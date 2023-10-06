@@ -344,6 +344,9 @@ CTEST_SUBMIT_RETRY_DELAY:STRING=5
 //Maximum time allowed before CTest will kill the test.
 DART_TESTING_TIMEOUT:STRING=1500
 
+//Path to a program.
+GITCOMMAND:FILEPATH=/usr/bin/git
+
 //Command to build the project
 MAKECOMMAND:STRING=/home/braer/.local/lib/python3.8/site-packages/cmake/data/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}" -- -i
 
@@ -407,6 +410,9 @@ Qt6GuiTools_DIR:PATH=/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools
 
 //The directory containing a CMake configuration file for Qt6Gui.
 Qt6Gui_DIR:PATH=/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui
+
+//The directory containing a CMake configuration file for Qt6OpenGLWidgets.
+Qt6OpenGLWidgets_DIR:PATH=/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets
 
 //The directory containing a CMake configuration file for Qt6OpenGL.
 Qt6OpenGL_DIR:PATH=/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL
@@ -679,6 +685,8 @@ FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 FIND_PACKAGE_MESSAGE_DETAILS_WrapAtomic:INTERNAL=[1][v()]
 //Details about finding WrapOpenGL
 FIND_PACKAGE_MESSAGE_DETAILS_WrapOpenGL:INTERNAL=[ON][v()]
+//ADVANCED property for variable: GITCOMMAND
+GITCOMMAND-ADVANCED:INTERNAL=1
 //Test HAVE_STDATOMIC
 HAVE_STDATOMIC:INTERNAL=1
 //ADVANCED property for variable: MAKECOMMAND

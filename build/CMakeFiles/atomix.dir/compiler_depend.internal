@@ -463,6 +463,21 @@ CMakeFiles/atomix.dir/main.cpp.o
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QSlider
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qslider.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qabstractslider.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QBoxLayout
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayoutitem.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qgridlayout.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/QOpenGLWidget
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qopenglwidget.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsglobal.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsexports.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QWidget
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLFunctions_3_1
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglfunctions_3_1.h
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qtopenglglobal.h

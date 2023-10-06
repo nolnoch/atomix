@@ -92,6 +92,7 @@ atomix_EXTERNAL_OBJECTS =
 
 atomix: CMakeFiles/atomix.dir/main.cpp.o
 atomix: CMakeFiles/atomix.dir/build.make
+atomix: /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3
 atomix: /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3
 atomix: /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3
 atomix: /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Gui.so.6.5.3

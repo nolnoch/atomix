@@ -1927,11 +1927,11 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "(This variable does not exist and should not be used)"
+					"value" : "Path to a program."
 				}
 			],
-			"type" : "UNINITIALIZED",
-			"value" : ""
+			"type" : "FILEPATH",
+			"value" : "/usr/bin/git"
 		},
 		{
 			"name" : "HAVE_STDATOMIC",
@@ -6948,6 +6948,18 @@
 			],
 			"type" : "PATH",
 			"value" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui"
+		},
+		{
+			"name" : "Qt6OpenGLWidgets_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for Qt6OpenGLWidgets."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets"
 		},
 		{
 			"name" : "Qt6OpenGL_DIR",

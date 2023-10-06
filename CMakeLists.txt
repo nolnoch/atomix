@@ -10,11 +10,11 @@ enable_testing()
 #include_directories(${QT_INC})
 #link_directories(${QT_LIB})
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets)
 
 add_executable(atomix main.cpp)
 
-target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::OpenGL)
+target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

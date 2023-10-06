@@ -462,6 +462,21 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QSlider \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qslider.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qabstractslider.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QBoxLayout \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayoutitem.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qgridlayout.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/QOpenGLWidget \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qopenglwidget.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsglobal.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsexports.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QWidget \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLFunctions_3_1 \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglfunctions_3_1.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qtopenglglobal.h \
@@ -486,6 +501,12 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qtopenglexports.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qtopenglglobal.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsglobal.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qopenglwidget.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QBoxLayout:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h:
 
@@ -555,9 +576,13 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstringconverter_base.h:
 
+/home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/QOpenGLWidget:
+
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtextstream.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qdebug.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h:
 
 /usr/include/c++/9/ctime:
 
@@ -582,6 +607,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcompare.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qmetatype.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearraylist.h:
 
@@ -702,6 +729,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 /usr/include/c++/9/bits/vector.tcc:
 
 /usr/include/c++/9/vector:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qabstractslider.h:
 
 /usr/include/c++/9/ext/atomicity.h:
 
@@ -847,6 +876,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 
 /usr/include/c++/9/new:
 
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QWidget:
+
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydata.h:
 
 /usr/include/time.h:
@@ -979,6 +1010,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 
 /usr/include/c++/9/bits/hashtable_policy.h:
 
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QSlider:
+
 /usr/include/c++/9/clocale:
 
 /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h:
@@ -1067,6 +1100,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/timesize.h:
 
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qgridlayout.h:
+
 /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpalette.h:
 
 /usr/include/c++/9/unordered_map:
@@ -1086,6 +1121,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 /usr/include/x86_64-linux-gnu/bits/types/struct_tm.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/9/include/stdint.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsexports.h:
 
 /usr/include/x86_64-linux-gnu/c++/9/bits/os_defines.h:
 
@@ -1194,6 +1231,10 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
 /usr/include/c++/9/bits/parse_numbers.h:
 
 /usr/include/c++/9/bits/string_view.tcc:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayoutitem.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qslider.h:
 
 /usr/include/c++/9/ext/string_conversions.h:
 

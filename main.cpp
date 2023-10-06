@@ -2,7 +2,7 @@
   atomix by Wade Burch
   (braernoch@gmail.com)
 
-  Open Source
+  Open Source (GPL)
  */
 
 //#include <cstdlib>
@@ -16,6 +16,9 @@
 #include <QScreen>
 #include <QCommandLineParser>
 #include <QOffscreenSurface>
+#include <QSlider>
+#include <QBoxLayout>
+#include <QtOpenGLWidgets/QOpenGLWidget>
 #include <QtOpenGL/QOpenGLFunctions_3_1>
 #include <QtOpenGL/QOpenGLVersionFunctionsFactory>
 //#include <eigen3/Eigen/Eigen>
@@ -41,10 +44,11 @@ int main(int argc, char* argv[]) {
     QSurfaceFormat qFmt;
     qFmt.setVersion(3,1);
     qFmt.setDepthBufferSize(24);
+    qFmt.setStencilBufferSize(8);
     qFmt.setSamples(4);
     QSurfaceFormat::setDefaultFormat(qFmt);
 
-    /* Topology: Main Window */
+    /* Topology: Outer Window */
     QWidget window;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
@@ -53,7 +57,17 @@ int main(int argc, char* argv[]) {
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     window.setFixedSize(dispX, dispY);
 
-    /* Topology: Extras */
+    /* Topology: Inner Sections */
+    QSlider *slide = new QSlider(Qt::Vertical, &window);
+    slide->setTickPosition(QSlider::TicksRight);
+    slide->setTickInterval(1);
+    slide->setSingleStep(1);
+    slide->setFixedWidth(100);
+    QOpenGLWidget *graph = new QOpenGLWidget();
+    QHBoxLayout *horGrid = new QHBoxLayout;
+    //horGrid->addWidget(graph);
+    horGrid->addWidget(slide);
+    window.setLayout(horGrid);
     QPushButton sButton ("Morb", &window);
     sButton.setGeometry(550, 850, 200, 50);
 
@@ -61,14 +75,19 @@ int main(int argc, char* argv[]) {
     auto *qOff = new QOffscreenSurface;
     qOff->setFormat(qFmt);
     qOff->create();
-
-    QOpenGLContext *qglContext = new QOpenGLContext(&window);
+    QOpenGLContext *qglContext = new QOpenGLContext(graph);
     qglContext->setFormat(qFmt);
     qglContext->create();
     qglContext->makeCurrent(qOff);
-
     auto *qf = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_1>(qglContext);
     qf->initializeOpenGLFunctions();
+
+    /* Init black render */
+    graph->makeCurrent();
+    qf->glClearColor(0, 0, 0, 0);
+    qf->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    qf->glEnable(GL_DEPTH_TEST);
+    qf->glEnable(GL_CULL_FACE);
     
     /* Engage */
     window.show();

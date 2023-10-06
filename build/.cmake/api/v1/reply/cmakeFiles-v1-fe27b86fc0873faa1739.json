@@ -1446,6 +1446,43 @@
 			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLVersionlessTargets.cmake"
 		},
 		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/braer/.local/lib/python3.8/site-packages/cmake/data/share/cmake-3.26/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsVersionlessTargets.cmake"
+		},
+		{
 			"isCMake" : true,
 			"isExternal" : true,
 			"path" : "/home/braer/.local/lib/python3.8/site-packages/cmake/data/share/cmake-3.26/Modules/CPack.cmake"

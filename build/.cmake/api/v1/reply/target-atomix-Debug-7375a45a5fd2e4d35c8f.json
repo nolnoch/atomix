@@ -244,6 +244,10 @@
 				},
 				{
 					"backtrace" : 2,
+					"define" : "QT_OPENGLWIDGETS_LIB"
+				},
+				{
+					"backtrace" : 2,
 					"define" : "QT_OPENGL_LIB"
 				},
 				{
@@ -282,6 +286,11 @@
 					"backtrace" : 2,
 					"isSystem" : true,
 					"path" : "/home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets"
 				}
 			],
 			"language" : "CXX",
@@ -314,6 +323,11 @@
 			},
 			{
 				"fragment" : "-Wl,-rpath,/home/braer/Qt/6.5.3/gcc_64/lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3",
 				"role" : "libraries"
 			},
 			{

@@ -11,24 +11,24 @@
 Window::Window(MainWindow *mw)
     : mainWindow(mw) {
     /* Create and arrange window components */
-    graph = new GWidget;
-    //graph->setFixedSize(400, 400);
+    QWidget *w = new QWidget;
+    graph = new GWidget(w);
+    slide = new QSlider(Qt::Vertical, w);
     morb = new QPushButton("Morb", this);
-    slide = new QSlider(Qt::Vertical, this);
+    QVBoxLayout *verGrid = new QVBoxLayout;
+    QHBoxLayout *horGrid = new QHBoxLayout;
+
     slide->setTickPosition(QSlider::TicksRight);
     slide->setTickInterval(1);
     slide->setSingleStep(1);
     slide->setFixedWidth(80);
 
-    QWidget *w = new QWidget;
-    QVBoxLayout *verGrid = new QVBoxLayout;
-    QHBoxLayout *horGrid = new QHBoxLayout;
-    horGrid->addWidget(graph);
+    //horGrid->addWidget(graph);
     horGrid->addWidget(slide);
     w->setLayout(horGrid);
     verGrid->addWidget(w);
     verGrid->addWidget(morb);
-    setLayout(verGrid);
+    this->setLayout(verGrid);
 
     setWindowTitle(tr("atomix"));
 }

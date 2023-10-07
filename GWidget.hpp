@@ -19,7 +19,6 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
-#include <QOffscreenSurface>
 #include <QMatrix4x4>
 
 #define GWIDTH 1843
@@ -46,7 +45,6 @@ protected:
 private:
     QOpenGLContext *gw_context = nullptr;
     QOpenGLShaderProgram *gw_program = nullptr;
-    QOffscreenSurface *gw_offscreen = nullptr;
     //QOpenGLVertexArrayObject gw_vao;
     //QOpenGLBuffer gw_vbo;
     QMatrix4x4 gw_proj;

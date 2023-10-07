@@ -12,8 +12,7 @@
 #include <QMainWindow>
 #include "Window.hpp"
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:

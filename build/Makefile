@@ -523,6 +523,115 @@ atomix/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/build
 .PHONY : atomix/fast
 
+#=============================================================================
+# Target rules for targets named atomix_autogen
+
+# Build rule for target.
+atomix_autogen: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 atomix_autogen
+.PHONY : atomix_autogen
+
+# fast build rule for target.
+atomix_autogen/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix_autogen.dir/build.make CMakeFiles/atomix_autogen.dir/build
+.PHONY : atomix_autogen/fast
+
+GWidget.o: GWidget.cpp.o
+.PHONY : GWidget.o
+
+# target to build an object file
+GWidget.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/GWidget.cpp.o
+.PHONY : GWidget.cpp.o
+
+GWidget.i: GWidget.cpp.i
+.PHONY : GWidget.i
+
+# target to preprocess a source file
+GWidget.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/GWidget.cpp.i
+.PHONY : GWidget.cpp.i
+
+GWidget.s: GWidget.cpp.s
+.PHONY : GWidget.s
+
+# target to generate assembly for a file
+GWidget.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/GWidget.cpp.s
+.PHONY : GWidget.cpp.s
+
+MainWindow.o: MainWindow.cpp.o
+.PHONY : MainWindow.o
+
+# target to build an object file
+MainWindow.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/MainWindow.cpp.o
+.PHONY : MainWindow.cpp.o
+
+MainWindow.i: MainWindow.cpp.i
+.PHONY : MainWindow.i
+
+# target to preprocess a source file
+MainWindow.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/MainWindow.cpp.i
+.PHONY : MainWindow.cpp.i
+
+MainWindow.s: MainWindow.cpp.s
+.PHONY : MainWindow.s
+
+# target to generate assembly for a file
+MainWindow.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/MainWindow.cpp.s
+.PHONY : MainWindow.cpp.s
+
+Window.o: Window.cpp.o
+.PHONY : Window.o
+
+# target to build an object file
+Window.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/Window.cpp.o
+.PHONY : Window.cpp.o
+
+Window.i: Window.cpp.i
+.PHONY : Window.i
+
+# target to preprocess a source file
+Window.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/Window.cpp.i
+.PHONY : Window.cpp.i
+
+Window.s: Window.cpp.s
+.PHONY : Window.s
+
+# target to generate assembly for a file
+Window.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/Window.cpp.s
+.PHONY : Window.cpp.s
+
+atomix_autogen/mocs_compilation.o: atomix_autogen/mocs_compilation.cpp.o
+.PHONY : atomix_autogen/mocs_compilation.o
+
+# target to build an object file
+atomix_autogen/mocs_compilation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o
+.PHONY : atomix_autogen/mocs_compilation.cpp.o
+
+atomix_autogen/mocs_compilation.i: atomix_autogen/mocs_compilation.cpp.i
+.PHONY : atomix_autogen/mocs_compilation.i
+
+# target to preprocess a source file
+atomix_autogen/mocs_compilation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.i
+.PHONY : atomix_autogen/mocs_compilation.cpp.i
+
+atomix_autogen/mocs_compilation.s: atomix_autogen/mocs_compilation.cpp.s
+.PHONY : atomix_autogen/mocs_compilation.s
+
+# target to generate assembly for a file
+atomix_autogen/mocs_compilation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/atomix.dir/build.make CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.s
+.PHONY : atomix_autogen/mocs_compilation.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -586,7 +695,20 @@ help:
 	@echo "... NightlySubmit"
 	@echo "... NightlyTest"
 	@echo "... NightlyUpdate"
+	@echo "... atomix_autogen"
 	@echo "... atomix"
+	@echo "... GWidget.o"
+	@echo "... GWidget.i"
+	@echo "... GWidget.s"
+	@echo "... MainWindow.o"
+	@echo "... MainWindow.i"
+	@echo "... MainWindow.s"
+	@echo "... Window.o"
+	@echo "... Window.i"
+	@echo "... Window.s"
+	@echo "... atomix_autogen/mocs_compilation.o"
+	@echo "... atomix_autogen/mocs_compilation.i"
+	@echo "... atomix_autogen/mocs_compilation.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

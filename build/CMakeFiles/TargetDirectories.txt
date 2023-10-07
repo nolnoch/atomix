@@ -32,3 +32,4 @@
 /home/braer/dev/atomix/build/CMakeFiles/test.dir
 /home/braer/dev/atomix/build/CMakeFiles/edit_cache.dir
 /home/braer/dev/atomix/build/CMakeFiles/rebuild_cache.dir
+/home/braer/dev/atomix/build/CMakeFiles/atomix_autogen.dir

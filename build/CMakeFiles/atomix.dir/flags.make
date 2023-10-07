@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/g++
 CXX_DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB
 
-CXX_INCLUDES = -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets
+CXX_INCLUDES = -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets
 
 CXX_FLAGS = -g -std=gnu++17 -fPIC -pthread
 

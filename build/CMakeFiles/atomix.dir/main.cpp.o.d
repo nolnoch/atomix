@@ -355,19 +355,6 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlocale.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qvariant.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qguiapplication_platform.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QPushButton \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qpushbutton.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qabstractbutton.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qicon.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qkeysequence.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qaction.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpalette.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbrush.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfont.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontmetrics.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontinfo.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qsizepolicy.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOpenGLContext \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
@@ -394,19 +381,12 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QCommandLineParser \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcommandlineparser.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcommandlineoption.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QSlider \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qslider.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qabstractslider.h \
+ /home/braer/dev/atomix/GWidget.hpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QBoxLayout \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayoutitem.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qsizepolicy.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qgridlayout.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/QOpenGLWidget \
@@ -415,6 +395,14 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsexports.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QWidget \
  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qaction.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qkeysequence.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qicon.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpalette.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbrush.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfont.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontmetrics.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontinfo.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLFunctions_3_1 \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglfunctions_3_1.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qtopenglglobal.h \
@@ -427,4 +415,47 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglversionfunctions.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLVersionFunctionsFactory \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglversionfunctionsfactory.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglversionprofile.h
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglversionprofile.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLShaderProgram \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglshaderprogram.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector2d.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvectornd.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector3d.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector4d.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qquaternion.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qgenericmatrix.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLVertexArrayObject \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
+ /home/braer/dev/atomix/MainWindow.hpp \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QMainWindow \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qmainwindow.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtabwidget.h \
+ /home/braer/dev/atomix/Window.hpp \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QWidget \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QSlider \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qslider.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qabstractslider.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QPushButton \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qpushbutton.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qabstractbutton.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QKeyEvent \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qevent.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qiodevice.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qpointer.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qurl.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qeventpoint.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpointingdevice.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qinputdevice.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h

@@ -293,6 +293,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "DartConfiguration.tcl"
   "CPackConfig.cmake"
   "CPackSourceConfig.cmake"
+  "CMakeFiles/atomix_autogen.dir/AutogenInfo.json"
   ".qt/QtDeploySupport.cmake"
   "CMakeFiles/CMakeDirectoryInformation.cmake"
   )
@@ -328,4 +329,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/ContinuousMemCheck.dir/DependInfo.cmake"
   "CMakeFiles/ContinuousSubmit.dir/DependInfo.cmake"
   "CMakeFiles/atomix.dir/DependInfo.cmake"
+  "CMakeFiles/atomix_autogen.dir/DependInfo.cmake"
   )

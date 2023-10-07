@@ -355,16 +355,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlocale.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qvariant.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qguiapplication_platform.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOpenGLContext \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopengl.h /usr/include/GL/gl.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglext.h \
- /usr/include/inttypes.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext_platform.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QList \
@@ -403,6 +395,14 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfont.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontmetrics.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontinfo.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopengl.h /usr/include/GL/gl.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglext.h \
+ /usr/include/inttypes.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOpenGLContext \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext_platform.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLFunctions_3_1 \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglfunctions_3_1.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qtopenglglobal.h \
@@ -429,12 +429,6 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
  /home/braer/dev/atomix/MainWindow.hpp \

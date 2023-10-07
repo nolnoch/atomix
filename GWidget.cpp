@@ -7,13 +7,12 @@
 */
 
 #include <iostream>
-//#include <GL/glew.h>
+#include <QTimer>
 #include "GWidget.hpp"
+
 
 GWidget::GWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
-    
-    initializeGL();
 }
 
 GWidget::~GWidget() {
@@ -25,8 +24,8 @@ void GWidget::cleanup() {
 
     std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
-    delete gw_program;
-    delete gw_offscreen;
+    if (gw_program)
+        delete gw_program;
 
     doneCurrent();
 }
@@ -52,17 +51,18 @@ static const char *fragmentShaderSource =
     "}\n";
 
 void GWidget::initializeGL() {
-    /* OpenGL Init */
-    if (!gw_context) {
+    /* Context and OpenGL Init */
+    if (!context()) {
         gw_context = new QOpenGLContext(this);
         if (!gw_context->create())
             std::cout << "Failed to create OpenGL context" << std::endl;
         else
             std::cout << "Init OpenGL Context" << std::endl;
+    } else {
+        gw_context = context();
+        std::cout << "OpenGL Context reassigned" << std::endl;
     }
-    gw_offscreen = new QOffscreenSurface();
-    gw_offscreen->create();
-    gw_context->makeCurrent(gw_offscreen);
+    makeCurrent();
     if (!gw_init) {
         if (!this->initializeOpenGLFunctions()) {
             std::cout << "Failed to initialize OpenGL functions" << std::endl;
@@ -71,45 +71,47 @@ void GWidget::initializeGL() {
             std::cout << "Init OpenGL functions" << std::endl;
         }
     }
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 
     /* Shader Init */
     gw_program = new QOpenGLShaderProgram(this);
     gw_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
     gw_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    gw_program->link();
+    if (!(gw_program->link() && gw_program->bind())) {
+        std::cout << "Shader program failed to link and bind." << std::endl;
+    }
     gw_posAttr = gw_program->attributeLocation("posAttr");
     gw_colAttr = gw_program->attributeLocation("colAttr");
     gw_uniMatrix = gw_program->uniformLocation("matrix");
 
-    /* Camera Init */
+    /* Camera and World Init */
     gw_camera.setToIdentity();
     gw_camera.translate(0, 0, -1);
     gw_world.setToIdentity();
 
-    makeCurrent();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    
-    //connect(gw_context, &QOpenGLContext::aboutToBeDestroyed, this, &GWidget::cleanup);
+    //std::cout << "At Frame# " << gw_frame << " Context pointer: " << context() << " and GWidget pointer: " << this << std::endl;
+    connect(context(), &QOpenGLContext::aboutToBeDestroyed, this, &GWidget::cleanup);
+
+    QTimer* Timer = new QTimer(this);
+    connect(Timer, SIGNAL(timeout()), this, SLOT(update()));
+    Timer->start(1000/33);
 }
 
 void GWidget::paintGL() {
     makeCurrent();
-
+    
     /* Render */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-    glClear(GL_COLOR_BUFFER_BIT);
-    gw_program->bind();
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     QMatrix4x4 matrix;
     matrix.perspective(60.0f, 4.0f / 3.0f, 0.1f, 100.0f);
     matrix.translate(0, 0, -2);
     matrix.rotate(100.0f * gw_frame / screen()->refreshRate(), 0, 1, 0);
-
-    gw_program->setUniformValue(gw_uniMatrix, QVector3D(0, 0, 70));
+    gw_program->setUniformValue(gw_uniMatrix, matrix);
 
     static const GLfloat vertices[] = {
          0.0f,  0.707f,

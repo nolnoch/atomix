@@ -116,7 +116,6 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qversiontagging.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qxptype_traits.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOpenGLContext \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
@@ -134,8 +133,6 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qimage.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qkeysequence.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopengl.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext_platform.h \
@@ -150,7 +147,6 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qrgb.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qrgba64.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtgui-config.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiexports.h \

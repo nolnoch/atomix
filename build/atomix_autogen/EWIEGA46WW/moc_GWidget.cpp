@@ -7,7 +7,6 @@
 *****************************************************************************/
 
 #include "../../../GWidget.hpp"
-#include <QtGui/qscreen.h>
 #include <QtCore/qmetatype.h>
 
 #if __has_include(<QtCore/qtmochelpers.h>)

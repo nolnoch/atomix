@@ -10,7 +10,6 @@
 //#include <iostream>
 
 #include <QApplication>
-#include <QOpenGLContext>
 #include <QSurfaceFormat>
 #include <QScreen>
 #include <QCommandLineParser>
@@ -19,8 +18,8 @@
 
 //#include <eigen3/Eigen/Eigen>
 
-#define SWIDTH 2304
-#define SHEIGHT 1296
+#define SWIDTH 1280
+#define SHEIGHT 720
 
 int main(int argc, char* argv[]) {
     /* Application */
@@ -49,7 +48,7 @@ int main(int argc, char* argv[]) {
     MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
-    short ratio = 0.6;
+    float ratio = 0.6;
     int dispX = dispXY.width() * ratio ?: SWIDTH;
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);

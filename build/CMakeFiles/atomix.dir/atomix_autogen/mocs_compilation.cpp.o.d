@@ -418,15 +418,8 @@ CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o: \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtmochelpers.h \
  /home/braer/dev/atomix/build/atomix_autogen/EWIEGA46WW/moc_MainWindow.cpp \
  /home/braer/dev/atomix/build/atomix_autogen/EWIEGA46WW/../../../MainWindow.hpp \
@@ -451,6 +444,7 @@ CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o: \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qeventpoint.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpointingdevice.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qinputdevice.h \
+ /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
  /home/braer/dev/atomix/build/atomix_autogen/EWIEGA46WW/../../../GWidget.hpp \
  /home/braer/dev/atomix/build/atomix_autogen/EWIEGA46WW/moc_Window.cpp \
  /home/braer/dev/atomix/build/atomix_autogen/EWIEGA46WW/../../../Window.hpp

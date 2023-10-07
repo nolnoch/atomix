@@ -439,11 +439,5 @@ CMakeFiles/atomix.dir/MainWindow.cpp.o: \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
  /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
- /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h

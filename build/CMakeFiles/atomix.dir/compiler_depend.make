@@ -176,10 +176,8 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /usr/include/c++/9/bits/ostream.tcc \
   /usr/include/c++/9/istream \
   /usr/include/c++/9/bits/istream.tcc \
-  /home/braer/dev/atomix/GWidget.hpp \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiglobal.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QTimer \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtimer.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qglobal.h \
   /usr/include/c++/9/cstddef \
   /usr/include/c++/9/utility \
@@ -265,21 +263,15 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtresource.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qttranslation.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qversiontagging.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtgui-config.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiexports.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QList \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlist.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydatapointer.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydataops.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydata.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qpair.h \
-  /usr/include/string.h \
-  /usr/include/strings.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcontainertools_impl.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qxptype_traits.h \
-  /usr/include/c++/9/cstring \
-  /usr/include/c++/9/iterator \
-  /usr/include/c++/9/bits/stream_iterator.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbasictimer.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qnamespace.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtmetamacros.h \
+  /usr/include/c++/9/chrono \
+  /usr/include/c++/9/ratio \
+  /usr/include/c++/9/ctime \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobject.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs_impl.h \
   /usr/include/c++/9/memory \
   /usr/include/c++/9/bits/stl_uninitialized.h \
   /usr/include/c++/9/bits/stl_tempbuf.h \
@@ -294,12 +286,8 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /usr/include/c++/9/backward/auto_ptr.h \
   /usr/include/c++/9/pstl/glue_memory_defs.h \
   /usr/include/c++/9/pstl/execution_defs.h \
-  /usr/include/c++/9/algorithm \
-  /usr/include/c++/9/bits/stl_algo.h \
-  /usr/include/c++/9/bits/algorithmfwd.h \
-  /usr/include/c++/9/bits/stl_heap.h \
-  /usr/include/c++/9/bits/uniform_int_dist.h \
-  /usr/include/c++/9/pstl/glue_algorithm_defs.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstring.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qchar.h \
   /usr/include/c++/9/functional \
   /usr/include/c++/9/bits/std_function.h \
   /usr/include/c++/9/unordered_map \
@@ -312,14 +300,26 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /usr/include/c++/9/bits/stl_vector.h \
   /usr/include/c++/9/bits/stl_bvector.h \
   /usr/include/c++/9/bits/vector.tcc \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qnamespace.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtmetamacros.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qhashfunctions.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstring.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qchar.h \
+  /usr/include/c++/9/bits/stl_algo.h \
+  /usr/include/c++/9/bits/algorithmfwd.h \
+  /usr/include/c++/9/bits/stl_heap.h \
+  /usr/include/c++/9/bits/uniform_int_dist.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstringview.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearray.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qrefcount.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydata.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qpair.h \
+  /usr/include/string.h \
+  /usr/include/strings.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydatapointer.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydataops.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcontainertools_impl.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qxptype_traits.h \
+  /usr/include/c++/9/cstring \
+  /usr/include/c++/9/iterator \
+  /usr/include/c++/9/bits/stream_iterator.h \
+  /usr/include/c++/9/algorithm \
+  /usr/include/c++/9/pstl/glue_algorithm_defs.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearrayalgorithms.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearrayview.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstringfwd.h \
@@ -331,19 +331,16 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qutf8stringview.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstringtokenizer.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstringbuilder.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlist.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qhashfunctions.h \
   /usr/include/c++/9/numeric \
   /usr/include/c++/9/bits/stl_numeric.h \
   /usr/include/c++/9/pstl/glue_numeric_defs.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qiterator.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearraylist.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlist.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstringlist.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qalgorithms.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qstringmatcher.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QObject \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobject.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs_impl.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qscopedpointer.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qmetatype.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcompare.h \
@@ -365,9 +362,16 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /usr/include/c++/9/bits/stl_multimap.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobject_impl.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbindingstorage.h \
-  /usr/include/c++/9/chrono \
-  /usr/include/c++/9/ratio \
-  /usr/include/c++/9/ctime \
+  /home/braer/dev/atomix/GWidget.hpp \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiglobal.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtgui-config.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiexports.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QList \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlist.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QObject \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobject.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QRect \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qrect.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qmargins.h \
@@ -390,7 +394,6 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtwidgets-config.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtwidgetsexports.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobject.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayoutitem.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qsizepolicy.h \
   /usr/lib/gcc/x86_64-linux-gnu/9/include/limits.h \
@@ -478,12 +481,6 @@ CMakeFiles/atomix.dir/GWidget.cpp.o: /home/braer/dev/atomix/GWidget.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h
 
@@ -986,12 +983,6 @@ CMakeFiles/atomix.dir/MainWindow.cpp.o: /home/braer/dev/atomix/MainWindow.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h
 
@@ -1490,12 +1481,6 @@ CMakeFiles/atomix.dir/Window.cpp.o: /home/braer/dev/atomix/Window.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h
 
@@ -1976,15 +1961,8 @@ CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o: atomix_autogen/mocs
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtmochelpers.h \
   atomix_autogen/EWIEGA46WW/moc_MainWindow.cpp \
   /home/braer/dev/atomix/MainWindow.hpp \
@@ -2009,6 +1987,7 @@ CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o: atomix_autogen/mocs
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qeventpoint.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpointingdevice.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qinputdevice.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
   /home/braer/dev/atomix/GWidget.hpp \
   atomix_autogen/EWIEGA46WW/moc_Window.cpp \
   /home/braer/dev/atomix/Window.hpp
@@ -2428,17 +2407,8 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlocale.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qvariant.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qguiapplication_platform.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOpenGLContext \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopengl.h \
-  /usr/include/GL/gl.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglext.h \
-  /usr/include/inttypes.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext_platform.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qscreen.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QList \
@@ -2477,6 +2447,15 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfont.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontmetrics.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontinfo.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopengl.h \
+  /usr/include/GL/gl.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglext.h \
+  /usr/include/inttypes.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOpenGLContext \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext_platform.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLFunctions_3_1 \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglfunctions_3_1.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qtopenglglobal.h \
@@ -2503,12 +2482,6 @@ CMakeFiles/atomix.dir/main.cpp.o: /home/braer/dev/atomix/main.cpp \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglvertexarrayobject.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/qopenglbuffer.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurfaceformat.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
   /home/braer/dev/atomix/MainWindow.hpp \
@@ -2556,8 +2529,6 @@ atomix_autogen/EWIEGA46WW/moc_MainWindow.cpp:
 /home/braer/dev/atomix/Window.hpp:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qmainwindow.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qsurface.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLBuffer:
 
@@ -2651,11 +2622,11 @@ atomix_autogen/EWIEGA46WW/moc_MainWindow.cpp:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QRect:
 
-/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h:
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/QObject:
 
-/usr/include/c++/9/ctime:
+/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen:
 
-/usr/include/c++/9/bits/stl_multimap.h:
+/home/braer/dev/atomix/GWidget.hpp:
 
 /usr/include/c++/9/map:
 
@@ -2677,12 +2648,6 @@ atomix_autogen/EWIEGA46WW/moc_MainWindow.cpp:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qmetatype.h:
 
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs_impl.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobject.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/QObject:
-
 /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qboxlayout.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearraylist.h:
@@ -2693,11 +2658,43 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 
 /usr/include/c++/9/numeric:
 
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qhashfunctions.h:
+
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qutf8stringview.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/q20type_traits.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearrayalgorithms.h:
+
+/usr/include/c++/9/algorithm:
+
+atomix_autogen/EWIEGA46WW/moc_GWidget.cpp:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/QSizeF:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiglobal.h:
+
+/usr/include/c++/9/bits/stream_iterator.h:
+
+/usr/include/c++/9/iterator:
+
+/usr/include/c++/9/cstring:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qxptype_traits.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydataops.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcontainertools_impl.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydatapointer.h:
+
+/usr/include/strings.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qkeysequence.h:
+
+/usr/include/string.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qpair.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qrefcount.h:
 
@@ -2706,34 +2703,6 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qhash.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearray.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qchar.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qhashfunctions.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtmetamacros.h:
-
-/usr/include/c++/9/vector:
-
-/usr/include/c++/9/bits/erase_if.h:
-
-/usr/include/c++/9/bits/node_handle.h:
-
-/usr/include/c++/9/bits/hashtable_policy.h:
-
-/usr/include/c++/9/bits/hashtable.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpalette.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qgridlayout.h:
-
-/usr/include/c++/9/unordered_map:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector4d.h:
-
-/usr/include/c++/9/bits/vector.tcc:
-
-/usr/include/c++/9/pstl/glue_algorithm_defs.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcoreapplication_platform.h:
 
@@ -2751,7 +2720,29 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 
 /usr/include/c++/9/bits/stl_algo.h:
 
-/usr/include/c++/9/algorithm:
+/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector4d.h:
+
+/usr/include/c++/9/pstl/glue_algorithm_defs.h:
+
+/usr/include/c++/9/bits/vector.tcc:
+
+/usr/include/c++/9/vector:
+
+/usr/include/c++/9/bits/erase_if.h:
+
+/usr/include/c++/9/bits/node_handle.h:
+
+/usr/include/c++/9/bits/hashtable_policy.h:
+
+/usr/include/c++/9/bits/hashtable.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpalette.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qgridlayout.h:
+
+/usr/include/c++/9/unordered_map:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qchar.h:
 
 /usr/include/c++/9/pstl/execution_defs.h:
 
@@ -2763,35 +2754,21 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 
 /usr/include/c++/9/bits/stl_raw_storage_iter.h:
 
-/usr/include/c++/9/iterator:
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs_impl.h:
 
-/usr/include/c++/9/cstring:
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobject.h:
 
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qxptype_traits.h:
+/home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h:
 
-/usr/include/strings.h:
+/usr/include/c++/9/ctime:
 
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qkeysequence.h:
-
-/usr/include/string.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qpair.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydataops.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcontainertools_impl.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qarraydatapointer.h:
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtmetamacros.h:
 
 /usr/include/c++/9/bits/unordered_map.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qversiontagging.h:
 
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QOffscreenSurface:
-
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtenvironmentvariables.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qoverload.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtmochelpers.h:
 
@@ -2849,9 +2826,9 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h:
 
-/usr/include/c++/9/chrono:
-
 /usr/include/c++/9/pstl/glue_memory_defs.h:
+
+/usr/include/c++/9/chrono:
 
 /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
 
@@ -2864,8 +2841,6 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QKeyEvent:
 
 /usr/include/x86_64-linux-gnu/bits/wordsize.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface_platform.h:
 
 /usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
 
@@ -3019,25 +2994,15 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 
 /usr/include/c++/9/debug/assertions.h:
 
+/usr/include/c++/9/bits/stl_multimap.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qtimer.h:
+
 /usr/include/c++/9/typeinfo:
 
 /usr/include/c++/9/bits/functexcept.h:
 
 /usr/include/c++/9/bits/locale_facets.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QTransform:
-
-/usr/include/c++/9/pstl/glue_numeric_defs.h:
-
-/usr/include/c++/9/bits/std_function.h:
-
-/usr/include/c++/9/tr1/riemann_zeta.tcc:
-
-/usr/include/x86_64-linux-gnu/bits/types/time_t.h:
-
-/usr/include/c++/9/bits/exception_ptr.h:
-
-/usr/include/c++/9/bits/char_traits.h:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopengl.h:
 
@@ -3139,9 +3104,9 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 
 /usr/include/sched.h:
 
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs.h:
-
 /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtgui-config.h:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qobjectdefs.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
 
@@ -3254,8 +3219,6 @@ atomix_autogen/EWIEGA46WW/moc_Window.cpp:
 /usr/include/c++/9/bits/stl_construct.h:
 
 /usr/include/x86_64-linux-gnu/c++/9/bits/gthr.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qoffscreensurface.h:
 
 /usr/include/c++/9/bits/allocator.h:
 
@@ -3401,19 +3364,11 @@ atomix_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/uio_lim.h:
 
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbasictimer.h:
+
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qprocessordetection.h:
 
-/home/braer/dev/atomix/GWidget.hpp:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen:
-
-atomix_autogen/EWIEGA46WW/moc_GWidget.cpp:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtCore/QSizeF:
-
-/usr/include/c++/9/bits/stream_iterator.h:
-
-/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiglobal.h:
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/QTimer:
 
 /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qrect.h:
 
@@ -3560,3 +3515,19 @@ atomix_autogen/EWIEGA46WW/moc_GWidget.cpp:
 /usr/include/c++/9/tr1/bessel_function.tcc:
 
 /usr/include/c++/9/tr1/modified_bessel_func.tcc:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QTransform:
+
+/usr/include/c++/9/pstl/glue_numeric_defs.h:
+
+/usr/include/c++/9/bits/std_function.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/time_t.h:
+
+/usr/include/c++/9/bits/exception_ptr.h:
+
+/usr/include/c++/9/bits/char_traits.h:
+
+/usr/include/c++/9/tr1/riemann_zeta.tcc:
+
+/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qoverload.h:

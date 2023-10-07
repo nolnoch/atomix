@@ -1,18 +1,14 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(atomix VERSION 0.1.0 LANGUAGES C CXX)
-#set(QT_INC "/usr/local/Qt-6.5.3/include")
-#set(QT_LIB "/usr/local/Qt-6.5.3/lib")
+set(CMAKE_AUTOMOC ON)
 set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
 
 include(CTest)
 enable_testing()
 
-#include_directories(${QT_INC})
-#link_directories(${QT_LIB})
-
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets)
 
-add_executable(atomix main.cpp)
+add_executable(atomix main.cpp MainWindow.cpp Window.cpp GWidget.cpp)
 
 target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets)
 

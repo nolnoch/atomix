@@ -14,7 +14,7 @@
 #include <QBoxLayout>
 #include <QOpenGLWidget>
 #include <QOpenGLContext>
-#include <QOpenGLFunctions_3_1>
+#include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLVersionFunctionsFactory>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
@@ -24,7 +24,7 @@
 #define GWIDTH 1843
 #define GHEIGHT 1196
 
-class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_1 {
+class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
     Q_OBJECT
 
 public:
@@ -35,7 +35,6 @@ public:
 
 public slots:
     void cleanup();
-    void renderLater();
 
 protected:
     void initializeGL() override;

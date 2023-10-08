@@ -18,6 +18,9 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
 
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+
 private slots:
     void onAddNew();
 };

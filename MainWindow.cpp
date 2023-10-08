@@ -15,3 +15,11 @@ MainWindow::MainWindow() {
 void MainWindow::onAddNew() {
     setCentralWidget(new Window(this));
 }
+
+void MainWindow::keyPressEvent(QKeyEvent *e)
+{
+    if (e->key() == Qt::Key_Escape)
+        close();
+    else
+        QWidget::keyPressEvent(e);
+}

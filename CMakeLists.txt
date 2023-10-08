@@ -1,10 +1,9 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.0.0...3.5)
 project(atomix VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_AUTOMOC ON)
 set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
 
-include(CTest)
-enable_testing()
+#find_package(OpenGL REQUIRED)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets)
 

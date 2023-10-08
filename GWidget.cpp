@@ -22,16 +22,12 @@ GWidget::~GWidget() {
 void GWidget::cleanup() {
     makeCurrent();
 
-    std::cout << "Rendered " << gw_frame << " frames." << std::endl;
+    //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
     if (gw_program)
         delete gw_program;
 
     doneCurrent();
-}
-
-void GWidget::renderLater() {
-    //requestUpdate();
 }
 
 static const char *vertexShaderSource =
@@ -56,20 +52,15 @@ void GWidget::initializeGL() {
         gw_context = new QOpenGLContext(this);
         if (!gw_context->create())
             std::cout << "Failed to create OpenGL context" << std::endl;
-        else
-            std::cout << "Init OpenGL Context" << std::endl;
     } else {
         gw_context = context();
-        std::cout << "OpenGL Context reassigned" << std::endl;
     }
     makeCurrent();
     if (!gw_init) {
-        if (!this->initializeOpenGLFunctions()) {
+        if (!this->initializeOpenGLFunctions())
             std::cout << "Failed to initialize OpenGL functions" << std::endl;
-        } else {
+        else
             gw_init = true;
-            std::cout << "Init OpenGL functions" << std::endl;
-        }
     }
 
     /* Shader Init */
@@ -88,9 +79,6 @@ void GWidget::initializeGL() {
     gw_camera.translate(0, 0, -1);
     gw_world.setToIdentity();
 
-    //std::cout << "At Frame# " << gw_frame << " Context pointer: " << context() << " and GWidget pointer: " << this << std::endl;
-    connect(context(), &QOpenGLContext::aboutToBeDestroyed, this, &GWidget::cleanup);
-
     QTimer* Timer = new QTimer(this);
     connect(Timer, SIGNAL(timeout()), this, SLOT(update()));
     Timer->start(1000/33);
@@ -102,7 +90,7 @@ void GWidget::paintGL() {
     /* Render */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 1.0f, 0.5f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

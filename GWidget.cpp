@@ -12,16 +12,20 @@
 
 const char *verShaderSrc =
     "#version 450 core\n"
-    "layout(location = 0) in vec3 pos;\n"
+    "layout(location = 0) in vec3 svPos;\n"
+    "layout(location = 1) in vec3 svCol;\n"
+    "out vec3 verColour;\n"
     "void main() {\n"
-    "   gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);\n"
+    "   gl_Position = vec4(svPos.x, svPos.y, svPos.z, 1.0);\n"
+    "   verColour = svCol;\n"
     "}\n";
 
 const char *fragShaderSrc =
     "#version 450 core\n"
-    "out vec4 FragColour;"
+    "out vec4 FragColour;\n"
+    "in vec3 verColour;\n"
     "void main() {\n"
-    "   FragColour = vec4(0.4f, 0.05f, 0.1f, 1.0f);\n"
+    "   FragColour = vec4(verColour, 1.0f);\n"
     "}\n";
 
 
@@ -38,7 +42,9 @@ void GWidget::cleanup() {
 
     std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
-    // Additional cleanup
+    glDeleteVertexArrays(1, &gw_vao);
+    glDeleteBuffers(1, &gw_vbo);
+    glDeleteProgram(gw_prog);
 
     doneCurrent();
 }
@@ -70,9 +76,9 @@ bool GWidget::checkCompileProgram(uint program) {
 void GWidget::initializeGL() {
     uint verShader, fragShader;
     const GLfloat vertices[] = {
-         0.0f,  0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f
+         0.0f,  0.69f, 0.0f,  1.0f, 0.0f, 0.0f,
+        -0.4f, -0.4f, 0.0f,  0.0f, 1.0f, 0.0f,
+         0.4f, -0.4f, 0.0f,  0.0f, 0.0f, 1.0f  
     };
     
     /* Init -- Context and OpenGL */
@@ -122,8 +128,12 @@ void GWidget::initializeGL() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     /* Attribute Pointers */
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // Vertices
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    // Vertex Colours
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     /* Camera and World Init */
     //gw_camera.setToIdentity();

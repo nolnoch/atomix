@@ -16,14 +16,13 @@
 #include "GWidget.hpp"
 #include "MainWindow.hpp"
 
-//#include <eigen3/Eigen/Eigen>
-
 #define SWIDTH 1280
 #define SHEIGHT 720
+#define SRATIO 0.0
 
 int main(int argc, char* argv[]) {
     /* Application */
-    QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+    //QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
     QApplication app (argc, argv);
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch, LLC");
@@ -40,7 +39,7 @@ int main(int argc, char* argv[]) {
     QSurfaceFormat qFmt;
     qFmt.setDepthBufferSize(24);
     qFmt.setStencilBufferSize(8);
-    qFmt.setSamples(16);
+    qFmt.setSamples(4);
     qFmt.setVersion(4,6);
     qFmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(qFmt);
@@ -49,7 +48,7 @@ int main(int argc, char* argv[]) {
     MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
-    float ratio = 0.6;
+    float ratio = SRATIO;
     int dispX = dispXY.width() * ratio ?: SWIDTH;
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);

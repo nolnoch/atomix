@@ -209,6 +209,8 @@
  mdp:/usr/include/c++/12/bits/allocator.h
  mdp:/usr/include/c++/12/bits/atomic_base.h
  mdp:/usr/include/c++/12/bits/atomic_lockfree_defines.h
+ mdp:/usr/include/c++/12/bits/basic_ios.h
+ mdp:/usr/include/c++/12/bits/basic_ios.tcc
  mdp:/usr/include/c++/12/bits/basic_string.h
  mdp:/usr/include/c++/12/bits/basic_string.tcc
  mdp:/usr/include/c++/12/bits/char_traits.h
@@ -230,15 +232,19 @@
  mdp:/usr/include/c++/12/bits/hashtable_policy.h
  mdp:/usr/include/c++/12/bits/invoke.h
  mdp:/usr/include/c++/12/bits/ios_base.h
+ mdp:/usr/include/c++/12/bits/istream.tcc
  mdp:/usr/include/c++/12/bits/list.tcc
  mdp:/usr/include/c++/12/bits/locale_classes.h
  mdp:/usr/include/c++/12/bits/locale_classes.tcc
+ mdp:/usr/include/c++/12/bits/locale_facets.h
+ mdp:/usr/include/c++/12/bits/locale_facets.tcc
  mdp:/usr/include/c++/12/bits/localefwd.h
  mdp:/usr/include/c++/12/bits/memoryfwd.h
  mdp:/usr/include/c++/12/bits/move.h
  mdp:/usr/include/c++/12/bits/nested_exception.h
  mdp:/usr/include/c++/12/bits/new_allocator.h
  mdp:/usr/include/c++/12/bits/node_handle.h
+ mdp:/usr/include/c++/12/bits/ostream.tcc
  mdp:/usr/include/c++/12/bits/ostream_insert.h
  mdp:/usr/include/c++/12/bits/parse_numbers.h
  mdp:/usr/include/c++/12/bits/postypes.h
@@ -250,6 +256,7 @@
  mdp:/usr/include/c++/12/bits/shared_ptr_atomic.h
  mdp:/usr/include/c++/12/bits/shared_ptr_base.h
  mdp:/usr/include/c++/12/bits/specfun.h
+ mdp:/usr/include/c++/12/bits/sstream.tcc
  mdp:/usr/include/c++/12/bits/std_abs.h
  mdp:/usr/include/c++/12/bits/std_function.h
  mdp:/usr/include/c++/12/bits/stl_algo.h
@@ -283,12 +290,15 @@
  mdp:/usr/include/c++/12/bits/uses_allocator.h
  mdp:/usr/include/c++/12/bits/utility.h
  mdp:/usr/include/c++/12/bits/vector.tcc
+ mdp:/usr/include/c++/12/cassert
  mdp:/usr/include/c++/12/cctype
  mdp:/usr/include/c++/12/cerrno
  mdp:/usr/include/c++/12/chrono
+ mdp:/usr/include/c++/12/climits
  mdp:/usr/include/c++/12/clocale
  mdp:/usr/include/c++/12/cmath
  mdp:/usr/include/c++/12/compare
+ mdp:/usr/include/c++/12/complex
  mdp:/usr/include/c++/12/cstddef
  mdp:/usr/include/c++/12/cstdint
  mdp:/usr/include/c++/12/cstdio
@@ -296,6 +306,7 @@
  mdp:/usr/include/c++/12/cstring
  mdp:/usr/include/c++/12/ctime
  mdp:/usr/include/c++/12/cwchar
+ mdp:/usr/include/c++/12/cwctype
  mdp:/usr/include/c++/12/debug/assertions.h
  mdp:/usr/include/c++/12/debug/debug.h
  mdp:/usr/include/c++/12/exception
@@ -308,7 +319,9 @@
  mdp:/usr/include/c++/12/ext/type_traits.h
  mdp:/usr/include/c++/12/functional
  mdp:/usr/include/c++/12/initializer_list
+ mdp:/usr/include/c++/12/ios
  mdp:/usr/include/c++/12/iosfwd
+ mdp:/usr/include/c++/12/istream
  mdp:/usr/include/c++/12/iterator
  mdp:/usr/include/c++/12/limits
  mdp:/usr/include/c++/12/list
@@ -317,11 +330,13 @@
  mdp:/usr/include/c++/12/new
  mdp:/usr/include/c++/12/numeric
  mdp:/usr/include/c++/12/optional
+ mdp:/usr/include/c++/12/ostream
  mdp:/usr/include/c++/12/pstl/execution_defs.h
  mdp:/usr/include/c++/12/pstl/glue_algorithm_defs.h
  mdp:/usr/include/c++/12/pstl/glue_memory_defs.h
  mdp:/usr/include/c++/12/pstl/glue_numeric_defs.h
  mdp:/usr/include/c++/12/ratio
+ mdp:/usr/include/c++/12/sstream
  mdp:/usr/include/c++/12/stdexcept
  mdp:/usr/include/c++/12/streambuf
  mdp:/usr/include/c++/12/string
@@ -347,6 +362,258 @@
  mdp:/usr/include/c++/12/variant
  mdp:/usr/include/c++/12/vector
  mdp:/usr/include/ctype.h
+ mdp:/usr/include/eigen3/Eigen/Cholesky
+ mdp:/usr/include/eigen3/Eigen/Core
+ mdp:/usr/include/eigen3/Eigen/Dense
+ mdp:/usr/include/eigen3/Eigen/Eigen
+ mdp:/usr/include/eigen3/Eigen/Eigenvalues
+ mdp:/usr/include/eigen3/Eigen/Geometry
+ mdp:/usr/include/eigen3/Eigen/Householder
+ mdp:/usr/include/eigen3/Eigen/IterativeLinearSolvers
+ mdp:/usr/include/eigen3/Eigen/Jacobi
+ mdp:/usr/include/eigen3/Eigen/LU
+ mdp:/usr/include/eigen3/Eigen/OrderingMethods
+ mdp:/usr/include/eigen3/Eigen/QR
+ mdp:/usr/include/eigen3/Eigen/SVD
+ mdp:/usr/include/eigen3/Eigen/Sparse
+ mdp:/usr/include/eigen3/Eigen/SparseCholesky
+ mdp:/usr/include/eigen3/Eigen/SparseCore
+ mdp:/usr/include/eigen3/Eigen/SparseLU
+ mdp:/usr/include/eigen3/Eigen/SparseQR
+ mdp:/usr/include/eigen3/Eigen/src/Cholesky/LDLT.h
+ mdp:/usr/include/eigen3/Eigen/src/Cholesky/LLT.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArithmeticSequence.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Array.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArrayBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArrayWrapper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Assign.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/AssignEvaluator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/BandMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Block.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/BooleanRedux.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CommaInitializer.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ConditionEstimator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CoreEvaluators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CoreIterators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseNullaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseTernaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseUnaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseUnaryView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseCoeffsBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseStorage.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Diagonal.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DiagonalMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DiagonalProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Dot.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/EigenBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Fuzzy.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GeneralProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GenericPacketMath.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GlobalFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/IO.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/IndexedView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Inverse.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Map.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MapBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MathFunctionsImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Matrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MatrixBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NestByValue.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NoAlias.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NumTraits.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PartialReduxEvaluator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PermutationMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PlainObjectBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Product.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ProductEvaluators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Random.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Redux.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Ref.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Replicate.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Reshaped.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ReturnByValue.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Reverse.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Select.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SelfAdjointView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SelfCwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Solve.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SolveTriangular.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/StableNorm.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/StlIterators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Stride.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Swap.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Transpose.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Transpositions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/TriangularMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/VectorBlock.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/VectorwiseOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Visitor.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/BFloat16.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/ConjHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/GenericPacketMathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/GenericPacketMathFunctionsFwd.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/Half.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/Settings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/TypeCasting.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/Complex.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/MathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/PacketMath.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/TypeCasting.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/AssignmentFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/BinaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/NullaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/StlFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/TernaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/UnaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralBlockPanelKernel.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/Parallelizer.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointRank2Update.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularSolverMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularSolverVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/BlasUtil.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ConfigureVectorization.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Constants.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/DisableStupidWarnings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ForwardDeclarations.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/IndexedViewHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/IntegralConstant.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/MKL_support.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Macros.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Memory.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Meta.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ReshapedHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/StaticAssert.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/SymbolicIndex.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/XprHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/ComplexEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/ComplexSchur.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/EigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/GeneralizedSelfAdjointEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/HessenbergDecomposition.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/RealSchur.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/Tridiagonalization.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/AlignedBox.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/AngleAxis.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/EulerAngles.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Homogeneous.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Hyperplane.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/OrthoMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/ParametrizedLine.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Quaternion.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Rotation2D.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/RotationBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Scaling.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Transform.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Translation.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Umeyama.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/arch/Geometry_SIMD.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/BlockHouseholder.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/Householder.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/HouseholderSequence.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/BasicPreconditioners.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/BiCGSTAB.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/ConjugateGradient.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IncompleteCholesky.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IncompleteLUT.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IterativeSolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/LeastSquareConjugateGradient.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/SolveWithGuess.h
+ mdp:/usr/include/eigen3/Eigen/src/Jacobi/Jacobi.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/Determinant.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/FullPivLU.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/InverseImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/PartialPivLU.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/arch/InverseSize4.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Amd.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Eigen_Colamd.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Ordering.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/ColPivHouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/CompleteOrthogonalDecomposition.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/FullPivHouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/HouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/BDCSVD.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/JacobiSVD.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/SVDBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/UpperBidiagonalization.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCholesky/SimplicialCholesky.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCholesky/SimplicialCholesky_impl.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/AmbiVector.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/CompressedStorage.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/ConservativeSparseSparseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/MappedSparseMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseAssign.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseBlock.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseColEtree.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCompressedBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCwiseUnaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDenseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDiagonalProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDot.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseFuzzy.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMap.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMatrixBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparsePermutation.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseRedux.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseRef.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSelfAdjointView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSparseProductWithPruning.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseTranspose.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseTriangularView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseUtil.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseVector.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/TriangularSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLUImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Memory.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Structs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_SupernodalMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Utils.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_column_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_column_dfs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_gemm_kernel.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_heap_relax_snode.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_kernel_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_panel_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_panel_dfs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_pivotL.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_pruneL.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_relax_snode.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseQR/SparseQR.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/Image.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/Kernel.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/RealSvd2x2.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ArrayCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ArrayCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/BlockMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/CommonCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/CommonCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/IndexedViewMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/MatrixCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/MatrixCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ReshapedMethods.h
  mdp:/usr/include/endian.h
  mdp:/usr/include/errno.h
  mdp:/usr/include/features-time64.h
@@ -366,6 +633,7 @@
  mdp:/usr/include/strings.h
  mdp:/usr/include/time.h
  mdp:/usr/include/wchar.h
+ mdp:/usr/include/wctype.h
  mdp:/usr/include/x86_64-linux-gnu/asm/errno.h
  mdp:/usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h
  mdp:/usr/include/x86_64-linux-gnu/bits/byteswap.h
@@ -429,6 +697,7 @@
  mdp:/usr/include/x86_64-linux-gnu/bits/waitflags.h
  mdp:/usr/include/x86_64-linux-gnu/bits/waitstatus.h
  mdp:/usr/include/x86_64-linux-gnu/bits/wchar.h
+ mdp:/usr/include/x86_64-linux-gnu/bits/wctype-wchar.h
  mdp:/usr/include/x86_64-linux-gnu/bits/wordsize.h
  mdp:/usr/include/x86_64-linux-gnu/bits/xopen_lim.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/atomic_word.h
@@ -436,6 +705,8 @@
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/c++locale.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/cpu_defines.h
+ mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/ctype_base.h
+ mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/ctype_inline.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/error_constants.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/gthr-default.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/gthr.h
@@ -445,9 +716,13 @@
  mdp:/usr/include/x86_64-linux-gnu/sys/cdefs.h
  mdp:/usr/include/x86_64-linux-gnu/sys/select.h
  mdp:/usr/include/x86_64-linux-gnu/sys/types.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/emmintrin.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/mm_malloc.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/mmintrin.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdbool.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/xmmintrin.h
 /home/braer/dev/atomix/MainWindow.cpp
 /home/braer/dev/atomix/Window.cpp
 /home/braer/dev/atomix/MainWindow.hpp
@@ -680,6 +955,8 @@
  mdp:/usr/include/c++/12/bits/allocator.h
  mdp:/usr/include/c++/12/bits/atomic_base.h
  mdp:/usr/include/c++/12/bits/atomic_lockfree_defines.h
+ mdp:/usr/include/c++/12/bits/basic_ios.h
+ mdp:/usr/include/c++/12/bits/basic_ios.tcc
  mdp:/usr/include/c++/12/bits/basic_string.h
  mdp:/usr/include/c++/12/bits/basic_string.tcc
  mdp:/usr/include/c++/12/bits/char_traits.h
@@ -701,15 +978,19 @@
  mdp:/usr/include/c++/12/bits/hashtable_policy.h
  mdp:/usr/include/c++/12/bits/invoke.h
  mdp:/usr/include/c++/12/bits/ios_base.h
+ mdp:/usr/include/c++/12/bits/istream.tcc
  mdp:/usr/include/c++/12/bits/list.tcc
  mdp:/usr/include/c++/12/bits/locale_classes.h
  mdp:/usr/include/c++/12/bits/locale_classes.tcc
+ mdp:/usr/include/c++/12/bits/locale_facets.h
+ mdp:/usr/include/c++/12/bits/locale_facets.tcc
  mdp:/usr/include/c++/12/bits/localefwd.h
  mdp:/usr/include/c++/12/bits/memoryfwd.h
  mdp:/usr/include/c++/12/bits/move.h
  mdp:/usr/include/c++/12/bits/nested_exception.h
  mdp:/usr/include/c++/12/bits/new_allocator.h
  mdp:/usr/include/c++/12/bits/node_handle.h
+ mdp:/usr/include/c++/12/bits/ostream.tcc
  mdp:/usr/include/c++/12/bits/ostream_insert.h
  mdp:/usr/include/c++/12/bits/parse_numbers.h
  mdp:/usr/include/c++/12/bits/postypes.h
@@ -721,6 +1002,7 @@
  mdp:/usr/include/c++/12/bits/shared_ptr_atomic.h
  mdp:/usr/include/c++/12/bits/shared_ptr_base.h
  mdp:/usr/include/c++/12/bits/specfun.h
+ mdp:/usr/include/c++/12/bits/sstream.tcc
  mdp:/usr/include/c++/12/bits/std_abs.h
  mdp:/usr/include/c++/12/bits/std_function.h
  mdp:/usr/include/c++/12/bits/stl_algo.h
@@ -754,12 +1036,15 @@
  mdp:/usr/include/c++/12/bits/uses_allocator.h
  mdp:/usr/include/c++/12/bits/utility.h
  mdp:/usr/include/c++/12/bits/vector.tcc
+ mdp:/usr/include/c++/12/cassert
  mdp:/usr/include/c++/12/cctype
  mdp:/usr/include/c++/12/cerrno
  mdp:/usr/include/c++/12/chrono
+ mdp:/usr/include/c++/12/climits
  mdp:/usr/include/c++/12/clocale
  mdp:/usr/include/c++/12/cmath
  mdp:/usr/include/c++/12/compare
+ mdp:/usr/include/c++/12/complex
  mdp:/usr/include/c++/12/cstddef
  mdp:/usr/include/c++/12/cstdint
  mdp:/usr/include/c++/12/cstdio
@@ -767,6 +1052,7 @@
  mdp:/usr/include/c++/12/cstring
  mdp:/usr/include/c++/12/ctime
  mdp:/usr/include/c++/12/cwchar
+ mdp:/usr/include/c++/12/cwctype
  mdp:/usr/include/c++/12/debug/assertions.h
  mdp:/usr/include/c++/12/debug/debug.h
  mdp:/usr/include/c++/12/exception
@@ -779,7 +1065,9 @@
  mdp:/usr/include/c++/12/ext/type_traits.h
  mdp:/usr/include/c++/12/functional
  mdp:/usr/include/c++/12/initializer_list
+ mdp:/usr/include/c++/12/ios
  mdp:/usr/include/c++/12/iosfwd
+ mdp:/usr/include/c++/12/istream
  mdp:/usr/include/c++/12/iterator
  mdp:/usr/include/c++/12/limits
  mdp:/usr/include/c++/12/list
@@ -788,11 +1076,13 @@
  mdp:/usr/include/c++/12/new
  mdp:/usr/include/c++/12/numeric
  mdp:/usr/include/c++/12/optional
+ mdp:/usr/include/c++/12/ostream
  mdp:/usr/include/c++/12/pstl/execution_defs.h
  mdp:/usr/include/c++/12/pstl/glue_algorithm_defs.h
  mdp:/usr/include/c++/12/pstl/glue_memory_defs.h
  mdp:/usr/include/c++/12/pstl/glue_numeric_defs.h
  mdp:/usr/include/c++/12/ratio
+ mdp:/usr/include/c++/12/sstream
  mdp:/usr/include/c++/12/stdexcept
  mdp:/usr/include/c++/12/streambuf
  mdp:/usr/include/c++/12/string
@@ -818,6 +1108,258 @@
  mdp:/usr/include/c++/12/variant
  mdp:/usr/include/c++/12/vector
  mdp:/usr/include/ctype.h
+ mdp:/usr/include/eigen3/Eigen/Cholesky
+ mdp:/usr/include/eigen3/Eigen/Core
+ mdp:/usr/include/eigen3/Eigen/Dense
+ mdp:/usr/include/eigen3/Eigen/Eigen
+ mdp:/usr/include/eigen3/Eigen/Eigenvalues
+ mdp:/usr/include/eigen3/Eigen/Geometry
+ mdp:/usr/include/eigen3/Eigen/Householder
+ mdp:/usr/include/eigen3/Eigen/IterativeLinearSolvers
+ mdp:/usr/include/eigen3/Eigen/Jacobi
+ mdp:/usr/include/eigen3/Eigen/LU
+ mdp:/usr/include/eigen3/Eigen/OrderingMethods
+ mdp:/usr/include/eigen3/Eigen/QR
+ mdp:/usr/include/eigen3/Eigen/SVD
+ mdp:/usr/include/eigen3/Eigen/Sparse
+ mdp:/usr/include/eigen3/Eigen/SparseCholesky
+ mdp:/usr/include/eigen3/Eigen/SparseCore
+ mdp:/usr/include/eigen3/Eigen/SparseLU
+ mdp:/usr/include/eigen3/Eigen/SparseQR
+ mdp:/usr/include/eigen3/Eigen/src/Cholesky/LDLT.h
+ mdp:/usr/include/eigen3/Eigen/src/Cholesky/LLT.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArithmeticSequence.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Array.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArrayBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArrayWrapper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Assign.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/AssignEvaluator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/BandMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Block.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/BooleanRedux.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CommaInitializer.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ConditionEstimator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CoreEvaluators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CoreIterators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseNullaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseTernaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseUnaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseUnaryView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseCoeffsBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseStorage.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Diagonal.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DiagonalMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DiagonalProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Dot.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/EigenBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Fuzzy.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GeneralProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GenericPacketMath.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GlobalFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/IO.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/IndexedView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Inverse.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Map.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MapBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MathFunctionsImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Matrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MatrixBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NestByValue.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NoAlias.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NumTraits.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PartialReduxEvaluator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PermutationMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PlainObjectBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Product.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ProductEvaluators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Random.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Redux.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Ref.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Replicate.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Reshaped.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ReturnByValue.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Reverse.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Select.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SelfAdjointView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SelfCwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Solve.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SolveTriangular.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/StableNorm.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/StlIterators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Stride.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Swap.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Transpose.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Transpositions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/TriangularMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/VectorBlock.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/VectorwiseOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Visitor.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/BFloat16.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/ConjHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/GenericPacketMathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/GenericPacketMathFunctionsFwd.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/Half.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/Settings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/TypeCasting.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/Complex.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/MathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/PacketMath.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/TypeCasting.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/AssignmentFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/BinaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/NullaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/StlFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/TernaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/UnaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralBlockPanelKernel.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/Parallelizer.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointRank2Update.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularSolverMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularSolverVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/BlasUtil.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ConfigureVectorization.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Constants.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/DisableStupidWarnings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ForwardDeclarations.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/IndexedViewHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/IntegralConstant.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/MKL_support.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Macros.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Memory.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Meta.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ReshapedHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/StaticAssert.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/SymbolicIndex.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/XprHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/ComplexEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/ComplexSchur.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/EigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/GeneralizedSelfAdjointEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/HessenbergDecomposition.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/RealSchur.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/Tridiagonalization.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/AlignedBox.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/AngleAxis.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/EulerAngles.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Homogeneous.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Hyperplane.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/OrthoMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/ParametrizedLine.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Quaternion.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Rotation2D.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/RotationBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Scaling.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Transform.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Translation.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Umeyama.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/arch/Geometry_SIMD.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/BlockHouseholder.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/Householder.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/HouseholderSequence.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/BasicPreconditioners.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/BiCGSTAB.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/ConjugateGradient.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IncompleteCholesky.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IncompleteLUT.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IterativeSolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/LeastSquareConjugateGradient.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/SolveWithGuess.h
+ mdp:/usr/include/eigen3/Eigen/src/Jacobi/Jacobi.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/Determinant.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/FullPivLU.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/InverseImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/PartialPivLU.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/arch/InverseSize4.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Amd.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Eigen_Colamd.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Ordering.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/ColPivHouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/CompleteOrthogonalDecomposition.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/FullPivHouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/HouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/BDCSVD.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/JacobiSVD.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/SVDBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/UpperBidiagonalization.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCholesky/SimplicialCholesky.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCholesky/SimplicialCholesky_impl.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/AmbiVector.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/CompressedStorage.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/ConservativeSparseSparseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/MappedSparseMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseAssign.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseBlock.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseColEtree.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCompressedBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCwiseUnaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDenseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDiagonalProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDot.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseFuzzy.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMap.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMatrixBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparsePermutation.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseRedux.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseRef.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSelfAdjointView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSparseProductWithPruning.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseTranspose.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseTriangularView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseUtil.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseVector.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/TriangularSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLUImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Memory.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Structs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_SupernodalMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Utils.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_column_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_column_dfs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_gemm_kernel.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_heap_relax_snode.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_kernel_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_panel_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_panel_dfs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_pivotL.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_pruneL.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_relax_snode.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseQR/SparseQR.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/Image.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/Kernel.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/RealSvd2x2.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ArrayCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ArrayCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/BlockMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/CommonCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/CommonCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/IndexedViewMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/MatrixCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/MatrixCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ReshapedMethods.h
  mdp:/usr/include/endian.h
  mdp:/usr/include/errno.h
  mdp:/usr/include/features-time64.h
@@ -837,6 +1379,7 @@
  mdp:/usr/include/strings.h
  mdp:/usr/include/time.h
  mdp:/usr/include/wchar.h
+ mdp:/usr/include/wctype.h
  mdp:/usr/include/x86_64-linux-gnu/asm/errno.h
  mdp:/usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h
  mdp:/usr/include/x86_64-linux-gnu/bits/byteswap.h
@@ -900,6 +1443,7 @@
  mdp:/usr/include/x86_64-linux-gnu/bits/waitflags.h
  mdp:/usr/include/x86_64-linux-gnu/bits/waitstatus.h
  mdp:/usr/include/x86_64-linux-gnu/bits/wchar.h
+ mdp:/usr/include/x86_64-linux-gnu/bits/wctype-wchar.h
  mdp:/usr/include/x86_64-linux-gnu/bits/wordsize.h
  mdp:/usr/include/x86_64-linux-gnu/bits/xopen_lim.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/atomic_word.h
@@ -907,6 +1451,8 @@
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/c++locale.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/cpu_defines.h
+ mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/ctype_base.h
+ mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/ctype_inline.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/error_constants.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/gthr-default.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/gthr.h
@@ -916,9 +1462,13 @@
  mdp:/usr/include/x86_64-linux-gnu/sys/cdefs.h
  mdp:/usr/include/x86_64-linux-gnu/sys/select.h
  mdp:/usr/include/x86_64-linux-gnu/sys/types.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/emmintrin.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/mm_malloc.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/mmintrin.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdbool.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/xmmintrin.h
 /home/braer/dev/atomix/Window.hpp
  mmc:Q_OBJECT
  mdp:/home/braer/dev/atomix/Window.hpp
@@ -1145,6 +1695,8 @@
  mdp:/usr/include/c++/12/bits/allocator.h
  mdp:/usr/include/c++/12/bits/atomic_base.h
  mdp:/usr/include/c++/12/bits/atomic_lockfree_defines.h
+ mdp:/usr/include/c++/12/bits/basic_ios.h
+ mdp:/usr/include/c++/12/bits/basic_ios.tcc
  mdp:/usr/include/c++/12/bits/basic_string.h
  mdp:/usr/include/c++/12/bits/basic_string.tcc
  mdp:/usr/include/c++/12/bits/char_traits.h
@@ -1166,15 +1718,19 @@
  mdp:/usr/include/c++/12/bits/hashtable_policy.h
  mdp:/usr/include/c++/12/bits/invoke.h
  mdp:/usr/include/c++/12/bits/ios_base.h
+ mdp:/usr/include/c++/12/bits/istream.tcc
  mdp:/usr/include/c++/12/bits/list.tcc
  mdp:/usr/include/c++/12/bits/locale_classes.h
  mdp:/usr/include/c++/12/bits/locale_classes.tcc
+ mdp:/usr/include/c++/12/bits/locale_facets.h
+ mdp:/usr/include/c++/12/bits/locale_facets.tcc
  mdp:/usr/include/c++/12/bits/localefwd.h
  mdp:/usr/include/c++/12/bits/memoryfwd.h
  mdp:/usr/include/c++/12/bits/move.h
  mdp:/usr/include/c++/12/bits/nested_exception.h
  mdp:/usr/include/c++/12/bits/new_allocator.h
  mdp:/usr/include/c++/12/bits/node_handle.h
+ mdp:/usr/include/c++/12/bits/ostream.tcc
  mdp:/usr/include/c++/12/bits/ostream_insert.h
  mdp:/usr/include/c++/12/bits/parse_numbers.h
  mdp:/usr/include/c++/12/bits/postypes.h
@@ -1186,6 +1742,7 @@
  mdp:/usr/include/c++/12/bits/shared_ptr_atomic.h
  mdp:/usr/include/c++/12/bits/shared_ptr_base.h
  mdp:/usr/include/c++/12/bits/specfun.h
+ mdp:/usr/include/c++/12/bits/sstream.tcc
  mdp:/usr/include/c++/12/bits/std_abs.h
  mdp:/usr/include/c++/12/bits/std_function.h
  mdp:/usr/include/c++/12/bits/stl_algo.h
@@ -1219,12 +1776,15 @@
  mdp:/usr/include/c++/12/bits/uses_allocator.h
  mdp:/usr/include/c++/12/bits/utility.h
  mdp:/usr/include/c++/12/bits/vector.tcc
+ mdp:/usr/include/c++/12/cassert
  mdp:/usr/include/c++/12/cctype
  mdp:/usr/include/c++/12/cerrno
  mdp:/usr/include/c++/12/chrono
+ mdp:/usr/include/c++/12/climits
  mdp:/usr/include/c++/12/clocale
  mdp:/usr/include/c++/12/cmath
  mdp:/usr/include/c++/12/compare
+ mdp:/usr/include/c++/12/complex
  mdp:/usr/include/c++/12/cstddef
  mdp:/usr/include/c++/12/cstdint
  mdp:/usr/include/c++/12/cstdio
@@ -1232,6 +1792,7 @@
  mdp:/usr/include/c++/12/cstring
  mdp:/usr/include/c++/12/ctime
  mdp:/usr/include/c++/12/cwchar
+ mdp:/usr/include/c++/12/cwctype
  mdp:/usr/include/c++/12/debug/assertions.h
  mdp:/usr/include/c++/12/debug/debug.h
  mdp:/usr/include/c++/12/exception
@@ -1244,7 +1805,9 @@
  mdp:/usr/include/c++/12/ext/type_traits.h
  mdp:/usr/include/c++/12/functional
  mdp:/usr/include/c++/12/initializer_list
+ mdp:/usr/include/c++/12/ios
  mdp:/usr/include/c++/12/iosfwd
+ mdp:/usr/include/c++/12/istream
  mdp:/usr/include/c++/12/iterator
  mdp:/usr/include/c++/12/limits
  mdp:/usr/include/c++/12/list
@@ -1253,11 +1816,13 @@
  mdp:/usr/include/c++/12/new
  mdp:/usr/include/c++/12/numeric
  mdp:/usr/include/c++/12/optional
+ mdp:/usr/include/c++/12/ostream
  mdp:/usr/include/c++/12/pstl/execution_defs.h
  mdp:/usr/include/c++/12/pstl/glue_algorithm_defs.h
  mdp:/usr/include/c++/12/pstl/glue_memory_defs.h
  mdp:/usr/include/c++/12/pstl/glue_numeric_defs.h
  mdp:/usr/include/c++/12/ratio
+ mdp:/usr/include/c++/12/sstream
  mdp:/usr/include/c++/12/stdexcept
  mdp:/usr/include/c++/12/streambuf
  mdp:/usr/include/c++/12/string
@@ -1283,6 +1848,258 @@
  mdp:/usr/include/c++/12/variant
  mdp:/usr/include/c++/12/vector
  mdp:/usr/include/ctype.h
+ mdp:/usr/include/eigen3/Eigen/Cholesky
+ mdp:/usr/include/eigen3/Eigen/Core
+ mdp:/usr/include/eigen3/Eigen/Dense
+ mdp:/usr/include/eigen3/Eigen/Eigen
+ mdp:/usr/include/eigen3/Eigen/Eigenvalues
+ mdp:/usr/include/eigen3/Eigen/Geometry
+ mdp:/usr/include/eigen3/Eigen/Householder
+ mdp:/usr/include/eigen3/Eigen/IterativeLinearSolvers
+ mdp:/usr/include/eigen3/Eigen/Jacobi
+ mdp:/usr/include/eigen3/Eigen/LU
+ mdp:/usr/include/eigen3/Eigen/OrderingMethods
+ mdp:/usr/include/eigen3/Eigen/QR
+ mdp:/usr/include/eigen3/Eigen/SVD
+ mdp:/usr/include/eigen3/Eigen/Sparse
+ mdp:/usr/include/eigen3/Eigen/SparseCholesky
+ mdp:/usr/include/eigen3/Eigen/SparseCore
+ mdp:/usr/include/eigen3/Eigen/SparseLU
+ mdp:/usr/include/eigen3/Eigen/SparseQR
+ mdp:/usr/include/eigen3/Eigen/src/Cholesky/LDLT.h
+ mdp:/usr/include/eigen3/Eigen/src/Cholesky/LLT.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArithmeticSequence.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Array.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArrayBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ArrayWrapper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Assign.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/AssignEvaluator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/BandMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Block.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/BooleanRedux.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CommaInitializer.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ConditionEstimator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CoreEvaluators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CoreIterators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseNullaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseTernaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseUnaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/CwiseUnaryView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseCoeffsBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DenseStorage.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Diagonal.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DiagonalMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/DiagonalProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Dot.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/EigenBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Fuzzy.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GeneralProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GenericPacketMath.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/GlobalFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/IO.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/IndexedView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Inverse.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Map.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MapBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MathFunctionsImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Matrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/MatrixBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NestByValue.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NoAlias.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/NumTraits.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PartialReduxEvaluator.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PermutationMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/PlainObjectBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Product.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ProductEvaluators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Random.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Redux.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Ref.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Replicate.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Reshaped.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/ReturnByValue.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Reverse.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Select.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SelfAdjointView.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SelfCwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Solve.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SolveTriangular.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/SolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/StableNorm.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/StlIterators.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Stride.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Swap.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Transpose.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Transpositions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/TriangularMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/VectorBlock.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/VectorwiseOp.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/Visitor.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/BFloat16.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/ConjHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/GenericPacketMathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/GenericPacketMathFunctionsFwd.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/Half.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/Settings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/Default/TypeCasting.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/Complex.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/MathFunctions.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/PacketMath.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/arch/SSE/TypeCasting.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/AssignmentFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/BinaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/NullaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/StlFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/TernaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/functors/UnaryFunctors.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralBlockPanelKernel.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/GeneralMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/Parallelizer.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/SelfadjointRank2Update.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularSolverMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/products/TriangularSolverVector.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/BlasUtil.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ConfigureVectorization.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Constants.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/DisableStupidWarnings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ForwardDeclarations.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/IndexedViewHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/IntegralConstant.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/MKL_support.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Macros.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Memory.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/Meta.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/ReshapedHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/StaticAssert.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/SymbolicIndex.h
+ mdp:/usr/include/eigen3/Eigen/src/Core/util/XprHelper.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/ComplexEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/ComplexSchur.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/EigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/GeneralizedSelfAdjointEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/HessenbergDecomposition.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/RealSchur.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/Eigenvalues/Tridiagonalization.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/AlignedBox.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/AngleAxis.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/EulerAngles.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Homogeneous.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Hyperplane.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/OrthoMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/ParametrizedLine.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Quaternion.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Rotation2D.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/RotationBase.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Scaling.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Transform.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Translation.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/Umeyama.h
+ mdp:/usr/include/eigen3/Eigen/src/Geometry/arch/Geometry_SIMD.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/BlockHouseholder.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/Householder.h
+ mdp:/usr/include/eigen3/Eigen/src/Householder/HouseholderSequence.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/BasicPreconditioners.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/BiCGSTAB.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/ConjugateGradient.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IncompleteCholesky.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IncompleteLUT.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/IterativeSolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/LeastSquareConjugateGradient.h
+ mdp:/usr/include/eigen3/Eigen/src/IterativeLinearSolvers/SolveWithGuess.h
+ mdp:/usr/include/eigen3/Eigen/src/Jacobi/Jacobi.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/Determinant.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/FullPivLU.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/InverseImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/PartialPivLU.h
+ mdp:/usr/include/eigen3/Eigen/src/LU/arch/InverseSize4.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Amd.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Eigen_Colamd.h
+ mdp:/usr/include/eigen3/Eigen/src/OrderingMethods/Ordering.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/ColPivHouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/CompleteOrthogonalDecomposition.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/FullPivHouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/QR/HouseholderQR.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/BDCSVD.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/JacobiSVD.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/SVDBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SVD/UpperBidiagonalization.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCholesky/SimplicialCholesky.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCholesky/SimplicialCholesky_impl.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/AmbiVector.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/CompressedStorage.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/ConservativeSparseSparseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/MappedSparseMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseAssign.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseBlock.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseColEtree.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCompressedBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCwiseBinaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseCwiseUnaryOp.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDenseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDiagonalProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseDot.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseFuzzy.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMap.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseMatrixBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparsePermutation.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseProduct.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseRedux.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseRef.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSelfAdjointView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSolverBase.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseSparseProductWithPruning.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseTranspose.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseTriangularView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseUtil.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseVector.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/SparseView.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseCore/TriangularSolver.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLUImpl.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Memory.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Structs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_SupernodalMatrix.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_Utils.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_column_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_column_dfs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_gemm_kernel.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_heap_relax_snode.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_kernel_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_panel_bmod.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_panel_dfs.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_pivotL.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_pruneL.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseLU/SparseLU_relax_snode.h
+ mdp:/usr/include/eigen3/Eigen/src/SparseQR/SparseQR.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/Image.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/Kernel.h
+ mdp:/usr/include/eigen3/Eigen/src/misc/RealSvd2x2.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ArrayCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ArrayCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/BlockMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/CommonCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/CommonCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/IndexedViewMethods.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/MatrixCwiseBinaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/MatrixCwiseUnaryOps.h
+ mdp:/usr/include/eigen3/Eigen/src/plugins/ReshapedMethods.h
  mdp:/usr/include/endian.h
  mdp:/usr/include/errno.h
  mdp:/usr/include/features-time64.h
@@ -1302,6 +2119,7 @@
  mdp:/usr/include/strings.h
  mdp:/usr/include/time.h
  mdp:/usr/include/wchar.h
+ mdp:/usr/include/wctype.h
  mdp:/usr/include/x86_64-linux-gnu/asm/errno.h
  mdp:/usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h
  mdp:/usr/include/x86_64-linux-gnu/bits/byteswap.h
@@ -1365,6 +2183,7 @@
  mdp:/usr/include/x86_64-linux-gnu/bits/waitflags.h
  mdp:/usr/include/x86_64-linux-gnu/bits/waitstatus.h
  mdp:/usr/include/x86_64-linux-gnu/bits/wchar.h
+ mdp:/usr/include/x86_64-linux-gnu/bits/wctype-wchar.h
  mdp:/usr/include/x86_64-linux-gnu/bits/wordsize.h
  mdp:/usr/include/x86_64-linux-gnu/bits/xopen_lim.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/atomic_word.h
@@ -1372,6 +2191,8 @@
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/c++locale.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/cpu_defines.h
+ mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/ctype_base.h
+ mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/ctype_inline.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/error_constants.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/gthr-default.h
  mdp:/usr/include/x86_64-linux-gnu/c++/12/bits/gthr.h
@@ -1381,8 +2202,12 @@
  mdp:/usr/include/x86_64-linux-gnu/sys/cdefs.h
  mdp:/usr/include/x86_64-linux-gnu/sys/select.h
  mdp:/usr/include/x86_64-linux-gnu/sys/types.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/emmintrin.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/mm_malloc.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/mmintrin.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdbool.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h
+ mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/xmmintrin.h
 /home/braer/dev/atomix/GWidget.cpp
 /home/braer/dev/atomix/main.cpp

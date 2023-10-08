@@ -1,0 +1,12 @@
+# ninja log v5
+37	399	1696729980052581758	atomix	2deea0549fc09d80
+375	1984	1696729384869191942	CMakeFiles/atomix.dir/Window.cpp.o	89147b79d307673d
+41	1563	1696729654722371076	CMakeFiles/atomix.dir/GWidget.cpp.o	e7d3c0c84e8e9915
+374	2036	1696729384925193020	CMakeFiles/atomix.dir/main.cpp.o	2eb1bd7bc0e09510
+374	1964	1696729384849191556	CMakeFiles/atomix.dir/MainWindow.cpp.o	45887f4a6739bef7
+4	35	1696729979692574901	/home/braer/dev/atomix/build/atomix_autogen/mocs_compilation.cpp	4dcabc73be917afd
+4	35	1696729979692574901	/home/braer/dev/atomix/build/atomix_autogen/timestamp	4dcabc73be917afd
+374	2015	1696729384901192558	CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o	3db0e4fff50189de
+4	35	1696729979692574901	atomix_autogen/mocs_compilation.cpp	4dcabc73be917afd
+4	35	1696729979692574901	atomix_autogen/timestamp	4dcabc73be917afd
+2	156	1696730374944094325	build.ninja	349a52a79a41e7

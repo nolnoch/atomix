@@ -1,32 +1,27 @@
 [
 {
   "directory": "/home/braer/dev/atomix/build",
-  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -std=gnu++17 -fPIC -pthread -o CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o -c /home/braer/dev/atomix/build/atomix_autogen/mocs_compilation.cpp",
-  "file": "/home/braer/dev/atomix/build/atomix_autogen/mocs_compilation.cpp",
-  "output": "CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o"
+  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o -c /home/braer/dev/atomix/build/atomix_autogen/mocs_compilation.cpp",
+  "file": "/home/braer/dev/atomix/build/atomix_autogen/mocs_compilation.cpp"
 },
 {
   "directory": "/home/braer/dev/atomix/build",
-  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -std=gnu++17 -fPIC -pthread -o CMakeFiles/atomix.dir/main.cpp.o -c /home/braer/dev/atomix/main.cpp",
-  "file": "/home/braer/dev/atomix/main.cpp",
-  "output": "CMakeFiles/atomix.dir/main.cpp.o"
+  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/main.cpp.o -c /home/braer/dev/atomix/main.cpp",
+  "file": "/home/braer/dev/atomix/main.cpp"
 },
 {
   "directory": "/home/braer/dev/atomix/build",
-  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -std=gnu++17 -fPIC -pthread -o CMakeFiles/atomix.dir/MainWindow.cpp.o -c /home/braer/dev/atomix/MainWindow.cpp",
-  "file": "/home/braer/dev/atomix/MainWindow.cpp",
-  "output": "CMakeFiles/atomix.dir/MainWindow.cpp.o"
+  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/MainWindow.cpp.o -c /home/braer/dev/atomix/MainWindow.cpp",
+  "file": "/home/braer/dev/atomix/MainWindow.cpp"
 },
 {
   "directory": "/home/braer/dev/atomix/build",
-  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -std=gnu++17 -fPIC -pthread -o CMakeFiles/atomix.dir/Window.cpp.o -c /home/braer/dev/atomix/Window.cpp",
-  "file": "/home/braer/dev/atomix/Window.cpp",
-  "output": "CMakeFiles/atomix.dir/Window.cpp.o"
+  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/Window.cpp.o -c /home/braer/dev/atomix/Window.cpp",
+  "file": "/home/braer/dev/atomix/Window.cpp"
 },
 {
   "directory": "/home/braer/dev/atomix/build",
-  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -std=gnu++17 -fPIC -pthread -o CMakeFiles/atomix.dir/GWidget.cpp.o -c /home/braer/dev/atomix/GWidget.cpp",
-  "file": "/home/braer/dev/atomix/GWidget.cpp",
-  "output": "CMakeFiles/atomix.dir/GWidget.cpp.o"
+  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/GWidget.cpp.o -c /home/braer/dev/atomix/GWidget.cpp",
+  "file": "/home/braer/dev/atomix/GWidget.cpp"
 }
 ]

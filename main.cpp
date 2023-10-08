@@ -38,10 +38,11 @@ int main(int argc, char* argv[]) {
     
     /* Surface Format */
     QSurfaceFormat qFmt;
-    qFmt.setVersion(3,1);
     qFmt.setDepthBufferSize(24);
     qFmt.setStencilBufferSize(8);
     qFmt.setSamples(4);
+    qFmt.setVersion(4,6);
+    qFmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(qFmt);
 
     /* Windows */

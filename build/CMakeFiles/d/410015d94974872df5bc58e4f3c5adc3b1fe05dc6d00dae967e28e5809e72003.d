@@ -1,5 +1,4 @@
-/home/braer/dev/atomix/build/atomix_autogen/EWIEGA46WW/moc_Window.cpp: /home/braer/dev/atomix/Window.hpp \
-  /home/braer/dev/atomix/build/atomix_autogen/moc_predefs.h \
+atomix_autogen/timestamp: \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QList \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QObject \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QPair \
@@ -187,6 +186,7 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsexports.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets/qtopenglwidgetsglobal.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QBoxLayout \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QMainWindow \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QPushButton \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QSlider \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/QWidget \
@@ -196,14 +196,253 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qgridlayout.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayout.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qlayoutitem.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qmainwindow.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qpushbutton.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qsizepolicy.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qslider.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtabwidget.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtwidgets-config.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtwidgetsexports.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtwidgetsglobal.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/3rdparty/kwin/FindXKB.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/FindWrapAtomic.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/FindWrapOpenGL.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/FindWrapVulkanHeaders.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/Qt6Config.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/Qt6ConfigExtras.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/Qt6ConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/Qt6ConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/Qt6Dependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/Qt6Targets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/Qt6VersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtFeature.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtFeatureCommon.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicAppleHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicCMakeHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicFinalizerHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicFindPackageHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicPluginHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicTargetHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicTestHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicToolHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6/QtPublicWalkLibsHelpers.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfigExtras.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreMacros.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/Qt6CoreVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Core/QtInstallPaths.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusMacros.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus/Qt6DBusVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiPlugins.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6GuiVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandEglPlatformIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandEglPlatformIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandEglPlatformIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandEglPlatformIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGL/Qt6OpenGLVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsMacros.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsVersionlessTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfig.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersion.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersionImpl.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsDependencies.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets-relwithdebinfo.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets.cmake \
+  /home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsVersionlessTargets.cmake \
+  /home/braer/dev/atomix/CMakeLists.txt \
+  /home/braer/dev/atomix/GWidget.cpp \
   /home/braer/dev/atomix/GWidget.hpp \
+  /home/braer/dev/atomix/MainWindow.cpp \
+  /home/braer/dev/atomix/MainWindow.hpp \
+  /home/braer/dev/atomix/Window.cpp \
+  /home/braer/dev/atomix/Window.hpp \
+  CMakeFiles/3.25.1/CMakeCCompiler.cmake \
+  CMakeFiles/3.25.1/CMakeCXXCompiler.cmake \
+  CMakeFiles/3.25.1/CMakeSystem.cmake \
+  atomix_autogen/moc_predefs.h \
+  /home/braer/dev/atomix/main.cpp \
   /usr/include/GL/gl.h \
   /usr/include/alloca.h \
   /usr/include/asm-generic/errno-base.h \
@@ -460,4 +699,44 @@
   /usr/include/x86_64-linux-gnu/sys/types.h \
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h \
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stdbool.h \
-  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h
+  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
+  /usr/share/cmake-3.25/Modules/CMakeCInformation.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeCXXInformation.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeCommonLanguageInclude.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeFindDependencyMacro.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeGenericSystem.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeInitializeConfigs.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeLanguageInformation.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeSystemSpecificInformation.cmake \
+  /usr/share/cmake-3.25/Modules/CMakeSystemSpecificInitialize.cmake \
+  /usr/share/cmake-3.25/Modules/CPack.cmake \
+  /usr/share/cmake-3.25/Modules/CPackComponent.cmake \
+  /usr/share/cmake-3.25/Modules/CheckCSourceCompiles.cmake \
+  /usr/share/cmake-3.25/Modules/CheckCXXCompilerFlag.cmake \
+  /usr/share/cmake-3.25/Modules/CheckCXXSourceCompiles.cmake \
+  /usr/share/cmake-3.25/Modules/CheckIncludeFile.cmake \
+  /usr/share/cmake-3.25/Modules/CheckLibraryExists.cmake \
+  /usr/share/cmake-3.25/Modules/Compiler/CMakeCommonCompilerMacros.cmake \
+  /usr/share/cmake-3.25/Modules/Compiler/GNU-C.cmake \
+  /usr/share/cmake-3.25/Modules/Compiler/GNU-CXX.cmake \
+  /usr/share/cmake-3.25/Modules/Compiler/GNU.cmake \
+  /usr/share/cmake-3.25/Modules/FeatureSummary.cmake \
+  /usr/share/cmake-3.25/Modules/FindOpenGL.cmake \
+  /usr/share/cmake-3.25/Modules/FindPackageHandleStandardArgs.cmake \
+  /usr/share/cmake-3.25/Modules/FindPackageMessage.cmake \
+  /usr/share/cmake-3.25/Modules/FindPkgConfig.cmake \
+  /usr/share/cmake-3.25/Modules/FindThreads.cmake \
+  /usr/share/cmake-3.25/Modules/FindVulkan.cmake \
+  /usr/share/cmake-3.25/Modules/GNUInstallDirs.cmake \
+  /usr/share/cmake-3.25/Modules/Internal/CheckCompilerFlag.cmake \
+  /usr/share/cmake-3.25/Modules/Internal/CheckFlagCommonConfig.cmake \
+  /usr/share/cmake-3.25/Modules/Internal/CheckSourceCompiles.cmake \
+  /usr/share/cmake-3.25/Modules/MacroAddFileDependencies.cmake \
+  /usr/share/cmake-3.25/Modules/Platform/Linux-GNU-C.cmake \
+  /usr/share/cmake-3.25/Modules/Platform/Linux-GNU-CXX.cmake \
+  /usr/share/cmake-3.25/Modules/Platform/Linux-GNU.cmake \
+  /usr/share/cmake-3.25/Modules/Platform/Linux.cmake \
+  /usr/share/cmake-3.25/Modules/Platform/UnixPaths.cmake \
+  /usr/share/cmake-3.25/Templates/CPackConfig.cmake.in \
+  /usr/bin/cmake

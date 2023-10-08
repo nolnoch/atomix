@@ -12,8 +12,8 @@ Window::Window(MainWindow *mw)
     : mainWindow(mw) {
     /* Create and arrange window components */
     QWidget *w = new QWidget;
-    graph = new GWidget(w);
-    slide = new QSlider(Qt::Vertical, w);
+    graph = new GWidget(this);
+    slide = new QSlider(Qt::Vertical, this);
     morb = new QPushButton("Morb", this);
     QVBoxLayout *verGrid = new QVBoxLayout;
     QHBoxLayout *horGrid = new QHBoxLayout;
@@ -23,7 +23,7 @@ Window::Window(MainWindow *mw)
     slide->setSingleStep(1);
     slide->setFixedWidth(80);
 
-    //horGrid->addWidget(graph);
+    horGrid->addWidget(graph);
     horGrid->addWidget(slide);
     w->setLayout(horGrid);
     verGrid->addWidget(w);
@@ -31,12 +31,4 @@ Window::Window(MainWindow *mw)
     this->setLayout(verGrid);
 
     setWindowTitle(tr("atomix"));
-}
-
-void Window::keyPressEvent(QKeyEvent *e)
-{
-    if (e->key() == Qt::Key_Escape)
-        close();
-    else
-        QWidget::keyPressEvent(e);
 }

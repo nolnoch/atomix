@@ -20,6 +20,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
 #include <QMatrix4x4>
+#include <eigen3/Eigen/Eigen>
 
 #define GWIDTH 1843
 #define GHEIGHT 1196
@@ -42,13 +43,20 @@ protected:
     void resizeGL(int width, int height) override;
 
 private:
+    bool checkCompileShader(uint shader);
+    bool checkCompileProgram(uint program);
+
     QOpenGLContext *gw_context = nullptr;
-    QOpenGLShaderProgram *gw_program = nullptr;
-    //QOpenGLVertexArrayObject gw_vao;
-    //QOpenGLBuffer gw_vbo;
+    uint gw_prog = 0;
+    uint gw_vao = 0;
+    uint gw_vbo = 0;
     QMatrix4x4 gw_proj;
     QMatrix4x4 gw_camera;
     QMatrix4x4 gw_world;
+    int gw_projMat = 0;
+    int gw_moveMat = 0;
+    int gw_normMat = 0;
+    int gw_lightMat = 0;
     int gw_posAttr = 0;
     int gw_colAttr = 0;
     int gw_uniMatrix = 0;

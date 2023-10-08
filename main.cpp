@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     QSurfaceFormat qFmt;
     qFmt.setDepthBufferSize(24);
     qFmt.setStencilBufferSize(8);
-    qFmt.setSamples(4);
+    qFmt.setSamples(16);
     qFmt.setVersion(4,6);
     qFmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(qFmt);

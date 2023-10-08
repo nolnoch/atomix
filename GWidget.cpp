@@ -22,7 +22,7 @@ GWidget::~GWidget() {
 void GWidget::cleanup() {
     makeCurrent();
 
-    //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
+    std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
     if (gw_program)
         delete gw_program;
@@ -67,21 +67,27 @@ void GWidget::initializeGL() {
     gw_program = new QOpenGLShaderProgram(this);
     gw_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
     gw_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    if (!(gw_program->link() && gw_program->bind())) {
-        std::cout << "Shader program failed to link and bind." << std::endl;
-    }
+    if (!gw_program->link())
+        std::cout << "Shader program failed to link." << std::endl;
     gw_posAttr = gw_program->attributeLocation("posAttr");
     gw_colAttr = gw_program->attributeLocation("colAttr");
     gw_uniMatrix = gw_program->uniformLocation("matrix");
+    Q_ASSERT(gw_posAttr != -1);
+    Q_ASSERT(gw_colAttr != -1);
+    Q_ASSERT(gw_uniMatrix != -1);
 
     /* Camera and World Init */
-    gw_camera.setToIdentity();
-    gw_camera.translate(0, 0, -1);
-    gw_world.setToIdentity();
+    //gw_camera.setToIdentity();
+    //gw_camera.translate(0, 0, -1);
+    //gw_world.setToIdentity();
 
-    QTimer* Timer = new QTimer(this);
-    connect(Timer, SIGNAL(timeout()), this, SLOT(update()));
-    Timer->start(1000/33);
+    glClearColor(0.0f, 0.03f, 0.05f, 0.0f);
+    //glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_CULL_FACE);
+    
+    //QTimer* Timer = new QTimer(this);
+    //connect(Timer, SIGNAL(timeout()), this, SLOT(update()));
+    //Timer->start(1000/33);
 }
 
 void GWidget::paintGL() {
@@ -90,10 +96,9 @@ void GWidget::paintGL() {
     /* Render */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-    glClearColor(0.0f, 0.0f, 1.0f, 0.5f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    gw_program->bind();
 
     QMatrix4x4 matrix;
     matrix.perspective(60.0f, 4.0f / 3.0f, 0.1f, 100.0f);
@@ -131,6 +136,6 @@ void GWidget::paintGL() {
 
 void GWidget::resizeGL(int w, int h) {
     gw_proj.setToIdentity();
-    gw_proj.perspective(45.0f, GLfloat(w) / h, 0.01f, 100.0f);
+    gw_proj.perspective(45.0f, GLfloat(w) / h, -10.0f, 100.0f);
 }
 

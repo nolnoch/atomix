@@ -445,10 +445,10 @@ Vulkan_INCLUDE_DIR:PATH=/usr/include
 Vulkan_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libvulkan.so
 
 //Path to a file.
-XKB_INCLUDE_DIR:PATH=XKB_INCLUDE_DIR-NOTFOUND
+XKB_INCLUDE_DIR:PATH=/usr/local/include/xcb
 
 //Path to a library.
-XKB_LIBRARY:FILEPATH=XKB_LIBRARY-NOTFOUND
+XKB_LIBRARY:FILEPATH=/usr/local
 
 //Value Computed by CMake
 atomix_BINARY_DIR:STATIC=/home/braer/dev/atomix/build
@@ -689,6 +689,8 @@ FIND_PACKAGE_MESSAGE_DETAILS_WrapAtomic:INTERNAL=[1][v()]
 FIND_PACKAGE_MESSAGE_DETAILS_WrapOpenGL:INTERNAL=[ON][v()]
 //Details about finding WrapVulkanHeaders
 FIND_PACKAGE_MESSAGE_DETAILS_WrapVulkanHeaders:INTERNAL=[/usr/include][v()]
+//Details about finding XKB
+FIND_PACKAGE_MESSAGE_DETAILS_XKB:INTERNAL=[/usr/local][/usr/local/include/xcb][v(0.5.0)]
 //ADVANCED property for variable: GITCOMMAND
 GITCOMMAND-ADVANCED:INTERNAL=1
 //Test HAVE_STDATOMIC

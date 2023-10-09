@@ -11,6 +11,16 @@
 },
 {
   "directory": "/home/braer/dev/atomix/build",
+  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/shaderobj.cpp.o -c /home/braer/dev/atomix/shaderobj.cpp",
+  "file": "/home/braer/dev/atomix/shaderobj.cpp"
+},
+{
+  "directory": "/home/braer/dev/atomix/build",
+  "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/program.cpp.o -c /home/braer/dev/atomix/program.cpp",
+  "file": "/home/braer/dev/atomix/program.cpp"
+},
+{
+  "directory": "/home/braer/dev/atomix/build",
   "command": "/usr/bin/g++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/braer/dev/atomix/build/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets -g -fPIC -o CMakeFiles/atomix.dir/MainWindow.cpp.o -c /home/braer/dev/atomix/MainWindow.cpp",
   "file": "/home/braer/dev/atomix/MainWindow.cpp"
 },

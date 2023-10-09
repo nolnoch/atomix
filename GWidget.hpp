@@ -13,14 +13,11 @@
 #include <QScreen>
 #include <QBoxLayout>
 #include <QOpenGLWidget>
-#include <QOpenGLContext>
+//#include <QOpenGLContext>
 #include <QOpenGLFunctions_4_5_Core>
-#include <QOpenGLVersionFunctionsFactory>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLVertexArrayObject>
-#include <QOpenGLBuffer>
 #include <QMatrix4x4>
-#include <eigen3/Eigen/Eigen>
+//#include <eigen3/Eigen/Eigen>
+#include "program.hpp"
 
 #define GWIDTH 1843
 #define GHEIGHT 1196
@@ -46,6 +43,9 @@ private:
     bool checkCompileShader(uint shader);
     bool checkCompileProgram(uint program);
 
+    Program *shaderProg = nullptr;
+
+    QOpenGLFunctions_4_5_Core *qgf;
     QOpenGLContext *gw_context = nullptr;
     uint gw_prog = 0;
     uint gw_vao = 0;

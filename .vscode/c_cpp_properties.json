@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/braer/Qt/6.5.3/gcc_64/include/**"
+                "/home/braer/Qt/6.5.3/gcc_64/include/**",
+                "/usr/include/xcb"
             ],
             "defines": [],
             "cStandard": "c17",

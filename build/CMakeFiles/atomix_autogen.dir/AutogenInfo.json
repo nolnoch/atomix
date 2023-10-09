@@ -368,6 +368,18 @@
 			"Mu",
 			"EWIEGA46WW/moc_Window.cpp",
 			null
+		],
+		[
+			"/home/braer/dev/atomix/program.hpp",
+			"Mu",
+			"EWIEGA46WW/moc_program.cpp",
+			null
+		],
+		[
+			"/home/braer/dev/atomix/shaderobj.hpp",
+			"Mu",
+			"EWIEGA46WW/moc_shaderobj.cpp",
+			null
 		]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
@@ -439,7 +451,9 @@
 		[ "/home/braer/dev/atomix/GWidget.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/MainWindow.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/Window.cpp", "Mu", null ],
-		[ "/home/braer/dev/atomix/main.cpp", "Mu", null ]
+		[ "/home/braer/dev/atomix/main.cpp", "Mu", null ],
+		[ "/home/braer/dev/atomix/program.cpp", "Mu", null ],
+		[ "/home/braer/dev/atomix/shaderobj.cpp", "Mu", null ]
 	],
 	"VERBOSITY" : 0
 }

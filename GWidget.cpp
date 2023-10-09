@@ -10,24 +10,6 @@
 #include <QTimer>
 #include "GWidget.hpp"
 
-const char *verShaderSrc =
-    "#version 450 core\n"
-    "layout(location = 0) in vec3 svPos;\n"
-    "layout(location = 1) in vec3 svCol;\n"
-    "out vec3 verColour;\n"
-    "void main() {\n"
-    "   gl_Position = vec4(svPos.x, svPos.y, svPos.z, 1.0);\n"
-    "   verColour = svCol;\n"
-    "}\n";
-
-const char *fragShaderSrc =
-    "#version 450 core\n"
-    "out vec4 FragColour;\n"
-    "in vec3 verColour;\n"
-    "void main() {\n"
-    "   FragColour = vec4(verColour, 1.0f);\n"
-    "}\n";
-
 
 GWidget::GWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
@@ -74,7 +56,6 @@ bool GWidget::checkCompileProgram(uint program) {
 }
 
 void GWidget::initializeGL() {
-    uint verShader, fragShader;
     const GLfloat vertices[] = {
          0.0f,  0.69f, 0.0f,  1.0f, 0.0f, 0.0f,
         -0.4f, -0.4f, 0.0f,  0.0f, 1.0f, 0.0f,
@@ -102,27 +83,6 @@ void GWidget::initializeGL() {
     shaderProg->addDefaultShaders();
     shaderProg->init();
     shaderProg->linkAndValidate();
-
-    /* Shaders -- Vertex (Load and compile) 
-    verShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(verShader, 1, &verShaderSrc, NULL);
-    glCompileShader(verShader);
-    Q_ASSERT(checkCompileShader(verShader));
-
-    /* Shaders -- Fragment (Load and compile) 
-    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader, 1, &fragShaderSrc, NULL);
-    glCompileShader(fragShader);
-    Q_ASSERT(checkCompileShader(fragShader));
-    
-    /* Shaders -- Program (Attach shaders and link) 
-    gw_prog = glCreateProgram();
-    glAttachShader(gw_prog, verShader);
-    glAttachShader(gw_prog, fragShader);
-    glLinkProgram(gw_prog);
-    Q_ASSERT(checkCompileProgram(gw_prog));
-    glDeleteShader(verShader);
-    glDeleteShader(fragShader);
 
     /* VAO */
     glGenVertexArrays(1, &gw_vao);
@@ -165,13 +125,13 @@ void GWidget::paintGL() {
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(gw_prog);
+    shaderProg->enable();
     glBindVertexArray(gw_vao);
     
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glBindVertexArray(0);
-    glUseProgram(0);
+    shaderProg->disable();
 
     ++gw_frame;
 }

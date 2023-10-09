@@ -44,9 +44,9 @@ private:
     bool checkCompileProgram(uint program);
 
     Program *shaderProg = nullptr;
-
-    QOpenGLFunctions_4_5_Core *qgf;
+    QOpenGLFunctions_4_5_Core *qgf = nullptr;
     QOpenGLContext *gw_context = nullptr;
+    
     uint gw_prog = 0;
     uint gw_vao = 0;
     uint gw_vbo = 0;

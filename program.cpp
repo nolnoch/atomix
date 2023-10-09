@@ -61,8 +61,8 @@ int Program::addShader(string fName, int type) {
  * Shortcut for adding one shader.vert and one shader.frag.
  */
 void Program::addDefaultShaders() {
-  this->addShader("../shader.vert", GL_VERTEX_SHADER);
-  this->addShader("../shader.frag", GL_FRAGMENT_SHADER);
+  this->addShader("shader.vert", GL_VERTEX_SHADER);
+  this->addShader("shader.frag", GL_FRAGMENT_SHADER);
   // this->addShader("shader.geom", GL_GEOMETRY_SHADER);
 }
 
@@ -107,8 +107,6 @@ void Program::init() {
     // Load shader sources.
     const GLchar *shaderSource = shad.source().c_str();
     qgf->glShaderSource(shad.id(), 1, &shaderSource, NULL);
-
-    std::cout << "Shader " << shad.id() << " assigned." << std::endl;
 
     // Compile shader from source.
     qgf->glCompileShader(shad.id());

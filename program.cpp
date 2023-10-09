@@ -19,6 +19,7 @@ Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
 : programId(0),
   samplers(0),
   stage(0),
+  vao(0),
   qgf(funcPointer) {
 }
 
@@ -28,6 +29,10 @@ Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
 Program::~Program() {
   if (samplers)
     delete samplers;
+  if (vao)
+    qgf->glDeleteVertexArrays(1, &vao);
+  if (stage >= 2)
+    qgf->glDeleteProgram(programId);
 }
 
 /**
@@ -198,6 +203,28 @@ void Program::enable() {
  */
 void Program::disable() {
   qgf->glUseProgram(0);
+}
+
+void Program::initVAO() {
+  qgf->glGenVertexArrays(1, &vao);
+}
+
+void Program::bindVAO() {
+  qgf->glBindVertexArray(vao);
+}
+
+void Program::clearVAO() {
+  qgf->glBindVertexArray(0);
+}
+
+void Program::beginRender() {
+  enable();
+  bindVAO();
+}
+
+void Program::endRender() {
+  clearVAO();
+  disable();
 }
 
 /**

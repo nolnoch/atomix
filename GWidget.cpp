@@ -10,6 +10,8 @@
 #include <QTimer>
 #include "GWidget.hpp"
 
+#define RAD(t) (glm::radians((t)))
+
 
 GWidget::GWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
@@ -24,7 +26,8 @@ void GWidget::cleanup() {
 
     //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
-    glDeleteBuffers(1, &gw_vbo);
+    glDeleteBuffers(1, &id_vbo);
+    delete shaderProg;
 
     doneCurrent();
 }
@@ -55,9 +58,18 @@ bool GWidget::checkCompileProgram(uint program) {
 
 void GWidget::initializeGL() {
     const GLfloat vertices[] = {
-         0.0f,  0.69f, 0.0f,  1.0f, 0.0f, 0.0f,
-        -0.4f, -0.4f, 0.0f,  0.0f, 1.0f, 0.0f,
-         0.4f, -0.4f, 0.0f,  0.0f, 0.0f, 1.0f  
+            //Vertex               //Colour
+         0.0f,  0.4f,  0.0f,   0.6f, 0.6f, 0.6f,    //top
+        -0.4f, -0.4f,  0.4f,   0.0f, 0.6f, 0.0f,    //left
+         0.4f, -0.4f,  0.4f,   0.0f, 0.0f, 0.69f,   //right
+         0.0f, -0.4f, -0.4f,   0.6f, 0.0f, 0.0f     //back
+    };
+
+    GLuint indices[] = {
+        0, 1, 2,
+        2, 3, 0,
+        3, 1, 0,
+        3, 2, 1
     };
     
     /* Init -- Context and OpenGL */
@@ -76,51 +88,72 @@ void GWidget::initializeGL() {
             gw_init = true;
     }
 
+    /* Program */
     shaderProg = new Program(this);
     shaderProg->addDefaultShaders();
     shaderProg->init();
     shaderProg->linkAndValidate();
+
+    /* VAO */
     shaderProg->initVAO();
     shaderProg->bindVAO();
 
-    /* VBO */
-    glGenBuffers(1, &gw_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, gw_vbo);
+    /* VBO -- Init */
+    glGenBuffers(1, &id_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, id_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    /* Attribute Pointers -- Vertices*/
+    /* VBO -- Attribute Pointers -- Vertices*/
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     
-    /* Attribute Pointers -- Colours */
+    /* VBO -- Attribute Pointers -- Colours */
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    /* EBO */
+    glGenBuffers(1, &id_ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     /* Camera and World Init */
     glClearColor(0.0f, 0.05f, 0.08f, 0.0f);
-    //gw_camera.setToIdentity();
-    //gw_camera.translate(0, 0, -1);
-    //gw_world.setToIdentity();
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    m4_proj = glm::mat4(1.0f);
+    m4_view = glm::mat4(1.0f);
+    m4_world = glm::mat4(1.0f);
 
+    /* Matrices */
+    shaderProg->enable();
+    m4_world = glm::rotate(m4_world, RAD(-38.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    m4_view = glm::translate(m4_view, glm::vec3(0.1f, 0.1f, -1.7f));
+    m4_proj = glm::perspective(RAD(40.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
+    shaderProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+    shaderProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+    shaderProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+
+    /* Release */
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     shaderProg->clearVAO();
+    shaderProg->disable();
 }
 
 void GWidget::paintGL() {
     /* Render */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
     shaderProg->beginRender();
     
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
 
     shaderProg->endRender();
-    //++gw_frame;
 }
 
 void GWidget::resizeGL(int w, int h) {
-    gw_proj.setToIdentity();
-    gw_proj.perspective(45.0f, GLfloat(w) / h, 0.1f, 100.0f);
+    m4_proj = glm::mat4(1.0f);
+    m4_proj = glm::perspective(RAD(40.0f), GLfloat(w) / h, 0.1f, 100.0f);
 }
 

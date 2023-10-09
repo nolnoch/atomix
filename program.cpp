@@ -16,11 +16,7 @@ using namespace std;
  * Default Constructor.
  */
 Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
-: programId(0),
-  samplers(0),
-  stage(0),
-  vao(0),
-  qgf(funcPointer) {
+: qgf(funcPointer) {
 }
 
 /**
@@ -103,6 +99,8 @@ void Program::init() {
 
   // Init program.
   this->programId = qgf->glCreateProgram();
+
+  std::cout << "Program ID " << this->programId << " registered." << std::endl;
 
   for (int i = 0; i < numShaders; i++) {
     // Init shader

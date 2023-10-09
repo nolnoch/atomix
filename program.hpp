@@ -77,6 +77,13 @@ class Program {
   void enable();
   void disable();
 
+  void initVAO();
+  void bindVAO();
+  void clearVAO();
+
+  void beginRender();
+  void endRender();
+
   void setUniform(int type, std::string name, float n);
   void setUniformv(int count, int type, std::string name, const float *n);
   void setUniformMatrix(int size, std::string name, float *m);
@@ -90,6 +97,7 @@ class Program {
  private:
   QOpenGLFunctions_4_5_Core *qgf = nullptr;
   GLuint programId;
+  GLuint vao;
   std::vector<Shader> shaders;
   std::vector<SamplerInfo> *samplers;
   int stage;

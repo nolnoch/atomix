@@ -22,11 +22,9 @@ GWidget::~GWidget() {
 void GWidget::cleanup() {
     makeCurrent();
 
-    std::cout << "Rendered " << gw_frame << " frames." << std::endl;
+    //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
-    glDeleteVertexArrays(1, &gw_vao);
     glDeleteBuffers(1, &gw_vbo);
-    glDeleteProgram(gw_prog);
 
     doneCurrent();
 }
@@ -77,46 +75,35 @@ void GWidget::initializeGL() {
         else
             gw_init = true;
     }
-    //qgf = this;
 
     shaderProg = new Program(this);
     shaderProg->addDefaultShaders();
     shaderProg->init();
     shaderProg->linkAndValidate();
+    shaderProg->initVAO();
+    shaderProg->bindVAO();
 
-    /* VAO */
-    glGenVertexArrays(1, &gw_vao);
-    glBindVertexArray(gw_vao);
-    
-    /* VBO (Define and load data) */
+    /* VBO */
     glGenBuffers(1, &gw_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, gw_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    /* Attribute Pointers */
-    // Vertices
+    /* Attribute Pointers -- Vertices*/
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    // Vertex Colours
+    
+    /* Attribute Pointers -- Colours */
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     /* Camera and World Init */
+    glClearColor(0.0f, 0.05f, 0.08f, 0.0f);
     //gw_camera.setToIdentity();
     //gw_camera.translate(0, 0, -1);
     //gw_world.setToIdentity();
 
-    glClearColor(0.0f, 0.05f, 0.08f, 0.0f);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    //glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
-    
-    //QTimer* Timer = new QTimer(this);
-    //connect(Timer, SIGNAL(timeout()), this, SLOT(update()));
-    //Timer->start(1000/33);
+    shaderProg->clearVAO();
 }
 
 void GWidget::paintGL() {
@@ -124,16 +111,12 @@ void GWidget::paintGL() {
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    shaderProg->enable();
-    glBindVertexArray(gw_vao);
+    shaderProg->beginRender();
     
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    glBindVertexArray(0);
-    shaderProg->disable();
-
-    ++gw_frame;
+    shaderProg->endRender();
+    //++gw_frame;
 }
 
 void GWidget::resizeGL(int w, int h) {

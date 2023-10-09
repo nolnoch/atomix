@@ -96,11 +96,12 @@ class Program {
 
  private:
   QOpenGLFunctions_4_5_Core *qgf = nullptr;
-  GLuint programId;
-  GLuint vao;
+  std::vector<SamplerInfo> *samplers = nullptr;
   std::vector<Shader> shaders;
-  std::vector<SamplerInfo> *samplers;
-  int stage;
+
+  GLuint programId = 0;
+  GLuint vao = 0;
+  int stage = 0;
 };
 
 #endif /* PROGRAM_HPP_ */

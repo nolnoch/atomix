@@ -16,6 +16,10 @@
 //#include <QOpenGLContext>
 #include <QOpenGLFunctions_4_5_Core>
 #include <QMatrix4x4>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 //#include <eigen3/Eigen/Eigen>
 #include "program.hpp"
 
@@ -28,8 +32,6 @@ class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
 public:
     GWidget(QWidget *parent = nullptr);
     ~GWidget();
-
-    int gw_frame = 0;
 
 public slots:
     void cleanup();
@@ -46,17 +48,12 @@ private:
     Program *shaderProg = nullptr;
     QOpenGLContext *gw_context = nullptr;
 
-    uint gw_vbo = 0;
-    QMatrix4x4 gw_proj;
-    QMatrix4x4 gw_camera;
-    QMatrix4x4 gw_world;
-    int gw_projMat = 0;
-    int gw_moveMat = 0;
-    int gw_normMat = 0;
-    int gw_lightMat = 0;
-    int gw_posAttr = 0;
-    int gw_colAttr = 0;
-    int gw_uniMatrix = 0;
+    GLuint id_vbo = 0;
+    GLuint id_ebo = 0;
+    glm::mat4 m4_proj;
+    glm::mat4 m4_view;
+    glm::mat4 m4_world;
+    int gw_frame = 0;
     bool gw_init = false;
 };
 

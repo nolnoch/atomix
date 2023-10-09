@@ -25,7 +25,6 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <glm/glm.hpp>
 #include <QOpenGLFunctions_4_5_Core>
 
 class Shader {

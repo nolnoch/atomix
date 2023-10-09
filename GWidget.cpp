@@ -96,20 +96,26 @@ void GWidget::initializeGL() {
         else
             gw_init = true;
     }
+    //qgf = this;
 
-    /* Shaders -- Vertex (Load and compile) */
+    shaderProg = new Program(this);
+    shaderProg->addDefaultShaders();
+    shaderProg->init();
+    shaderProg->linkAndValidate();
+
+    /* Shaders -- Vertex (Load and compile) 
     verShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(verShader, 1, &verShaderSrc, NULL);
     glCompileShader(verShader);
     Q_ASSERT(checkCompileShader(verShader));
 
-    /* Shaders -- Fragment (Load and compile) */
+    /* Shaders -- Fragment (Load and compile) 
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragShader, 1, &fragShaderSrc, NULL);
     glCompileShader(fragShader);
     Q_ASSERT(checkCompileShader(fragShader));
     
-    /* Shaders -- Program (Attach shaders and link) */
+    /* Shaders -- Program (Attach shaders and link) 
     gw_prog = glCreateProgram();
     glAttachShader(gw_prog, verShader);
     glAttachShader(gw_prog, fragShader);

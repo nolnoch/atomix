@@ -376,6 +376,12 @@
 			null
 		],
 		[
+			"/home/braer/dev/atomix/quaternion.hpp",
+			"Mu",
+			"EWIEGA46WW/moc_quaternion.cpp",
+			null
+		],
+		[
 			"/home/braer/dev/atomix/shaderobj.hpp",
 			"Mu",
 			"EWIEGA46WW/moc_shaderobj.cpp",
@@ -453,6 +459,7 @@
 		[ "/home/braer/dev/atomix/Window.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/main.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/program.cpp", "Mu", null ],
+		[ "/home/braer/dev/atomix/quaternion.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/shaderobj.cpp", "Mu", null ]
 	],
 	"VERBOSITY" : 0

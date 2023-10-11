@@ -100,8 +100,6 @@ void Program::init() {
   // Init program.
   this->programId = qgf->glCreateProgram();
 
-  std::cout << "Program ID " << this->programId << " registered." << std::endl;
-
   for (int i = 0; i < numShaders; i++) {
     // Init shader
     Shader& shad = this->shaders[i];

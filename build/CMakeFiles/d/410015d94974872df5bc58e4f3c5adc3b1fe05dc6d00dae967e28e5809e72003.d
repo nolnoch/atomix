@@ -119,7 +119,7 @@ atomix_autogen/timestamp: \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qversiontagging.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qxptype_traits.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QKeyEvent \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMatrix4x4 \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMouseEvent \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QTransform \
@@ -133,12 +133,10 @@ atomix_autogen/timestamp: \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfont.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontinfo.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qfontmetrics.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qgenericmatrix.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qicon.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qimage.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qinputdevice.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qkeysequence.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qmatrix4x4.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopengl.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qopenglcontext_platform.h \
@@ -149,7 +147,6 @@ atomix_autogen/timestamp: \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpixmap.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpointingdevice.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qpolygon.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qquaternion.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qregion.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qrgb.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qrgba64.h \
@@ -160,8 +157,6 @@ atomix_autogen/timestamp: \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtguiglobal.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qtransform.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector2d.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector3d.h \
-  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvector4d.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qvectornd.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qwindowdefs.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL/QOpenGLFunctions_4_5_Core \
@@ -436,6 +431,8 @@ atomix_autogen/timestamp: \
   /home/braer/dev/atomix/main.cpp \
   /home/braer/dev/atomix/program.cpp \
   /home/braer/dev/atomix/program.hpp \
+  /home/braer/dev/atomix/quaternion.cpp \
+  /home/braer/dev/atomix/quaternion.hpp \
   /home/braer/dev/atomix/shaderobj.cpp \
   /home/braer/dev/atomix/shaderobj.hpp \
   /usr/include/GL/gl.h \

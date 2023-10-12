@@ -14,6 +14,8 @@
 #include <QBoxLayout>
 #include <QOpenGLWidget>
 #include <QMouseEvent>
+#include <QWheelEvent>
+#include <QKeyEvent>
 #include <QOpenGLFunctions_4_5_Core>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -24,6 +26,8 @@
 
 #define GWIDTH 1843
 #define GHEIGHT 1196
+
+enum { RX = 32, RY = 64, RZ = 128 };
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
     Q_OBJECT
@@ -40,14 +44,17 @@ protected:
     void paintGL() override;
     void resizeGL(int width, int height) override;
 
+    void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
 
 private:
     bool checkCompileShader(uint shader);
     bool checkCompileProgram(uint program);
-    GLfloat findRotationAngle(glm::vec3 startVec, glm::vec3 endVec);
+    GLfloat findRotationAngle(glm::vec3 startVec, glm::vec3 endVec, uint axis);
+    void initVecsAndMatrices();
 
     Program *shaderProg = nullptr;
     QOpenGLContext *gw_context = nullptr;

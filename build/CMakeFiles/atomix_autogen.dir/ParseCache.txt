@@ -122,10 +122,12 @@
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qvarlengtharray.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qversiontagging.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtCore/qxptype_traits.h
+ mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QKeyEvent
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QMouseEvent
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QTransform
+ mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QWheelEvent
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qaction.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbitmap.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbrush.h
@@ -789,6 +791,7 @@
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QTransform
+ mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QWheelEvent
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qaction.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbitmap.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbrush.h
@@ -1461,6 +1464,7 @@
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QTransform
+ mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/QWheelEvent
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qaction.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbitmap.h
  mdp:/home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbrush.h

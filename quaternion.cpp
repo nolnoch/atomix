@@ -622,7 +622,7 @@ Quaternion Quaternion::operator* (const Quaternion &b) {
   qProduct.Y = (W * b.Y) - (X * b.Z) + (Y * b.W) + (Z * b.X);
   qProduct.Z = (W * b.Z) + (X * b.Y) - (Y * b.X) + (Z * b.W);
 
-  qProduct.normalize();     // Needed if all quaternions are pre-normalized?
+  //qProduct.normalize();     // Needed if all quaternions are pre-normalized?
 
   return qProduct;
 }

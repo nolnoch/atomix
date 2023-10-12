@@ -124,6 +124,7 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QScreen \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QSurfaceFormat \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QTransform \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtGui/QWheelEvent \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qaction.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbitmap.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtGui/qbrush.h \

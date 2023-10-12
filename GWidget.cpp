@@ -27,8 +27,9 @@ void GWidget::cleanup() {
 
     //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
-    glDeleteBuffers(1, &id_vbo);
-    delete shaderProg;
+    glDeleteBuffers(1, &id_crystalVBO);
+    delete crystalProg;
+    delete waveProg;
 
     doneCurrent();
 }
@@ -99,20 +100,8 @@ bool GWidget::checkCompileProgram(uint program) {
     return success;
 }
 
-void GWidget::initVecsAndMatrices() {
-    m4_rotation = glm::mat4(1.0f);
-    m4_translation = glm::mat4(1.0f);
-    m4_proj = glm::mat4(1.0f);
-    m4_view = glm::mat4(1.0f);
-    m4_world = glm::mat4(1.0f);
-    v3_cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-    v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    v3_orbitBegin = glm::vec3(0);
-    v3_orbitEnd = glm::vec3(0);
-}
-
-void GWidget::initializeGL() {
+void GWidget::crystalProgram() {
+    /* Shader Program -- Central Crystal */
     float zero, peak, edge, back, forX, forZ, root;
     edge = 0.6f;  // <-- Change this to scale diamond
     peak = edge * 1.2;
@@ -140,8 +129,124 @@ void GWidget::initializeGL() {
         3, 4, 1
     };
     this->gw_faces = sizeof(indices) / sizeof(indices[0]);
+
+    /* Program */
+    crystalProg = new Program(this);
+    crystalProg->addShader("crystal.vert", GL_VERTEX_SHADER);
+    crystalProg->addShader("crystal.frag", GL_FRAGMENT_SHADER);
+    crystalProg->init();
+    crystalProg->linkAndValidate();
+
+    /* VAO */
+    crystalProg->initVAO();
+    crystalProg->bindVAO();
+
+    /* VBO -- Init */
+    glGenBuffers(1, &id_crystalVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, id_crystalVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    /* VBO -- Attribute Pointers -- Vertices*/
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
     
-    /* Init -- Context and OpenGL */
+    /* VBO -- Attribute Pointers -- Colours */
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    /* EBO */
+    glGenBuffers(1, &id_crystalEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id_crystalEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    /* Release */
+    crystalProg->clearVAO();
+    crystalProg->disable();
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+/* Shader Program -- Outer Wave */
+void GWidget::waveProgram() {
+    const int steps  = 180;
+    GLfloat crad = PI / 180.0f;
+    GLfloat r = 1.6f;
+
+    std::vector<GLfloat> vertices;
+    for (int i = 0; i < steps; i++) {
+        GLfloat x, y, theta;
+        theta = 2 * i * crad;
+        x = r * cos(theta);
+        y = r * sin(theta);
+        
+        vertices.push_back(x);
+        vertices.push_back(0.0f);
+        vertices.push_back(y);
+    }
+    //for (auto i: vertices)
+    //    std::cout << i << ", ";
+
+    /* EBO Indices */
+    //const int numIndices = ((steps - 2) * 2) + 2;
+    //std::vector<GLuint> indices;
+    //for (int i = 1; i <= numIndices; i++) {
+    //    GLuint idx = i / 2;
+    //    indices.push_back(idx);
+    //    //std::cout << "Iter: " << i << " and pushed: " << indices.back() << std::endl;
+    //}
+    std::vector<GLuint> indices(steps);
+    std::iota(std::begin(indices), std::end(indices), 0);
+    this->gw_points = indices.size();
+
+    /* Program */
+    waveProg = new Program(this);
+    waveProg->addShader("wave.vert", GL_VERTEX_SHADER);
+    waveProg->addShader("wave.frag", GL_FRAGMENT_SHADER);
+    waveProg->init();
+    waveProg->linkAndValidate();
+
+    /* VAO */
+    waveProg->initVAO();
+    waveProg->bindVAO();
+
+    /* VBO -- Init */
+    glGenBuffers(1, &id_waveVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, id_waveVBO);
+    glBufferData(GL_ARRAY_BUFFER, (vertices.size() * sizeof(GLfloat)), &vertices[0], GL_STATIC_DRAW);
+
+    /* VBO -- Attribute Pointers -- Vertices*/
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    /* EBO */
+    glGenBuffers(1, &id_waveEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id_waveEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (indices.size() * sizeof(GLuint)), &indices[0], GL_STATIC_DRAW);
+
+    /* Release */
+    waveProg->clearVAO();
+    waveProg->disable();
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void GWidget::initVecsAndMatrices() {
+    m4_rotation = glm::mat4(1.0f);
+    m4_translation = glm::mat4(1.0f);
+    m4_proj = glm::mat4(1.0f);
+    m4_view = glm::mat4(1.0f);
+    m4_world = glm::mat4(1.0f);
+    v3_cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+    v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+    v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    v3_slideBegin = glm::vec3(0);
+    v3_slideEnd = glm::vec3(0);
+    v3_orbitBegin = glm::vec3(0);
+    v3_orbitEnd = glm::vec3(0);
+}
+
+void GWidget::initializeGL() {
+    /* Init -- OpenGL Context and Functions */
     if (!context()) {
         gw_context = new QOpenGLContext(this);
         if (!gw_context->create())
@@ -157,48 +262,18 @@ void GWidget::initializeGL() {
             gw_init = true;
     }
 
-    /* Program */
-    shaderProg = new Program(this);
-    shaderProg->addDefaultShaders();
-    shaderProg->init();
-    shaderProg->linkAndValidate();
-
-    /* VAO */
-    shaderProg->initVAO();
-    shaderProg->bindVAO();
-
-    /* VBO -- Init */
-    glGenBuffers(1, &id_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, id_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    /* VBO -- Attribute Pointers -- Vertices*/
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    
-    /* VBO -- Attribute Pointers -- Colours */
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    /* EBO */
-    glGenBuffers(1, &id_ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id_ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
     /* Camera and OpenGL State Init */
-    glClearColor(0.0f, 0.05f, 0.08f, 0.0f);
+    glClearColor(0.0f, 0.05f, 0.08f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
     /* Starting Matrices */
     initVecsAndMatrices();
-    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraPosition + v3_cameraTarget, v3_cameraUp);
+    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
 
-    /* Release */
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    shaderProg->clearVAO();
-    shaderProg->disable();
+    crystalProgram();
+    waveProgram();
 }
 
 void GWidget::paintGL() {
@@ -206,21 +281,28 @@ void GWidget::paintGL() {
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    shaderProg->beginRender();
 
-    /* Render */
+    /* Re-calculate world state matrices */
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     m4_world = m4_translation * m4_rotation;
     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
-    shaderProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-    shaderProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-    shaderProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
     
+    /* Render -- Crystal */
+    crystalProg->beginRender();
+    crystalProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+    crystalProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+    crystalProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
+    crystalProg->endRender();
 
-    shaderProg->endRender();
+    /* Render -- Wave */
+    waveProg->beginRender();
+    waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+    waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+    waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+    glDrawElements(GL_LINE_LOOP, gw_points, GL_UNSIGNED_INT, 0);
+    waveProg->endRender();
 }
 
 void GWidget::resizeGL(int w, int h) {
@@ -262,7 +344,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         v3_orbitBegin = v3_orbitEnd;
         v3_orbitEnd = glm::vec3(x, scrHeight - y, v3_cameraPosition.z);
         glm::vec3 cameraVec = v3_cameraPosition - v3_cameraTarget;
-        GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
+        //GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
 
         /* Right-click drag horizontal movement will orbit */
         if (v3_orbitBegin.x != v3_orbitEnd.x) {

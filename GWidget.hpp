@@ -55,12 +55,17 @@ private:
     bool checkCompileProgram(uint program);
     GLfloat findRotationAngle(glm::vec3 startVec, glm::vec3 endVec, uint axis);
     void initVecsAndMatrices();
+    void crystalProgram();
+    void waveProgram();
 
-    Program *shaderProg = nullptr;
     QOpenGLContext *gw_context = nullptr;
+    Program *crystalProg = nullptr;
+    Program *waveProg = nullptr;
 
-    GLuint id_vbo = 0;
-    GLuint id_ebo = 0;
+    GLuint id_crystalVBO = 0;
+    GLuint id_crystalEBO = 0;
+    GLuint id_waveVBO = 0;
+    GLuint id_waveEBO = 0;
     glm::mat4 m4_proj;
     glm::mat4 m4_view;
     glm::mat4 m4_world;
@@ -75,10 +80,11 @@ private:
     glm::vec3 v3_slideEnd;
     Quaternion q_TotalRot;
     uint gw_faces = 0;
+    uint gw_points = 0;
     int gw_frame = 0;
     bool gw_init = false;
     bool gw_orbiting = false;
-    bool gw_sliding = true;
+    bool gw_sliding = false;
 };
 
 #endif

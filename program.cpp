@@ -177,7 +177,7 @@ GLint Program::linkAndValidate() {
 }
 
 /**
- * A sequence-protected wrapper for qgf->glUseProgram().  This completely preempts
+ * A sequence-protected wrapper for glUseProgram().  This completely preempts
  * the OpenGL graphics pipeline for any shader functions implemented.
  */
 void Program::enable() {
@@ -240,7 +240,7 @@ void Program::setUniform(int type, string name, float n) {
 }
 
 /**
- * A quick wrapper for array or referenced uniform values.
+ * A quick wrapper for array of referenced uniform values.
  * @param count - number of values in the array
  * @param type - GL_FLOAT or GL_INT
  * @param name - string representation of the GLSL uniform name

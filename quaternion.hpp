@@ -95,7 +95,7 @@
 enum { EULER = 2, EXPLICIT = 4, ANGLE_AXIS = 8, MATRIX = 16 };
 enum { DEG = 1, RAD = 0 };
 
-const float PI = 3.1415926f;
+const float RAD_FAC = (float) M_PI / 180.0f;
 
 using namespace std;
 
@@ -117,7 +117,6 @@ class Quaternion {
 
   // Internal operations
   float magnitude();
-  void normalize();
   void makeMatrix();
   void loadMatrix(float *m);
   void normalizeVector(float *v);
@@ -149,6 +148,7 @@ class Quaternion {
   void toString();
   void matrixToString();
   void zero();
+  void normalize();
 
   // Operators
   Quaternion operator+ (const Quaternion& b);

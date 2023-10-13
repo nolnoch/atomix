@@ -24,10 +24,14 @@
 #include "program.hpp"
 #include "quaternion.hpp"
 
-#define GWIDTH 1843
-#define GHEIGHT 1196
+const double H = 6.626070e-34;      // Planck's constant
+const double C = 299792458;         // Speed of massless particles
+const double HC = 1.98644586e-25;   // Convenience product of above
+const double L = 2 * M_PI;          // For this model, lambda = 2pi
+const double E = 3.16152677e-26;    // E = HC / L
 
-enum { RX = 32, RY = 64, RZ = 128 };
+const int STEPS = 180;              // Wave-circle resolution
+
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
     Q_OBJECT
@@ -51,9 +55,6 @@ protected:
     void keyPressEvent(QKeyEvent *event);
 
 private:
-    bool checkCompileShader(uint shader);
-    bool checkCompileProgram(uint program);
-    GLfloat findRotationAngle(glm::vec3 startVec, glm::vec3 endVec, uint axis);
     void initVecsAndMatrices();
     void crystalProgram();
     void waveProgram();

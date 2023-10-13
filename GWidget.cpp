@@ -34,72 +34,6 @@ void GWidget::cleanup() {
     doneCurrent();
 }
 
-GLfloat GWidget::findRotationAngle(glm::vec3 startVec, glm::vec3 endVec, uint axis) {
-    GLfloat angle, zA, zB, yA, yB, xA, xB, dotProd;
-    GLfloat width = this->width() / 2.0f;
-    glm::vec3 vA, vB;
-
-    switch(axis) {
-        case(RX):
-            yA = glm::sin(((startVec.y - width) / width) * PI / 2);
-            yB = glm::sin(((endVec.y - width) / width) * PI / 2);
-
-            zA = glm::sqrt(1.0f - (yA * yA));
-            zB = glm::sqrt(1.0f - (yB * yB));
-
-            vA = glm::vec3(0.0, yA, zA);
-            vB = glm::vec3(0.0, yB, zB);
-        break;
-        case(RY):
-            xA = glm::sin(((startVec.x - width) / width) * PI / 2);
-            xB = glm::sin(((endVec.x - width) / width) * PI / 2);
-
-            zA = glm::sqrt(1.0f - (xA * xA));
-            zB = glm::sqrt(1.0f - (xB * xB));
-
-            vA = glm::vec3(xA, 0.0, zA);
-            vB = glm::vec3(xB, 0.0, zB);
-        break;
-        case(RZ):
-            xA = glm::sin(((startVec.y - width) / width) * PI / 2);
-            xB = glm::sin(((endVec.y - width) / width) * PI / 2);
-
-            yA = glm::sqrt(1.0f - (xA * xA));
-            yB = glm::sqrt(1.0f - (xB * xB));
-
-            vA = glm::vec3(xA, yA, 0.0);
-            vB = glm::vec3(xB, yB, 0.0);
-        break;
-    }
-    
-    dotProd = glm::dot(glm::normalize(vA), glm::normalize(vB));
-    return glm::acos(dotProd) * 1.20f;
-}
-
-bool GWidget::checkCompileShader(uint shader) {
-    int success;
-    char log[512];
-
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(shader, 512, NULL, log);
-        std::cout << "Shader Compilation Failed\n" << log << std::endl;
-    }
-    return success;
-}
-
-bool GWidget::checkCompileProgram(uint program) {
-    int success;
-    char log[512];
-
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(program, 512, NULL, log);
-        std::cout << "Program Compilation Failed\n" << log << std::endl;
-    }
-    return success;
-}
-
 void GWidget::crystalProgram() {
     /* Shader Program -- Central Crystal */
     float zero, peak, edge, back, forX, forZ, root;
@@ -113,10 +47,10 @@ void GWidget::crystalProgram() {
     
     const GLfloat vertices[] = {
               //Vertex              //Colour
-          zero,  peak,  zero,   0.5f, 0.5f, 0.5f,    //top
-         -forX,  zero,  forZ,   0.1f, 0.3f, 0.1f,    //left
-          forX,  zero,  forZ,   0.1f, 0.0f, 0.3f,    //right
-          zero,  zero, -back,   0.3f, 0.1f, 0.1f,    //back
+          zero,  peak,  zero,   0.6f, 0.6f, 0.6f,    //top
+         -forX,  zero,  forZ,   0.1f, 0.4f, 0.4f,    //left - cyan
+          forX,  zero,  forZ,   0.4f, 0.1f, 0.4f,    //right - magenta
+          zero,  zero, -back,   0.4f, 0.4f, 0.1f,    //back - yellow
           zero, -peak,  zero,   0.0f, 0.0f, 0.0f     //bottom
     };
 
@@ -166,34 +100,28 @@ void GWidget::crystalProgram() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-/* Shader Program -- Outer Wave */
+/* Shader Program -- Wave 1 */
 void GWidget::waveProgram() {
     const int steps  = 180;
-    GLfloat crad = PI / 180.0f;
-    GLfloat r = 1.6f;
+    const float deg = 360 / steps;
+    float r = 1.0f;
+    float a = 0.6f;
+    //float l = L / 2;
 
     std::vector<GLfloat> vertices;
     for (int i = 0; i < steps; i++) {
-        GLfloat x, y, theta;
-        theta = 2 * i * crad;
+        GLfloat x, y, z, theta;
+        theta = deg * i * RAD_FAC;
         x = r * cos(theta);
-        y = r * sin(theta);
+        z = r * sin(theta);
+        y = a * sin(((2 * M_PI) / L) * (r * theta));
         
         vertices.push_back(x);
-        vertices.push_back(0.0f);
         vertices.push_back(y);
+        vertices.push_back(z);
     }
-    //for (auto i: vertices)
-    //    std::cout << i << ", ";
 
     /* EBO Indices */
-    //const int numIndices = ((steps - 2) * 2) + 2;
-    //std::vector<GLuint> indices;
-    //for (int i = 1; i <= numIndices; i++) {
-    //    GLuint idx = i / 2;
-    //    indices.push_back(idx);
-    //    //std::cout << "Iter: " << i << " and pushed: " << indices.back() << std::endl;
-    //}
     std::vector<GLuint> indices(steps);
     std::iota(std::begin(indices), std::end(indices), 0);
     this->gw_points = indices.size();
@@ -303,6 +231,8 @@ void GWidget::paintGL() {
     waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
     glDrawElements(GL_LINE_LOOP, gw_points, GL_UNSIGNED_INT, 0);
     waveProg->endRender();
+
+    q_TotalRot.normalize();
 }
 
 void GWidget::resizeGL(int w, int h) {
@@ -335,8 +265,9 @@ void GWidget::mousePressEvent(QMouseEvent *e) {
 }
 
 void GWidget::mouseMoveEvent(QMouseEvent *e) {
-    int x, y, scrHeight;
+    int x, y, scrHeight, scrWidth;
     scrHeight = height();
+    scrWidth = width();
     x = e->pos().x();
     y = e->pos().y();
 
@@ -344,28 +275,35 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         v3_orbitBegin = v3_orbitEnd;
         v3_orbitEnd = glm::vec3(x, scrHeight - y, v3_cameraPosition.z);
         glm::vec3 cameraVec = v3_cameraPosition - v3_cameraTarget;
-        //GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
+        GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
 
-        /* Right-click drag horizontal movement will orbit */
+        /* Right-click-drag horizontal movement will orbit about Y axis */
         if (v3_orbitBegin.x != v3_orbitEnd.x) {
-            float signAxisH = v3_orbitBegin.x < v3_orbitEnd.x ? 1.0f : -1.0f;
-            glm::vec3 orbitAxisH = glm::vec3(0.0, signAxisH, 0.0);
-            GLfloat orbitAngleH = findRotationAngle(v3_orbitBegin, v3_orbitEnd, RY) * 1.8f;
+            float dragRatio = (v3_orbitBegin.x - v3_orbitEnd.x) / scrWidth;
+            GLfloat orbitAngleH = M_PIf * 2.0f * dragRatio;
+            glm::vec3 orbitAxisH = glm::vec3(0.0, 1.0f, 0.0);
             Quaternion qOrbitRotH = Quaternion(orbitAngleH, orbitAxisH, RAD);
             
-            q_TotalRot = qOrbitRotH * q_TotalRot;
+            v3_cameraPosition = qOrbitRotH.rotate(v3_cameraPosition);
         }
-        /* Rght-click drag vertical movement will arc */
+        /* Rght-click-drag vertical movement will orbit about XZ plane */
         if (v3_orbitBegin.y != v3_orbitEnd.y) {
             float dragRatio = (v3_orbitEnd.y - v3_orbitBegin.y) / scrHeight;
-            float angleDelta = (PI / 2) * dragRatio * 1.5;
-            glm::vec3 cameraUnit = glm::normalize(cameraVec);
+            GLfloat orbitAngleV = M_PIf * 2.0f * dragRatio;
+            //glm::vec3 cameraUnit = glm::normalize(cameraVec);
+            glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
             glm::vec3 orbitAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
-            GLfloat orbitAngleV = angleDelta;
             Quaternion qOrbitRotV = Quaternion(orbitAngleV, orbitAxisV, RAD);
+
+            //std::cout << "Y: " << cameraVec.y << std::endl;
+            //std::cout << "Orbit Axis: " << glm::to_string(orbitAxisV) << std::endl;
             
             v3_cameraPosition = qOrbitRotV.rotate(v3_cameraPosition);
+            if ((M_PIf / 2.0f) - currentAngle < 0.01f) {
+                std::cout << "Locked." << std::endl;
+            }
         }
+
         update();
     }
     if (gw_sliding) {

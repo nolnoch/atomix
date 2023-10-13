@@ -286,22 +286,24 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
             
             v3_cameraPosition = qOrbitRotH.rotate(v3_cameraPosition);
         }
-        /* Rght-click-drag vertical movement will orbit about XZ plane */
+        /* Right-click-drag vertical movement will orbit about XZ plane */
         if (v3_orbitBegin.y != v3_orbitEnd.y) {
             float dragRatio = (v3_orbitEnd.y - v3_orbitBegin.y) / scrHeight;
             GLfloat orbitAngleV = M_PIf * 2.0f * dragRatio;
             //glm::vec3 cameraUnit = glm::normalize(cameraVec);
             glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
             glm::vec3 orbitAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
+            //if (currentAngle >= (M_PI_2f - 0.01f)) {
+            //    orbitAxisV = glm::vec3(-cameraUnit.z, 0.0f, cameraUnit.x);
+            //    v3_cameraUp = glm::vec3(0.0f, -1.0f, 0.0f);
+            //}
             Quaternion qOrbitRotV = Quaternion(orbitAngleV, orbitAxisV, RAD);
 
-            //std::cout << "Y: " << cameraVec.y << std::endl;
+            //std::cout << "Angle: " << currentAngle << std::endl;
             //std::cout << "Orbit Axis: " << glm::to_string(orbitAxisV) << std::endl;
             
             v3_cameraPosition = qOrbitRotV.rotate(v3_cameraPosition);
-            if ((M_PIf / 2.0f) - currentAngle < 0.01f) {
-                std::cout << "Locked." << std::endl;
-            }
+            v3_cameraUp = glm::normalize(glm::cross(cameraVec, orbitAxisV));
         }
 
         update();

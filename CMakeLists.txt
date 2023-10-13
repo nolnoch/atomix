@@ -3,8 +3,6 @@ project(atomix VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_AUTOMOC ON)
 set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
 
-#find_package(OpenGL REQUIRED)
-
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets)
 
 add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp program.cpp MainWindow.cpp Window.cpp GWidget.cpp)

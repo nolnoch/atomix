@@ -85,9 +85,9 @@ Quaternion::Quaternion(float w, float x, float y, float z)
 Quaternion::Quaternion(float yaw, float pitch, float roll, int deg_rad)
 : W(0), X(0), Y(0), Z(0), dirty(1) {
   if (deg_rad) {
-    yaw *= (PI / 180.0f);
-    pitch *= (PI / 180.0f);
-    roll *= (PI / 180.0f);
+    yaw *= (RAD_FAC);
+    pitch *= (RAD_FAC);
+    roll *= (RAD_FAC);
   }
   this->initQEulerAngles(yaw, pitch, roll);
 }
@@ -101,9 +101,9 @@ Quaternion::Quaternion(float yaw, float pitch, float roll, int deg_rad)
 Quaternion::Quaternion(glm::vec3 v3Angles, int deg_rad)
 : W(0), X(0), Y(0), Z(0), dirty(1) {
   if (deg_rad) {
-    v3Angles[0] *= (PI / 180.0f);
-    v3Angles[1] *= (PI / 180.0f);
-    v3Angles[2] *= (PI / 180.0f);
+    v3Angles[0] *= (RAD_FAC);
+    v3Angles[1] *= (RAD_FAC);
+    v3Angles[2] *= (RAD_FAC);
   }
   this->initQEulerAngles(v3Angles[0], v3Angles[1], v3Angles[2]);
 }
@@ -118,7 +118,7 @@ Quaternion::Quaternion(glm::vec3 v3Angles, int deg_rad)
 Quaternion::Quaternion(float theta, vector<float> axis, int deg_rad)
 : W(0), X(0), Y(0), Z(0), dirty(1) {
   if (deg_rad) {
-    theta *= (PI / 180.0f);
+    theta *= (RAD_FAC);
   }
   this->initQAngleAxis(theta, &axis[0]);
 }
@@ -133,7 +133,7 @@ Quaternion::Quaternion(float theta, vector<float> axis, int deg_rad)
 Quaternion::Quaternion(float theta, glm::vec3 axis, int deg_rad)
 : W(0), X(0), Y(0), Z(0), dirty(1) {
   if (deg_rad) {
-    theta *= (PI / 180.0f);
+    theta *= (RAD_FAC);
   }
   this->initQAngleAxis(theta, glm::value_ptr(axis));
 }
@@ -148,7 +148,7 @@ Quaternion::Quaternion(float theta, glm::vec3 axis, int deg_rad)
 Quaternion::Quaternion(float theta, float axis[3], int deg_rad)
 : W(0), X(0), Y(0), Z(0), dirty(1) {
   if (deg_rad) {
-    theta *= (PI / 180.0f);
+    theta *= (RAD_FAC);
   }
   this->initQAngleAxis(theta, axis);
 }
@@ -325,9 +325,9 @@ void Quaternion::initQArrayUnknown(float *m, int construction, int deg_rad) {
   switch (construction) {
     case EULER: {
       if (deg_rad) {
-        m[0] *= (PI / 180.0f);
-        m[1] *= (PI / 180.0f);
-        m[2] *= (PI / 180.0f);
+        m[0] *= (RAD_FAC);
+        m[1] *= (RAD_FAC);
+        m[2] *= (RAD_FAC);
       }
       this->initQEulerAngles(m[0], m[1], m[2]);
       break;
@@ -343,7 +343,7 @@ void Quaternion::initQArrayUnknown(float *m, int construction, int deg_rad) {
     }
     case ANGLE_AXIS: {
       if (deg_rad) {
-        m[0] *= (PI / 180.0f);
+        m[0] *= (RAD_FAC);
       }
       initQAngleAxis(m[0], &m[1]);
       break;
@@ -612,15 +612,15 @@ Quaternion Quaternion::operator+ (const Quaternion &b) {
  */
 Quaternion Quaternion::operator* (const Quaternion &b) {
   Quaternion qProduct = Quaternion();
-  float W = this->W;
-  float X = this->X;
-  float Y = this->Y;
-  float Z = this->Z;
+  float fW = this->W;
+  float fX = this->X;
+  float fY = this->Y;
+  float fZ = this->Z;
 
-  qProduct.W = (W * b.W) - (X * b.X) - (Y * b.Y) - (Z * b.Z);
-  qProduct.X = (W * b.X) + (X * b.W) + (Y * b.Z) - (Z * b.Y);
-  qProduct.Y = (W * b.Y) - (X * b.Z) + (Y * b.W) + (Z * b.X);
-  qProduct.Z = (W * b.Z) + (X * b.Y) - (Y * b.X) + (Z * b.W);
+  qProduct.W = (fW * b.W) - (fX * b.X) - (fY * b.Y) - (fZ * b.Z);
+  qProduct.X = (fW * b.X) + (fX * b.W) + (fY * b.Z) - (fZ * b.Y);
+  qProduct.Y = (fW * b.Y) - (fX * b.Z) + (fY * b.W) + (fZ * b.X);
+  qProduct.Z = (fW * b.Z) + (fX * b.Y) - (fY * b.X) + (fZ * b.W);
 
   //qProduct.normalize();     // Needed if all quaternions are pre-normalized?
 

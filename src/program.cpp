@@ -46,7 +46,9 @@ Program::~Program() {
 int Program::addShader(string fName, int type) {
   int validFile;
 
-  this->shaders.push_back(Shader(fName, type));
+  string fileLoc = "/home/braer/dev/atomix/shaders/" + fName;
+
+  this->shaders.push_back(Shader(fileLoc, type));
   validFile = this->shaders.back().isValid();
 
   if (!validFile) {

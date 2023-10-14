@@ -29,7 +29,6 @@ void GWidget::cleanup() {
 
     glDeleteBuffers(1, &id_crystalVBO);
     delete crystalProg;
-    delete waveProg;
 
     doneCurrent();
 }
@@ -100,16 +99,14 @@ void GWidget::crystalProgram() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-/* Shader Program -- Wave 1 */
-void GWidget::waveProgram() {
-    const int steps  = 180;
-    const float deg = 360 / steps;
-    float r = 1.0f;
+/* Shader Program -- Waves */
+void GWidget::waveProgram(uint radius) {
+    const float deg = 360 / STEPS;
+    float r = radius;
     float a = 0.6f;
-    //float l = L / 2;
 
     std::vector<GLfloat> vertices;
-    for (int i = 0; i < steps; i++) {
+    for (int i = 0; i < STEPS; i++) {
         GLfloat x, y, z, theta;
         theta = deg * i * RAD_FAC;
         x = r * cos(theta);
@@ -122,24 +119,25 @@ void GWidget::waveProgram() {
     }
 
     /* EBO Indices */
-    std::vector<GLuint> indices(steps);
+    std::vector<GLuint> indices(STEPS);
     std::iota(std::begin(indices), std::end(indices), 0);
     this->gw_points = indices.size();
 
     /* Program */
-    waveProg = new Program(this);
-    waveProg->addShader("wave.vert", GL_VERTEX_SHADER);
-    waveProg->addShader("wave.frag", GL_FRAGMENT_SHADER);
-    waveProg->init();
-    waveProg->linkAndValidate();
+    Program *prog = new Program(this);
+    waveProgs.push_back(prog);
+    prog->addShader("wave.vert", GL_VERTEX_SHADER);
+    prog->addShader("wave.frag", GL_FRAGMENT_SHADER);
+    prog->init();
+    prog->linkAndValidate();
 
     /* VAO */
-    waveProg->initVAO();
-    waveProg->bindVAO();
+    prog->initVAO();
+    prog->bindVAO();
 
     /* VBO -- Init */
-    glGenBuffers(1, &id_waveVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, id_waveVBO);
+    glGenBuffers(1, &prog->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, prog->vbo);
     glBufferData(GL_ARRAY_BUFFER, (vertices.size() * sizeof(GLfloat)), &vertices[0], GL_STATIC_DRAW);
 
     /* VBO -- Attribute Pointers -- Vertices*/
@@ -147,13 +145,13 @@ void GWidget::waveProgram() {
     glEnableVertexAttribArray(0);
 
     /* EBO */
-    glGenBuffers(1, &id_waveEBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id_waveEBO);
+    glGenBuffers(1, &prog->ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prog->ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, (indices.size() * sizeof(GLuint)), &indices[0], GL_STATIC_DRAW);
 
     /* Release */
-    waveProg->clearVAO();
-    waveProg->disable();
+    prog->clearVAO();
+    prog->disable();
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
@@ -201,7 +199,10 @@ void GWidget::initializeGL() {
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
 
     crystalProgram();
-    waveProgram();
+    waveProgram(1.0f);
+    waveProgram(2.0f);
+    waveProgram(3.0f);
+    waveProgram(4.0f);
 }
 
 void GWidget::paintGL() {
@@ -224,13 +225,15 @@ void GWidget::paintGL() {
     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
     crystalProg->endRender();
 
-    /* Render -- Wave */
-    waveProg->beginRender();
-    waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-    waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-    waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+    /* Render -- Waves */
+    for (int i = 0; i < 4; i++) {
+    waveProgs[i]->beginRender();
+    waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+    waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+    waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
     glDrawElements(GL_LINE_LOOP, gw_points, GL_UNSIGNED_INT, 0);
-    waveProg->endRender();
+    waveProgs[i]->endRender();
+    }
 
     q_TotalRot.normalize();
 }
@@ -275,35 +278,24 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         v3_orbitBegin = v3_orbitEnd;
         v3_orbitEnd = glm::vec3(x, scrHeight - y, v3_cameraPosition.z);
         glm::vec3 cameraVec = v3_cameraPosition - v3_cameraTarget;
-        GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
+        //GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
 
         /* Right-click-drag horizontal movement will orbit about Y axis */
         if (v3_orbitBegin.x != v3_orbitEnd.x) {
-            float dragRatio = (v3_orbitBegin.x - v3_orbitEnd.x) / scrWidth;
+            float dragRatio = (v3_orbitEnd.x - v3_orbitBegin.x) / scrWidth;
             GLfloat orbitAngleH = M_PIf * 2.0f * dragRatio;
             glm::vec3 orbitAxisH = glm::vec3(0.0, 1.0f, 0.0);
             Quaternion qOrbitRotH = Quaternion(orbitAngleH, orbitAxisH, RAD);
-            
-            v3_cameraPosition = qOrbitRotH.rotate(v3_cameraPosition);
+            q_TotalRot = qOrbitRotH * q_TotalRot;
         }
         /* Right-click-drag vertical movement will orbit about XZ plane */
         if (v3_orbitBegin.y != v3_orbitEnd.y) {
-            float dragRatio = (v3_orbitEnd.y - v3_orbitBegin.y) / scrHeight;
+            float dragRatio = (v3_orbitBegin.y - v3_orbitEnd.y) / scrHeight;
             GLfloat orbitAngleV = M_PIf * 2.0f * dragRatio;
-            //glm::vec3 cameraUnit = glm::normalize(cameraVec);
             glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
             glm::vec3 orbitAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
-            //if (currentAngle >= (M_PI_2f - 0.01f)) {
-            //    orbitAxisV = glm::vec3(-cameraUnit.z, 0.0f, cameraUnit.x);
-            //    v3_cameraUp = glm::vec3(0.0f, -1.0f, 0.0f);
-            //}
             Quaternion qOrbitRotV = Quaternion(orbitAngleV, orbitAxisV, RAD);
-
-            //std::cout << "Angle: " << currentAngle << std::endl;
-            //std::cout << "Orbit Axis: " << glm::to_string(orbitAxisV) << std::endl;
-            
-            v3_cameraPosition = qOrbitRotV.rotate(v3_cameraPosition);
-            v3_cameraUp = glm::normalize(glm::cross(cameraVec, orbitAxisV));
+            q_TotalRot = qOrbitRotV * q_TotalRot;
         }
 
         update();
@@ -314,10 +306,9 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         
         /* Left-click drag will grab and slide world */
         if (v3_slideBegin != v3_slideEnd) {
-            glm::vec3 deltaSlide = -0.01f * (v3_slideEnd - v3_slideBegin);
-            glm::vec3 cameraSlide = glm::vec3(deltaSlide.x, 0.0, -deltaSlide.y);
-            v3_cameraPosition = v3_cameraPosition + cameraSlide;
-            v3_cameraTarget = v3_cameraTarget + cameraSlide;
+            glm::vec3 deltaSlide = 0.01f * (v3_slideEnd - v3_slideBegin);
+            glm::vec3 cameraSlide = glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
+            m4_translation = glm::translate(m4_translation, cameraSlide);
         }
         update();
     }

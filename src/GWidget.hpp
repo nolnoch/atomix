@@ -57,16 +57,22 @@ protected:
 private:
     void initVecsAndMatrices();
     void crystalProgram();
-    void waveProgram();
+    void waveProgram(uint radius);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
-    Program *waveProg = nullptr;
+    std::vector<Program *> waveProgs;
 
     GLuint id_crystalVBO = 0;
     GLuint id_crystalEBO = 0;
-    GLuint id_waveVBO = 0;
-    GLuint id_waveEBO = 0;
+    GLuint id_waveVBO_1 = 0;
+    GLuint id_waveVBO_2 = 0;
+    GLuint id_waveVBO_3 = 0;
+    GLuint id_waveVBO_4 = 0;
+    GLuint id_waveEBO_1 = 0;
+    GLuint id_waveEBO_2 = 0;
+    GLuint id_waveEBO_3 = 0;
+    GLuint id_waveEBO_4 = 0;
     glm::mat4 m4_proj;
     glm::mat4 m4_view;
     glm::mat4 m4_world;

@@ -157,6 +157,7 @@ void GWidget::waveProgram(uint radius) {
 }
 
 void GWidget::initVecsAndMatrices() {
+    q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
     m4_translation = glm::mat4(1.0f);
     m4_proj = glm::mat4(1.0f);
@@ -226,7 +227,7 @@ void GWidget::paintGL() {
     crystalProg->endRender();
 
     /* Render -- Waves */
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < waveProgs.size(); i++) {
     waveProgs[i]->beginRender();
     waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
     waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
@@ -288,7 +289,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
             Quaternion qOrbitRotH = Quaternion(orbitAngleH, orbitAxisH, RAD);
             q_TotalRot = qOrbitRotH * q_TotalRot;
         }
-        /* Right-click-drag vertical movement will orbit about XZ plane */
+        /* Right-click-drag vertical movement will orbit about X and Z axes */
         if (v3_orbitBegin.y != v3_orbitEnd.y) {
             float dragRatio = (v3_orbitBegin.y - v3_orbitEnd.y) / scrHeight;
             GLfloat orbitAngleV = M_PIf * 2.0f * dragRatio;

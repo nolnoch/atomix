@@ -43,13 +43,12 @@ void GWidget::cleanup() {
 
     //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
-    glDeleteBuffers(1, &id_crystalVBO);
     delete crystalProg;
 
     doneCurrent();
 }
 
-/* Shader Program -- Central Crystal */
+/* Shader Program -- Crystal */
 void GWidget::crystalProgram() {
     float zero, peak, edge, back, forX, forZ, root;
     edge = 0.6f;  // <-- Change this to scale diamond
@@ -87,16 +86,14 @@ void GWidget::crystalProgram() {
     crystalProg->linkAndValidate();
 
     /* VAO */
-    crystalProg->initVAO();
     crystalProg->bindVAO();
 
-    /* VBO -- Init */
+    /* VBO */
     crystalProg->bindVBO(sizeof(vertices), vertices.data());
 
     /* Attribute Pointers */
-    crystalProg->attributePointer(0, 3, 6 * sizeof(float), (void*)0);                       // Vertices
-    crystalProg->attributePointer(1, 3, 6 * sizeof(float), (void*)(3 * sizeof(float)));     // Colours
-    crystalProg->enableAttributes();
+    crystalProg->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                              // Vertices
+    crystalProg->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));    // Colours
 
     /* EBO */
     crystalProg->bindEBO(sizeof(indices), indices.data());
@@ -104,7 +101,8 @@ void GWidget::crystalProgram() {
     /* Release */
     crystalProg->clearVAO();
     crystalProg->disable();
-    crystalProg->clearBuffers();
+    crystalProg->clearVBO();
+    crystalProg->clearEBO();
 }
 
 /* Shader Program -- Waves */
@@ -140,23 +138,22 @@ void GWidget::waveProgram(uint radius) {
     prog->linkAndValidate();
 
     /* VAO */
-    prog->initVAO();
     prog->bindVAO();
 
     /* VBO */
-    prog->bindVBO((vertices.size() * sizeof(GLfloat)), vertices.data());
+    prog->bindVBO((vertices.size() * sizeof(GLfloat)), &vertices[0]);
 
     /* Attribute Pointers */
-    prog->attributePointer(0, 3, 3 * sizeof(float), (void*)0);                              // Vertices
-    prog->enableAttributes();
+    prog->attributePointer(0, 3, 3 * sizeof(float), (void *)0);
 
     /* EBO */
-    prog->bindEBO((indices.size() * sizeof(GLuint)), indices.data());
+    prog->bindEBO((indices.size() * sizeof(GLuint)), &indices[0]);
 
     /* Release */
     prog->clearVAO();
     prog->disable();
-    prog->clearBuffers();
+    prog->clearVBO();
+    prog->clearEBO();
 }
 
 void GWidget::initVecsAndMatrices() {
@@ -203,7 +200,7 @@ void GWidget::initializeGL() {
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
 
     crystalProgram();
-    for (int i = 1; i <= WAVES; i++) {
+    for (int i = 0; i < WAVES; i++) {
         waveProgram((float) i);
     }
 }

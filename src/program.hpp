@@ -2,9 +2,8 @@
  * program.hpp
  *
  *    Created on: Apr 8, 2013
- *   Last Update: Apr 21, 2013
- *  Orig. Author: Wade Burch (nolnoch@cs.utexas.edu)
- *  Contributors: [none]
+ *   Last Update: Oct 14, 2023
+ *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  *
  *  This class was created to automate (and generally make easier) the use
  *  of GLSL programs through the GLEW extension libraries.
@@ -34,10 +33,21 @@
  *
  *  This is a work in progress and will be continually improved as I use it.
  *
- *  Feel free to share, expand, and modify as you see fit with attribution
- *  to the original author (me) and any who have added since.
- *
- *  -Wade Burch
+ *  Copyright 2013,2023 Wade Burch (GPLv3)
+ * 
+ *  This file is part of atomix.
+ * 
+ *  atomix is free software: you can redistribute it and/or modify it under the
+ *  terms of the GNU General Public License as published by the Free Software 
+ *  Foundation, either version 3 of the License, or (at your option) any later 
+ *  version.
+ * 
+ *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ *  You should have received a copy of the GNU General Public License along with 
+ *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef PROGRAM_HPP_

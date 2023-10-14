@@ -48,6 +48,7 @@ Quaternion::Quaternion()
 Quaternion::Quaternion(const Quaternion &b)
 : W(b.W), X(b.X), Y(b.Y), Z(b.Z), dirty(1) {
   this->rotMatrix.clear();
+  //TODO implement actual copy.
 }
 
 /************************************************************************
@@ -575,7 +576,8 @@ void Quaternion::zero() {
   this->Y = 0;
   this->Z = 0;
   this->dirty = 1;
-  this->rotMatrix.clear();
+  if (rotMatrix.size())
+    std::fill(rotMatrix.begin(), rotMatrix.end(), 0.0f);
 }
 
 

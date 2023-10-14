@@ -94,6 +94,9 @@ class Program {
   void displayLogProgram();
   void displayLogShader(GLenum shader);
 
+  GLuint vbo = 0;
+  GLuint ebo = 0;
+
  private:
   QOpenGLFunctions_4_5_Core *qgf = nullptr;
   std::vector<SamplerInfo> *samplers = nullptr;
@@ -101,6 +104,7 @@ class Program {
 
   GLuint programId = 0;
   GLuint vao = 0;
+  
   int stage = 0;
 };
 

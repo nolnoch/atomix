@@ -91,8 +91,17 @@ class Program {
   void bindVAO();
   void clearVAO();
 
+  void bindVBO(uint bufSize, const GLfloat *buf);
+  void attributePointer(uint idx, uint count, uint stride, const void *offset);
+  void enableAttributes();
+  void clearVBO();
+
+  void bindEBO(uint bufSize, const GLuint *buf);
+  void clearEBO();
+
   void beginRender();
   void endRender();
+  void clearBuffers();
 
   void setUniform(int type, std::string name, float n);
   void setUniformv(int count, int type, std::string name, const float *n);
@@ -111,6 +120,7 @@ class Program {
   QOpenGLFunctions_4_5_Core *qgf = nullptr;
   std::vector<SamplerInfo> *samplers = nullptr;
   std::vector<Shader> shaders;
+  std::vector<GLuint> attribs;
 
   GLuint programId = 0;
   GLuint vao = 0;

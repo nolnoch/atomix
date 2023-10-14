@@ -46,6 +46,7 @@ const double HC = 1.98644586e-25;   // Convenience product of above
 const double L = 2 * M_PI;          // For this model, lambda = 2pi
 const double E = 3.16152677e-26;    // E = HC / L
 
+const int WAVES = 4;                // Number of wave-circles
 const int STEPS = 180;              // Wave-circle resolution
 
 
@@ -101,6 +102,8 @@ private:
     glm::vec3 v3_orbitEnd;
     glm::vec3 v3_slideBegin;
     glm::vec3 v3_slideEnd;
+    glm::vec3 v3_rollBegin;
+    glm::vec3 v3_rollEnd;
     Quaternion q_TotalRot;
     uint gw_faces = 0;
     uint gw_points = 0;
@@ -108,6 +111,7 @@ private:
     bool gw_init = false;
     bool gw_orbiting = false;
     bool gw_sliding = false;
+    bool gw_rolling = false;
 };
 
 #endif

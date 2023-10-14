@@ -1,10 +1,26 @@
-/** GWidget.cpp 
+/**
+ * GWidget.cpp
+ *
+ *    Created on: Oct 3, 2023
+ *   Last Update: Oct 14, 2023
+ *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  * 
- * atomix by Wade Burch
- * (braernoch@gmail.com)
+ *  Copyright 2023 Wade Burch (GPLv3)
  * 
- * GPL Open Source
-*/
+ *  This file is part of atomix.
+ * 
+ *  atomix is free software: you can redistribute it and/or modify it under the
+ *  terms of the GNU General Public License as published by the Free Software 
+ *  Foundation, either version 3 of the License, or (at your option) any later 
+ *  version.
+ * 
+ *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ *  You should have received a copy of the GNU General Public License along with 
+ *  atomix. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include <iostream>
 #include <QTimer>
@@ -298,6 +314,8 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
             Quaternion qOrbitRotV = Quaternion(orbitAngleV, orbitAxisV, RAD);
             q_TotalRot = qOrbitRotV * q_TotalRot;
         }
+        /* Middle-click-drag should orbit about camera look vector */
+        //TODO implement this
 
         update();
     }

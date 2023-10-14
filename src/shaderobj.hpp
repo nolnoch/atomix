@@ -2,9 +2,8 @@
  * shaderobj.hpp
  *
  *    Created on: Apr 8, 2013
- *   Last Update: Apr 8, 2013
- *  Orig. Author: Wade Burch (nolnoch@cs.utexas.edu)
- *  Contributors: [none]
+ *   Last Update: Oct 14, 2023
+ *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  *
  *  This was created specifically for my Program class for easier use of
  *  GLSL shaders with the GLEW extension libraries.
@@ -13,10 +12,21 @@
  *  necessary to load, compile, attach, link, and use it in an automated
  *  framework.
  *
- *  Feel free to share, expand, and modify as you see fit with attribution
- *  to the original author (me) and any who have added since.
- *
- *  -Wade Burch
+ *  Copyright 2013,2023 Wade Burch (GPLv3)
+ * 
+ *  This file is part of atomix.
+ * 
+ *  atomix is free software: you can redistribute it and/or modify it under the
+ *  terms of the GNU General Public License as published by the Free Software 
+ *  Foundation, either version 3 of the License, or (at your option) any later 
+ *  version.
+ * 
+ *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ *  You should have received a copy of the GNU General Public License along with 
+ *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef SHADEROBJ_HPP_

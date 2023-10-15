@@ -32,6 +32,7 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
+#include <QDateTime>
 #include <QOpenGLFunctions_4_5_Core>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -44,13 +45,13 @@ const double TWO_PI = 2.0 * M_PI;   // 2pi is used a lot
 const double H = 6.626070e-34;      // Planck's constant
 const double C = 299792458;         // Speed of massless particles
 const double HC = 1.98644586e-25;   // Convenience product of above
-const double L = TWO_PI;          // For this model, lambda = 2pi
+const double L = TWO_PI;            // For this model, lambda = 2pi
 const double E = HC / L;            // E = HC / L
 
-const int WAVES = 4;                // Number of wave-circles
-const int STEPS = 180;              // Wave-circle resolution
+const int WAVES = 7;                // Number of wave-circles
+const int STEPS = 360;              // Wave-circle resolution
 const float A = 0.6f;               // Wave-circle amplitude
-const float T = 1.0f;               // Wave-circle phase
+const float T = 1.0f;               // Wave-circle period
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -100,10 +101,9 @@ private:
     glm::vec3 v3_rollBegin;
     glm::vec3 v3_rollEnd;
     Quaternion q_TotalRot;
+    int64_t gw_timeStart;
     uint gw_faces = 0;
     uint gw_points = 0;
-    float gw_time = 0;
-    int gw_frame = 0;
     bool gw_init = false;
     bool gw_orbiting = false;
     bool gw_sliding = false;

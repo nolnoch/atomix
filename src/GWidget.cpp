@@ -113,7 +113,7 @@ void GWidget::waveProgram(uint r) {
         vertices.push_back(0.0f);
         vertices.push_back(z);
 
-        /* y = A * sin((two_pi_L_r * theta) - (two_pi_T * t)) */
+        /* y = A * sin((two_pi_L_r * theta) - (two_pi_T * t) + (p = 0)) */
         vertices.push_back(A);
         vertices.push_back(two_pi_L_r * theta);
         vertices.push_back(two_pi_T);
@@ -147,13 +147,15 @@ void GWidget::waveProgram(uint r) {
 }
 
 void GWidget::initVecsAndMatrices() {
+    float camStart = WAVES * 2.0f;
+
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
     m4_translation = glm::mat4(1.0f);
     m4_proj = glm::mat4(1.0f);
     m4_view = glm::mat4(1.0f);
     m4_world = glm::mat4(1.0f);
-    v3_cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+    v3_cameraPosition = glm::vec3(0.0f, 0.0f, camStart);
     v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     v3_slideBegin = glm::vec3(0);
@@ -195,13 +197,17 @@ void GWidget::initializeGL() {
         waveProgram((float) i);
     }
 
-    /* Init -- Timer */
-    //gw_timer = new QTimer(this);
-    //connect(gw_timer, &QTimer::timeout, this, &GWidget::updateWaves);
-    //gw_timer->start(33);
+    /* Init -- Time */
+    gw_timeStart = QDateTime::currentMSecsSinceEpoch();
+    gw_timer = new QTimer(this);
+    connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&GWidget::update));
+    gw_timer->start(33);
 }
 
 void GWidget::paintGL() {
+    int64_t timeEnd = QDateTime::currentMSecsSinceEpoch();
+    float time = (timeEnd - gw_timeStart) / 1000.0f;
+
     /* Per-frame Setup */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
@@ -227,7 +233,7 @@ void GWidget::paintGL() {
     waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
     waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
     waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-    waveProgs[i]->setUniform(GL_FLOAT, "time", gw_time);
+    waveProgs[i]->setUniform(GL_FLOAT, "time", time);
     glDrawElements(GL_LINE_LOOP, gw_points, GL_UNSIGNED_INT, 0);
     waveProgs[i]->endRender();
     }

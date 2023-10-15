@@ -48,6 +48,8 @@ const double E = 3.16152677e-26;    // E = HC / L
 
 const int WAVES = 4;                // Number of wave-circles
 const int STEPS = 180;              // Wave-circle resolution
+const float A = 0.6f;               // Wave-circle amplitude
+const float T = 0.0f;               // Wave-circle phase
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -75,21 +77,15 @@ private:
     void initVecsAndMatrices();
     void crystalProgram();
     void waveProgram(uint radius);
+    void updateWaves();
+    void updateWave(float radius, double time);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
     std::vector<Program *> waveProgs;
+    std::vector<GLfloat> f_peak;
 
-    GLuint id_crystalVBO = 0;
-    GLuint id_crystalEBO = 0;
-    GLuint id_waveVBO_1 = 0;
-    GLuint id_waveVBO_2 = 0;
-    GLuint id_waveVBO_3 = 0;
-    GLuint id_waveVBO_4 = 0;
-    GLuint id_waveEBO_1 = 0;
-    GLuint id_waveEBO_2 = 0;
-    GLuint id_waveEBO_3 = 0;
-    GLuint id_waveEBO_4 = 0;
+    QTimer *gw_timer = nullptr;
     glm::mat4 m4_proj;
     glm::mat4 m4_view;
     glm::mat4 m4_world;
@@ -107,6 +103,7 @@ private:
     Quaternion q_TotalRot;
     uint gw_faces = 0;
     uint gw_points = 0;
+    double gw_time = 0;
     int gw_frame = 0;
     bool gw_init = false;
     bool gw_orbiting = false;

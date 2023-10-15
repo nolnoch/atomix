@@ -43,13 +43,11 @@ void GWidget::cleanup() {
 
     //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
-    glDeleteBuffers(1, &id_crystalVBO);
     delete crystalProg;
 
     doneCurrent();
 }
 
-/* Shader Program -- Central Crystal */
 void GWidget::crystalProgram() {
     float zero, peak, edge, back, forX, forZ, root;
     edge = 0.6f;  // <-- Change this to scale diamond
@@ -85,45 +83,40 @@ void GWidget::crystalProgram() {
     crystalProg->addShader("crystal.frag", GL_FRAGMENT_SHADER);
     crystalProg->init();
     crystalProg->linkAndValidate();
-
-    /* VAO */
     crystalProg->initVAO();
     crystalProg->bindVAO();
-
-    /* VBO -- Init */
     crystalProg->bindVBO(sizeof(vertices), vertices.data());
-
-    /* Attribute Pointers */
     crystalProg->attributePointer(0, 3, 6 * sizeof(float), (void*)0);                       // Vertices
     crystalProg->attributePointer(1, 3, 6 * sizeof(float), (void*)(3 * sizeof(float)));     // Colours
     crystalProg->enableAttributes();
-
-    /* EBO */
     crystalProg->bindEBO(sizeof(indices), indices.data());
 
     /* Release */
-    crystalProg->clearVAO();
-    crystalProg->disable();
+    crystalProg->endRender();
     crystalProg->clearBuffers();
 }
 
-/* Shader Program -- Waves */
 void GWidget::waveProgram(uint radius) {
     const float deg = 360 / STEPS;
     float r = radius;
-    float a = 0.6f;
+    GLfloat x, y, z, theta;
+    double t, T, two_pi;
+    two_pi = 2 * M_PI;
+    t = 0;
 
     std::vector<GLfloat> vertices;
     for (int i = 0; i < STEPS; i++) {
-        GLfloat x, y, z, theta;
         theta = deg * i * RAD_FAC;
+        
         x = r * cos(theta);
         z = r * sin(theta);
-        y = a * sin(((2 * M_PI) / L) * (r * theta));
+        y = A * sin((two_pi / L * r * theta) - (two_pi / T * t));
         
         vertices.push_back(x);
         vertices.push_back(y);
         vertices.push_back(z);
+
+        f_peak.push_back(y);
     }
 
     /* EBO Indices */
@@ -138,25 +131,42 @@ void GWidget::waveProgram(uint radius) {
     prog->addShader("wave.frag", GL_FRAGMENT_SHADER);
     prog->init();
     prog->linkAndValidate();
-
-    /* VAO */
     prog->initVAO();
     prog->bindVAO();
-
-    /* VBO */
     prog->bindVBO((vertices.size() * sizeof(GLfloat)), vertices.data());
-
-    /* Attribute Pointers */
     prog->attributePointer(0, 3, 3 * sizeof(float), (void*)0);                              // Vertices
     prog->enableAttributes();
-
-    /* EBO */
+    prog->setUniformv(f_peak.size(), GL_FLOAT, "peak", f_peak.data());
     prog->bindEBO((indices.size() * sizeof(GLuint)), indices.data());
 
     /* Release */
-    prog->clearVAO();
-    prog->disable();
+    prog->endRender();
     prog->clearBuffers();
+}
+
+void GWidget::updateWaves() {
+    for (int i = 1; i <= WAVES; i++) {
+        updateWave((float) i, gw_time);
+    }
+
+
+    update();
+}
+
+void GWidget::updateWave(float r, double t) {
+    const float deg = 360 / STEPS;
+    GLfloat y, theta;
+    double two_pi = 2 * M_PI;
+
+    f_peak.clear();
+
+    for (int i = 0; i < STEPS; i++) {
+        theta = deg * i * RAD_FAC;
+        
+        y = A * sin((two_pi / L * r * theta) - (two_pi / T * t));
+
+        f_peak.push_back(y);
+    }
 }
 
 void GWidget::initVecsAndMatrices() {
@@ -192,20 +202,26 @@ void GWidget::initializeGL() {
             gw_init = true;
     }
 
-    /* Camera and OpenGL State Init */
+    /* Init -- Camera and OpenGL State */
     glClearColor(0.0f, 0.05f, 0.08f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
-    /* Starting Matrices */
+    /* Init -- Matrices */
     initVecsAndMatrices();
     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
 
+    /* Init -- Programs and Shaders */
     crystalProgram();
     for (int i = 1; i <= WAVES; i++) {
         waveProgram((float) i);
     }
+
+    /* Init -- Timer */
+    //gw_timer = new QTimer(this);
+    //connect(gw_timer, &QTimer::timeout, this, &GWidget::updateWaves);
+    //gw_timer->start(33);
 }
 
 void GWidget::paintGL() {

@@ -2,10 +2,12 @@
 
 layout(location = 0) in vec3 wavePos;
 
+//uniform float peak;
+
 uniform mat4 worldMat;
 uniform mat4 viewMat;
 uniform mat4 projMat;
 
 void main() {
-   gl_Position = projMat * viewMat * worldMat * vec4(wavePos, 1.0f);
+   gl_Position = projMat * viewMat * worldMat * vec4(wavePos.x, wavePos.y, wavePos.z, 1.0f);
 };

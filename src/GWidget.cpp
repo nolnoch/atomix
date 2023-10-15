@@ -99,18 +99,23 @@ void GWidget::crystalProgram() {
 void GWidget::waveProgram(uint radius) {
     const float deg = 360 / STEPS;
     float r = radius;
-    GLfloat x, y, z, theta;
-    double t, T, two_pi;
+    GLfloat x, y, z;
+    double theta, t, two_pi, two_pi_L_r, two_pi_T;
     two_pi = 2 * M_PI;
+    two_pi_L_r = two_pi / L * r;
+    two_pi_T = two_pi / T;
     t = 0;
 
     std::vector<GLfloat> vertices;
     for (int i = 0; i < STEPS; i++) {
+        double fac_a, fac_b;
         theta = deg * i * RAD_FAC;
+        fac_a = two_pi_L_r * theta;
+        fac_b = two_pi_T;
         
         x = r * cos(theta);
         z = r * sin(theta);
-        y = A * sin((two_pi / L * r * theta) - (two_pi / T * t));
+        y = A * sin(fac_a - (fac_b * t));
         
         vertices.push_back(x);
         vertices.push_back(y);

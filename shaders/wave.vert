@@ -2,8 +2,6 @@
 
 layout(location = 0) in vec3 wavePos;
 
-//uniform float peak;
-
 uniform mat4 worldMat;
 uniform mat4 viewMat;
 uniform mat4 projMat;

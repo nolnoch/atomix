@@ -49,7 +49,7 @@ const double E = 3.16152677e-26;    // E = HC / L
 const int WAVES = 4;                // Number of wave-circles
 const int STEPS = 180;              // Wave-circle resolution
 const float A = 0.6f;               // Wave-circle amplitude
-const float T = 0.0f;               // Wave-circle phase
+const float T = 1.0f;               // Wave-circle phase
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {

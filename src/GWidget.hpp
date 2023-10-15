@@ -40,11 +40,12 @@
 #include "program.hpp"
 #include "quaternion.hpp"
 
+const double TWO_PI = 2.0 * M_PI;   // 2pi is used a lot
 const double H = 6.626070e-34;      // Planck's constant
 const double C = 299792458;         // Speed of massless particles
 const double HC = 1.98644586e-25;   // Convenience product of above
-const double L = 2 * M_PI;          // For this model, lambda = 2pi
-const double E = 3.16152677e-26;    // E = HC / L
+const double L = TWO_PI;          // For this model, lambda = 2pi
+const double E = HC / L;            // E = HC / L
 
 const int WAVES = 4;                // Number of wave-circles
 const int STEPS = 180;              // Wave-circle resolution
@@ -77,8 +78,6 @@ private:
     void initVecsAndMatrices();
     void crystalProgram();
     void waveProgram(uint radius);
-    void updateWaves();
-    void updateWave(float radius, double time);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
@@ -103,7 +102,7 @@ private:
     Quaternion q_TotalRot;
     uint gw_faces = 0;
     uint gw_points = 0;
-    double gw_time = 0;
+    float gw_time = 0;
     int gw_frame = 0;
     bool gw_init = false;
     bool gw_orbiting = false;

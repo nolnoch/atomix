@@ -96,32 +96,27 @@ void GWidget::crystalProgram() {
     crystalProg->clearBuffers();
 }
 
-void GWidget::waveProgram(uint radius) {
-    const float deg = 360 / STEPS;
-    float r = radius;
-    GLfloat x, y, z;
-    double theta, t, two_pi, two_pi_L_r, two_pi_T;
-    two_pi = 2 * M_PI;
-    two_pi_L_r = two_pi / L * r;
-    two_pi_T = two_pi / T;
-    t = 0;
+void GWidget::waveProgram(uint r) {
+    float deg = 360 / STEPS;
+    double two_pi_L_r, two_pi_T;
+    two_pi_L_r = TWO_PI / L * r;
+    two_pi_T = TWO_PI / T;
 
     std::vector<GLfloat> vertices;
     for (int i = 0; i < STEPS; i++) {
-        double fac_a, fac_b;
-        theta = deg * i * RAD_FAC;
-        fac_a = two_pi_L_r * theta;
-        fac_b = two_pi_T;
+        double theta = i * deg * RAD_FAC;
         
-        x = r * cos(theta);
-        z = r * sin(theta);
-        y = A * sin(fac_a - (fac_b * t));
+        GLfloat x = r * cos(theta);
+        GLfloat z = r * sin(theta);
         
         vertices.push_back(x);
-        vertices.push_back(y);
+        vertices.push_back(0.0f);
         vertices.push_back(z);
 
-        f_peak.push_back(y);
+        /* y = A * sin((two_pi_L_r * theta) - (two_pi_T * t)) */
+        vertices.push_back(A);
+        vertices.push_back(two_pi_L_r * theta);
+        vertices.push_back(two_pi_T);
     }
 
     /* EBO Indices */
@@ -138,40 +133,17 @@ void GWidget::waveProgram(uint radius) {
     prog->linkAndValidate();
     prog->initVAO();
     prog->bindVAO();
+    
     prog->bindVBO((vertices.size() * sizeof(GLfloat)), vertices.data());
-    prog->attributePointer(0, 3, 3 * sizeof(float), (void*)0);                              // Vertices
+    prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,z coords
+    prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // y-coord factors
     prog->enableAttributes();
-    prog->setUniformv(f_peak.size(), GL_FLOAT, "peak", f_peak.data());
+    
     prog->bindEBO((indices.size() * sizeof(GLuint)), indices.data());
 
     /* Release */
     prog->endRender();
     prog->clearBuffers();
-}
-
-void GWidget::updateWaves() {
-    for (int i = 1; i <= WAVES; i++) {
-        updateWave((float) i, gw_time);
-    }
-
-
-    update();
-}
-
-void GWidget::updateWave(float r, double t) {
-    const float deg = 360 / STEPS;
-    GLfloat y, theta;
-    double two_pi = 2 * M_PI;
-
-    f_peak.clear();
-
-    for (int i = 0; i < STEPS; i++) {
-        theta = deg * i * RAD_FAC;
-        
-        y = A * sin((two_pi / L * r * theta) - (two_pi / T * t));
-
-        f_peak.push_back(y);
-    }
 }
 
 void GWidget::initVecsAndMatrices() {
@@ -255,6 +227,7 @@ void GWidget::paintGL() {
     waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
     waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
     waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+    waveProgs[i]->setUniform(GL_FLOAT, "time", gw_time);
     glDrawElements(GL_LINE_LOOP, gw_points, GL_UNSIGNED_INT, 0);
     waveProgs[i]->endRender();
     }
@@ -324,7 +297,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         /* Right-click-drag horizontal movement will orbit about Y axis */
         if (v3_orbitBegin.x != v3_orbitEnd.x) {
             float dragRatio = (v3_orbitEnd.x - v3_orbitBegin.x) / scrWidth;
-            GLfloat orbitAngleH = M_PIf * 2.0f * dragRatio;
+            GLfloat orbitAngleH = TWO_PI * dragRatio;
             glm::vec3 orbitAxisH = glm::vec3(0.0, 1.0f, 0.0);
             Quaternion qOrbitRotH = Quaternion(orbitAngleH, orbitAxisH, RAD);
             q_TotalRot = qOrbitRotH * q_TotalRot;
@@ -332,7 +305,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         /* Right-click-drag vertical movement will orbit about X and Z axes */
         if (v3_orbitBegin.y != v3_orbitEnd.y) {
             float dragRatio = (v3_orbitBegin.y - v3_orbitEnd.y) / scrHeight;
-            GLfloat orbitAngleV = M_PIf * 2.0f * dragRatio;
+            GLfloat orbitAngleV = TWO_PI * dragRatio;
             glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
             glm::vec3 orbitAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
             Quaternion qOrbitRotV = Quaternion(orbitAngleV, orbitAxisV, RAD);
@@ -347,7 +320,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         /* Middle-click-drag will orbit about camera look vector */
         if (v3_rollBegin.x != v3_rollEnd.x) {
             float dragRatio = (v3_rollBegin.x - v3_rollEnd.x) / scrWidth;
-            GLfloat orbitAngleL = M_PIf * 2.0f * dragRatio;
+            GLfloat orbitAngleL = TWO_PI * dragRatio;
             glm::vec3 orbitAxisL = glm::normalize(cameraVec);
             Quaternion qOrbitRotL = Quaternion(orbitAngleL, orbitAxisL, RAD);
             q_TotalRot = qOrbitRotL * q_TotalRot;

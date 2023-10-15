@@ -1,5 +1,6 @@
 /home/braer/dev/atomix/build/src/atomix_autogen/EWIEGA46WW/moc_Window.cpp: /home/braer/dev/atomix/src/Window.hpp \
   /home/braer/dev/atomix/build/src/atomix_autogen/moc_predefs.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QDateTime \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QList \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QObject \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QPair \
@@ -22,6 +23,7 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearrayalgorithms.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearraylist.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qbytearrayview.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcalendar.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qchar.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcompare.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcompare_impl.h \
@@ -35,6 +37,7 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qcoreevent.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qdarwinhelpers.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qdatastream.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qdatetime.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qdebug.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qexceptionhandling.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qflags.h \
@@ -52,6 +55,7 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qiterator.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qline.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlist.h \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlocale.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qlogging.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qmalloc.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/qmap.h \

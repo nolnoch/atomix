@@ -6694,6 +6694,18 @@
 			"value" : "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus"
 		},
 		{
+			"name" : "Qt6DateTime_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for Qt6DateTime."
+				}
+			],
+			"type" : "PATH",
+			"value" : "Qt6DateTime_DIR-NOTFOUND"
+		},
+		{
 			"name" : "Qt6GuiTools_DIR",
 			"properties" : 
 			[

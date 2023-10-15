@@ -255,7 +255,7 @@ build src/atomix_autogen/timestamp src/atomix_autogen/mocs_compilation.cpp | ${c
 #############################################
 # Phony custom command for src/CMakeFiles/atomix_autogen_timestamp_deps
 
-build src/CMakeFiles/atomix_autogen_timestamp_deps | ${cmake_ninja_workdir}src/CMakeFiles/atomix_autogen_timestamp_deps: phony /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Core.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/./libexec/moc /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3
+build src/CMakeFiles/atomix_autogen_timestamp_deps | ${cmake_ninja_workdir}src/CMakeFiles/atomix_autogen_timestamp_deps: phony /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Core.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/./libexec/moc /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3
 
 
 #############################################

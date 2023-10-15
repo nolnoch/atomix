@@ -371,6 +371,9 @@ Qt6DBusTools_DIR:PATH=/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBusTools
 //The directory containing a CMake configuration file for Qt6DBus.
 Qt6DBus_DIR:PATH=/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6DBus
 
+//The directory containing a CMake configuration file for Qt6DateTime.
+Qt6DateTime_DIR:PATH=Qt6DateTime_DIR-NOTFOUND
+
 //The directory containing a CMake configuration file for Qt6GuiTools.
 Qt6GuiTools_DIR:PATH=/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6GuiTools
 

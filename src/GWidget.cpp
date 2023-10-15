@@ -158,10 +158,10 @@ void GWidget::initVecsAndMatrices() {
     v3_cameraPosition = glm::vec3(0.0f, 0.0f, camStart);
     v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    v3_slideBegin = glm::vec3(0);
-    v3_slideEnd = glm::vec3(0);
-    v3_orbitBegin = glm::vec3(0);
-    v3_orbitEnd = glm::vec3(0);
+    v3_mouseBegin = glm::vec3(0);
+    v3_mouseEnd = glm::vec3(0);
+    v3_mouseBegin = glm::vec3(0);
+    v3_mouseEnd = glm::vec3(0);
 }
 
 void GWidget::initializeGL() {
@@ -242,6 +242,8 @@ void GWidget::paintGL() {
 }
 
 void GWidget::resizeGL(int w, int h) {
+    gw_scrHeight = height();
+    gw_scrWidth = width();
     m4_proj = glm::mat4(1.0f);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, 0.1f, 100.0f);
 }
@@ -254,106 +256,66 @@ void GWidget::wheelEvent(QWheelEvent *e) {
 }
 
 void GWidget::mousePressEvent(QMouseEvent *e) {
-    int x, y;
-    x = e->pos().x();
-    y = e->pos().y();
-    glm::vec3 mouseVec = glm::vec3(x, height() - y, v3_cameraPosition.z);
+    glm::vec3 mouseVec = glm::vec3(e->pos().x(), height() - e->pos().y(), v3_cameraPosition.z);
+    v3_mouseBegin = mouseVec;
+    v3_mouseEnd = mouseVec;
 
-    switch(e->button()) {
-        case(Qt::LeftButton):
-            v3_slideBegin = mouseVec;
-            v3_slideEnd = v3_slideBegin;
-            gw_sliding = true;
-            break;
-        case(Qt::RightButton):
-            v3_orbitBegin = mouseVec;
-            v3_orbitEnd = v3_orbitBegin;
-            gw_orbiting = true;
-            break;
-        case(Qt::MiddleButton):
-            v3_rollBegin = mouseVec;
-            v3_rollEnd = v3_rollBegin;
-            gw_rolling = true;
-            break;
-        default:
-            QWidget::mousePressEvent(e);
-    }
+    if (!gw_movement && (e->button() & (Qt::LeftButton | Qt::RightButton | Qt::MiddleButton)))
+        gw_movement |= e->button();
+    else
+        QWidget::mousePressEvent(e);
 }
 
-/** 
- * The reason for repeating so much of this code with different variables is that,
- * at least in the case of Left and Right mouse buttons, multiple of these may be
- * concurrently true and must be handled in parallel.
-*/
 void GWidget::mouseMoveEvent(QMouseEvent *e) {
-    int x, y, scrHeight, scrWidth;
-    scrHeight = height();
-    scrWidth = width();
-    x = e->pos().x();
-    y = e->pos().y();
-    glm::vec3 mouseVec = glm::vec3(x, scrHeight - y, v3_cameraPosition.z);
+    glm::vec3 mouseVec = glm::vec3(e->pos().x(), gw_scrHeight - e->pos().y(), v3_cameraPosition.z);
     glm::vec3 cameraVec = v3_cameraPosition - v3_cameraTarget;
+    v3_mouseBegin = v3_mouseEnd;
+    v3_mouseEnd = mouseVec;
 
     //GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
 
-    if (gw_orbiting) {
-        v3_orbitBegin = v3_orbitEnd;
-        v3_orbitEnd = mouseVec;
-        
-        /* Right-click-drag horizontal movement will orbit about Y axis */
-        if (v3_orbitBegin.x != v3_orbitEnd.x) {
-            float dragRatio = (v3_orbitEnd.x - v3_orbitBegin.x) / scrWidth;
+    if (gw_movement & Qt::RightButton) {
+        /* Right-click-drag HORIZONTAL movement will orbit about Y axis */
+        if (v3_mouseBegin.x != v3_mouseEnd.x) {
+            float dragRatio = (v3_mouseEnd.x - v3_mouseBegin.x) / gw_scrWidth;
             GLfloat orbitAngleH = TWO_PI * dragRatio;
             glm::vec3 orbitAxisH = glm::vec3(0.0, 1.0f, 0.0);
             Quaternion qOrbitRotH = Quaternion(orbitAngleH, orbitAxisH, RAD);
             q_TotalRot = qOrbitRotH * q_TotalRot;
         }
-        /* Right-click-drag vertical movement will orbit about X and Z axes */
-        if (v3_orbitBegin.y != v3_orbitEnd.y) {
-            float dragRatio = (v3_orbitBegin.y - v3_orbitEnd.y) / scrHeight;
+        /* Right-click-drag VERTICAL movement will orbit about X and Z axes */
+        if (v3_mouseBegin.y != v3_mouseEnd.y) {
+            float dragRatio = (v3_mouseBegin.y - v3_mouseEnd.y) / gw_scrHeight;
             GLfloat orbitAngleV = TWO_PI * dragRatio;
             glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
             glm::vec3 orbitAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
             Quaternion qOrbitRotV = Quaternion(orbitAngleV, orbitAxisV, RAD);
             q_TotalRot = qOrbitRotV * q_TotalRot;
         }
-        update();
-    }
-    if (gw_rolling) {
-        v3_rollBegin = v3_rollEnd;
-        v3_rollEnd = mouseVec;
-
+    } else if (gw_movement & Qt::LeftButton) {
+        /* Left-click drag will grab and slide world */
+        if (v3_mouseBegin != v3_mouseEnd) {
+            glm::vec3 deltaSlide = 0.01f * (v3_mouseEnd - v3_mouseBegin);
+            glm::vec3 cameraSlide = glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
+            m4_translation = glm::translate(m4_translation, cameraSlide);
+        }
+        
+    } else if (gw_movement & Qt::MiddleButton) {
         /* Middle-click-drag will orbit about camera look vector */
-        if (v3_rollBegin.x != v3_rollEnd.x) {
-            float dragRatio = (v3_rollBegin.x - v3_rollEnd.x) / scrWidth;
+        if (v3_mouseBegin.x != v3_mouseEnd.x) {
+            float dragRatio = (v3_mouseBegin.x - v3_mouseEnd.x) / gw_scrWidth;
             GLfloat orbitAngleL = TWO_PI * dragRatio;
             glm::vec3 orbitAxisL = glm::normalize(cameraVec);
             Quaternion qOrbitRotL = Quaternion(orbitAngleL, orbitAxisL, RAD);
             q_TotalRot = qOrbitRotL * q_TotalRot;
         }
-        update();
-    }
-    if (gw_sliding) {
-        v3_slideBegin = v3_slideEnd;
-        v3_slideEnd = mouseVec;
-        
-        /* Left-click drag will grab and slide world */
-        if (v3_slideBegin != v3_slideEnd) {
-            glm::vec3 deltaSlide = 0.01f * (v3_slideEnd - v3_slideBegin);
-            glm::vec3 cameraSlide = glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
-            m4_translation = glm::translate(m4_translation, cameraSlide);
-        }
-        update();
-    }
+    } 
+    update();
 }
 
 void GWidget::mouseReleaseEvent(QMouseEvent *e) {
-    if (e->button() == Qt::RightButton)
-        gw_orbiting = false;
-    else if (e->button() == Qt::LeftButton)
-        gw_sliding = false;
-    else if (e->button() == Qt::MiddleButton)
-        gw_rolling = false;
+    if (e->button() & (Qt::RightButton | Qt::LeftButton | Qt::MiddleButton))
+        gw_movement = false;
     else
         QWidget::mouseReleaseEvent(e);
 }

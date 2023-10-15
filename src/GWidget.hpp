@@ -94,20 +94,16 @@ private:
     glm::vec3 v3_cameraPosition;
     glm::vec3 v3_cameraTarget;
     glm::vec3 v3_cameraUp;
-    glm::vec3 v3_orbitBegin;
-    glm::vec3 v3_orbitEnd;
-    glm::vec3 v3_slideBegin;
-    glm::vec3 v3_slideEnd;
-    glm::vec3 v3_rollBegin;
-    glm::vec3 v3_rollEnd;
+    glm::vec3 v3_mouseBegin;
+    glm::vec3 v3_mouseEnd;
     Quaternion q_TotalRot;
     int64_t gw_timeStart;
     uint gw_faces = 0;
     uint gw_points = 0;
+    int gw_scrHeight = 0;
+    int gw_scrWidth = 0;
+    uint gw_movement = 0;
     bool gw_init = false;
-    bool gw_orbiting = false;
-    bool gw_sliding = false;
-    bool gw_rolling = false;
 };
 
 #endif

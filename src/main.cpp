@@ -60,15 +60,11 @@ int main(int argc, char* argv[]) {
 
     /* Orbit Starting Configuration */
     ConfigParser cfgParser;
-    int cand = cfgParser.findConfigFiles();
-    if (cand == 1)
-        cfgParser.loadConfigFile(cfgParser.cfgFiles.back());
-    else
-        cout << "No or too many config files present. Proceding with default values." << endl;
-    cfgParser.fillConfigFile();
+    cfgParser.populateConfig();
 
     /* Windows */
     MainWindow mainWindow;
+    mainWindow.loadConfig(cfgParser.config);
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
     float ratio = SRATIO;
@@ -77,7 +73,6 @@ int main(int argc, char* argv[]) {
     mainWindow.resize(dispX, dispY);
 
     /* Engage */
-    mainWindow.loadConfig(cfgParser.config);
     mainWindow.show();
     
     return app.exec();

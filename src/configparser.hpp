@@ -34,18 +34,17 @@
 #include <map>
 #include <QMetaType>
 
-const std::string path = "/home/braer/dev/atomix/build/src/";
-const std::string ext = ".wave";
+const std::string PATH = "/home/braer/dev/atomix/build/src/";
+const std::string EXT = ".wave";
 
 /* Wave-circle config struct */
 typedef struct {
-    double wavelength = 2.0f * M_PI;
+    double wavelength = 2.0 * M_PI;
     float amplitude = 0.6f;
     float period = 1.0f;
     int orbits = 4;
     int resolution = 360;
 } WaveConfig;
-
 Q_DECLARE_METATYPE(WaveConfig);
 
 
@@ -54,14 +53,17 @@ class ConfigParser {
         ConfigParser();
         virtual ~ConfigParser();
 
+        void populateConfig();
+
+        std::vector<std::string> cfgFiles;
+        WaveConfig *config;
+
+    private:
         int findConfigFiles();
+        int chooseConfigFile();
         void loadConfigFile(std::string filepath);
         void fillConfigFile();
 
-        std::vector<std::string> cfgFiles;
-        WaveConfig config;
-
-    private:
         std::map<std::string, int> cfgValues;
 };
 

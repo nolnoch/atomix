@@ -106,8 +106,8 @@ void GWidget::crystalProgram() {
 
 void GWidget::waveProgram(uint r) {
     float deg = 360.0f / STEPS;
-    double two_pi_L_r, two_pi_T;
-    two_pi_L_r = TWO_PI / L * r;
+    double two_pi_L, two_pi_T;
+    two_pi_L = TWO_PI / L;
     two_pi_T = TWO_PI / T;
 
     std::vector<GLfloat> vertices;
@@ -121,9 +121,13 @@ void GWidget::waveProgram(uint r) {
         vertices.push_back(0.0f);
         vertices.push_back(z);
 
-        /* y = A * sin((two_pi_L_r * theta) - (two_pi_T * t) + (p = 0)) */
+        /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
+        /* y = A * sin(   ( k   *   x )    -    (   w  *  t  )   +   p    */
+        /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
+        /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
+        
         vertices.push_back(A);
-        vertices.push_back(two_pi_L_r * theta);
+        vertices.push_back(two_pi_L * r * theta);
         vertices.push_back(two_pi_T);
     }
 

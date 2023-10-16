@@ -2,7 +2,7 @@
  * GWidget.cpp
  *
  *    Created on: Oct 3, 2023
- *   Last Update: Oct 14, 2023
+ *   Last Update: Oct 16, 2023
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  * 
  *  Copyright 2023 Wade Burch (GPLv3)

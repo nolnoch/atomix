@@ -34,8 +34,8 @@
 #include <map>
 #include <QMetaType>
 
-const std::string PATH = "/home/braer/dev/atomix/build/src/";
 const std::string EXT = ".wave";
+
 
 /* Wave-circle config struct */
 typedef struct {

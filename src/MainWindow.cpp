@@ -28,8 +28,14 @@ MainWindow::MainWindow() {
     onAddNew();
 }
 
+void MainWindow::loadConfig(WaveConfig cfg) {
+    emit sendConfig(cfg);
+}
+
 void MainWindow::onAddNew() {
-    setCentralWidget(new Window(this));
+    container = new Window(this);
+    setCentralWidget(container);
+    connect(this, SIGNAL(sendConfig(WaveConfig)), container, SIGNAL(passConfig(WaveConfig)));
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

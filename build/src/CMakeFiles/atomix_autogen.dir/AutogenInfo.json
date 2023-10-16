@@ -346,6 +346,12 @@
 			null
 		],
 		[
+			"/home/braer/dev/atomix/src/configparser.hpp",
+			"Mu",
+			"EWIEGA46WW/moc_configparser.cpp",
+			null
+		],
+		[
 			"/home/braer/dev/atomix/src/program.hpp",
 			"Mu",
 			"EWIEGA46WW/moc_program.cpp",
@@ -433,6 +439,7 @@
 		[ "/home/braer/dev/atomix/src/GWidget.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/MainWindow.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/Window.cpp", "Mu", null ],
+		[ "/home/braer/dev/atomix/src/configparser.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/main.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/program.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/quaternion.cpp", "Mu", null ],

@@ -25,7 +25,6 @@
 #ifndef GWIDGET_H
 #define GWIDGET_H
 
-
 #include <QScreen>
 #include <QBoxLayout>
 #include <QOpenGLWidget>
@@ -40,18 +39,13 @@
 #include <glm/gtx/string_cast.hpp>
 #include "program.hpp"
 #include "quaternion.hpp"
+#include "configparser.hpp"
 
+/* Math constants */
 const double TWO_PI = 2.0 * M_PI;   // 2pi is used a lot
 const double H = 6.626070e-34;      // Planck's constant
 const double C = 299792458;         // Speed of massless particles
 const double HC = 1.98644586e-25;   // Convenience product of above
-const double L = TWO_PI;            // For this model, lambda = 2pi
-const double E = HC / L;            // E = HC / L
-
-const int WAVES = 7;                // Number of wave-circles
-const int STEPS = 360;              // Wave-circle resolution
-const float A = 0.6f;               // Wave-circle amplitude
-const float T = 1.0f;               // Wave-circle period
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -63,6 +57,7 @@ public:
 
 public slots:
     void cleanup();
+    void configReceived(WaveConfig cfg);
 
 protected:
     void initializeGL() override;
@@ -104,6 +99,15 @@ private:
     int gw_scrWidth = 0;
     uint gw_movement = 0;
     bool gw_init = false;
+    WaveConfig *gw_config;
 };
+
+/* Orbit config aliases */
+#define WAVES   gw_config->orbits        // Number of orbits
+#define A       gw_config->amplitude     // Wave-circle amplitude
+#define T       gw_config->period        // Wave-circle period
+#define L       gw_config->wavelength    // Wave-circle lambda
+#define STEPS   gw_config->resolution    // Wave-circle resolution
+
 
 #endif

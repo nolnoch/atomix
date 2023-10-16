@@ -1,0 +1,14 @@
+# (orbits: int) Number of wave-circle orbits [default = 4]
+orbits: 8
+
+# (amplitude: float) Vertical displacement of waves [default = 0.6]
+amplitude: 0.8
+
+# (period: float) Wave period [default = 1.0]
+period: 1.0
+
+# (wavelength: int <= 8) Wavelength/lambda in multiples of pi [default = 2]
+wavelength: 4
+
+# (resolution: int) Render resolution of the circle (vertices per circumference) [default = 360]
+resolution: 720

@@ -2,6 +2,7 @@
   /home/braer/dev/atomix/build/src/atomix_autogen/moc_predefs.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QDateTime \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QList \
+  /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QMetaType \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QObject \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QPair \
   /home/braer/Qt/6.5.3/gcc_64/include/QtCore/QRect \
@@ -199,6 +200,7 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h \
   /home/braer/dev/atomix/src/GWidget.hpp \
   /home/braer/dev/atomix/src/Window.hpp \
+  /home/braer/dev/atomix/src/configparser.hpp \
   /home/braer/dev/atomix/src/program.hpp \
   /home/braer/dev/atomix/src/quaternion.hpp \
   /home/braer/dev/atomix/src/shaderobj.hpp \
@@ -237,6 +239,10 @@
   /usr/include/c++/12/bits/exception.h \
   /usr/include/c++/12/bits/exception_defines.h \
   /usr/include/c++/12/bits/exception_ptr.h \
+  /usr/include/c++/12/bits/fs_dir.h \
+  /usr/include/c++/12/bits/fs_fwd.h \
+  /usr/include/c++/12/bits/fs_ops.h \
+  /usr/include/c++/12/bits/fs_path.h \
   /usr/include/c++/12/bits/fstream.tcc \
   /usr/include/c++/12/bits/functexcept.h \
   /usr/include/c++/12/bits/functional_hash.h \
@@ -249,8 +255,11 @@
   /usr/include/c++/12/bits/list.tcc \
   /usr/include/c++/12/bits/locale_classes.h \
   /usr/include/c++/12/bits/locale_classes.tcc \
+  /usr/include/c++/12/bits/locale_conv.h \
   /usr/include/c++/12/bits/locale_facets.h \
   /usr/include/c++/12/bits/locale_facets.tcc \
+  /usr/include/c++/12/bits/locale_facets_nonio.h \
+  /usr/include/c++/12/bits/locale_facets_nonio.tcc \
   /usr/include/c++/12/bits/localefwd.h \
   /usr/include/c++/12/bits/memoryfwd.h \
   /usr/include/c++/12/bits/move.h \
@@ -263,6 +272,7 @@
   /usr/include/c++/12/bits/postypes.h \
   /usr/include/c++/12/bits/predefined_ops.h \
   /usr/include/c++/12/bits/ptr_traits.h \
+  /usr/include/c++/12/bits/quoted_string.h \
   /usr/include/c++/12/bits/range_access.h \
   /usr/include/c++/12/bits/refwrap.h \
   /usr/include/c++/12/bits/shared_ptr.h \
@@ -311,6 +321,7 @@
   /usr/include/c++/12/climits \
   /usr/include/c++/12/clocale \
   /usr/include/c++/12/cmath \
+  /usr/include/c++/12/codecvt \
   /usr/include/c++/12/compare \
   /usr/include/c++/12/cstdarg \
   /usr/include/c++/12/cstddef \
@@ -331,9 +342,11 @@
   /usr/include/c++/12/ext/numeric_traits.h \
   /usr/include/c++/12/ext/string_conversions.h \
   /usr/include/c++/12/ext/type_traits.h \
+  /usr/include/c++/12/filesystem \
   /usr/include/c++/12/fstream \
   /usr/include/c++/12/functional \
   /usr/include/c++/12/initializer_list \
+  /usr/include/c++/12/iomanip \
   /usr/include/c++/12/ios \
   /usr/include/c++/12/iosfwd \
   /usr/include/c++/12/iostream \
@@ -341,6 +354,7 @@
   /usr/include/c++/12/iterator \
   /usr/include/c++/12/limits \
   /usr/include/c++/12/list \
+  /usr/include/c++/12/locale \
   /usr/include/c++/12/map \
   /usr/include/c++/12/memory \
   /usr/include/c++/12/new \
@@ -570,6 +584,7 @@
   /usr/include/glm/vec4.hpp \
   /usr/include/glm/vector_relational.hpp \
   /usr/include/inttypes.h \
+  /usr/include/libintl.h \
   /usr/include/limits.h \
   /usr/include/linux/errno.h \
   /usr/include/linux/limits.h \
@@ -663,7 +678,9 @@
   /usr/include/x86_64-linux-gnu/c++/12/bits/error_constants.h \
   /usr/include/x86_64-linux-gnu/c++/12/bits/gthr-default.h \
   /usr/include/x86_64-linux-gnu/c++/12/bits/gthr.h \
+  /usr/include/x86_64-linux-gnu/c++/12/bits/messages_members.h \
   /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
+  /usr/include/x86_64-linux-gnu/c++/12/bits/time_members.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \

@@ -46,5 +46,11 @@ Window::Window(MainWindow *mw)
     verGrid->addWidget(morb);
     this->setLayout(verGrid);
 
+    connect(this, SIGNAL(passConfig(WaveConfig)), graph, SLOT(configReceived(WaveConfig)));
+
     setWindowTitle(tr("atomix"));
 }
+
+//void Window::passConfig(WaveConfig cfg) {
+//    emit passConfig(cfg);
+//}

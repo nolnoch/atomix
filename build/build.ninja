@@ -165,6 +165,14 @@ build src/CMakeFiles/atomix.dir/GWidget.cpp.o: CXX_COMPILER__atomix_Debug /home/
   OBJECT_DIR = src/CMakeFiles/atomix.dir
   OBJECT_FILE_DIR = src/CMakeFiles/atomix.dir
 
+build src/CMakeFiles/atomix.dir/configparser.cpp.o: CXX_COMPILER__atomix_Debug /home/braer/dev/atomix/src/configparser.cpp || cmake_object_order_depends_target_atomix
+  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB
+  DEP_FILE = src/CMakeFiles/atomix.dir/configparser.cpp.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/home/braer/dev/atomix/build/src/atomix_autogen/include -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtCore -isystem /home/braer/Qt/6.5.3/gcc_64/include -isystem /home/braer/Qt/6.5.3/gcc_64/mkspecs/linux-g++ -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtGui -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGL -isystem /home/braer/Qt/6.5.3/gcc_64/include/QtOpenGLWidgets
+  OBJECT_DIR = src/CMakeFiles/atomix.dir
+  OBJECT_FILE_DIR = src/CMakeFiles/atomix.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target atomix
@@ -173,7 +181,7 @@ build src/CMakeFiles/atomix.dir/GWidget.cpp.o: CXX_COMPILER__atomix_Debug /home/
 #############################################
 # Link the executable src/atomix
 
-build src/atomix: CXX_EXECUTABLE_LINKER__atomix_Debug src/CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o src/CMakeFiles/atomix.dir/main.cpp.o src/CMakeFiles/atomix.dir/quaternion.cpp.o src/CMakeFiles/atomix.dir/shaderobj.cpp.o src/CMakeFiles/atomix.dir/program.cpp.o src/CMakeFiles/atomix.dir/MainWindow.cpp.o src/CMakeFiles/atomix.dir/Window.cpp.o src/CMakeFiles/atomix.dir/GWidget.cpp.o | /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Gui.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Core.so.6.5.3 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so || src/atomix_autogen src/atomix_autogen_timestamp_deps
+build src/atomix: CXX_EXECUTABLE_LINKER__atomix_Debug src/CMakeFiles/atomix.dir/atomix_autogen/mocs_compilation.cpp.o src/CMakeFiles/atomix.dir/main.cpp.o src/CMakeFiles/atomix.dir/quaternion.cpp.o src/CMakeFiles/atomix.dir/shaderobj.cpp.o src/CMakeFiles/atomix.dir/program.cpp.o src/CMakeFiles/atomix.dir/MainWindow.cpp.o src/CMakeFiles/atomix.dir/Window.cpp.o src/CMakeFiles/atomix.dir/GWidget.cpp.o src/CMakeFiles/atomix.dir/configparser.cpp.o | /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Gui.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Core.so.6.5.3 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so || src/atomix_autogen src/atomix_autogen_timestamp_deps
   FLAGS = -g
   LINK_LIBRARIES = -Wl,-rpath,/home/braer/Qt/6.5.3/gcc_64/lib  /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3  /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3  /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3  /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Gui.so.6.5.3  /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Core.so.6.5.3  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so
   OBJECT_DIR = src/CMakeFiles/atomix.dir
@@ -255,7 +263,7 @@ build src/atomix_autogen/timestamp src/atomix_autogen/mocs_compilation.cpp | ${c
 #############################################
 # Phony custom command for src/CMakeFiles/atomix_autogen_timestamp_deps
 
-build src/CMakeFiles/atomix_autogen_timestamp_deps | ${cmake_ninja_workdir}src/CMakeFiles/atomix_autogen_timestamp_deps: phony /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Core.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/./libexec/moc /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3
+build src/CMakeFiles/atomix_autogen_timestamp_deps | ${cmake_ninja_workdir}src/CMakeFiles/atomix_autogen_timestamp_deps: phony /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Widgets.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGL.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/lib/libQt6Core.so.6.5.3 /home/braer/Qt/6.5.3/gcc_64/./libexec/moc /home/braer/Qt/6.5.3/gcc_64/lib/libQt6OpenGLWidgets.so.6.5.3
 
 
 #############################################

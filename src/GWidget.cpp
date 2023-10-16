@@ -48,6 +48,14 @@ void GWidget::cleanup() {
     doneCurrent();
 }
 
+void GWidget::configReceived(WaveConfig cfg) {
+    gw_config->amplitude = cfg.amplitude;
+    gw_config->orbits = cfg.orbits;
+    gw_config->period = cfg.period;
+    gw_config->resolution = cfg.resolution;
+    gw_config->wavelength = cfg.wavelength;
+}
+
 void GWidget::crystalProgram() {
     float zero, peak, edge, back, forX, forZ, root;
     edge = 0.6f;  // <-- Change this to scale diamond
@@ -180,6 +188,7 @@ void GWidget::initializeGL() {
         else
             gw_init = true;
     }
+    gw_config = new WaveConfig;
 
     /* Init -- Camera and OpenGL State */
     glClearColor(0.0f, 0.05f, 0.08f, 1.0f);

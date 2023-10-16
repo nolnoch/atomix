@@ -33,12 +33,19 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow();
+    void loadConfig(WaveConfig cfg);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 
+signals:
+    void sendConfig(WaveConfig cfg);
+
 private slots:
     void onAddNew();
+
+private:
+    Window *container;
 };
 
 #endif

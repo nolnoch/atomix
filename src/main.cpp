@@ -22,9 +22,6 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//#include <cstdlib>
-//#include <iomanip>
-//#include <iostream>
 
 #include <QApplication>
 #include <QSurfaceFormat>
@@ -37,12 +34,12 @@
 #define SHEIGHT 720
 #define SRATIO 0.6
 
+
 int main(int argc, char* argv[]) {
     /* Application */
-    //QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
     QApplication app (argc, argv);
     QCoreApplication::setApplicationName("atomix");
-    QCoreApplication::setOrganizationName("Nolnoch, LLC");
+    QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
     /* Exe and CLI Parsing */
@@ -61,6 +58,15 @@ int main(int argc, char* argv[]) {
     qFmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(qFmt);
 
+    /* Orbit Starting Configuration */
+    ConfigParser cfgParser;
+    int cand = cfgParser.findConfigFiles();
+    if (cand == 1)
+        cfgParser.loadConfigFile(cfgParser.cfgFiles.back());
+    else
+        cout << "No or too many config files present. Proceding with default values." << endl;
+    cfgParser.fillConfigFile();
+
     /* Windows */
     MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
@@ -71,6 +77,7 @@ int main(int argc, char* argv[]) {
     mainWindow.resize(dispX, dispY);
 
     /* Engage */
+    mainWindow.loadConfig(cfgParser.config);
     mainWindow.show();
     
     return app.exec();

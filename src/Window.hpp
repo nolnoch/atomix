@@ -40,6 +40,9 @@ class Window : public QWidget {
 public:
     Window(MainWindow *mw);
 
+signals:
+    void passConfig(WaveConfig cfg);
+
 private:
     GWidget *graph = nullptr;
     QSlider *slide = nullptr;

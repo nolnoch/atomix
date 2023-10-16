@@ -57,7 +57,7 @@ public:
 
 public slots:
     void cleanup();
-    void configReceived(WaveConfig cfg);
+    void configReceived(WaveConfig *cfg);
 
 protected:
     void initializeGL() override;
@@ -99,15 +99,15 @@ private:
     int gw_scrWidth = 0;
     uint gw_movement = 0;
     bool gw_init = false;
-    WaveConfig *gw_config;
+    WaveConfig gw_config;
 };
 
 /* Orbit config aliases */
-#define WAVES   gw_config->orbits        // Number of orbits
-#define A       gw_config->amplitude     // Wave-circle amplitude
-#define T       gw_config->period        // Wave-circle period
-#define L       gw_config->wavelength    // Wave-circle lambda
-#define STEPS   gw_config->resolution    // Wave-circle resolution
+#define WAVES   gw_config.orbits        // Number of orbits
+#define A       gw_config.amplitude     // Wave-circle amplitude
+#define T       gw_config.period        // Wave-circle period
+#define L       gw_config.wavelength    // Wave-circle lambda
+#define STEPS   gw_config.resolution    // Wave-circle resolution
 
 
 #endif

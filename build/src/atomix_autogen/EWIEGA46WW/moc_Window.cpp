@@ -41,7 +41,7 @@ static constexpr auto qt_meta_stringdata_CLASSWindowENDCLASS = QtMocHelpers::str
     "Window",
     "passConfig",
     "",
-    "WaveConfig",
+    "WaveConfig*",
     "cfg"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
@@ -50,7 +50,7 @@ struct qt_meta_stringdata_CLASSWindowENDCLASS_t {
     char stringdata0[7];
     char stringdata1[11];
     char stringdata2[1];
-    char stringdata3[11];
+    char stringdata3[12];
     char stringdata4[4];
 };
 #define QT_MOC_LITERAL(ofs, len) \
@@ -60,13 +60,13 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSWindowENDCLASS_t qt_meta_string
         QT_MOC_LITERAL(0, 6),  // "Window"
         QT_MOC_LITERAL(7, 10),  // "passConfig"
         QT_MOC_LITERAL(18, 0),  // ""
-        QT_MOC_LITERAL(19, 10),  // "WaveConfig"
-        QT_MOC_LITERAL(30, 3)   // "cfg"
+        QT_MOC_LITERAL(19, 11),  // "WaveConfig*"
+        QT_MOC_LITERAL(31, 3)   // "cfg"
     },
     "Window",
     "passConfig",
     "",
-    "WaveConfig",
+    "WaveConfig*",
     "cfg"
 };
 #undef QT_MOC_LITERAL
@@ -106,7 +106,7 @@ Q_CONSTINIT const QMetaObject Window::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<Window, std::true_type>,
         // method 'passConfig'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<WaveConfig, std::false_type>
+        QtPrivate::TypeAndForceComplete<WaveConfig *, std::false_type>
     >,
     nullptr
 } };
@@ -117,24 +117,13 @@ void Window::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void
         auto *_t = static_cast<Window *>(_o);
         (void)_t;
         switch (_id) {
-        case 0: _t->passConfig((*reinterpret_cast< std::add_pointer_t<WaveConfig>>(_a[1]))); break;
+        case 0: _t->passConfig((*reinterpret_cast< std::add_pointer_t<WaveConfig*>>(_a[1]))); break;
         default: ;
-        }
-    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        switch (_id) {
-        default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-        case 0:
-            switch (*reinterpret_cast<int*>(_a[1])) {
-            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-            case 0:
-                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< WaveConfig >(); break;
-            }
-            break;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         {
-            using _t = void (Window::*)(WaveConfig );
+            using _t = void (Window::*)(WaveConfig * );
             if (_t _q_method = &Window::passConfig; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 0;
                 return;
@@ -167,14 +156,14 @@ int Window::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         _id -= 1;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
         if (_id < 1)
-            qt_static_metacall(this, _c, _id, _a);
+            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
         _id -= 1;
     }
     return _id;
 }
 
 // SIGNAL 0
-void Window::passConfig(WaveConfig _t1)
+void Window::passConfig(WaveConfig * _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 0, _a);

@@ -48,12 +48,12 @@ void GWidget::cleanup() {
     doneCurrent();
 }
 
-void GWidget::configReceived(WaveConfig cfg) {
-    gw_config->amplitude = cfg.amplitude;
-    gw_config->orbits = cfg.orbits;
-    gw_config->period = cfg.period;
-    gw_config->resolution = cfg.resolution;
-    gw_config->wavelength = cfg.wavelength;
+void GWidget::configReceived(WaveConfig *cfg) {
+    gw_config.amplitude = cfg->amplitude;
+    gw_config.orbits = cfg->orbits;
+    gw_config.period = cfg->period;
+    gw_config.resolution = cfg->resolution;
+    gw_config.wavelength = cfg->wavelength;
 }
 
 void GWidget::crystalProgram() {
@@ -105,7 +105,7 @@ void GWidget::crystalProgram() {
 }
 
 void GWidget::waveProgram(uint r) {
-    float deg = 360 / STEPS;
+    float deg = 360.0f / STEPS;
     double two_pi_L_r, two_pi_T;
     two_pi_L_r = TWO_PI / L * r;
     two_pi_T = TWO_PI / T;
@@ -188,7 +188,6 @@ void GWidget::initializeGL() {
         else
             gw_init = true;
     }
-    gw_config = new WaveConfig;
 
     /* Init -- Camera and OpenGL State */
     glClearColor(0.0f, 0.05f, 0.08f, 1.0f);

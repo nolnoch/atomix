@@ -3,7 +3,7 @@
  *
  *    Created on: Oct 15, 2023
  *   Last Update: Oct 15, 2023
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *  Orig-> Author: Wade Burch (braernoch.dev@gmail.com)
  * 
  *  Copyright 2023 Wade Burch (GPLv3)
  * 
@@ -36,6 +36,8 @@ ConfigParser::ConfigParser() {
     cfgValues["period"] = 3;
     cfgValues["wavelength"] = 4;
     cfgValues["resolution"] = 5;
+
+    config = new WaveConfig;
 }
 
 ConfigParser::~ConfigParser() {
@@ -43,28 +45,70 @@ ConfigParser::~ConfigParser() {
 }
 
 void ConfigParser::fillConfigFile() {
-    /* Populate missing or invalid values with defaults in WaveConfig struct */
-    config.orbits = config.orbits >= 0 ?: 4;
-    config.amplitude = config.amplitude > 0 ?: 0.6f;
-    config.period = config.period ?: 1.0f;
-    config.wavelength = config.wavelength > 0 ?: 2.0f * M_PI;
-    config.resolution = config.resolution > 0 ?: 360;
+    /* This is broken and currently unnecessary anyway. */
+    config->orbits = config->orbits >= 0 ?: 4;
+    config->amplitude = config->amplitude > 0 ?: 0.6f;
+    config->period = config->period ?: 1.0f;
+    config->wavelength = config->wavelength > 0 ?: 2.0f * M_PI;
+    config->resolution = config->resolution > 0 ?: 360;
 }
 
 int ConfigParser::findConfigFiles() {
-    for (auto &p: filesystem::recursive_directory_iterator(path)) {
-        if (p.path().extension() == ext)
-            this->cfgFiles.push_back(p.path());
+    for (auto &p: filesystem::recursive_directory_iterator(PATH)) {
+        if (p.path().extension() == EXT)
+            this->cfgFiles.push_back(p.path().string());
     }
     cout << "Found " << cfgFiles.size() << " candidate file(s)." << endl;
 
     return cfgFiles.size();
 }
 
+int ConfigParser::chooseConfigFile() {
+    string s;
+    int f, files;
+    files = cfgFiles.size();
+    f = -1;
+
+    cout << "Please choose config file from available options [1-" << files + 1 << "]:\n\n";
+    for (int i = 0; i < files; i++) {
+        string fpath = cfgFiles[i];
+        string fname = fpath.substr(fpath.find_last_of("/") + 1);
+        string sname = fname.substr(0, fname.length() - 5);
+        cout << "    [" << i + 1 << "] " << sname << "\n";
+    }
+    cout << "    [" << files + 1 << "] none (use default configuration)\n\n";
+    cout << "Selection: ";
+    
+    if (cin.peek() == '\n') {
+        cout << "Using default configuration." << endl;
+    } else {
+        cin >> s;
+        if (isdigit(s[0])) {
+            int c = stoi(s);
+
+            if (c == files + 1) {
+                cout << "Using default configuration." << endl;
+            } else if (c < 0 || c > files) {
+                cout << "Invalid selection. Proceeding with default." << endl;
+            } else {
+                f = c - 1;
+            }
+        } else {
+            cout << "Invalid selection. Proceeding with default." << endl;
+        }
+    }
+
+    return f;
+}
+
 void ConfigParser::loadConfigFile(string path) {
-    string line, key, value;
+    string line, key, value, name;
     size_t colon;
+    int changes;
     map<string, int>::iterator iter;
+
+    name = path.substr(path.find_last_of("/") + 1);
+    cout << "Using config file: " << name << endl;
 
     ifstream file(path);
 
@@ -82,24 +126,43 @@ void ConfigParser::loadConfigFile(string path) {
 
         switch(iter->second) {
             case 1:
-                config.orbits = stoi(value);
+                config->orbits = stoi(value);
+                changes++;
                 break;
             case 2:
-                config.amplitude = stof(value);
+                config->amplitude = stof(value);
+                changes++;
                 break;
             case 3:
-                config.period = stof(value);
+                config->period = stof(value);
+                changes++;
                 break;
             case 4:
-                config.wavelength = stoi(value);
+                config->wavelength = stod(value) * M_PI;
+                changes++;
                 break;
             case 5:
-                config.resolution = stoi(value);
+                config->resolution = stoi(value);
+                changes++;
                 break;
             default:
                 continue;
         }
     }
+    if (changes < 5)
+        cout << "Some configuration values not found; defaults were used instead." << endl;
 
     file.close();
+}
+
+void ConfigParser::populateConfig() {
+    int cand = findConfigFiles();
+
+    if (!cand)
+        cout << "Using default configuration." << endl;
+    else {
+        int choice = chooseConfigFile();
+        if (choice >= 0)
+            loadConfigFile(cfgFiles[choice]);
+    }
 }

@@ -42,7 +42,7 @@ static constexpr auto qt_meta_stringdata_CLASSGWidgetENDCLASS = QtMocHelpers::st
     "cleanup",
     "",
     "configReceived",
-    "WaveConfig",
+    "WaveConfig*",
     "cfg"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
@@ -52,7 +52,7 @@ struct qt_meta_stringdata_CLASSGWidgetENDCLASS_t {
     char stringdata1[8];
     char stringdata2[1];
     char stringdata3[15];
-    char stringdata4[11];
+    char stringdata4[12];
     char stringdata5[4];
 };
 #define QT_MOC_LITERAL(ofs, len) \
@@ -63,14 +63,14 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSGWidgetENDCLASS_t qt_meta_strin
         QT_MOC_LITERAL(8, 7),  // "cleanup"
         QT_MOC_LITERAL(16, 0),  // ""
         QT_MOC_LITERAL(17, 14),  // "configReceived"
-        QT_MOC_LITERAL(32, 10),  // "WaveConfig"
-        QT_MOC_LITERAL(43, 3)   // "cfg"
+        QT_MOC_LITERAL(32, 11),  // "WaveConfig*"
+        QT_MOC_LITERAL(44, 3)   // "cfg"
     },
     "GWidget",
     "cleanup",
     "",
     "configReceived",
-    "WaveConfig",
+    "WaveConfig*",
     "cfg"
 };
 #undef QT_MOC_LITERAL
@@ -114,7 +114,7 @@ Q_CONSTINIT const QMetaObject GWidget::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'configReceived'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<WaveConfig, std::false_type>
+        QtPrivate::TypeAndForceComplete<WaveConfig *, std::false_type>
     >,
     nullptr
 } };
@@ -126,19 +126,8 @@ void GWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, voi
         (void)_t;
         switch (_id) {
         case 0: _t->cleanup(); break;
-        case 1: _t->configReceived((*reinterpret_cast< std::add_pointer_t<WaveConfig>>(_a[1]))); break;
+        case 1: _t->configReceived((*reinterpret_cast< std::add_pointer_t<WaveConfig*>>(_a[1]))); break;
         default: ;
-        }
-    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        switch (_id) {
-        default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-        case 1:
-            switch (*reinterpret_cast<int*>(_a[1])) {
-            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-            case 0:
-                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< WaveConfig >(); break;
-            }
-            break;
         }
     }
 }
@@ -169,7 +158,7 @@ int GWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         _id -= 2;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
         if (_id < 2)
-            qt_static_metacall(this, _c, _id, _a);
+            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
         _id -= 2;
     }
     return _id;

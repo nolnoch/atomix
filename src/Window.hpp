@@ -41,7 +41,7 @@ public:
     Window(MainWindow *mw);
 
 signals:
-    void passConfig(WaveConfig cfg);
+    void passConfig(WaveConfig *cfg);
 
 private:
     GWidget *graph = nullptr;

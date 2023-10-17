@@ -10,6 +10,13 @@ uniform mat4 viewMat;
 uniform mat4 projMat;
 
 void main() {
+   float cos_t = wavePos.x;
+   float sin_t = wavePos.z;
+   float r = wavePos.y;
+
+   float x_coord = r * cos_t;
    float y_coord = yFactors.x * sin(yFactors.y - (yFactors.z * time));
-   gl_Position = projMat * viewMat * worldMat * vec4(wavePos.x, y_coord, wavePos.z, 1.0f);
+   float z_coord = r * sin_t;
+
+   gl_Position = projMat * viewMat * worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
 };

@@ -54,6 +54,7 @@ void GWidget::configReceived(WaveConfig *cfg) {
     gw_config.period = cfg->period;
     gw_config.resolution = cfg->resolution;
     gw_config.wavelength = cfg->wavelength;
+    gw_config.shader = cfg->shader;
 }
 
 void GWidget::crystalProgram() {
@@ -114,11 +115,11 @@ void GWidget::waveProgram(uint r) {
     for (int i = 0; i < STEPS; i++) {
         double theta = i * deg * RAD_FAC;
         
-        GLfloat x = r * cos(theta);
-        GLfloat z = r * sin(theta);
+        GLfloat x = cos(theta);
+        GLfloat z = sin(theta);
         
         vertices.push_back(x);
-        vertices.push_back(0.0f);
+        vertices.push_back(r);
         vertices.push_back(z);
 
         /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
@@ -139,7 +140,7 @@ void GWidget::waveProgram(uint r) {
     /* Program */
     Program *prog = new Program(this);
     waveProgs.push_back(prog);
-    prog->addShader("wave.vert", GL_VERTEX_SHADER);
+    prog->addShader(SHADER, GL_VERTEX_SHADER);
     prog->addShader("wave.frag", GL_FRAGMENT_SHADER);
     prog->init();
     prog->linkAndValidate();

@@ -35,6 +35,7 @@ ConfigParser::ConfigParser() {
     cfgValues["period"] = 3;
     cfgValues["wavelength"] = 4;
     cfgValues["resolution"] = 5;
+    cfgValues["shader"] = 6;
 
     config = new WaveConfig;
 }
@@ -122,7 +123,7 @@ void ConfigParser::loadConfigFile(string path) {
         if (iter == cfgValues.end())
             continue;
         
-        value = line.substr(colon + 1);
+        value = line.substr(colon + 2);
 
         switch(iter->second) {
             case 1:
@@ -145,11 +146,15 @@ void ConfigParser::loadConfigFile(string path) {
                 config->resolution = stoi(value);
                 changes++;
                 break;
+            case 6:
+                config->shader = value;
+                changes++;
+                break;
             default:
                 continue;
         }
     }
-    if (changes < 5)
+    if (changes < 6)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
     file.close();

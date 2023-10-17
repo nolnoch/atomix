@@ -108,6 +108,7 @@ private:
 #define T       gw_config.period        // Wave-circle period
 #define L       gw_config.wavelength    // Wave-circle lambda
 #define STEPS   gw_config.resolution    // Wave-circle resolution
+#define SHADER  gw_config.shader        // Vertex shader
 
 
 #endif

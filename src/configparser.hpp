@@ -44,6 +44,7 @@ typedef struct {
     float period = 1.0f;
     int orbits = 4;
     int resolution = 360;
+    std::string shader = "ortho_wave.vert";
 } WaveConfig;
 Q_DECLARE_METATYPE(WaveConfig);
 

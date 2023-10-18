@@ -1,7 +1,7 @@
 # atomix
 Modeling stable electron wave states as a factor of input energy (WIP)
 
-_I am under no illusions and make no claims that this represents accurate physics!_
+_I am under no illusions and make no claims that this represents completely accurate physics!_
 
 My goal with this project is to tactically/viscerally understand de Broglie wavelength stuff, inspired by this wonderful youtube video: [https://youtu.be/k581_XpaTnU](https://youtu.be/k581_XpaTnU).
 
@@ -15,6 +15,7 @@ I sincerely doubt anyone will ever see this but me, but it's always good to comm
 
 ## Current State
 
+#### Description and Features
 As of 17 Oct 2023:
 
 The model is a central hexahedral crystal with polar colouring, orbited by circular transverse waves. There are two pre-loaded shaders for waves either parallel or orthogonal to the equatorial plane. A the moment, the peaks and troughs are coloured, but I plan to make that optional.
@@ -30,6 +31,13 @@ The model is a central hexahedral crystal with polar colouring, orbited by circu
   * "Home" key resets the model to starting state in case you're upside down
   * "Spacebar" will seamlessly pause and unpause time in the model's world
   * "Escape" will exit the program
+ 
+#### Development Platform and Possible Requirements:
+- Ubuntu 23.04 Lunar
+- gcc/g++ 12.3.0+
+- CMake 3.25.1+
+- OpenGL 4.6
+- Qt 6.5.3+  <== [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
 
 ## Personal notes and scribbles
 

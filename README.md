@@ -13,6 +13,24 @@ Warning: I may end up taking this in many different directions since the magical
 
 I sincerely doubt anyone will ever see this but me, but it's always good to communicate and CYA, innit?
 
+## Current State
+
+As of 17 Oct 2023:
+
+The model is a central hexahedral crystal with polar colouring, orbited by circular transverse waves. There are two pre-loaded shaders for waves either parallel or orthogonal to the equatorial plane. A the moment, the peaks and troughs are coloured, but I plan to make that optional.
+* Use the config.wave files (feel free to create your own!) to adjust model parameters such as:
+  * Number of orbit-waves (for *n*>=1, *n* waves where wave[*n*] has r = *n*)
+  * Wave amplitude, period, and wavelength (in radians)
+  * Wave-circle resolution (in raw \# of vertices; suggest >360)
+  * Custom vertex shader file selection (there are two; you may use any)
+* Robust mouse and keyboard controls
+  * Left-click-drag translates the model up/down/left/right in the window
+  * Right-click-drag rotates the model in 3-space
+  * Middle-click-drag rotates the model in the style of Eulerian "roll" (for minor adjustments)
+  * "Home" key resets the model to starting state in case you're upside down
+  * "Spacebar" will seamlessly pause and unpause time in the model's world
+  * "Escape" will exit the program
+
 ## Personal notes and scribbles
 
 Subtituting real-world values for k = 2pi/l = p/h = E/hc would not be graphically interesting, and I would learn nothing.

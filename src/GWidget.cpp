@@ -195,14 +195,9 @@ void GWidget::initializeGL() {
     }
 
     /* Init -- Camera and OpenGL State */
-    glClearColor(0.03f, 0.06f, 0.09f, 1.0f);
+    glClearColor(0.00f, 0.03f, 0.06f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    //glDisable(GL_DEPTH_TEST);
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_ONE, GL_ONE);
-    //glEnable(GL_STENCIL_TEST);
-    //glStencilOp(GL_INCR, GL_INCR, GL_INCR);
-    //glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glEnable(GL_BLEND);
 
     /* Init -- Matrices */
     initVecsAndMatrices();

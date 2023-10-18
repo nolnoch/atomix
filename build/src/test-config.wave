@@ -1,8 +1,8 @@
 # (orbits: int <= 8) Number of wave-circle orbits [default = 4]
-orbits: 6
+orbits: 5
 
 # (amplitude: float) Vertical displacement of waves [default = 0.6]
-amplitude: 1.0
+amplitude: 0.7
 
 # (period: float) Wave period [default = 1.0]
 period: 1.0

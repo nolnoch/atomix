@@ -195,9 +195,14 @@ void GWidget::initializeGL() {
     }
 
     /* Init -- Camera and OpenGL State */
-    glClearColor(0.0f, 0.05f, 0.08f, 1.0f);
+    glClearColor(0.03f, 0.06f, 0.09f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
+    //glDisable(GL_DEPTH_TEST);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_ONE, GL_ONE);
+    //glEnable(GL_STENCIL_TEST);
+    //glStencilOp(GL_INCR, GL_INCR, GL_INCR);
+    //glStencilFunc(GL_ALWAYS, 1, 0xFF);
 
     /* Init -- Matrices */
     initVecsAndMatrices();
@@ -218,13 +223,14 @@ void GWidget::initializeGL() {
 }
 
 void GWidget::paintGL() {
-    int64_t timeEnd = QDateTime::currentMSecsSinceEpoch();
-    float time = (timeEnd - gw_timeStart) / 1000.0f;
+    if (!gw_pause)
+        gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+    float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
 
     /* Per-frame Setup */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     /* Re-calculate world state matrices */
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
@@ -336,6 +342,15 @@ void GWidget::mouseReleaseEvent(QMouseEvent *e) {
 void GWidget::keyPressEvent(QKeyEvent * e) {
     if (e->key() == Qt::Key_Home) {
         initVecsAndMatrices();
+        update();
+    } else if (e->key() == Qt::Key_Space) {
+        gw_pause = !gw_pause;
+        if (gw_pause) {
+            gw_timePaused = QDateTime::currentMSecsSinceEpoch();
+        } else {
+            gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+        gw_timeStart += gw_timeEnd - gw_timePaused;
+        }
         update();
     } else
         QWidget::keyPressEvent(e);

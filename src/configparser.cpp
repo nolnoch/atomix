@@ -135,7 +135,7 @@ void ConfigParser::loadConfigFile(string path) {
                 changes++;
                 break;
             case 3:
-                config->period = stof(value);
+                config->period = stof(value) * M_PI;
                 changes++;
                 break;
             case 4:

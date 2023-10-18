@@ -3,6 +3,8 @@
 layout(location = 0) in vec3 wavePos;
 layout(location = 1) in vec3 yFactors;
 
+out float peakTrough;
+
 uniform float time;
 
 uniform mat4 worldMat;
@@ -10,13 +12,18 @@ uniform mat4 viewMat;
 uniform mat4 projMat;
 
 void main() {
-   float cos_t = wavePos.x;
-   float sin_t = wavePos.z;
+   float cos_th = wavePos.x;
+   float sin_th = wavePos.z;
    float r = wavePos.y;
+   
+   //                   (2pi / L * x) - (2pi / T * t)
+   float normRange = sin(yFactors.y - (yFactors.z * time));
 
-   float x_coord = r * cos_t;
-   float y_coord = yFactors.x * sin(yFactors.y - (yFactors.z * time));
-   float z_coord = r * sin_t;
+   //               A      *   wave
+   float wave = yFactors.x * normRange;
+   float x_coord = r * cos_th;
+   float z_coord = r * sin_th;
 
-   gl_Position = projMat * viewMat * worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
+   peakTrough = normRange;
+   gl_Position = projMat * viewMat * worldMat * vec4(x_coord, wave, z_coord, 1.0f);
 };

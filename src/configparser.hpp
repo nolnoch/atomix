@@ -41,7 +41,7 @@ const std::string EXT = ".wave";
 typedef struct {
     double wavelength = 2.0 * M_PI;
     float amplitude = 0.6f;
-    float period = 1.0f;
+    float period = 1.0f * M_PI;
     int orbits = 4;
     int resolution = 360;
     std::string shader = "ortho_wave.vert";

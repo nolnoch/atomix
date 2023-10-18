@@ -1382,7 +1382,7 @@
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h
 /home/braer/dev/atomix/src/quaternion.hpp
 /home/braer/dev/atomix/src/program.cpp
-/home/braer/dev/atomix/src/configparser.cpp
+/home/braer/dev/atomix/src/Window.cpp
 /home/braer/dev/atomix/src/MainWindow.hpp
  mmc:Q_OBJECT
  mdp:/home/braer/dev/atomix/src/MainWindow.hpp
@@ -2077,4 +2077,4 @@
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stdbool.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h
-/home/braer/dev/atomix/src/Window.cpp
+/home/braer/dev/atomix/src/configparser.cpp

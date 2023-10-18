@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...3.21)
+cmake_minimum_required(VERSION 3.16...3.25)
 
 # These are part of the public API. Projects should use them to provide a
 # consistent set of prefix-relative destinations.

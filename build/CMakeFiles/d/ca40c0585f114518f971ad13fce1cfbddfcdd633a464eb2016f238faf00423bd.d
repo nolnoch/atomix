@@ -434,6 +434,8 @@ src/atomix_autogen/timestamp: \
   /home/braer/dev/atomix/src/configparser.cpp \
   /home/braer/dev/atomix/src/configparser.hpp \
   /home/braer/dev/atomix/src/main.cpp \
+  /home/braer/dev/atomix/src/orbit.cpp \
+  /home/braer/dev/atomix/src/orbit.hpp \
   /home/braer/dev/atomix/src/program.cpp \
   /home/braer/dev/atomix/src/program.hpp \
   /home/braer/dev/atomix/src/quaternion.cpp \

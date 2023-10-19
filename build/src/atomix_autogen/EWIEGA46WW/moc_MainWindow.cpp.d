@@ -201,6 +201,7 @@
   /home/braer/dev/atomix/src/GWidget.hpp \
   /home/braer/dev/atomix/src/Window.hpp \
   /home/braer/dev/atomix/src/configparser.hpp \
+  /home/braer/dev/atomix/src/orbit.hpp \
   /home/braer/dev/atomix/src/program.hpp \
   /home/braer/dev/atomix/src/quaternion.hpp \
   /home/braer/dev/atomix/src/shaderobj.hpp \

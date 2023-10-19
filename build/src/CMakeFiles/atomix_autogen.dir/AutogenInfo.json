@@ -352,6 +352,12 @@
 			null
 		],
 		[
+			"/home/braer/dev/atomix/src/orbit.hpp",
+			"Mu",
+			"EWIEGA46WW/moc_orbit.cpp",
+			null
+		],
+		[
 			"/home/braer/dev/atomix/src/program.hpp",
 			"Mu",
 			"EWIEGA46WW/moc_program.cpp",
@@ -441,6 +447,7 @@
 		[ "/home/braer/dev/atomix/src/Window.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/configparser.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/main.cpp", "Mu", null ],
+		[ "/home/braer/dev/atomix/src/orbit.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/program.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/quaternion.cpp", "Mu", null ],
 		[ "/home/braer/dev/atomix/src/shaderobj.cpp", "Mu", null ]

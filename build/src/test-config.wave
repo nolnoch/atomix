@@ -11,7 +11,7 @@ period: 1.0
 wavelength: 2.0
 
 # (resolution: int) Render resolution of the circle (vertices per circumference) [default = 360]
-resolution: 720
+resolution: 500
 
 # (shader: string) Vertex shader file name for this render [default = "ortho_wave.vert"]
 shader: para_wave.vert

@@ -37,7 +37,7 @@ const double H = 6.626070e-34;      // Planck's constant
 const double C = 299792458;         // Speed of massless particles
 const double HC = 1.98644586e-25;   // Convenience product of above
 
-using svec = std::vector<glm::vec3>;
+using gvec = std::vector<glm::vec3>;
 using ivec = std::vector<uint>;
 using vec = glm::vec3;
 
@@ -50,6 +50,7 @@ class Orbit {
         void genOrbit();
         void updateOrbit(double time);
         void proximityDetect();
+        void superposition();
         
         int vertexCount();
         int vertexSize();
@@ -61,7 +62,7 @@ class Orbit {
     private:
         int idx = 0;
         WaveConfig config;
-        svec myVertices;
+        gvec myVertices;
         ivec myIndices;
         Orbit *priorOrbit = nullptr;
 
@@ -79,6 +80,7 @@ class Orbit {
 #define T       config.period        // Wave-circle period
 #define L       config.wavelength    // Wave-circle lambda
 #define STEPS   config.resolution    // Wave-circle resolution
+#define SUPER   config.superposition // Toggle superposition
 #define SHADER  config.shader        // Vertex shader
 
 #endif

@@ -13,5 +13,8 @@ wavelength: 2.0
 # (resolution: int) Render resolution of the circle (vertices per circumference) [default = 360]
 resolution: 500
 
+# (superposition: bool) Whether to respect superposition in co-planar wavefunctions [default = false]
+superposition: true
+
 # (shader: string) Vertex shader file name for this render [default = "ortho_wave.vert"]
 shader: para_wave.vert

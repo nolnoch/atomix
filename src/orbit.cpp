@@ -42,13 +42,14 @@ Orbit::~Orbit() {
 
 void Orbit::updateOrbit(double t) {
     double r = (double) this->idx;
+    myVertices.clear();
+    myIndices.clear();
 
     /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
     /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
-    myVertices.clear();
     for (int i = 0; i < STEPS; i++) {
         double theta = i * deg_fac;
         myIndices.push_back(i);
@@ -66,27 +67,45 @@ void Orbit::updateOrbit(double t) {
         myVertices.push_back(colour);
     }
 
-    //if (idx > 1)
-        //proximityDetect();
+    if (idx > 1 && SUPER)
+        proximityDetect();
 }
 
 void Orbit::proximityDetect() {
-    int verts = STEPS * 2;
-    
-    for (int dt = 0; dt < verts; dt += 2) {
-        int xs = 0;
+    int verts = myVertices.size();
 
+    for (int dt = 0; dt < verts; dt += 2) {
         vec a = priorOrbit->myVertices[dt];
         vec b = myVertices[dt];
 
-        if (a.x - b.x + 0.05 >= 0 && a.z - b.z + 0.05 >= 0) {
-            myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
-            if (idx = 2)
-                priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
-        }
+        double diffX = abs(a.x) - abs(b.x);
+        double diffZ = abs(a.z) - abs(b.z);
 
-        if (dt / verts < 0.25)
+        bool crossX = diffX > 0 && diffX < 0.05;
+        bool crossZ = diffZ > 0 && diffZ < 0.05;
+
+        if (crossX && crossZ) {
             myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+            priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+        }
+    }
+}
+
+void Orbit::superposition() {
+    int verts = myVertices.size();
+
+    for (int dt = 0; dt < verts; dt += 2) {
+        vec a = priorOrbit->myVertices[dt];
+        vec b = myVertices[dt];
+
+        double diffX = abs(a.x) - abs(b.x);
+        double diffZ = abs(a.z) - abs(b.z);
+
+        if (diffX >= 0 && diffZ >= 0) {
+            vec sumVec = a + b;
+            myVertices[dt] = sumVec;
+            priorOrbit->myVertices[dt] = sumVec;
+        }
     }
 }
 

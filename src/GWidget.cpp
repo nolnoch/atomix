@@ -54,6 +54,7 @@ void GWidget::configReceived(WaveConfig *cfg) {
     gw_config.period = cfg->period;
     gw_config.resolution = cfg->resolution;
     gw_config.wavelength = cfg->wavelength;
+    gw_config.superposition = cfg->superposition;
     gw_config.shader = cfg->shader;
 }
 
@@ -94,7 +95,7 @@ void GWidget::crystalProgram() {
     crystalProg->linkAndValidate();
     crystalProg->initVAO();
     crystalProg->bindVAO();
-    crystalProg->bindVBO(sizeof(vertices), vertices.data());
+    crystalProg->bindVBO(sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
     crystalProg->attributePointer(0, 3, 6 * sizeof(float), (void*)0);                       // Vertices
     crystalProg->attributePointer(1, 3, 6 * sizeof(float), (void*)(3 * sizeof(float)));     // Colours
     crystalProg->enableAttributes();
@@ -107,20 +108,7 @@ void GWidget::crystalProgram() {
 
 void GWidget::waveProgram(uint i) {
     int c = i - 1;
-    int index = gw_config.resolution / 2;
-    gw_orbits.push_back(new Orbit(gw_config, c ? gw_orbits[c - 1] : 0));
-
-    /* EBO Indices */
-    //int n = -2;
-    //std::vector<GLuint> indices(index);
-    //std::iota(std::begin(indices), std::end(indices), 0);
-    //std::generate(indices.begin(), indices.end(), [&n]{ return n+=2;});
-    //for (int i = 0; i < index / 2; i++)
-    //    indices.push_back(i * 2);
-    this->gw_points = gw_orbits.back()->indexCount();
-    //for (auto i: indices)
-    //    std::cout << i << "\n";
-    //std::cout << "\n Count: " << gw_points << std::endl;
+    gw_orbits.push_back(new Orbit(gw_config, c > 0 ? gw_orbits[c - 1] : 0));
 
     /* Program */
     Program *prog = new Program(this);
@@ -132,7 +120,7 @@ void GWidget::waveProgram(uint i) {
     prog->initVAO();
     prog->bindVAO();
     
-    prog->bindVBO((gw_orbits.back()->vertexSize()), gw_orbits.back()->vertexData());
+    prog->bindVBO((gw_orbits.back()->vertexSize()), gw_orbits.back()->vertexData(), GL_DYNAMIC_DRAW);
     prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords
     prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour
     prog->enableAttributes();
@@ -192,7 +180,7 @@ void GWidget::initializeGL() {
     /* Init -- Programs and Shaders */
     crystalProgram();
     for (int i = 1; i <= gw_config.orbits; i++) {
-        waveProgram((float) i);
+        waveProgram(i);
     }
 
     /* Init -- Time */
@@ -226,15 +214,20 @@ void GWidget::paintGL() {
     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
     crystalProg->endRender();
 
+    /* Update -- Waves */
+    for (int i = 0; i < gw_orbits.size(); i++) {
+        gw_orbits[i]->updateOrbit(time);
+    }
+    
     /* Render -- Waves */
     for (int i = 0; i < waveProgs.size(); i++) {
-    waveProgs[i]->beginRender();
-    waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-    waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-    waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-    waveProgs[i]->setUniform(GL_FLOAT, "time", time);
-    glDrawElements(GL_LINE_LOOP, gw_points, GL_UNSIGNED_INT, 0);
-    waveProgs[i]->endRender();
+        waveProgs[i]->beginRender();
+        waveProgs[i]->updateVBO(0, gw_orbits[i]->vertexSize(), gw_orbits[i]->vertexData());
+        waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+        waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+        waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        glDrawElements(GL_LINE_LOOP, gw_orbits[i]->indexCount(), GL_UNSIGNED_INT, 0);
+        waveProgs[i]->endRender();
     }
 
     q_TotalRot.normalize();

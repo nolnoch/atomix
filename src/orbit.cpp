@@ -59,16 +59,20 @@ void Orbit::updateOrbit(double t) {
         float x = (wavefunc + r) * cos(theta);
         float y = 0.0f;
         float z = (wavefunc + r) * sin(theta);
+
+
         
         vec vertex = vec(x, y, z);
         vec colour = vec(1.0f, 1.0f, 1.0f);
         
         myVertices.push_back(vertex);
         myVertices.push_back(colour);
+
+        myComponents.push_back(glm::vec2(wavefunc, r));
     }
 
     if (idx > 1 && SUPER)
-        proximityDetect();
+        superposition();
 }
 
 void Orbit::proximityDetect() {
@@ -102,9 +106,8 @@ void Orbit::superposition() {
         double diffZ = abs(a.z) - abs(b.z);
 
         if (diffX >= 0 && diffZ >= 0) {
-            vec sumVec = a + b;
-            myVertices[dt] = sumVec;
-            priorOrbit->myVertices[dt] = sumVec;
+            myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+            priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
         }
     }
 }

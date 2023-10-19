@@ -38,6 +38,7 @@ const double C = 299792458;         // Speed of massless particles
 const double HC = 1.98644586e-25;   // Convenience product of above
 
 using gvec = std::vector<glm::vec3>;
+using dvec = std::vector<glm::vec2>;
 using ivec = std::vector<uint>;
 using vec = glm::vec3;
 
@@ -64,6 +65,7 @@ class Orbit {
         WaveConfig config;
         gvec myVertices;
         ivec myIndices;
+        dvec myComponents;
         Orbit *priorOrbit = nullptr;
 
         double amplitude = 0;

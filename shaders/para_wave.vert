@@ -1,29 +1,15 @@
 #version 450 core
 
-layout(location = 0) in vec3 wavePos;
-layout(location = 1) in vec3 yFactors;
+layout(location = 0) in vec3 pos;
+layout(location = 1) in vec3 colour;
 
-out float peakTrough;
-
-uniform float time;
+out vec3 vertColour;
 
 uniform mat4 worldMat;
 uniform mat4 viewMat;
 uniform mat4 projMat;
 
 void main() {
-   float cos_th = wavePos.x;
-   float sin_th = wavePos.z;
-   float r = wavePos.y;
-   
-   //                   (2pi / L * x) - (2pi / T * t)
-   float normRange = sin(yFactors.y - (yFactors.z * time));
-
-   //               A      *   wave
-   float wave = yFactors.x * normRange;
-   float x_coord = (r + wave) * cos_th;
-   float z_coord = (r + wave) * sin_th;
-
-   peakTrough = normRange;
-   gl_Position = projMat * viewMat * worldMat * vec4(x_coord, 0.0f, z_coord, 1.0f);
+   vertColour = colour;
+   gl_Position = projMat * viewMat * worldMat * vec4(pos, 1.0f);
 };

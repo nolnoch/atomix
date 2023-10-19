@@ -105,54 +105,39 @@ void GWidget::crystalProgram() {
     crystalProg->clearBuffers();
 }
 
-void GWidget::waveProgram(uint r) {
-    float deg = 360.0f / STEPS;
-    double two_pi_L, two_pi_T;
-    two_pi_L = TWO_PI / L;
-    two_pi_T = TWO_PI / T;
-
-    std::vector<GLfloat> vertices;
-    for (int i = 0; i < STEPS; i++) {
-        double theta = i * deg * RAD_FAC;
-        
-        GLfloat x = cos(theta);
-        GLfloat z = sin(theta);
-        
-        vertices.push_back(x);
-        vertices.push_back(r);
-        vertices.push_back(z);
-
-        /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
-        /* y = A * sin(   ( k   *   x )    -    (   w  *  t  )   +   p    */
-        /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
-        /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
-        
-        vertices.push_back(A);
-        vertices.push_back(two_pi_L * r * theta);
-        vertices.push_back(two_pi_T);
-    }
+void GWidget::waveProgram(uint i) {
+    int c = i - 1;
+    int index = gw_config.resolution / 2;
+    gw_orbits.push_back(new Orbit(gw_config, c ? gw_orbits[c - 1] : 0));
 
     /* EBO Indices */
-    std::vector<GLuint> indices(STEPS);
-    std::iota(std::begin(indices), std::end(indices), 0);
-    this->gw_points = indices.size();
+    //int n = -2;
+    //std::vector<GLuint> indices(index);
+    //std::iota(std::begin(indices), std::end(indices), 0);
+    //std::generate(indices.begin(), indices.end(), [&n]{ return n+=2;});
+    //for (int i = 0; i < index / 2; i++)
+    //    indices.push_back(i * 2);
+    this->gw_points = gw_orbits.back()->indexCount();
+    //for (auto i: indices)
+    //    std::cout << i << "\n";
+    //std::cout << "\n Count: " << gw_points << std::endl;
 
     /* Program */
     Program *prog = new Program(this);
     waveProgs.push_back(prog);
-    prog->addShader(SHADER, GL_VERTEX_SHADER);
+    prog->addShader(gw_config.shader, GL_VERTEX_SHADER);
     prog->addShader("wave.frag", GL_FRAGMENT_SHADER);
     prog->init();
     prog->linkAndValidate();
     prog->initVAO();
     prog->bindVAO();
     
-    prog->bindVBO((vertices.size() * sizeof(GLfloat)), vertices.data());
-    prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,z coords
-    prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // y-coord factors
+    prog->bindVBO((gw_orbits.back()->vertexSize()), gw_orbits.back()->vertexData());
+    prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords
+    prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour
     prog->enableAttributes();
     
-    prog->bindEBO((indices.size() * sizeof(GLuint)), indices.data());
+    prog->bindEBO(gw_orbits.back()->indexSize(), gw_orbits.back()->indexData());
 
     /* Release */
     prog->endRender();
@@ -160,7 +145,7 @@ void GWidget::waveProgram(uint r) {
 }
 
 void GWidget::initVecsAndMatrices() {
-    float camStart = WAVES * 2.0f;
+    float camStart = gw_config.orbits * 2.0f;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -206,7 +191,7 @@ void GWidget::initializeGL() {
 
     /* Init -- Programs and Shaders */
     crystalProgram();
-    for (int i = 1; i <= WAVES; i++) {
+    for (int i = 1; i <= gw_config.orbits; i++) {
         waveProgram((float) i);
     }
 

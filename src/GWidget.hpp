@@ -35,17 +35,9 @@
 #include <QOpenGLFunctions_4_5_Core>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include "program.hpp"
 #include "quaternion.hpp"
-#include "configparser.hpp"
-
-/* Math constants */
-const double TWO_PI = 2.0 * M_PI;   // 2pi is used a lot
-const double H = 6.626070e-34;      // Planck's constant
-const double C = 299792458;         // Speed of massless particles
-const double HC = 1.98644586e-25;   // Convenience product of above
+#include "orbit.hpp"
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -78,6 +70,7 @@ private:
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
     std::vector<Program *> waveProgs;
+    std::vector<Orbit *> gw_orbits;
     std::vector<GLfloat> f_peak;
 
     QTimer *gw_timer = nullptr;
@@ -104,14 +97,5 @@ private:
     bool gw_init = false;
     WaveConfig gw_config;
 };
-
-/* Orbit config aliases */
-#define WAVES   gw_config.orbits        // Number of orbits
-#define A       gw_config.amplitude     // Wave-circle amplitude
-#define T       gw_config.period        // Wave-circle period
-#define L       gw_config.wavelength    // Wave-circle lambda
-#define STEPS   gw_config.resolution    // Wave-circle resolution
-#define SHADER  gw_config.shader        // Vertex shader
-
 
 #endif

@@ -89,7 +89,6 @@ private:
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
     uint gw_faces = 0;
-    uint gw_points = 0;
     int gw_scrHeight = 0;
     int gw_scrWidth = 0;
     uint gw_movement = 0;

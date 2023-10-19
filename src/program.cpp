@@ -24,7 +24,9 @@
 
 #include "program.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::string;
 
 
 /**
@@ -92,7 +94,7 @@ void Program::addSampler(string sName) {
   GLuint sample;
 
   if (!samplers)
-    this->samplers = new vector<SamplerInfo>();
+    this->samplers = new std::vector<SamplerInfo>();
 
   qgf->glGenSamplers(1, &sample);
 
@@ -230,10 +232,10 @@ void Program::clearVAO() {
   qgf->glBindVertexArray(0);
 }
 
-void Program::bindVBO(uint bufSize, const GLfloat *buf) {
+void Program::bindVBO(uint bufSize, const GLfloat *buf, uint mode) {
   qgf->glGenBuffers(1, &this->vbo);
   qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
-  qgf->glBufferData(GL_ARRAY_BUFFER, bufSize, buf, GL_STATIC_DRAW);
+  qgf->glBufferData(GL_ARRAY_BUFFER, bufSize, buf, mode);
 }
 
 void Program::attributePointer(uint idx, uint count, uint stride, const void *offset) {
@@ -244,6 +246,11 @@ void Program::attributePointer(uint idx, uint count, uint stride, const void *of
 void Program::enableAttributes() {
   for (auto i: attribs)
     qgf->glEnableVertexAttribArray(i);
+}
+
+void Program::updateVBO(uint offset, uint bufSize, const GLfloat *buf) {
+  qgf->glBufferSubData(GL_ARRAY_BUFFER, offset, bufSize, buf);
+  displayLogProgram();
 }
 
 void Program::clearVBO() {
@@ -263,6 +270,7 @@ void Program::clearEBO() {
 void Program::beginRender() {
   enable();
   bindVAO();
+  qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
 }
 
 void Program::endRender() {

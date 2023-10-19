@@ -36,6 +36,7 @@ ConfigParser::ConfigParser() {
     cfgValues["wavelength"] = 4;
     cfgValues["resolution"] = 5;
     cfgValues["shader"] = 6;
+    cfgValues["superposition"] = 7;
 
     config = new WaveConfig;
 }
@@ -150,11 +151,15 @@ void ConfigParser::loadConfigFile(string path) {
                 config->shader = value;
                 changes++;
                 break;
+            case 7:
+                config->superposition = string("true") == value;
+                changes++;
+                break;
             default:
                 continue;
         }
     }
-    if (changes < 6)
+    if (changes < 7)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
     file.close();

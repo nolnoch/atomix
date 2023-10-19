@@ -91,9 +91,10 @@ class Program {
   void bindVAO();
   void clearVAO();
 
-  void bindVBO(uint bufSize, const GLfloat *buf);
+  void bindVBO(uint bufSize, const GLfloat *buf, uint mode);
   void attributePointer(uint idx, uint count, uint stride, const void *offset);
   void enableAttributes();
+  void updateVBO(uint offset, uint bufSize, const GLfloat *buf);
   void clearVBO();
 
   void bindEBO(uint bufSize, const GLuint *buf);

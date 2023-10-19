@@ -1,5 +1,5 @@
 # (orbits: int <= 8) Number of wave-circle orbits [default = 4]
-orbits: 5
+orbits: 2
 
 # (amplitude: float) Vertical displacement of waves [default = 0.6]
 amplitude: 0.7

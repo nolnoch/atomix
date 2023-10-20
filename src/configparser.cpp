@@ -37,6 +37,8 @@ ConfigParser::ConfigParser() {
     cfgValues["resolution"] = 5;
     cfgValues["shader"] = 6;
     cfgValues["superposition"] = 7;
+    cfgValues["orientation"] = 8;
+    cfgValues["processor"] = 9;
 
     config = new WaveConfig;
 }
@@ -103,11 +105,15 @@ int ConfigParser::chooseConfigFile() {
     return f;
 }
 
-void ConfigParser::loadConfigFile(string path) {
-    string line, key, value, name;
-    size_t colon;
-    int changes;
+int ConfigParser::loadConfigFile(string path) {
+    string line, key, value, name, answer;
+    size_t colon, start, end;
+    int changes, errors;
+    bool custom_shader = false;
     map<string, int>::iterator iter;
+
+    changes = 0;
+    errors = 0;
 
     name = path.substr(path.find_last_of("/") + 1);
     cout << "Using config file: " << name << endl;
@@ -124,7 +130,17 @@ void ConfigParser::loadConfigFile(string path) {
         if (iter == cfgValues.end())
             continue;
         
-        value = line.substr(colon + 2);
+        answer = line.substr(colon + 1);
+        if (!answer.empty()) {
+            start = answer.find_first_not_of(WHITESPACE);
+            if (start == string::npos)
+                value = "";
+            else {
+                end = answer.find_last_not_of(WHITESPACE);
+                value = answer.substr(start, end - start + 1);
+            }
+        } else
+            value = "";
 
         switch(iter->second) {
             case 1:
@@ -149,30 +165,98 @@ void ConfigParser::loadConfigFile(string path) {
                 break;
             case 6:
                 config->shader = value;
+                if (!value.empty())
+                    custom_shader = true;
                 changes++;
                 break;
             case 7:
                 config->superposition = string("true") == value;
                 changes++;
                 break;
+            case 8:
+                config->parallel = string("parallel") == value;
+                changes++;
+                break;
+            case 9:
+                config->gpu = string("gpu") == value;
+                changes++;
+                break;
             default:
                 continue;
         }
     }
-    if (changes < 7)
+    if (changes < 9)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
+    string ortho = "ortho_wave.vert";
+    string para = "para_wave.vert";
+    string super = "cpu_wave.vert";
+    string shad = config->shader;
+    if (custom_shader) {
+        if (shad == ortho) {
+            if (config->parallel) {
+                cout << "ERROR: Specified parallel (coplanar) waves with orthogonal wave shader." << endl;
+                errors++;
+            }
+            if (!config->gpu) {
+                cout << "ERROR: \"ortho_wave.vert\" is only intended for GPU-based calculation." << endl;
+                errors++;
+            }
+        } else if (shad == para) {
+            if (!config->parallel) {
+                cout << "ERROR: Specified orthogonal waves with parallel (coplanar) wave shader." << endl;
+                errors++;
+            }
+            if (!config->gpu) {
+                cout << "ERROR: \"para_wave.vert\" is only intended for GPU-based calculation." << endl;
+                errors++;
+            }
+        } else if (shad == super) {
+            if (config->gpu) {
+                cout << "ERROR: \"wave.vert\" is only intended for CPU-based calculation." << endl;
+                errors++;
+            }
+        } else {
+            cout << "INFO: Custom shader in use. Disabling consistency checks." << endl;
+            goto label_abort;
+        }
+    } else {
+        if (config->gpu) {
+            if (config->superposition) {
+                cout << "ERROR: Cannot calculate superposition on GPU." << endl;
+                errors++;
+            }
+            if (config->parallel) {
+                cout << "For parallel (coplanar) waves on GPU, auto-selecting shader \"para_wave.vert\"." << endl;
+                config->shader = para;
+            } else {
+                cout << "For orthogonal waves on GPU, auto-selecting shader \"ortho_wave.vert\"." << endl;
+                config->shader = ortho;
+            }
+        } else {
+            cout << "CPU calculation requested; auto-selecting shader \"cpu_wave.vert\"." << endl;
+            config->shader = super;
+        }
+    }
+
+label_abort:
     file.close();
+    return errors;
 }
 
-void ConfigParser::populateConfig() {
+int ConfigParser::populateConfig() {
     int cand = findConfigFiles();
+    int status = 0;
 
-    if (!cand)
+    if (!cand) {
         cout << "Using default configuration." << endl;
-    else {
+    } else {
         int choice = chooseConfigFile();
-        if (choice >= 0)
-            loadConfigFile(cfgFiles[choice]);
+        if (choice >= 0) {
+            if (status = loadConfigFile(cfgFiles[choice])) {
+                cout << "ERROR: Errors in config file. Please correct." << endl;
+            }
+        }
     }
+    return status;
 }

@@ -34,17 +34,20 @@
 #include <map>
 #include <QMetaType>
 
+const std::string WHITESPACE = " \n\r\t\f\v";
 const std::string EXT = ".wave";
 
 
 /* Wave-circle config struct */
 typedef struct {
     double wavelength = 2.0 * M_PI;
-    float amplitude = 0.6f;
+    float amplitude = 0.4f;
     float period = 1.0f * M_PI;
     int orbits = 4;
     int resolution = 360;
     bool superposition = false;
+    bool gpu = true;
+    bool parallel = false;
     std::string shader = "ortho_wave.vert";
 } WaveConfig;
 Q_DECLARE_METATYPE(WaveConfig);
@@ -55,7 +58,7 @@ class ConfigParser {
         ConfigParser();
         virtual ~ConfigParser();
 
-        void populateConfig();
+        int populateConfig();
 
         std::vector<std::string> cfgFiles;
         WaveConfig *config;
@@ -63,7 +66,7 @@ class ConfigParser {
     private:
         int findConfigFiles();
         int chooseConfigFile();
-        void loadConfigFile(std::string filepath);
+        int loadConfigFile(std::string filepath);
         void fillConfigFile();
 
         std::map<std::string, int> cfgValues;

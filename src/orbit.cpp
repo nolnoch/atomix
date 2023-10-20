@@ -28,10 +28,10 @@
 Orbit::Orbit(WaveConfig cfg, Orbit *prior = nullptr)
     : config(cfg), priorOrbit(prior) {
     this->idx = prior ? prior->idx + 1 : 1;
-    this->amplitude = A;
-    this->two_pi_L = TWO_PI / L;
-    this->two_pi_T = TWO_PI / T;
-    this->deg_fac = 2.0 * M_PI / STEPS;
+    this->amplitude = config.amplitude;
+    this->two_pi_L = TWO_PI / config.wavelength;
+    this->two_pi_T = TWO_PI / config.period;
+    this->deg_fac = 2.0 * M_PI / config.resolution;
 
     if (config.gpu)
         genOrbit();
@@ -53,7 +53,7 @@ void Orbit::genOrbit() {
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
-    for (int i = 0; i < STEPS; i++) {
+    for (int i = 0; i < config.resolution; i++) {
         double theta = i * deg_fac;
         myIndices.push_back(i);
 
@@ -82,7 +82,7 @@ void Orbit::updateOrbit(double t) {
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
-    for (int i = 0; i < STEPS; i++) {
+    for (int i = 0; i < config.resolution; i++) {
         float x, y, z;
         double theta = i * deg_fac;
         myIndices.push_back(i);

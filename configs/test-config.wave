@@ -1,0 +1,30 @@
+# (orbits: int <= 8) Number of wave-circle orbits [default = 4]
+orbits: 7
+
+# (amplitude: float) Vertical displacement of waves [default = 0.4]
+amplitude: 0.7
+
+# (period: float) Wave period [default = 1.0]
+period: 1.0
+
+# (wavelength: double) Wavelength/lambda in multiples of pi [default = 2.0]
+wavelength: 2.0
+
+# (resolution: int) Render resolution of the circle (vertices per circumference) [default = 360]
+resolution: 500
+
+# (orientation: 'orthogonal','parallel') Whether waves should be 'parallel' (coplanar) or
+# 'orthogonal' to orbit diameter [default = orthogonal]
+orientation: parallel
+
+# (superposition: 'true','false') Whether to respect superposition in coplanar wavefunctions
+# (irrelevant to orthogonal waves) [default = false]
+superposition: true
+
+# (processor: 'cpu','gpu') Whether to perform transformations on 'cpu' or 'gpu'
+# (if parallel waves are requested and superposition is true, must be cpu) [default = gpu]
+processor: cpu
+
+# (shader: filename) Vertex shader file name for this render
+# [default = "ortho_wave.vert"]
+shader: 

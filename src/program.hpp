@@ -55,8 +55,10 @@
 
 #include <iostream>
 #include <vector>
-
 #include "shaderobj.hpp"
+#include "global.hpp"
+
+const std::string SHADERS = std::string(ROOT_DIR) + "shaders/";
 
 
 /**

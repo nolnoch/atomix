@@ -29,13 +29,14 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <vector>
 #include <map>
 #include <QMetaType>
+#include "global.hpp"
 
 const std::string WHITESPACE = " \n\r\t\f\v";
 const std::string EXT = ".wave";
+const std::string CONFIGS = std::string(ROOT_DIR) + "configs/";
 
 
 /* Wave-circle config struct */

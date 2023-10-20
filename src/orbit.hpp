@@ -76,15 +76,4 @@ class Orbit {
         double deg_fac = 0;
 };
 
-/* Orbit config aliases */
-#define WAVES   config.orbits        // Number of orbits
-#define A       config.amplitude     // Wave-circle amplitude
-#define T       config.period        // Wave-circle period
-#define L       config.wavelength    // Wave-circle lambda
-#define STEPS   config.resolution    // Wave-circle resolution
-#define SUPER   config.superposition // Toggle superposition
-#define SHADER  config.shader        // Vertex shader
-#define GPU     config.gpu           // CPU or GPU calculation
-#define PARA    config.parallel      // Parallel or Orthogonal waves
-
 #endif

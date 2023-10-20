@@ -57,8 +57,8 @@ void ConfigParser::fillConfigFile() {
 }
 
 int ConfigParser::findConfigFiles() {
-    const std::string PATH = filesystem::current_path().string() + "/";
-    for (auto &p: filesystem::recursive_directory_iterator(PATH)) {
+    //const std::string PATH = filesystem::current_path().string() + "/";
+    for (auto &p: filesystem::recursive_directory_iterator(CONFIGS)) {
         if (p.path().extension() == EXT)
             this->cfgFiles.push_back(p.path().string());
     }

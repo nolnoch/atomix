@@ -55,6 +55,8 @@ void GWidget::configReceived(WaveConfig *cfg) {
     gw_config.resolution = cfg->resolution;
     gw_config.wavelength = cfg->wavelength;
     gw_config.superposition = cfg->superposition;
+    gw_config.gpu = cfg->gpu;
+    gw_config.parallel = cfg->parallel;
     gw_config.shader = cfg->shader;
 }
 
@@ -111,6 +113,7 @@ void GWidget::waveProgram(uint i) {
     gw_orbits.push_back(new Orbit(gw_config, c > 0 ? gw_orbits[c - 1] : 0));
 
     /* Program */
+    uint static_dynamic = gw_config.gpu ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW;
     Program *prog = new Program(this);
     waveProgs.push_back(prog);
     prog->addShader(gw_config.shader, GL_VERTEX_SHADER);
@@ -119,12 +122,10 @@ void GWidget::waveProgram(uint i) {
     prog->linkAndValidate();
     prog->initVAO();
     prog->bindVAO();
-    
-    prog->bindVBO((gw_orbits.back()->vertexSize()), gw_orbits.back()->vertexData(), GL_DYNAMIC_DRAW);
-    prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords
-    prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour
+    prog->bindVBO((gw_orbits.back()->vertexSize()), gw_orbits.back()->vertexData(), static_dynamic);
+    prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords or factorsA
+    prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour or factorsB
     prog->enableAttributes();
-    
     prog->bindEBO(gw_orbits.back()->indexSize(), gw_orbits.back()->indexData());
 
     /* Release */
@@ -214,9 +215,11 @@ void GWidget::paintGL() {
     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
     crystalProg->endRender();
 
-    /* Update -- Waves */
-    for (int i = 0; i < gw_orbits.size(); i++) {
-        gw_orbits[i]->updateOrbit(time);
+    /* (CPU) Update -- Waves */
+    if (!gw_config.gpu) {
+        for (int i = 0; i < gw_orbits.size(); i++) {
+            gw_orbits[i]->updateOrbit(time);
+        }
     }
     
     /* Render -- Waves */
@@ -226,6 +229,7 @@ void GWidget::paintGL() {
         waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
         waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
         waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        waveProgs[i]->setUniform(GL_FLOAT, "time", time);
         glDrawElements(GL_LINE_LOOP, gw_orbits[i]->indexCount(), GL_UNSIGNED_INT, 0);
         waveProgs[i]->endRender();
     }

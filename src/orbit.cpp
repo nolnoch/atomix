@@ -33,11 +33,43 @@ Orbit::Orbit(WaveConfig cfg, Orbit *prior = nullptr)
     this->two_pi_T = TWO_PI / T;
     this->deg_fac = 2.0 * M_PI / STEPS;
 
-    updateOrbit(0);
+    if (config.gpu)
+        genOrbit();
+    else
+        updateOrbit(0);
 }
 
 Orbit::~Orbit() {
 
+}
+
+void Orbit::genOrbit() {
+    double radius = (double) this->idx;
+    myVertices.clear();
+    myIndices.clear();
+
+    /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
+    /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
+    /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
+    /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
+
+    for (int i = 0; i < STEPS; i++) {
+        double theta = i * deg_fac;
+        myIndices.push_back(i);
+
+        float a = amplitude;
+        float k = two_pi_L * radius * theta;
+        float w = two_pi_T;
+        float r = (float) radius;
+        float c = cos(theta);
+        float s = sin(theta);
+
+        vec factorsA = vec(a, k, w);
+        vec factorsB = vec(r, c, s);
+        
+        myVertices.push_back(factorsA);
+        myVertices.push_back(factorsB);
+    }
 }
 
 void Orbit::updateOrbit(double t) {
@@ -51,27 +83,30 @@ void Orbit::updateOrbit(double t) {
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
     for (int i = 0; i < STEPS; i++) {
+        float x, y, z;
         double theta = i * deg_fac;
         myIndices.push_back(i);
 
         double wavefunc = amplitude * sin((two_pi_L * r * theta) - (two_pi_T * t) + phase_const);
 
-        float x = (wavefunc + r) * cos(theta);
-        float y = 0.0f;
-        float z = (wavefunc + r) * sin(theta);
+        if (config.parallel) {
+            x = (wavefunc + r) * cos(theta);
+            y = 0.0f;
+            z = (wavefunc + r) * sin(theta);
+        } else {
+            x = r * cos(theta);
+            y = wavefunc;
+            z = r * sin(theta);
+        }
 
-
-        
         vec vertex = vec(x, y, z);
         vec colour = vec(1.0f, 1.0f, 1.0f);
         
         myVertices.push_back(vertex);
         myVertices.push_back(colour);
-
-        myComponents.push_back(glm::vec2(wavefunc, r));
     }
 
-    if (idx > 1 && SUPER)
+    if (idx > 1 && config.superposition)
         superposition();
 }
 
@@ -88,10 +123,17 @@ void Orbit::proximityDetect() {
         bool crossX = diffX > 0 && diffX < 0.05;
         bool crossZ = diffZ > 0 && diffZ < 0.05;
 
+        /* Interesection highlight */
         if (crossX && crossZ) {
             myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
             priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
         }
+
+        /* Crossing region highlight 
+        if (diffX >= 0 && diffZ >= 0) {
+            myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+            priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+        }*/
     }
 }
 
@@ -106,8 +148,16 @@ void Orbit::superposition() {
         double diffZ = abs(a.z) - abs(b.z);
 
         if (diffX >= 0 && diffZ >= 0) {
-            myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
-            priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+            //myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+            //priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
+
+            float avgX = (a.x + b.x) / 2;
+            float avgZ = (a.z + b.z) / 2;
+
+            vec avg = vec(avgX, 0.0f, avgZ);
+
+            myVertices[dt] = avg;
+            priorOrbit->myVertices[dt] = avg;
         }
     }
 }

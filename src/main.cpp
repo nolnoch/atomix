@@ -60,7 +60,8 @@ int main(int argc, char* argv[]) {
 
     /* Orbit Starting Configuration */
     ConfigParser cfgParser;
-    cfgParser.populateConfig();
+    if (cfgParser.populateConfig())
+        return -1;
 
     /* Windows */
     MainWindow mainWindow;

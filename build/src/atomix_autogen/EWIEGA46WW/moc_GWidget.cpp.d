@@ -190,6 +190,7 @@
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qtwidgetsglobal.h \
   /home/braer/Qt/6.5.3/gcc_64/include/QtWidgets/qwidget.h \
   /home/braer/dev/atomix/src/configparser.hpp \
+  /home/braer/dev/atomix/src/global.hpp \
   /home/braer/dev/atomix/src/orbit.hpp \
   /home/braer/dev/atomix/src/program.hpp \
   /home/braer/dev/atomix/src/quaternion.hpp \

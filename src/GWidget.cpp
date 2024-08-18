@@ -58,12 +58,13 @@ void GWidget::configReceived(WaveConfig *cfg) {
     gw_config.gpu = cfg->gpu;
     gw_config.parallel = cfg->parallel;
     gw_config.shader = cfg->shader;
+    gw_config.sphere = cfg->sphere;
 }
 
 void GWidget::crystalProgram() {
     float zero, peak, edge, back, forX, forZ, root;
     edge = 0.6f;  // <-- Change this to scale diamond
-    peak = edge * 1.2;
+    peak = edge;
     zero = 0.0f;
     root = sqrt(3);
     back = root / 3 * edge;
@@ -122,7 +123,7 @@ void GWidget::waveProgram(uint i) {
     prog->linkAndValidate();
     prog->initVAO();
     prog->bindVAO();
-    prog->bindVBO((gw_orbits.back()->vertexSize()), gw_orbits.back()->vertexData(), static_dynamic);
+    prog->bindVBO(gw_orbits.back()->vertexSize(), gw_orbits.back()->vertexData(), static_dynamic);
     prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords or factorsA
     prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour or factorsB
     prog->enableAttributes();
@@ -229,8 +230,11 @@ void GWidget::paintGL() {
         waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
         waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
         waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        //waveProgs[i]->setUniform(GL_FLOAT, "two_pi_L", gw_orbits[0]->two_pi_L);
+        //waveProgs[i]->setUniform(GL_FLOAT, "two_pi_T", gw_orbits[0]->two_pi_T);
+        //waveProgs[i]->setUniform(GL_FLOAT, "amp", gw_orbits[0]->amplitude);
         waveProgs[i]->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_LINE_LOOP, gw_orbits[i]->indexCount(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_POINTS, gw_orbits[i]->indexCount(), GL_UNSIGNED_INT, 0);
         waveProgs[i]->endRender();
     }
 

@@ -48,6 +48,9 @@ class Orbit {
         Orbit(WaveConfig cfg, Orbit *prior);
         virtual ~Orbit();
 
+        void sphereOrbitA();
+        void sphereOrbitB();
+        void sphereOrbitCPU();
         void genOrbit();
         void updateOrbit(double time);
         void proximityDetect();
@@ -60,6 +63,10 @@ class Orbit {
         int indexSize();
         const uint* indexData();
 
+        double amplitude = 0;
+        double two_pi_L = 0;
+        double two_pi_T = 0;
+
     private:
         int idx = 0;
         WaveConfig config;
@@ -68,9 +75,9 @@ class Orbit {
         dvec myComponents;
         Orbit *priorOrbit = nullptr;
 
-        double amplitude = 0;
-        double two_pi_L = 0;
-        double two_pi_T = 0;
+        //double amplitude = 0;
+        //double two_pi_L = 0;
+        //double two_pi_T = 0;
         double phase_const = 0;
 
         double deg_fac = 0;

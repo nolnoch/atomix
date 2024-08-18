@@ -39,6 +39,7 @@ ConfigParser::ConfigParser() {
     cfgValues["superposition"] = 7;
     cfgValues["orientation"] = 8;
     cfgValues["processor"] = 9;
+    cfgValues["sphere"] = 10;
 
     config = new WaveConfig;
 }
@@ -181,16 +182,21 @@ int ConfigParser::loadConfigFile(string path) {
                 config->gpu = string("gpu") == value;
                 changes++;
                 break;
+            case 10:
+                config->sphere = string("true") == value;
+                changes++;
+                break;
             default:
                 continue;
         }
     }
-    if (changes < 9)
+    if (changes < 10)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
     string ortho = "ortho_wave.vert";
     string para = "para_wave.vert";
     string super = "cpu_wave.vert";
+    string sphere = "para_sphere.vert";
     string shad = config->shader;
     if (custom_shader) {
         if (shad == ortho) {
@@ -237,6 +243,11 @@ int ConfigParser::loadConfigFile(string path) {
             cout << "CPU calculation requested; auto-selecting shader \"cpu_wave.vert\"." << endl;
             config->shader = super;
         }
+    }
+    if (config->sphere) {
+        cout << "Special case \"sphere\" selected. Using \"para_sphere.vert\" on GPU." << endl;
+        config->shader = sphere;
+        config->gpu = true;
     }
 
 label_abort:

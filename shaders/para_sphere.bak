@@ -1,0 +1,40 @@
+#version 450 core
+
+layout(location = 0) in vec3 factorsA;
+layout(location = 1) in vec3 factorsB;
+
+out vec3 vertColour;
+
+uniform float two_pi_L;
+uniform float two_pi_T;
+uniform float amp;
+uniform float time;
+
+uniform mat4 worldMat;
+uniform mat4 viewMat;
+uniform mat4 projMat;
+
+void main() {
+    float r = 1.0f;
+    float x = factorsA.x;
+    float y = factorsA.y;
+    float z = factorsA.z;
+    float theta = factorsB.x;
+    float cos_th = factorsB.y;
+    float sin_th = factorsB.z;
+    float r_theta = theta * z;
+    float r_phi = theta * y;
+   
+    //       sin((2pi / L * x) - (2pi / T * t))
+    //       sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
+    float wavefunc = sin((two_pi_L * cos(r_phi) * r_theta) + (two_pi_L * sin(r_phi) * r_theta) - (two_pi_T * time));
+    float displacement = amp * wavefunc;
+
+    float x_coord = (r + displacement) * cos_th;
+    float axis_two = (r + displacement) * sin_th;
+    float y_coord = axis_two * y;
+    float z_coord = axis_two * z;
+
+    vertColour = vec3(wavefunc, 1 - wavefunc, 1.0f);
+    gl_Position = projMat * viewMat * worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
+};

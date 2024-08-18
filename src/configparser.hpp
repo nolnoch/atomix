@@ -49,6 +49,7 @@ typedef struct {
     bool superposition = false;
     bool gpu = true;
     bool parallel = false;
+    bool sphere = false;
     std::string shader = "ortho_wave.vert";
 } WaveConfig;
 Q_DECLARE_METATYPE(WaveConfig);

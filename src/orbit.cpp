@@ -31,16 +31,104 @@ Orbit::Orbit(WaveConfig cfg, Orbit *prior = nullptr)
     this->amplitude = config.amplitude;
     this->two_pi_L = TWO_PI / config.wavelength;
     this->two_pi_T = TWO_PI / config.period;
-    this->deg_fac = 2.0 * M_PI / config.resolution;
+    this->deg_fac = TWO_PI / config.resolution;
 
-    if (config.gpu)
+    if (config.sphere) {
+        sphereOrbitB();
+    } else if (config.gpu) {
         genOrbit();
-    else
+    } else {
         updateOrbit(0);
+    }
 }
 
 Orbit::~Orbit() {
 
+}
+
+void Orbit::sphereOrbitA() {
+    myVertices.clear();
+    myIndices.clear();
+
+    for (int i = 0; i < config.resolution; i++) {
+        double theta = i * deg_fac;
+        
+        myIndices.push_back(i);
+
+        float x = 1.0f;
+        float y = (float) (this->idx - 1);          //idx=1: 0, idx=2: 1
+        float z = (float) -(this->idx - 2);         //idx=1: 1, idx=2: 0
+        float h = (float) theta;
+        float c = (float) cos(theta);
+        float s = (float) sin(theta);
+
+        vec factorsA = vec(x, y, z);
+        vec factorsB = vec(h, c, s);
+        
+        myVertices.push_back(factorsA);
+        // std::cout << glm::to_string(factorsA) << "\n";
+        myVertices.push_back(factorsB);
+    }
+}
+
+void Orbit::sphereOrbitB() {
+    double radius = (double) this->idx;
+    myVertices.clear();
+    myIndices.clear();
+
+    for (int i = 0; i < config.resolution; i++) {
+        for (int j = 0; j < config.resolution; j++) {
+            double theta = i * deg_fac;
+            double phi = j * deg_fac;
+            
+            myIndices.push_back(i*config.resolution + j);
+
+            float a = amplitude;
+            float k = two_pi_L;
+            float w = two_pi_T;
+            float h = (float) theta;
+            float p = (float) phi;
+            float r = (float) radius;
+
+            vec factorsA = vec(a, k, w);
+            vec factorsB = vec(h, p, r);
+            
+            myVertices.push_back(factorsA);
+            myVertices.push_back(factorsB);
+            //std::cout << glm::to_string(factorsB) << "\n";
+        }
+    }
+
+    std::cout << "Sphere " << this->idx << " generation complete." << std::endl;
+}
+
+void Orbit::sphereOrbitCPU() {
+    double radius = (double) this->idx;
+    myVertices.clear();
+    myIndices.clear();
+
+    for (int i = 0; i < config.resolution; i++) {
+        for (int j = 0; j < config.resolution; j++) {
+            double theta = i * deg_fac;
+            double phi = j * deg_fac;
+            
+            myIndices.push_back(i*config.resolution + j);
+
+            float r = 0.8f;
+            float g = 0.8f;
+            float b = 0.8f;
+
+            float x = (float) (sin(phi) * sin(theta));
+            float y = (float) cos(phi);
+            float z = (float) (sin(phi) * cos(theta));
+
+            vec factorsA = vec(r, g, b);
+            vec factorsB = vec(x, y, z);
+            
+            myVertices.push_back(factorsA);
+            myVertices.push_back(factorsB);
+        }
+    }
 }
 
 void Orbit::genOrbit() {
@@ -170,6 +258,7 @@ int Orbit::vertexSize() {
     int chunks = myVertices.size();
     int chunkSize = sizeof(glm::vec3);
 
+    //std::cout << "MyVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
 }
 

@@ -27,24 +27,25 @@
 Window::Window(MainWindow *mw)
     : mainWindow(mw) {
     /* Create and arrange window components */
-    QWidget *w = new QWidget;
+    //QWidget *wWindow = new QWidget;
     graph = new GWidget(this);
-    slide = new QSlider(Qt::Vertical, this);
-    morb = new QPushButton("Morb", this);
-    QVBoxLayout *verGrid = new QVBoxLayout;
+    //qCombo = new QComboBox(this);
+    //slide = new QSlider(Qt::Vertical, this);
+    //qMorb = new QPushButton("Morb", this);
+    //QVBoxLayout *verGrid = new QVBoxLayout;
     QHBoxLayout *horGrid = new QHBoxLayout;
 
-    slide->setTickPosition(QSlider::TicksRight);
-    slide->setTickInterval(1);
-    slide->setSingleStep(1);
-    slide->setFixedWidth(80);
+    //slide->setTickPosition(QSlider::TicksRight);
+    //slide->setTickInterval(1);
+    //slide->setSingleStep(1);
+    //slide->setFixedWidth(80);
 
+    //verGrid->addWidget(qCombo);
+    //verGrid->addWidget(qMorb);
+    //w->setLayout(verGrid);
     horGrid->addWidget(graph);
-    horGrid->addWidget(slide);
-    w->setLayout(horGrid);
-    verGrid->addWidget(w);
-    verGrid->addWidget(morb);
-    this->setLayout(verGrid);
+    //horGrid->addWidget(w);
+    this->setLayout(horGrid);
 
     connect(this, &Window::passConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
 

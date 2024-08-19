@@ -26,14 +26,27 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QDockWidget>
+#include <QTableWidget>
+#include <QHeaderView>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QCheckBox>
+#include <QGroupBox>
+#include <QButtonGroup>
 #include "Window.hpp"
+
+const QString EMPTY = "Default";
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     MainWindow();
-    void loadConfig(WaveConfig *cfg);
+    void lockConfig(WaveConfig *cfg);
+    void refreshConfigs();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -45,7 +58,39 @@ private slots:
     void onAddNew();
 
 private:
-    Window *container;
+    Window *container = nullptr;
+    QWidget *wDock = nullptr;
+    QDockWidget *controlBox = nullptr;
+    QComboBox *qCombo = nullptr;
+    QPushButton *qMorb = nullptr;
+    QVBoxLayout *layGrid = nullptr;
+    QVBoxLayout *cfgGrid = nullptr;
+    QTableWidget *cfgTable = nullptr;
+    ConfigParser *cfgParser = nullptr;
+
+    QLineEdit *entryOrbit = nullptr;
+    QLineEdit *entryAmp = nullptr;
+    QLineEdit *entryPeriod = nullptr;
+    QLineEdit *entryWavelength = nullptr;
+    QLineEdit *entryResolution = nullptr;
+    QRadioButton *entryOrtho = nullptr;
+    QRadioButton *entryPara = nullptr;
+    QRadioButton *entrySuperOn = nullptr;
+    QRadioButton *entrySuperOff = nullptr;
+    QRadioButton *entryCPU = nullptr;
+    QRadioButton *entryGPU = nullptr;
+    QRadioButton *entryCircle = nullptr;
+    QRadioButton *entrySphere = nullptr;
+    QComboBox *entryVertex = nullptr;
+    QComboBox *entryFrag = nullptr;
+
+    QButtonGroup *buttGroupOrtho = nullptr;
+    QButtonGroup *buttGroupSuper = nullptr;
+    QButtonGroup *buttGroupCPU = nullptr;
+    QButtonGroup *buttGroupSphere = nullptr;
+
+    void loadConfig();
+    void setupDock();
 };
 
 #endif

@@ -1,5 +1,5 @@
 /**
- * Window.hpp
+ * MainWindow.cpp
  *
  *    Created on: Oct 3, 2023
  *   Last Update: Oct 14, 2023
@@ -22,34 +22,26 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef WINDOW_H
-#define WINDOW_H
+#include "MainWindow.hpp"
 
-#include <QWidget>
-#include <QSlider>
-#include <QComboBox>
-#include <QPushButton>
-#include <QKeyEvent>
-#include "GWidget.hpp"
+MainWindow::MainWindow() {
+    onAddNew();
+}
 
-class GWidget;
-class MainWindow;
+void MainWindow::loadConfig(WaveConfig *cfg) {
+    emit sendConfig(cfg);
+}
 
-class Window : public QWidget {
-    Q_OBJECT
+void MainWindow::onAddNew() {
+    container = new Window(this);
+    setCentralWidget(container);
+    connect(this, &MainWindow::sendConfig, container, &Window::passConfig, Qt::DirectConnection);
+}
 
-public:
-    Window(MainWindow *mw);
-
-signals:
-    void passConfig(WaveConfig *cfg);
-
-private:
-    GWidget *graph = nullptr;
-    //QSlider *slide = nullptr;
-    //QComboBox *qCombo = nullptr;
-    //QPushButton *qMorb = nullptr;
-    MainWindow *mainWindow = nullptr;
-};
-
-#endif
+void MainWindow::keyPressEvent(QKeyEvent *e)
+{
+    if (e->key() == Qt::Key_Escape)
+        close();
+    else
+        QWidget::keyPressEvent(e);
+}

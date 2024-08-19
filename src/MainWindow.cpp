@@ -28,14 +28,181 @@ MainWindow::MainWindow() {
     onAddNew();
 }
 
-void MainWindow::loadConfig(WaveConfig *cfg) {
+void MainWindow::lockConfig(WaveConfig *cfg) {
     emit sendConfig(cfg);
 }
 
 void MainWindow::onAddNew() {
-    container = new Window(this);
+    qCombo = new QComboBox(this);
+    cfgParser = new ConfigParser;
+
+    /* Orbit Starting Configuration */
+    //assert(!cfgParser->populateConfig());
+    refreshConfigs();
+    loadConfig();
+
+    /* Setup Dock GUI */
+    setupDock();
+    addDockWidget(Qt::RightDockWidgetArea, controlBox);
     setCentralWidget(container);
+    
     connect(this, &MainWindow::sendConfig, container, &Window::passConfig, Qt::DirectConnection);
+    lockConfig(cfgParser->config);
+}
+
+void MainWindow::refreshConfigs() {
+    int files = cfgParser->cfgFiles.size();
+    int rootLength = ROOT_DIR.length() + 8;
+
+    if (!files)
+        files = cfgParser->findConfigFiles();
+    assert(files);
+
+    qCombo->clear();
+    qCombo->addItem(EMPTY);
+    for (int i = 0; i < files; i++) {
+        qCombo->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength));
+    }
+}
+
+void MainWindow::loadConfig() {
+    int comboIdx = qCombo->currentIndex();
+    QString cfgCurrent = qCombo->itemText(comboIdx);
+
+    if (!comboIdx)
+        return;
+
+    //QString cfgPath = QString::fromStdString(CONFIGS) + cfgCurrent;
+    assert(cfgParser->loadConfigFile(cfgParser->cfgFiles[comboIdx - 1]));
+
+    //TODO
+}
+
+void MainWindow::setupDock() {
+    layGrid = new QVBoxLayout;
+    cfgGrid = new QVBoxLayout;
+    wDock = new QWidget;
+    container = new Window(this);
+    controlBox = new QDockWidget(this);
+    qMorb = new QPushButton("Morb", this);
+    cfgTable = new QTableWidget(11, 2, this);
+
+    QGroupBox *groupConfig = new QGroupBox("Configuration");
+    
+    QHBoxLayout *row1 = new QHBoxLayout;
+    QHBoxLayout *row2 = new QHBoxLayout;
+    QHBoxLayout *row3 = new QHBoxLayout;
+    QHBoxLayout *row4 = new QHBoxLayout;
+    QHBoxLayout *row5 = new QHBoxLayout;
+    QHBoxLayout *row6 = new QHBoxLayout;
+    QHBoxLayout *row7 = new QHBoxLayout;
+    QHBoxLayout *row8 = new QHBoxLayout;
+    QHBoxLayout *row9 = new QHBoxLayout;
+    QHBoxLayout *row10 = new QHBoxLayout;
+    QHBoxLayout *row11 = new QHBoxLayout;
+
+    QLabel *labelConfig = new QLabel("Select Config File:");
+    QLabel *labelOrbit = new QLabel("Number of orbit waves (0,8]");
+    QLabel *labelAmp = new QLabel("Amplitude of waves");
+    QLabel *labelPeriod = new QLabel("Period of waves (n * PI)");
+    QLabel *labelWavelength = new QLabel("Wavelength of waves (n * PI)");
+    QLabel *labelResolution = new QLabel("Resolution (points) per wave");
+    QLabel *labelOrthoPara = new QLabel("Orthogonal vs Parallel waves");
+    QLabel *labelSuper = new QLabel("Superposition on/off");
+    QLabel *labelCPU = new QLabel("CPU vs GPU rendering");
+    QLabel *labelSphere = new QLabel("Spherical vs Circular waves");
+    QLabel *labelVertex = new QLabel("Select Vertex Shader file");
+    QLabel *labelFrag = new QLabel("Select Fragment Shader file");
+
+    entryOrbit = new QLineEdit("4");
+    entryAmp = new QLineEdit("0.4");
+    entryPeriod = new QLineEdit("1.0");
+    entryWavelength = new QLineEdit("2.0");
+    entryResolution = new QLineEdit("180");
+    entryOrtho = new QRadioButton("Ortho");
+    entryPara = new QRadioButton("Para");
+    entrySuperOn = new QRadioButton("On");
+    entrySuperOff = new QRadioButton("Off");
+    entryCPU = new QRadioButton("CPU");
+    entryGPU = new QRadioButton("GPU");
+    entryCircle = new QRadioButton("Circle");
+    entrySphere = new QRadioButton("Sphere");
+    entryVertex = new QComboBox(this);
+    entryFrag = new QComboBox(this);
+
+    buttGroupOrtho = new QButtonGroup();
+    buttGroupOrtho->addButton(entryOrtho, 1);
+    buttGroupOrtho->addButton(entryPara, 2);
+    entryOrtho->toggle();
+    buttGroupSuper = new QButtonGroup();
+    buttGroupSuper->addButton(entrySuperOn, 4);
+    buttGroupSuper->addButton(entrySuperOff, 8);
+    entrySuperOff->toggle();
+    buttGroupCPU = new QButtonGroup();
+    buttGroupCPU->addButton(entryCPU, 16);
+    buttGroupCPU->addButton(entryGPU, 32);
+    entryGPU->toggle();
+    buttGroupSphere = new QButtonGroup();
+    buttGroupSphere->addButton(entryCircle, 64);
+    buttGroupSphere->addButton(entrySphere, 128);
+    entryCircle->toggle();
+
+    row1->addWidget(labelOrbit, 2, Qt::AlignLeft);
+    row1->addWidget(entryOrbit, 2, Qt::AlignRight);
+    row2->addWidget(labelAmp, 2, Qt::AlignLeft);
+    row2->addWidget(entryAmp, 2, Qt::AlignRight);
+    row3->addWidget(labelPeriod, 2, Qt::AlignLeft);
+    row3->addWidget(entryPeriod, 2, Qt::AlignRight);
+    row4->addWidget(labelWavelength, 2, Qt::AlignLeft);
+    row4->addWidget(entryWavelength, 2, Qt::AlignRight);
+    row5->addWidget(labelResolution, 2, Qt::AlignLeft);
+    row5->addWidget(entryResolution, 2, Qt::AlignRight);
+    row6->addWidget(labelOrthoPara, 2, Qt::AlignLeft);
+    row6->addWidget(entryOrtho, 1, Qt::AlignRight);
+    row6->addWidget(entryPara, 1, Qt::AlignRight);
+    row7->addWidget(labelSuper, 2, Qt::AlignLeft);
+    row7->addWidget(entrySuperOff, 1, Qt::AlignRight);
+    row7->addWidget(entrySuperOn, 1, Qt::AlignRight);
+    row8->addWidget(labelCPU, 2, Qt::AlignLeft);
+    row8->addWidget(entryCPU, 1, Qt::AlignRight);
+    row8->addWidget(entryGPU, 1, Qt::AlignRight);
+    row9->addWidget(labelSphere, 2, Qt::AlignLeft);
+    row9->addWidget(entrySphere, 1, Qt::AlignRight);
+    row9->addWidget(entryCircle, 1, Qt::AlignRight);
+    row10->addWidget(labelVertex, 2, Qt::AlignLeft);
+    row10->addWidget(entryVertex, 2, Qt::AlignRight);
+    row11->addWidget(labelFrag, 2, Qt::AlignLeft);
+    row11->addWidget(entryFrag, 2, Qt::AlignRight);
+    
+    cfgGrid->addLayout(row1);
+    cfgGrid->addLayout(row2);
+    cfgGrid->addLayout(row3);
+    cfgGrid->addLayout(row4);
+    cfgGrid->addLayout(row5);
+    cfgGrid->addLayout(row6);
+    cfgGrid->addLayout(row7);
+    cfgGrid->addLayout(row8);
+    cfgGrid->addLayout(row9);
+    cfgGrid->addLayout(row10);
+    cfgGrid->addLayout(row11);
+
+    groupConfig->setLayout(cfgGrid);
+    
+    layGrid->addWidget(labelConfig);
+    layGrid->addWidget(qCombo);
+    layGrid->addStretch(1);
+    layGrid->addWidget(groupConfig);
+    layGrid->addStretch(1);
+    layGrid->addWidget(qMorb);
+
+    layGrid->setStretchFactor(labelConfig, 1);
+    layGrid->setStretchFactor(qCombo, 1);
+    layGrid->setStretchFactor(groupConfig, 8);
+    layGrid->setStretchFactor(qMorb, 1);
+    
+    wDock->setLayout(layGrid);
+    wDock->setMinimumSize(500,0);
+    controlBox->setWidget(wDock);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

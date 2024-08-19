@@ -35,7 +35,9 @@
 #include "global.hpp"
 
 const std::string WHITESPACE = " \n\r\t\f\v";
-const std::string EXT = ".wave";
+const std::string CFGEXT = ".wave";
+const std::string VSHEXT = ".vert";
+const std::string FSHEXT = ".frag";
 const std::string CONFIGS = std::string(ROOT_DIR) + "configs/";
 
 
@@ -51,6 +53,7 @@ typedef struct {
     bool parallel = false;
     bool sphere = false;
     std::string shader = "ortho_wave.vert";
+    std::string frag = "wave.frag";
 } WaveConfig;
 Q_DECLARE_METATYPE(WaveConfig);
 
@@ -60,15 +63,17 @@ class ConfigParser {
         ConfigParser();
         virtual ~ConfigParser();
 
+        int findConfigFiles();
         int populateConfig();
+        int loadConfigFile(std::string filepath);
 
         std::vector<std::string> cfgFiles;
+        std::vector<std::string> vshFiles;
+        std::vector<std::string> fshFiles;
         WaveConfig *config;
 
     private:
-        int findConfigFiles();
         int chooseConfigFile();
-        int loadConfigFile(std::string filepath);
         void fillConfigFile();
 
         std::map<std::string, int> cfgValues;

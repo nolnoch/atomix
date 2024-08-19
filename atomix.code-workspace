@@ -70,7 +70,9 @@
 			"cinttypes": "cpp",
 			"typeinfo": "cpp",
 			"variant": "cpp",
-			"bit": "cpp"
+			"bit": "cpp",
+			"qlabel": "cpp",
+			"qgroupbox": "cpp"
 		}
 	}
 }

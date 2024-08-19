@@ -58,14 +58,8 @@ int main(int argc, char* argv[]) {
     qFmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(qFmt);
 
-    /* Orbit Starting Configuration */
-    ConfigParser cfgParser;
-    if (cfgParser.populateConfig())
-        return -1;
-
     /* Windows */
     MainWindow mainWindow;
-    mainWindow.loadConfig(cfgParser.config);
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
     float ratio = SRATIO;

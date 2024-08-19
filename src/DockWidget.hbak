@@ -1,7 +1,7 @@
 /**
- * Window.hpp
+ * DockWidget.hpp
  *
- *    Created on: Oct 3, 2023
+ *    Created on: Aug 18, 2024
  *   Last Update: Oct 14, 2023
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  * 
@@ -22,34 +22,31 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef WINDOW_H
-#define WINDOW_H
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
 
-#include <QWidget>
-#include <QSlider>
-#include <QComboBox>
-#include <QPushButton>
-#include <QKeyEvent>
-#include "GWidget.hpp"
+#include <QDockWidget>
+#include "Window.hpp"
 
-class GWidget;
-class MainWindow;
-
-class Window : public QWidget {
+class DockWidget : public QDockWidget {
     Q_OBJECT
 
 public:
-    Window(MainWindow *mw);
+    MainWindow();
+    void loadConfig(WaveConfig *cfg);
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
 
 signals:
-    void passConfig(WaveConfig *cfg);
+    void sendConfig(WaveConfig *cfg);
+
+private slots:
+    void onAddNew();
 
 private:
-    GWidget *graph = nullptr;
-    //QSlider *slide = nullptr;
-    //QComboBox *qCombo = nullptr;
-    //QPushButton *qMorb = nullptr;
-    MainWindow *mainWindow = nullptr;
+    Window *container;
+    QDockWidget *controls;
 };
 
 #endif

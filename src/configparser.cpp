@@ -60,7 +60,7 @@ void ConfigParser::fillConfigFile() {
 int ConfigParser::findConfigFiles() {
     //const std::string PATH = filesystem::current_path().string() + "/";
     for (auto &p: filesystem::recursive_directory_iterator(CONFIGS)) {
-        if (p.path().extension() == EXT)
+        if (p.path().extension() == CFGEXT)
             this->cfgFiles.push_back(p.path().string());
     }
     cout << "Found " << cfgFiles.size() << " candidate file(s)." << endl;
@@ -256,10 +256,9 @@ label_abort:
 }
 
 int ConfigParser::populateConfig() {
-    int cand = findConfigFiles();
     int status = 0;
 
-    if (!cand) {
+    if (!findConfigFiles()) {
         cout << "Using default configuration." << endl;
     } else {
         int choice = chooseConfigFile();

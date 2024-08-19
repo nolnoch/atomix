@@ -43,6 +43,7 @@ void MainWindow::onAddNew() {
 
     /* Setup Dock GUI */
     setupDock();
+    refreshShaders();
     addDockWidget(Qt::RightDockWidgetArea, controlBox);
     setCentralWidget(container);
     
@@ -52,16 +53,48 @@ void MainWindow::onAddNew() {
 
 void MainWindow::refreshConfigs() {
     int files = cfgParser->cfgFiles.size();
-    int rootLength = ROOT_DIR.length() + 8;
+    int rootLength = ROOT_DIR.length() + CONFIGS.length();
 
     if (!files)
-        files = cfgParser->findConfigFiles();
+        files = cfgParser->findFiles(std::string(ROOT_DIR) + std::string(CONFIGS), CFGEXT, &cfgParser->cfgFiles);
     assert(files);
 
     qCombo->clear();
     qCombo->addItem(EMPTY);
     for (int i = 0; i < files; i++) {
         qCombo->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength));
+    }
+}
+
+void MainWindow::refreshShaders() {
+    int rootLength = ROOT_DIR.length() + SHADERS.length();
+    int files = 0;
+
+    /* Vertex Shaders */
+    files = cfgParser->vshFiles.size();
+    if (!files)
+        files = cfgParser->findFiles(std::string(ROOT_DIR) + std::string(SHADERS), VSHEXT, &cfgParser->vshFiles);
+    assert(files);
+
+    entryVertex->clear();
+    for (int i = 0; i < files; i++) {
+        cout << cfgParser->vshFiles[i] << endl;
+        QString item = QString::fromStdString(cfgParser->vshFiles[i]).sliced(rootLength);
+        if (!item.contains("crystal"))
+            entryVertex->addItem(item);
+    }
+
+    /* Fragment Shaders */
+    files = cfgParser->fshFiles.size();
+    if (!files)
+        files = cfgParser->findFiles(std::string(ROOT_DIR) + std::string(SHADERS), FSHEXT, &cfgParser->fshFiles);
+    assert(files);
+
+    entryFrag->clear();
+    for (int i = 0; i < files; i++) {
+        QString item = QString::fromStdString(cfgParser->fshFiles[i]).sliced(rootLength);
+        if (!item.contains("crystal"))
+            entryFrag->addItem(item);
     }
 }
 

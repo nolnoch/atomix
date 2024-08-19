@@ -46,7 +46,6 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
     void lockConfig(WaveConfig *cfg);
-    void refreshConfigs();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -91,6 +90,8 @@ private:
 
     void loadConfig();
     void setupDock();
+    void refreshConfigs();
+    void refreshShaders();
 };
 
 #endif

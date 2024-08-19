@@ -46,6 +46,8 @@ ConfigParser::ConfigParser() {
 
 ConfigParser::~ConfigParser() {
     cfgFiles.clear();
+    vshFiles.clear();
+    fshFiles.clear();
 }
 
 void ConfigParser::fillConfigFile() {
@@ -57,15 +59,15 @@ void ConfigParser::fillConfigFile() {
     config->resolution = config->resolution > 0 ?: 360;
 }
 
-int ConfigParser::findConfigFiles() {
+int ConfigParser::findFiles(std::string loc, std::string type, std::vector<std::string>* fileList) {
     //const std::string PATH = filesystem::current_path().string() + "/";
-    for (auto &p: filesystem::recursive_directory_iterator(CONFIGS)) {
-        if (p.path().extension() == CFGEXT)
-            this->cfgFiles.push_back(p.path().string());
+    for (auto &p: filesystem::recursive_directory_iterator(loc)) {
+        if (p.path().extension() == type)
+            fileList->push_back(p.path().string());
     }
-    cout << "Found " << cfgFiles.size() << " candidate file(s)." << endl;
+    cout << "Found " << fileList->size() << " candidate file(s) with extension " << type << "." << endl;
 
-    return cfgFiles.size();
+    return fileList->size();
 }
 
 int ConfigParser::chooseConfigFile() {
@@ -258,7 +260,7 @@ label_abort:
 int ConfigParser::populateConfig() {
     int status = 0;
 
-    if (!findConfigFiles()) {
+    if (!findFiles(std::string(ROOT_DIR) + std::string(CONFIGS), CFGEXT, &cfgFiles)) {
         cout << "Using default configuration." << endl;
     } else {
         int choice = chooseConfigFile();

@@ -63,7 +63,7 @@ Program::~Program() {
 int Program::addShader(string fName, int type) {
   int validFile;
 
-  string fileLoc = SHADERS + fName;
+  string fileLoc = string(ROOT_DIR) + string(SHADERS) + fName;
 
   this->shaders.push_back(Shader(fileLoc, type));
   validFile = this->shaders.back().isValid();

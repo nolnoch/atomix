@@ -38,7 +38,6 @@ const std::string WHITESPACE = " \n\r\t\f\v";
 const std::string CFGEXT = ".wave";
 const std::string VSHEXT = ".vert";
 const std::string FSHEXT = ".frag";
-const std::string CONFIGS = std::string(ROOT_DIR) + "configs/";
 
 
 /* Wave-circle config struct */
@@ -63,7 +62,7 @@ class ConfigParser {
         ConfigParser();
         virtual ~ConfigParser();
 
-        int findConfigFiles();
+        int findFiles(std::string loc, std::string type, std::vector<std::string>* fileList);
         int populateConfig();
         int loadConfigFile(std::string filepath);
 

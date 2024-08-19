@@ -58,8 +58,6 @@
 #include "shaderobj.hpp"
 #include "global.hpp"
 
-const std::string SHADERS = std::string(ROOT_DIR) + "shaders/";
-
 
 /**
  * Stores pairings of generated GLSL samplers and their uniform names.

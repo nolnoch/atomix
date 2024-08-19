@@ -40,5 +40,7 @@
 */
 
 inline constexpr std::string_view ROOT_DIR = "/home/braer/dev/atomix/";
+inline constexpr std::string_view SHADERS = "shaders/";
+inline constexpr std::string_view CONFIGS = "configs/";
 
 #endif

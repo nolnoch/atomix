@@ -32,6 +32,8 @@
 GWidget::GWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
     setFocusPolicy(Qt::StrongFocus);
+
+    //gw_config.orbits = 0;
 }
 
 GWidget::~GWidget() {
@@ -49,16 +51,25 @@ void GWidget::cleanup() {
 }
 
 void GWidget::configReceived(WaveConfig *cfg) {
-    gw_config.amplitude = cfg->amplitude;
+    cout << "\nConfig received! Changing from: \n";
+    printConfig();
+    
     gw_config.orbits = cfg->orbits;
+    gw_config.amplitude = cfg->amplitude;
     gw_config.period = cfg->period;
-    gw_config.resolution = cfg->resolution;
     gw_config.wavelength = cfg->wavelength;
+    gw_config.resolution = cfg->resolution;
+    gw_config.parallel = cfg->parallel;
     gw_config.superposition = cfg->superposition;
     gw_config.gpu = cfg->gpu;
-    gw_config.parallel = cfg->parallel;
-    gw_config.shader = cfg->shader;
     gw_config.sphere = cfg->sphere;
+    gw_config.shader = cfg->shader;
+    gw_config.frag = cfg->frag;
+
+    cout << "\nTo: \n";
+    printConfig();
+
+    initWavePrograms();
 }
 
 void GWidget::crystalProgram() {
@@ -109,6 +120,19 @@ void GWidget::crystalProgram() {
     crystalProg->clearBuffers();
 }
 
+void GWidget::initWavePrograms() {
+    makeCurrent();
+
+    waveProgs.clear();
+    gw_orbits.clear();
+    
+    for (int i = 1; i <= gw_config.orbits; i++) {
+        waveProgram(i);
+    }
+
+    doneCurrent();
+}
+
 void GWidget::waveProgram(uint i) {
     int c = i - 1;
     gw_orbits.push_back(new Orbit(gw_config, c > 0 ? gw_orbits[c - 1] : 0));
@@ -118,7 +142,7 @@ void GWidget::waveProgram(uint i) {
     Program *prog = new Program(this);
     waveProgs.push_back(prog);
     prog->addShader(gw_config.shader, GL_VERTEX_SHADER);
-    prog->addShader("wave.frag", GL_FRAGMENT_SHADER);
+    prog->addShader(gw_config.frag, GL_FRAGMENT_SHADER);
     prog->init();
     prog->linkAndValidate();
     prog->initVAO();
@@ -181,9 +205,7 @@ void GWidget::initializeGL() {
 
     /* Init -- Programs and Shaders */
     crystalProgram();
-    for (int i = 1; i <= gw_config.orbits; i++) {
-        waveProgram(i);
-    }
+    initWavePrograms();
 
     /* Init -- Time */
     gw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -246,6 +268,20 @@ void GWidget::resizeGL(int w, int h) {
     gw_scrWidth = width();
     m4_proj = glm::mat4(1.0f);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, 0.1f, 100.0f);
+}
+
+void GWidget::printConfig() {
+    cout << "Orbits: " << gw_config.orbits << "\n";
+    cout << "Amplitude: " << gw_config.amplitude << "\n";
+    cout << "Period: " << gw_config.period << "\n";
+    cout << "Wavelength: " << gw_config.wavelength << "\n";
+    cout << "Resolution: " << gw_config.resolution << "\n";
+    cout << "Parallel: " << gw_config.parallel << "\n";
+    cout << "Superposition: " << gw_config.superposition << "\n";
+    cout << "GPU: " << gw_config.gpu << "\n";
+    cout << "Sphere: " << gw_config.sphere << "\n";
+    cout << "Vert Shader: " << gw_config.shader << "\n";
+    cout << "Frag Shader: " << gw_config.frag << endl;
 }
 
 void GWidget::wheelEvent(QWheelEvent *e) {

@@ -57,7 +57,7 @@ private slots:
     void onAddNew();
 
 private:
-    Window *container = nullptr;
+    //Window *container = nullptr;
     QWidget *wDock = nullptr;
     QDockWidget *controlBox = nullptr;
     QComboBox *qCombo = nullptr;
@@ -88,10 +88,14 @@ private:
     QButtonGroup *buttGroupCPU = nullptr;
     QButtonGroup *buttGroupSphere = nullptr;
 
+    GWidget *graph = nullptr;
+
     void loadConfig();
     void setupDock();
     void refreshConfigs();
     void refreshShaders();
+
+    void handleMorb();
 };
 
 #endif

@@ -29,26 +29,27 @@ MainWindow::MainWindow() {
 }
 
 void MainWindow::lockConfig(WaveConfig *cfg) {
+    cout << "Updating config." << endl;
     emit sendConfig(cfg);
 }
 
 void MainWindow::onAddNew() {
-    qCombo = new QComboBox(this);
+    graph = new GWidget(this);
     cfgParser = new ConfigParser;
-
-    /* Orbit Starting Configuration */
-    //assert(!cfgParser->populateConfig());
-    refreshConfigs();
-    loadConfig();
 
     /* Setup Dock GUI */
     setupDock();
-    refreshShaders();
     addDockWidget(Qt::RightDockWidgetArea, controlBox);
-    setCentralWidget(container);
+    setCentralWidget(graph);
+
+    refreshConfigs();
+    refreshShaders();
+    loadConfig();
     
-    connect(this, &MainWindow::sendConfig, container, &Window::passConfig, Qt::DirectConnection);
-    lockConfig(cfgParser->config);
+    connect(this, &MainWindow::sendConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
+    connect(qMorb, &QPushButton::clicked, this, &MainWindow::handleMorb);
+
+    setWindowTitle(tr("atomix"));
 }
 
 void MainWindow::refreshConfigs() {
@@ -78,11 +79,11 @@ void MainWindow::refreshShaders() {
 
     entryVertex->clear();
     for (int i = 0; i < files; i++) {
-        cout << cfgParser->vshFiles[i] << endl;
         QString item = QString::fromStdString(cfgParser->vshFiles[i]).sliced(rootLength);
         if (!item.contains("crystal"))
             entryVertex->addItem(item);
     }
+    entryVertex->setCurrentText(QString::fromStdString(cfgParser->config->shader));
 
     /* Fragment Shaders */
     files = cfgParser->fshFiles.size();
@@ -96,26 +97,28 @@ void MainWindow::refreshShaders() {
         if (!item.contains("crystal"))
             entryFrag->addItem(item);
     }
+    entryFrag->setCurrentText(QString::fromStdString(cfgParser->config->frag));
 }
 
 void MainWindow::loadConfig() {
     int comboIdx = qCombo->currentIndex();
     QString cfgCurrent = qCombo->itemText(comboIdx);
 
-    if (!comboIdx)
-        return;
+    if (comboIdx) {
 
-    //QString cfgPath = QString::fromStdString(CONFIGS) + cfgCurrent;
-    assert(cfgParser->loadConfigFile(cfgParser->cfgFiles[comboIdx - 1]));
+        //QString cfgPath = QString::fromStdString(CONFIGS) + cfgCurrent;
+        assert(cfgParser->loadConfigFile(cfgParser->cfgFiles[comboIdx - 1]));
 
-    //TODO
+        //TODO
+    }
 }
 
 void MainWindow::setupDock() {
+    qCombo = new QComboBox(this);
     layGrid = new QVBoxLayout;
     cfgGrid = new QVBoxLayout;
     wDock = new QWidget;
-    container = new Window(this);
+    //container = new Window(this);
     controlBox = new QDockWidget(this);
     qMorb = new QPushButton("Morb", this);
     cfgTable = new QTableWidget(11, 2, this);
@@ -236,6 +239,22 @@ void MainWindow::setupDock() {
     wDock->setLayout(layGrid);
     wDock->setMinimumSize(500,0);
     controlBox->setWidget(wDock);
+}
+
+void MainWindow::handleMorb() {
+    cfgParser->config->orbits = entryOrbit->text().toInt();
+    cfgParser->config->amplitude = entryAmp->text().toFloat();
+    cfgParser->config->period = entryPeriod->text().toFloat() * M_PI;
+    cfgParser->config->wavelength = entryWavelength->text().toDouble() * M_PI;
+    cfgParser->config->resolution = entryResolution->text().toInt();
+    cfgParser->config->parallel = buttGroupOrtho->checkedId() & 2;
+    cfgParser->config->superposition = buttGroupSuper->checkedId() & 4;
+    cfgParser->config->gpu = buttGroupCPU->checkedId() & 32;
+    cfgParser->config->sphere = buttGroupSphere->checkedId() & 128;
+    cfgParser->config->shader = entryVertex->currentText().toStdString();
+    cfgParser->config->frag = entryFrag->currentText().toStdString();
+
+    lockConfig(cfgParser->config);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

@@ -46,6 +46,7 @@ Window::Window(MainWindow *mw)
     horGrid->addWidget(graph);
     //horGrid->addWidget(w);
     this->setLayout(horGrid);
+    this->
 
     connect(this, &Window::passConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
 

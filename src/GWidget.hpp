@@ -47,6 +47,8 @@ public:
     GWidget(QWidget *parent = nullptr);
     ~GWidget();
 
+    void printConfig();
+
 public slots:
     void cleanup();
     void configReceived(WaveConfig *cfg);
@@ -65,6 +67,7 @@ protected:
 private:
     void initVecsAndMatrices();
     void crystalProgram();
+    void initWavePrograms();
     void waveProgram(uint radius);
 
     QOpenGLContext *gw_context = nullptr;

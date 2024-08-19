@@ -66,6 +66,8 @@ class ConfigParser {
         int populateConfig();
         int loadConfigFile(std::string filepath);
 
+        void printConfig();
+
         std::vector<std::string> cfgFiles;
         std::vector<std::string> vshFiles;
         std::vector<std::string> fshFiles;

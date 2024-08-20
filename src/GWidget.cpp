@@ -51,23 +51,23 @@ void GWidget::cleanup() {
 }
 
 void GWidget::configReceived(WaveConfig *cfg) {
-    cout << "\nConfig received! Changing from: \n";
-    printConfig();
+    //cout << "\nConfig received! Changing from: \n";
+    //printConfig();
     
     gw_config.orbits = cfg->orbits;
     gw_config.amplitude = cfg->amplitude;
-    gw_config.period = cfg->period;
-    gw_config.wavelength = cfg->wavelength;
+    gw_config.period = cfg->period * M_PI;
+    gw_config.wavelength = cfg->wavelength * M_PI;
     gw_config.resolution = cfg->resolution;
     gw_config.parallel = cfg->parallel;
     gw_config.superposition = cfg->superposition;
-    gw_config.gpu = cfg->gpu;
+    gw_config.cpu = cfg->cpu;
     gw_config.sphere = cfg->sphere;
     gw_config.shader = cfg->shader;
     gw_config.frag = cfg->frag;
 
-    cout << "\nTo: \n";
-    printConfig();
+    //cout << "\nTo: \n";
+    //printConfig();
 
     initWavePrograms();
 }
@@ -138,7 +138,7 @@ void GWidget::waveProgram(uint i) {
     gw_orbits.push_back(new Orbit(gw_config, c > 0 ? gw_orbits[c - 1] : 0));
 
     /* Program */
-    uint static_dynamic = gw_config.gpu ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW;
+    uint static_dynamic = gw_config.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     Program *prog = new Program(this);
     waveProgs.push_back(prog);
     prog->addShader(gw_config.shader, GL_VERTEX_SHADER);
@@ -239,7 +239,7 @@ void GWidget::paintGL() {
     crystalProg->endRender();
 
     /* (CPU) Update -- Waves */
-    if (!gw_config.gpu) {
+    if (gw_config.cpu) {
         for (int i = 0; i < gw_orbits.size(); i++) {
             gw_orbits[i]->updateOrbit(time);
         }
@@ -278,7 +278,7 @@ void GWidget::printConfig() {
     cout << "Resolution: " << gw_config.resolution << "\n";
     cout << "Parallel: " << gw_config.parallel << "\n";
     cout << "Superposition: " << gw_config.superposition << "\n";
-    cout << "GPU: " << gw_config.gpu << "\n";
+    cout << "CPU: " << gw_config.cpu << "\n";
     cout << "Sphere: " << gw_config.sphere << "\n";
     cout << "Vert Shader: " << gw_config.shader << "\n";
     cout << "Frag Shader: " << gw_config.frag << endl;

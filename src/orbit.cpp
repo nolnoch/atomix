@@ -35,7 +35,7 @@ Orbit::Orbit(WaveConfig cfg, Orbit *prior = nullptr)
 
     if (config.sphere) {
         sphereOrbitB();
-    } else if (config.gpu) {
+    } else if (!config.cpu) {
         genOrbit();
     } else {
         updateOrbit(0);

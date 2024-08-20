@@ -36,6 +36,7 @@ void MainWindow::lockConfig(WaveConfig *cfg) {
 void MainWindow::onAddNew() {
     graph = new GWidget(this);
     cfgParser = new ConfigParser;
+    customConfig = new WaveConfig;
 
     /* Setup Dock GUI */
     setupDock();
@@ -47,6 +48,7 @@ void MainWindow::onAddNew() {
     loadConfig();
     
     connect(this, &MainWindow::sendConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
+    connect(qCombo, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(qMorb, &QPushButton::clicked, this, &MainWindow::handleMorb);
 
     setWindowTitle(tr("atomix"));
@@ -61,10 +63,11 @@ void MainWindow::refreshConfigs() {
     assert(files);
 
     qCombo->clear();
-    qCombo->addItem(EMPTY);
     for (int i = 0; i < files; i++) {
-        qCombo->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength));
+        qCombo->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength), i + 1);
     }
+    qCombo->addItem(tr("Custom"), files + 1);
+    qCombo->setCurrentText(DEFAULT);
 }
 
 void MainWindow::refreshShaders() {
@@ -101,16 +104,41 @@ void MainWindow::refreshShaders() {
 }
 
 void MainWindow::loadConfig() {
-    int comboIdx = qCombo->currentIndex();
-    QString cfgCurrent = qCombo->itemText(comboIdx);
+    int files = cfgParser->cfgFiles.size();
+    int comboID = qCombo->currentData().toInt();
+    WaveConfig *cfg = nullptr;
 
-    if (comboIdx) {
+    cout << "comboID: " << comboID << endl;
 
-        //QString cfgPath = QString::fromStdString(CONFIGS) + cfgCurrent;
-        assert(cfgParser->loadConfigFile(cfgParser->cfgFiles[comboIdx - 1]));
-
-        //TODO
+    if (comboID <= files) {
+        assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1]));
+        cfg = cfgParser->config;
+    } else if (comboID == files + 1) {
+        cfg = customConfig;
+    } else {
+        return;
     }
+
+    entryOrbit->setText(QString::number(cfg->orbits));
+    entryAmp->setText(QString::number(cfg->amplitude));
+    entryPeriod->setText(QString::number(cfg->period));
+    entryWavelength->setText(QString::number(cfg->wavelength));
+    entryResolution->setText(QString::number(cfg->resolution));
+
+    /* To my horror and disgust, neither toggle() nor setChecked() work to flip from False to True.
+       It is therefore necessary to manually set every radio button individually.
+    */    
+    entryPara->setChecked(cfg->parallel);
+    entryOrtho->setChecked(!cfg->parallel);
+    entrySuperOn->setChecked(cfg->superposition);
+    entrySuperOff->setChecked(!cfg->superposition);
+    entryCPU->setChecked(cfg->cpu);
+    entryGPU->setChecked(!cfg->cpu);
+    entrySphere->setChecked(cfg->sphere);
+    entryCircle->setChecked(!cfg->sphere);
+    
+    entryVertex->setCurrentText(QString::fromStdString(cfg->shader));
+    entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
 }
 
 void MainWindow::setupDock() {
@@ -118,10 +146,8 @@ void MainWindow::setupDock() {
     layGrid = new QVBoxLayout;
     cfgGrid = new QVBoxLayout;
     wDock = new QWidget;
-    //container = new Window(this);
     controlBox = new QDockWidget(this);
     qMorb = new QPushButton("Morb", this);
-    cfgTable = new QTableWidget(11, 2, this);
 
     QGroupBox *groupConfig = new QGroupBox("Configuration");
     
@@ -194,11 +220,11 @@ void MainWindow::setupDock() {
     row5->addWidget(labelResolution, 2, Qt::AlignLeft);
     row5->addWidget(entryResolution, 2, Qt::AlignRight);
     row6->addWidget(labelOrthoPara, 2, Qt::AlignLeft);
-    row6->addWidget(entryOrtho, 1, Qt::AlignRight);
     row6->addWidget(entryPara, 1, Qt::AlignRight);
+    row6->addWidget(entryOrtho, 1, Qt::AlignRight);
     row7->addWidget(labelSuper, 2, Qt::AlignLeft);
-    row7->addWidget(entrySuperOff, 1, Qt::AlignRight);
     row7->addWidget(entrySuperOn, 1, Qt::AlignRight);
+    row7->addWidget(entrySuperOff, 1, Qt::AlignRight);
     row8->addWidget(labelCPU, 2, Qt::AlignLeft);
     row8->addWidget(entryCPU, 1, Qt::AlignRight);
     row8->addWidget(entryGPU, 1, Qt::AlignRight);
@@ -241,16 +267,20 @@ void MainWindow::setupDock() {
     controlBox->setWidget(wDock);
 }
 
+void MainWindow::handleComboCfg() {
+    this->loadConfig();
+}
+
 void MainWindow::handleMorb() {
     cfgParser->config->orbits = entryOrbit->text().toInt();
-    cfgParser->config->amplitude = entryAmp->text().toFloat();
-    cfgParser->config->period = entryPeriod->text().toFloat() * M_PI;
+    cfgParser->config->amplitude = entryAmp->text().toDouble();
+    cfgParser->config->period = entryPeriod->text().toDouble() * M_PI;
     cfgParser->config->wavelength = entryWavelength->text().toDouble() * M_PI;
     cfgParser->config->resolution = entryResolution->text().toInt();
-    cfgParser->config->parallel = buttGroupOrtho->checkedId() & 2;
-    cfgParser->config->superposition = buttGroupSuper->checkedId() & 4;
-    cfgParser->config->gpu = buttGroupCPU->checkedId() & 32;
-    cfgParser->config->sphere = buttGroupSphere->checkedId() & 128;
+    cfgParser->config->parallel = entryPara->isChecked();
+    cfgParser->config->superposition = entrySuperOn->isChecked();
+    cfgParser->config->cpu = entryCPU->isChecked();
+    cfgParser->config->sphere = entrySphere->isChecked();
     cfgParser->config->shader = entryVertex->currentText().toStdString();
     cfgParser->config->frag = entryFrag->currentText().toStdString();
 

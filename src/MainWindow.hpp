@@ -27,18 +27,17 @@
 
 #include <QMainWindow>
 #include <QDockWidget>
-#include <QTableWidget>
-#include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QCheckBox>
 #include <QGroupBox>
 #include <QButtonGroup>
-#include "Window.hpp"
+#include <QComboBox>
+#include <QBoxLayout>
+#include "GWidget.hpp"
 
-const QString EMPTY = "Default";
+const QString DEFAULT = "default-config.wave";
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -64,8 +63,8 @@ private:
     QPushButton *qMorb = nullptr;
     QVBoxLayout *layGrid = nullptr;
     QVBoxLayout *cfgGrid = nullptr;
-    QTableWidget *cfgTable = nullptr;
     ConfigParser *cfgParser = nullptr;
+    WaveConfig *customConfig = nullptr;
 
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;
@@ -96,6 +95,7 @@ private:
     void refreshShaders();
 
     void handleMorb();
+    void handleComboCfg();
 };
 
 #endif

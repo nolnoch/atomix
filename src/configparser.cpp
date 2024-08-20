@@ -40,6 +40,7 @@ ConfigParser::ConfigParser() {
     cfgValues["orientation"] = 8;
     cfgValues["processor"] = 9;
     cfgValues["sphere"] = 10;
+    cfgValues["fragment"] = 11;
 
     config = new WaveConfig;
 }
@@ -108,7 +109,7 @@ int ConfigParser::chooseConfigFile() {
     return f;
 }
 
-int ConfigParser::loadConfigFile(string path) {
+int ConfigParser::loadConfigFileCLI(string path) {
     string line, key, value, name, answer;
     size_t colon, start, end;
     int changes, errors;
@@ -155,11 +156,11 @@ int ConfigParser::loadConfigFile(string path) {
                 changes++;
                 break;
             case 3:
-                config->period = stof(value) * M_PI;
+                config->period = stof(value);
                 changes++;
                 break;
             case 4:
-                config->wavelength = stod(value) * M_PI;
+                config->wavelength = stod(value);
                 changes++;
                 break;
             case 5:
@@ -181,18 +182,21 @@ int ConfigParser::loadConfigFile(string path) {
                 changes++;
                 break;
             case 9:
-                config->gpu = string("gpu") == value;
+                config->cpu = string("cpu") == value;
                 changes++;
                 break;
             case 10:
                 config->sphere = string("true") == value;
                 changes++;
                 break;
+            case 11:
+                config->frag = value;
+                changes++;
             default:
                 continue;
         }
     }
-    if (changes < 10)
+    if (changes < 11)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
     string ortho = "ortho_wave.vert";
@@ -206,7 +210,7 @@ int ConfigParser::loadConfigFile(string path) {
                 cout << "ERROR: Specified parallel (coplanar) waves with orthogonal wave shader." << endl;
                 errors++;
             }
-            if (!config->gpu) {
+            if (config->cpu) {
                 cout << "ERROR: \"ortho_wave.vert\" is only intended for GPU-based calculation." << endl;
                 errors++;
             }
@@ -215,13 +219,13 @@ int ConfigParser::loadConfigFile(string path) {
                 cout << "ERROR: Specified orthogonal waves with parallel (coplanar) wave shader." << endl;
                 errors++;
             }
-            if (!config->gpu) {
+            if (config->cpu) {
                 cout << "ERROR: \"para_wave.vert\" is only intended for GPU-based calculation." << endl;
                 errors++;
             }
         } else if (shad == super) {
-            if (config->gpu) {
-                cout << "ERROR: \"wave.vert\" is only intended for CPU-based calculation." << endl;
+            if (!config->cpu) {
+                cout << "ERROR: \"cpu_wave.vert\" is only intended for CPU-based calculation." << endl;
                 errors++;
             }
         } else {
@@ -229,7 +233,7 @@ int ConfigParser::loadConfigFile(string path) {
             goto label_abort;
         }
     } else {
-        if (config->gpu) {
+        if (!config->cpu) {
             if (config->superposition) {
                 cout << "ERROR: Cannot calculate superposition on GPU." << endl;
                 errors++;
@@ -249,7 +253,145 @@ int ConfigParser::loadConfigFile(string path) {
     if (config->sphere) {
         cout << "Special case \"sphere\" selected. Using \"para_sphere.vert\" on GPU." << endl;
         config->shader = sphere;
-        config->gpu = true;
+        config->cpu = false;
+    }
+
+label_abort:
+    file.close();
+    return errors;
+}
+
+int ConfigParser::loadConfigFileGUI(string path) {
+    string line, key, value, name, answer;
+    size_t colon, start, end;
+    int changes, errors;
+    bool custom_shader = false;
+    map<string, int>::iterator iter;
+
+    changes = 0;
+    errors = 0;
+
+    name = path.substr(path.find_last_of("/") + 1);
+    cout << "Using config file: " << name << endl;
+
+    ifstream file(path);
+
+    while (getline(file, line)) {
+        if (!line.length() || line[0] == '#')
+            continue;
+        
+        colon = line.find(":");
+        key = line.substr(0, colon);
+        iter = cfgValues.find(key);
+        if (iter == cfgValues.end())
+            continue;
+        
+        answer = line.substr(colon + 1);
+        if (!answer.empty()) {
+            start = answer.find_first_not_of(WHITESPACE);
+            if (start == string::npos)
+                value = "";
+            else {
+                end = answer.find_last_not_of(WHITESPACE);
+                value = answer.substr(start, end - start + 1);
+            }
+        } else
+            value = "";
+
+        switch(iter->second) {
+            case 1:
+                config->orbits = stoi(value);
+                changes++;
+                break;
+            case 2:
+                config->amplitude = stof(value);
+                changes++;
+                break;
+            case 3:
+                config->period = stof(value);
+                changes++;
+                break;
+            case 4:
+                config->wavelength = stod(value);
+                changes++;
+                break;
+            case 5:
+                config->resolution = stoi(value);
+                changes++;
+                break;
+            case 6:
+                config->shader = value;
+                if (!value.empty())
+                    custom_shader = true;
+                changes++;
+                break;
+            case 7:
+                config->superposition = string("true") == value;
+                changes++;
+                break;
+            case 8:
+                config->parallel = string("parallel") == value;
+                changes++;
+                break;
+            case 9:
+                config->cpu = string("cpu") == value;
+                changes++;
+                break;
+            case 10:
+                config->sphere = string("true") == value;
+                changes++;
+                break;
+            case 11:
+                config->frag = value;
+                if (!value.empty())
+                    custom_shader = true;
+                changes++;
+            default:
+                continue;
+        }
+    }
+    if (changes < 11)
+        cout << "Some configuration values not found; defaults were used instead." << endl;
+
+    string ortho = "gpu_ortho_circle.vert";
+    string para = "gpu_para_circle.vert";
+    string super = "cpu_circle.vert";
+    string gpu_sphere = "gpu_sphere.vert";
+    string cpu_sphere = "cpu_sphere.vert";
+    string path = std::string(ROOT_DIR) + std::string(SHADERS);
+    string vshad = path + config->shader;
+    string fshad = path + config->frag;
+    if (custom_shader) {
+        /* Here we check for valid shader files */
+        if (std::find(vshFiles.begin(), vshFiles.end(), vshad) == vshFiles.end()) {
+            cout << "Invalid vertex shader: no such file found." << endl;
+            errors++;
+        }
+        if (std::find(fshFiles.begin(), fshFiles.end(), fshad) == fshFiles.end()) {
+            cout << "Invalid fragment shader: no such file found." << endl;
+            errors++;
+        }
+    }
+    /* Here we check for Ortho/Super conflicts */
+    if (!config->parallel) {
+        if (config->superposition) {
+            cout << "Invalid combo: Orthogonal waves and Superposition." << endl;
+            errors++;
+        }
+        if (config->sphere) {
+            cout << "Invalid combo: Orthogonal waves and Spherical waves." << endl;
+            errors++;
+        }
+    }
+    if (config->superposition) {
+        if (!config->cpu) {
+            cout << "Invalid combo: Superposition and GPU rendering." << endl;
+            errors++;
+        }
+        if (config->sphere) {
+            cout << "Invalid combo: Superposition and Spherical waves." << endl;
+            errors++;
+        }
     }
 
 label_abort:
@@ -265,10 +407,24 @@ int ConfigParser::populateConfig() {
     } else {
         int choice = chooseConfigFile();
         if (choice >= 0) {
-            if (status = loadConfigFile(cfgFiles[choice])) {
+            if (status = loadConfigFileGUI(cfgFiles[choice])) {
                 cout << "ERROR: Errors in config file. Please correct." << endl;
             }
         }
     }
     return status;
+}
+
+void ConfigParser::printConfig() {
+    cout << "Orbits: " << config->orbits << "\n";
+    cout << "Amplitude: " << config->amplitude << "\n";
+    cout << "Period: " << config->period << "\n";
+    cout << "Wavelength: " << config->wavelength << "\n";
+    cout << "Resolution: " << config->resolution << "\n";
+    cout << "Parallel: " << config->parallel << "\n";
+    cout << "Superposition: " << config->superposition << "\n";
+    cout << "CPU: " << config->cpu << "\n";
+    cout << "Sphere: " << config->sphere << "\n";
+    cout << "Vert Shader: " << config->shader << "\n";
+    cout << "Frag Shader: " << config->frag << endl;
 }

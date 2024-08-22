@@ -45,7 +45,7 @@ using vec = glm::vec3;
 
 class Orbit {
     public:
-        Orbit(WaveConfig cfg, Orbit *prior);
+        Orbit(WaveConfig *cfg, Orbit *prior);
         virtual ~Orbit();
 
         void sphereOrbitA();
@@ -69,7 +69,7 @@ class Orbit {
 
     private:
         int idx = 0;
-        WaveConfig config;
+        WaveConfig *config;
         gvec myVertices;
         ivec myIndices;
         dvec myComponents;

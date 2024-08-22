@@ -25,17 +25,17 @@
 #include "orbit.hpp"
 
 
-Orbit::Orbit(WaveConfig cfg, Orbit *prior = nullptr)
+Orbit::Orbit(WaveConfig *cfg, Orbit *prior = nullptr)
     : config(cfg), priorOrbit(prior) {
     this->idx = prior ? prior->idx + 1 : 1;
-    this->amplitude = config.amplitude;
-    this->two_pi_L = TWO_PI / config.wavelength;
-    this->two_pi_T = TWO_PI / config.period;
-    this->deg_fac = TWO_PI / config.resolution;
+    this->amplitude = config->amplitude;
+    this->two_pi_L = TWO_PI / config->wavelength;
+    this->two_pi_T = TWO_PI / config->period;
+    this->deg_fac = TWO_PI / config->resolution;
 
-    if (config.sphere) {
+    if (config->sphere) {
         sphereOrbitB();
-    } else if (!config.cpu) {
+    } else if (!config->cpu) {
         genOrbit();
     } else {
         updateOrbit(0);
@@ -50,7 +50,7 @@ void Orbit::sphereOrbitA() {
     myVertices.clear();
     myIndices.clear();
 
-    for (int i = 0; i < config.resolution; i++) {
+    for (int i = 0; i < config->resolution; i++) {
         double theta = i * deg_fac;
         
         myIndices.push_back(i);
@@ -76,12 +76,12 @@ void Orbit::sphereOrbitB() {
     myVertices.clear();
     myIndices.clear();
 
-    for (int i = 0; i < config.resolution; i++) {
-        for (int j = 0; j < config.resolution; j++) {
+    for (int i = 0; i < config->resolution; i++) {
+        for (int j = 0; j < config->resolution; j++) {
             double theta = i * deg_fac;
             double phi = j * deg_fac;
             
-            myIndices.push_back(i*config.resolution + j);
+            myIndices.push_back(i*config->resolution + j);
 
             float a = amplitude;
             float k = two_pi_L;
@@ -99,7 +99,7 @@ void Orbit::sphereOrbitB() {
         }
     }
 
-    std::cout << "Sphere " << this->idx << " generation complete." << std::endl;
+    //std::cout << "Sphere " << this->idx << " generation complete." << std::endl;
 }
 
 void Orbit::sphereOrbitCPU() {
@@ -107,12 +107,12 @@ void Orbit::sphereOrbitCPU() {
     myVertices.clear();
     myIndices.clear();
 
-    for (int i = 0; i < config.resolution; i++) {
-        for (int j = 0; j < config.resolution; j++) {
+    for (int i = 0; i < config->resolution; i++) {
+        for (int j = 0; j < config->resolution; j++) {
             double theta = i * deg_fac;
             double phi = j * deg_fac;
             
-            myIndices.push_back(i*config.resolution + j);
+            myIndices.push_back(i*config->resolution + j);
 
             float r = 0.8f;
             float g = 0.8f;
@@ -141,7 +141,7 @@ void Orbit::genOrbit() {
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
-    for (int i = 0; i < config.resolution; i++) {
+    for (int i = 0; i < config->resolution; i++) {
         double theta = i * deg_fac;
         myIndices.push_back(i);
 
@@ -170,14 +170,14 @@ void Orbit::updateOrbit(double t) {
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
-    for (int i = 0; i < config.resolution; i++) {
+    for (int i = 0; i < config->resolution; i++) {
         float x, y, z;
         double theta = i * deg_fac;
         myIndices.push_back(i);
 
         double wavefunc = amplitude * sin((two_pi_L * r * theta) - (two_pi_T * t) + phase_const);
 
-        if (config.parallel) {
+        if (config->parallel) {
             x = (wavefunc + r) * cos(theta);
             y = 0.0f;
             z = (wavefunc + r) * sin(theta);
@@ -194,7 +194,7 @@ void Orbit::updateOrbit(double t) {
         myVertices.push_back(colour);
     }
 
-    if (idx > 1 && config.superposition)
+    if (idx > 1 && config->superposition)
         superposition();
 }
 

@@ -66,7 +66,7 @@ int ConfigParser::findFiles(std::string loc, std::string type, std::vector<std::
         if (p.path().extension() == type)
             fileList->push_back(p.path().string());
     }
-    cout << "Found " << fileList->size() << " candidate file(s) with extension " << type << "." << endl;
+    //cout << "Found " << fileList->size() << " candidate file(s) with extension " << type << "." << endl;
 
     return fileList->size();
 }

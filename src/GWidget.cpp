@@ -33,7 +33,12 @@ GWidget::GWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
     setFocusPolicy(Qt::StrongFocus);
 
-    //gw_config.orbits = 0;
+    ap.apProgs.push_back(&firstProgs);
+    ap.apProgs.push_back(&secondProgs);
+    ap.apOrbits.push_back(&firstOrbits);
+    ap.apOrbits.push_back(&secondOrbits);
+    ap.apConfigs.push_back(&renderConfig);
+    ap.apConfigs.push_back(&createConfig);
 }
 
 GWidget::~GWidget() {
@@ -51,25 +56,31 @@ void GWidget::cleanup() {
 }
 
 void GWidget::configReceived(WaveConfig *cfg) {
-    //cout << "\nConfig received! Changing from: \n";
-    //printConfig();
+    cout << "\nConfig received! Changing from: \n";
+    printConfig(ap.apConfigs[ap.apIdxCreate % 2]);
     
-    gw_config.orbits = cfg->orbits;
-    gw_config.amplitude = cfg->amplitude;
-    gw_config.period = cfg->period * M_PI;
-    gw_config.wavelength = cfg->wavelength * M_PI;
-    gw_config.resolution = cfg->resolution;
-    gw_config.parallel = cfg->parallel;
-    gw_config.superposition = cfg->superposition;
-    gw_config.cpu = cfg->cpu;
-    gw_config.sphere = cfg->sphere;
-    gw_config.shader = cfg->shader;
-    gw_config.frag = cfg->frag;
+    ap.apConfigs[ap.apIdxCreate % 2]->orbits = cfg->orbits;
+    ap.apConfigs[ap.apIdxCreate % 2]->amplitude = cfg->amplitude;
+    ap.apConfigs[ap.apIdxCreate % 2]->period = cfg->period;
+    ap.apConfigs[ap.apIdxCreate % 2]->wavelength = cfg->wavelength;
+    ap.apConfigs[ap.apIdxCreate % 2]->resolution = cfg->resolution;
+    ap.apConfigs[ap.apIdxCreate % 2]->parallel = cfg->parallel;
+    ap.apConfigs[ap.apIdxCreate % 2]->superposition = cfg->superposition;
+    ap.apConfigs[ap.apIdxCreate % 2]->cpu = cfg->cpu;
+    ap.apConfigs[ap.apIdxCreate % 2]->sphere = cfg->sphere;
+    ap.apConfigs[ap.apIdxCreate % 2]->shader = cfg->shader;
+    ap.apConfigs[ap.apIdxCreate % 2]->frag = cfg->frag;
 
-    //cout << "\nTo: \n";
-    //printConfig();
+    cout << "\nTo: \n";
+    printConfig(ap.apConfigs[ap.apIdxCreate % 2]);
 
+    setUpdatesEnabled(false);
     initWavePrograms();
+    ap.apIdxRender++;
+    renderProgs = ap.apProgs[ap.apIdxRender % 2];
+    renderOrbits = ap.apOrbits[ap.apIdxRender % 2];
+    setUpdatesEnabled(true);
+    update();
 }
 
 void GWidget::crystalProgram() {
@@ -121,45 +132,52 @@ void GWidget::crystalProgram() {
 }
 
 void GWidget::initWavePrograms() {
-    makeCurrent();
-
-    waveProgs.clear();
-    gw_orbits.clear();
-    
-    for (int i = 1; i <= gw_config.orbits; i++) {
-        waveProgram(i);
+    if (ap.apIdxCreate > 1) {
+        clearProgram(ap.apIdxCreate % 2);
     }
-
-    doneCurrent();
+    
+    for (int i = 1; i <= ap.apConfigs[ap.apIdxCreate % 2]->orbits; i++) {
+        waveProgram(i, ap.apProgs[ap.apIdxCreate % 2], ap.apOrbits[ap.apIdxCreate % 2], ap.apConfigs[ap.apIdxCreate % 2]);
+    }
+    ap.apIdxCreate++;
 }
 
-void GWidget::waveProgram(uint i) {
+void GWidget::waveProgram(uint i, std::vector<Program *> *vecProgs, std::vector<Orbit *> *vecOrbits, WaveConfig *cfg) {
     int c = i - 1;
-    gw_orbits.push_back(new Orbit(gw_config, c > 0 ? gw_orbits[c - 1] : 0));
+    vecOrbits->push_back(new Orbit(cfg, c > 0 ? (*vecOrbits)[c - 1] : 0));
 
     /* Program */
-    uint static_dynamic = gw_config.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    uint static_dynamic = cfg->cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     Program *prog = new Program(this);
-    waveProgs.push_back(prog);
-    prog->addShader(gw_config.shader, GL_VERTEX_SHADER);
-    prog->addShader(gw_config.frag, GL_FRAGMENT_SHADER);
+    vecProgs->push_back(prog);
+    prog->addShader(cfg->shader, GL_VERTEX_SHADER);
+    prog->addShader(cfg->frag, GL_FRAGMENT_SHADER);
     prog->init();
     prog->linkAndValidate();
     prog->initVAO();
     prog->bindVAO();
-    prog->bindVBO(gw_orbits.back()->vertexSize(), gw_orbits.back()->vertexData(), static_dynamic);
+    prog->bindVBO(vecOrbits->back()->vertexSize(), vecOrbits->back()->vertexData(), static_dynamic);
     prog->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords or factorsA
     prog->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour or factorsB
     prog->enableAttributes();
-    prog->bindEBO(gw_orbits.back()->indexSize(), gw_orbits.back()->indexData());
+    prog->bindEBO(vecOrbits->back()->indexSize(), vecOrbits->back()->indexData());
 
     /* Release */
     prog->endRender();
     prog->clearBuffers();
 }
 
+void GWidget::clearProgram(uint i) {
+    for (auto p : (*ap.apProgs[i]))
+        delete (p);
+    (*ap.apProgs[i]).clear();
+    for (auto p : (*ap.apOrbits[i]))
+        delete (p);
+    (*ap.apOrbits[i]).clear();
+}
+
 void GWidget::initVecsAndMatrices() {
-    float camStart = gw_config.orbits * 2.0f;
+    float camStart = ap.apConfigs[ap.apIdxRender % 2]->orbits * 2.0f;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -194,7 +212,7 @@ void GWidget::initializeGL() {
     }
 
     /* Init -- Camera and OpenGL State */
-    glClearColor(0.00f, 0.03f, 0.06f, 1.0f);
+    glClearColor(0.03f, 0.00f, 0.06f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
@@ -206,6 +224,8 @@ void GWidget::initializeGL() {
     /* Init -- Programs and Shaders */
     crystalProgram();
     initWavePrograms();
+    renderProgs = ap.apProgs[ap.apIdxRender % 2];
+    renderOrbits = ap.apOrbits[ap.apIdxRender % 2];
 
     /* Init -- Time */
     gw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -239,25 +259,25 @@ void GWidget::paintGL() {
     crystalProg->endRender();
 
     /* (CPU) Update -- Waves */
-    if (gw_config.cpu) {
-        for (int i = 0; i < gw_orbits.size(); i++) {
-            gw_orbits[i]->updateOrbit(time);
+    if (ap.apConfigs[ap.apIdxRender % 2]->cpu) {
+        for (int i = 0; i < renderOrbits->size(); i++) {
+            (*renderOrbits)[i]->updateOrbit(time);
         }
     }
     
     /* Render -- Waves */
-    for (int i = 0; i < waveProgs.size(); i++) {
-        waveProgs[i]->beginRender();
-        waveProgs[i]->updateVBO(0, gw_orbits[i]->vertexSize(), gw_orbits[i]->vertexData());
-        waveProgs[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-        waveProgs[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-        waveProgs[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-        //waveProgs[i]->setUniform(GL_FLOAT, "two_pi_L", gw_orbits[0]->two_pi_L);
-        //waveProgs[i]->setUniform(GL_FLOAT, "two_pi_T", gw_orbits[0]->two_pi_T);
-        //waveProgs[i]->setUniform(GL_FLOAT, "amp", gw_orbits[0]->amplitude);
-        waveProgs[i]->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_POINTS, gw_orbits[i]->indexCount(), GL_UNSIGNED_INT, 0);
-        waveProgs[i]->endRender();
+    for (int i = 0; i < renderOrbits->size(); i++) {
+        (*renderProgs)[i]->beginRender();
+        (*renderProgs)[i]->updateVBO(0, (*renderOrbits)[i]->vertexSize(), (*renderOrbits)[i]->vertexData());
+        (*renderProgs)[i]->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+        (*renderProgs)[i]->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+        (*renderProgs)[i]->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        //(*renderProgs)[i]->setUniform(GL_FLOAT, "two_pi_L", gw_orbits[0]->two_pi_L);
+        //(*renderProgs)[i]->setUniform(GL_FLOAT, "two_pi_T", gw_orbits[0]->two_pi_T);
+        //(*renderProgs)[i]->setUniform(GL_FLOAT, "amp", gw_orbits[0]->amplitude);
+        (*renderProgs)[i]->setUniform(GL_FLOAT, "time", time);
+        glDrawElements(GL_POINTS, (*renderOrbits)[i]->indexCount(), GL_UNSIGNED_INT, 0);
+        (*renderProgs)[i]->endRender();
     }
 
     q_TotalRot.normalize();
@@ -270,18 +290,18 @@ void GWidget::resizeGL(int w, int h) {
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, 0.1f, 100.0f);
 }
 
-void GWidget::printConfig() {
-    cout << "Orbits: " << gw_config.orbits << "\n";
-    cout << "Amplitude: " << gw_config.amplitude << "\n";
-    cout << "Period: " << gw_config.period << "\n";
-    cout << "Wavelength: " << gw_config.wavelength << "\n";
-    cout << "Resolution: " << gw_config.resolution << "\n";
-    cout << "Parallel: " << gw_config.parallel << "\n";
-    cout << "Superposition: " << gw_config.superposition << "\n";
-    cout << "CPU: " << gw_config.cpu << "\n";
-    cout << "Sphere: " << gw_config.sphere << "\n";
-    cout << "Vert Shader: " << gw_config.shader << "\n";
-    cout << "Frag Shader: " << gw_config.frag << endl;
+void GWidget::printConfig(WaveConfig *cfg) {
+    cout << "Orbits: " << cfg->orbits << "\n";
+    cout << "Amplitude: " << cfg->amplitude << "\n";
+    cout << "Period: " << cfg->period << "\n";
+    cout << "Wavelength: " << cfg->wavelength << "\n";
+    cout << "Resolution: " << cfg->resolution << "\n";
+    cout << "Parallel: " << cfg->parallel << "\n";
+    cout << "Superposition: " << cfg->superposition << "\n";
+    cout << "CPU: " << cfg->cpu << "\n";
+    cout << "Sphere: " << cfg->sphere << "\n";
+    cout << "Vert Shader: " << cfg->shader << "\n";
+    cout << "Frag Shader: " << cfg->frag << endl;
 }
 
 void GWidget::wheelEvent(QWheelEvent *e) {

@@ -40,6 +40,17 @@
 #include "orbit.hpp"
 
 
+/* Program/Orbit pointer struct */
+typedef struct {
+    std::vector<std::vector<Program *> *> apProgs;      // Vector of pointers to Programs
+    std::vector<std::vector<Orbit *> *> apOrbits;       // Vector of pointers to Orbits
+    std::vector<WaveConfig *> apConfigs;                // Vector of configs
+    int apIdxRender = 0;                                // Current pointer index
+    int apIdxCreate = 0;                                // Future pointer index
+} AtomixProgs;
+Q_DECLARE_METATYPE(AtomixProgs);
+
+
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
     Q_OBJECT
 
@@ -47,7 +58,7 @@ public:
     GWidget(QWidget *parent = nullptr);
     ~GWidget();
 
-    void printConfig();
+    void printConfig(WaveConfig *cfg);
 
 public slots:
     void cleanup();
@@ -68,13 +79,20 @@ private:
     void initVecsAndMatrices();
     void crystalProgram();
     void initWavePrograms();
-    void waveProgram(uint radius);
+    void waveProgram(uint radius, std::vector<Program *> *vecProgs, std::vector<Orbit *> *vecOrbits, WaveConfig *cfg);
+    void clearProgram(uint i);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
-    std::vector<Program *> waveProgs;
-    std::vector<Orbit *> gw_orbits;
-    std::vector<GLfloat> f_peak;
+    AtomixProgs ap;
+    std::vector<Program *> firstProgs;
+    std::vector<Orbit *> firstOrbits;
+    std::vector<Program *> secondProgs;
+    std::vector<Orbit *> secondOrbits;
+    std::vector<Program *> *renderProgs = nullptr;
+    std::vector<Orbit *> *renderOrbits = nullptr;
+    WaveConfig renderConfig;
+    WaveConfig createConfig;
 
     QTimer *gw_timer = nullptr;
     glm::mat4 m4_proj;
@@ -97,7 +115,7 @@ private:
     uint gw_movement = 0;
     bool gw_pause = false;
     bool gw_init = false;
-    WaveConfig gw_config;
+    //WaveConfig gw_config;
 };
 
 #endif

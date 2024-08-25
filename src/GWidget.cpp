@@ -53,9 +53,8 @@ void GWidget::configReceived(WaveConfig *cfg) {
     setUpdatesEnabled(false);
     
     //cout << "\nConfig received! Changing from: \n";
-    //printConfig(ap.apConfigs[ap.apIdxCreate % 2]);
+    //printConfig(renderConfig]);
 
-    updateOrbits();
     renderConfig.orbits = cfg->orbits;
     renderConfig.amplitude = cfg->amplitude;
     renderConfig.period = cfg->period;
@@ -67,9 +66,11 @@ void GWidget::configReceived(WaveConfig *cfg) {
     renderConfig.sphere = cfg->sphere;
     renderConfig.vert = cfg->vert;
     renderConfig.frag = cfg->frag;
-
+    
     //cout << "\nTo: \n";
-    //printConfig(ap.apConfigs[ap.apIdxCreate % 2]);
+    //printConfig(renderConfig]);
+
+    updateOrbits();
 
     setUpdatesEnabled(true);
     update();

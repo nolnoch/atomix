@@ -39,22 +39,26 @@
 
 class Shader {
  public:
-  Shader(std::string fName, int type);
+  Shader(std::string fName, int type, QOpenGLFunctions_4_5_Core *funcPointer);
   virtual ~Shader();
 
   void setId(GLenum idAssigned);
 
   GLenum id();
   GLuint type();
+  std::string& name();
+  std::string& path();
   std::string& source();
   int isValid();
 
  private:
   GLenum shaderId;
   GLuint shaderType;
+  std::string filePath;
   std::string fileName;
   std::string sourceString;
   int valid;
+  QOpenGLFunctions_4_5_Core *qgf = nullptr;
 
   void fileToString();
 };

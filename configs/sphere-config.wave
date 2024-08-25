@@ -28,9 +28,9 @@ processor: gpu
 # (sphere: 'true', 'false') Whether to render a spherical wave pattern [default = false]
 sphere: true
 
-# (shader: filename) Vertex shader file name for this render
+# (vertex shader: filename) Vertex shader file name for this render
 # [default = "ortho_wave.vert"]
-shader: gpu_sphere.vert
+vertex: gpu_sphere.vert
 
 # (fragment shader: filename) Fragment shader file name for this render
 # [default = "wave.frag"]

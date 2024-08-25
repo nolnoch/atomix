@@ -37,13 +37,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "program.hpp"
 #include "quaternion.hpp"
-#include "orbit.hpp"
+#include "orbitmanager.hpp"
 
 
 /* Program/Orbit pointer struct */
 typedef struct {
     std::vector<std::vector<Program *> *> apProgs;      // Vector of pointers to Programs
-    std::vector<std::vector<Orbit *> *> apOrbits;       // Vector of pointers to Orbits
+    std::vector<std::vector<OrbitManager *> *> apOrbits;       // Vector of pointers to Orbits
     std::vector<WaveConfig *> apConfigs;                // Vector of configs
     int apIdxRender = 0;                                // Current pointer index
     int apIdxCreate = 0;                                // Future pointer index
@@ -55,7 +55,7 @@ class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
     Q_OBJECT
 
 public:
-    GWidget(QWidget *parent = nullptr);
+    GWidget(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~GWidget();
 
     void printConfig(WaveConfig *cfg);
@@ -78,21 +78,27 @@ protected:
 private:
     void initVecsAndMatrices();
     void crystalProgram();
-    void initWavePrograms();
-    void waveProgram(uint radius, std::vector<Program *> *vecProgs, std::vector<Orbit *> *vecOrbits, WaveConfig *cfg);
+    void initWaveProgram();
+    void updateOrbits();
+    void updateWaveProgram();
     void clearProgram(uint i);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
-    AtomixProgs ap;
-    std::vector<Program *> firstProgs;
-    std::vector<Orbit *> firstOrbits;
-    std::vector<Program *> secondProgs;
-    std::vector<Orbit *> secondOrbits;
-    std::vector<Program *> *renderProgs = nullptr;
-    std::vector<Orbit *> *renderOrbits = nullptr;
+    Program *waveProg = nullptr;
+    ConfigParser *cfgParser = nullptr;
+    OrbitManager *orbits = nullptr;
+    //AtomixProgs ap;
+    //std::vector<Program *> firstProgs;
+    //std::vector<Orbit *> firstOrbits;
+    //std::vector<Program *> secondProgs;
+    //std::vector<Orbit *> secondOrbits;
+    //std::vector<Program *> *renderProgs = nullptr;
+    //std::vector<Orbit *> *renderOrbits = nullptr;
+    //std::vector<OrbitManager *> waveOrbits;
+    //ivec allIndices;
+    //gvec allVertices;
     WaveConfig renderConfig;
-    WaveConfig createConfig;
 
     QTimer *gw_timer = nullptr;
     glm::mat4 m4_proj;

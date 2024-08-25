@@ -5,6 +5,9 @@ layout(location = 1) in vec3 factorsB;
 
 out vec3 vertColour;
 
+uniform float two_pi_L;
+uniform float two_pi_T;
+uniform float amp;
 uniform float time;
 
 uniform mat4 worldMat;
@@ -30,8 +33,8 @@ void main() {
    
     //       sin((2pi / L * x) - (2pi / T * t))
     //       sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
-    float wavefunc = sin((k * r_theta) - (w * time));
-    float displacement = a * wavefunc;
+    float wavefunc = sin((two_pi_L * r_theta) - (two_pi_T * time));
+    float displacement = amp * wavefunc;
 
     float x_coord = (r + displacement) * sin_phi * sin_theta;
     float z_coord = (r + displacement) * sin_phi * cos_theta;

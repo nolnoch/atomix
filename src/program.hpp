@@ -77,13 +77,18 @@ class Program {
   Program(QOpenGLFunctions_4_5_Core *funcPointer);
   virtual ~Program();
 
-  int addShader(std::string fName, int type);
+  int addShader(std::string fName, GLuint type);
+  int addAllShaders(std::vector<std::string> *fList, GLuint type);
   void addDefaultShaders();
   void addSampler(std::string sName);
 
   void init();
   void bindAttribute(int location, std::string name);
+  GLuint getShaderIdFromName(std::string& fileName);
+  void attachShader(std::string& name);
   GLint linkAndValidate();
+  void detachShaders();
+  void detachDelete();
   void enable();
   void disable();
 
@@ -103,6 +108,8 @@ class Program {
   void beginRender();
   void endRender();
   void clearBuffers();
+  
+  void deleteBuffers();
 
   void setUniform(int type, std::string name, float n);
   void setUniformv(int count, int type, std::string name, const float *n);
@@ -114,17 +121,21 @@ class Program {
   void displayLogProgram();
   void displayLogShader(GLenum shader);
 
-  GLuint vbo = 0;
-  GLuint ebo = 0;
+  
 
  private:
   QOpenGLFunctions_4_5_Core *qgf = nullptr;
   std::vector<SamplerInfo> *samplers = nullptr;
-  std::vector<Shader> shaders;
+  std::vector<Shader> registeredShaders;
   std::vector<GLuint> attribs;
+  std::map<std::string, GLuint> compiledShaders;
+  std::vector<GLuint> attachedShaders;
 
   GLuint programId = 0;
   GLuint vao = 0;
+  GLuint vbo = 0;
+  GLuint ebo = 0;
+  bool enabled = false;
   
   int stage = 0;
 };

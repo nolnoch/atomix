@@ -30,7 +30,7 @@ sphere: false
 
 # (vertex shader: filename) Vertex shader file name for this render
 # [default = "ortho_wave.vert"]
-shader: gpu_ortho_circle.vert
+vertex: gpu_ortho_circle.vert
 
 # (fragment shader: filename) Fragment shader file name for this render
 # [default = "wave.frag"]

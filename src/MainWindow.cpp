@@ -34,8 +34,8 @@ void MainWindow::lockConfig(WaveConfig *cfg) {
 }
 
 void MainWindow::onAddNew() {
-    graph = new GWidget(this);
     cfgParser = new ConfigParser;
+    graph = new GWidget(this, cfgParser);
     customConfig = new WaveConfig;
 
     /* Setup Dock GUI */
@@ -86,7 +86,7 @@ void MainWindow::refreshShaders() {
         if (!item.contains("crystal"))
             entryVertex->addItem(item);
     }
-    entryVertex->setCurrentText(QString::fromStdString(cfgParser->config->shader));
+    entryVertex->setCurrentText(QString::fromStdString(cfgParser->config->vert));
 
     /* Fragment Shaders */
     files = cfgParser->fshFiles.size();
@@ -137,7 +137,7 @@ void MainWindow::loadConfig() {
     entrySphere->setChecked(cfg->sphere);
     entryCircle->setChecked(!cfg->sphere);
     
-    entryVertex->setCurrentText(QString::fromStdString(cfg->shader));
+    entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
 }
 
@@ -281,7 +281,7 @@ void MainWindow::handleMorb() {
     cfgParser->config->superposition = entrySuperOn->isChecked();
     cfgParser->config->cpu = entryCPU->isChecked();
     cfgParser->config->sphere = entrySphere->isChecked();
-    cfgParser->config->shader = entryVertex->currentText().toStdString();
+    cfgParser->config->vert = entryVertex->currentText().toStdString();
     cfgParser->config->frag = entryFrag->currentText().toStdString();
 
     lockConfig(cfgParser->config);

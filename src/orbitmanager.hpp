@@ -26,6 +26,7 @@
 #define ORBIT_H
 
 #include <vector>
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -43,44 +44,66 @@ using ivec = std::vector<uint>;
 using vec = glm::vec3;
 
 
-class Orbit {
+class OrbitManager {
     public:
-        Orbit(WaveConfig *cfg, Orbit *prior);
-        virtual ~Orbit();
+        OrbitManager(WaveConfig *cfg);
+        virtual ~OrbitManager();
 
-        void sphereOrbitA();
-        void sphereOrbitB();
-        void sphereOrbitCPU();
-        void genOrbit();
-        void updateOrbit(double time);
-        void proximityDetect();
-        void superposition();
+        void createOrbits();
+        void updateOrbits(double time);
         
-        int vertexCount();
-        int vertexSize();
-        const float* vertexData();
-        int indexCount();
-        int indexSize();
-        const uint* indexData();
+        void newOrbits();
+        void newConfig(WaveConfig *cfg);
+        
+        int getVertexSize();
+        int getIndexSize();
+        const float* getVertexData();
+        const uint* getIndexData();
+
+        void printIndices();
+        void printVertices();
 
         double amplitude = 0;
         double two_pi_L = 0;
         double two_pi_T = 0;
 
     private:
-        int idx = 0;
+        void circleOrbitGPU(int idx);
+        void sphereOrbitGPU(int idx);
+        void updateOrbitCPUCircle(int idx, double time);
+        void updateOrbitCPUSphere(int idx, double time);
+        void proximityDetect(int idx);
+        void superposition(int idx);
+
+        void genVertexArray();
+        void genIndexBuffer();
+        void resetManager();
+        
+        int setVertexCount();
+        int setVertexSize();
+        int setIndexCount();
+        int setIndexSize();
+
         WaveConfig *config;
-        gvec myVertices;
-        ivec myIndices;
-        dvec myComponents;
-        Orbit *priorOrbit = nullptr;
+        std::vector<gvec *> orbitVertices;
+        std::vector<ivec *> orbitIndices;
+        //dvec myComponents;
+        //OrbitManager *priorOrbit = nullptr;
+        gvec allVertices;
+        ivec allIndices;
 
-        //double amplitude = 0;
-        //double two_pi_L = 0;
-        //double two_pi_T = 0;
+        int orbitCount = 0;
+        int vertexCount = 0;
+        int vertexSize = 0;
+        int indexCount = 0;
+        int indexSize = 0;
+
+        int resolution = 0;
+        
         double phase_const = 0;
-
         double deg_fac = 0;
+
+        bool update = false;
 };
 
 #endif

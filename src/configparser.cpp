@@ -35,7 +35,7 @@ ConfigParser::ConfigParser() {
     cfgValues["period"] = 3;
     cfgValues["wavelength"] = 4;
     cfgValues["resolution"] = 5;
-    cfgValues["shader"] = 6;
+    cfgValues["vertex"] = 6;
     cfgValues["superposition"] = 7;
     cfgValues["orientation"] = 8;
     cfgValues["processor"] = 9;
@@ -168,7 +168,7 @@ int ConfigParser::loadConfigFileCLI(string path) {
                 changes++;
                 break;
             case 6:
-                config->shader = value;
+                config->vert = value;
                 if (!value.empty())
                     custom_shader = true;
                 changes++;
@@ -203,7 +203,7 @@ int ConfigParser::loadConfigFileCLI(string path) {
     string para = "para_wave.vert";
     string super = "cpu_wave.vert";
     string sphere = "para_sphere.vert";
-    string shad = config->shader;
+    string shad = config->vert;
     if (custom_shader) {
         if (shad == ortho) {
             if (config->parallel) {
@@ -240,19 +240,19 @@ int ConfigParser::loadConfigFileCLI(string path) {
             }
             if (config->parallel) {
                 cout << "For parallel (coplanar) waves on GPU, auto-selecting shader \"para_wave.vert\"." << endl;
-                config->shader = para;
+                config->vert = para;
             } else {
                 cout << "For orthogonal waves on GPU, auto-selecting shader \"ortho_wave.vert\"." << endl;
-                config->shader = ortho;
+                config->vert = ortho;
             }
         } else {
             cout << "CPU calculation requested; auto-selecting shader \"cpu_wave.vert\"." << endl;
-            config->shader = super;
+            config->vert = super;
         }
     }
     if (config->sphere) {
         cout << "Special case \"sphere\" selected. Using \"para_sphere.vert\" on GPU." << endl;
-        config->shader = sphere;
+        config->vert = sphere;
         config->cpu = false;
     }
 
@@ -320,7 +320,7 @@ int ConfigParser::loadConfigFileGUI(string path) {
                 changes++;
                 break;
             case 6:
-                config->shader = value;
+                config->vert = value;
                 if (!value.empty())
                     custom_shader = true;
                 changes++;
@@ -359,7 +359,7 @@ int ConfigParser::loadConfigFileGUI(string path) {
     string gpu_sphere = "gpu_sphere.vert";
     string cpu_sphere = "cpu_sphere.vert";
     string path = std::string(ROOT_DIR) + std::string(SHADERS);
-    string vshad = path + config->shader;
+    string vshad = path + config->vert;
     string fshad = path + config->frag;
     if (custom_shader) {
         /* Here we check for valid shader files */
@@ -425,6 +425,6 @@ void ConfigParser::printConfig() {
     cout << "Superposition: " << config->superposition << "\n";
     cout << "CPU: " << config->cpu << "\n";
     cout << "Sphere: " << config->sphere << "\n";
-    cout << "Vert Shader: " << config->shader << "\n";
+    cout << "Vert Shader: " << config->vert << "\n";
     cout << "Frag Shader: " << config->frag << endl;
 }

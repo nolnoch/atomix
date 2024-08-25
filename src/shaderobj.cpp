@@ -30,20 +30,23 @@ using namespace std;
 /**
  * Primary Constructor.
  */
-Shader::Shader(string fName, int type)
-: fileName(fName),
+Shader::Shader(string fName, int type, QOpenGLFunctions_4_5_Core *funcPointer)
+: filePath(fName),
   shaderId(0),
   shaderType(type),
   sourceString(""),
-  valid(0) {
+  valid(0),
+  qgf(funcPointer) {
   this->fileToString();
+  std::size_t nameStart = fName.find_last_of('/') + 1;
+  this->fileName = fName.substr(nameStart);
 }
 
 /**
  * Default Destructor.
  */
 Shader::~Shader() {
-  // Not necessary (yet).
+  // Nothing to do here (yet).
 }
 
 /**
@@ -71,6 +74,22 @@ GLuint Shader::type() {
 }
 
 /**
+ * Accessor function for the shader filename as a string.
+ * @return the string representation of the shader filename
+ */
+string& Shader::name() {
+  return this->fileName;
+}
+
+/**
+ * Accessor function for the shader file path as a string.
+ * @return the string representation of the shader file path
+ */
+string& Shader::path() {
+  return this->filePath;
+}
+
+/**
  * Accessor function for the shader source parsed into a string.
  * @return the string representation of the shader source
  */
@@ -90,7 +109,7 @@ int Shader::isValid() {
  * Converts the shader source file to a string for loading by the program.
  */
 void Shader::fileToString() {
-  fstream shaderFile(this->fileName.c_str(), ios::in);
+  fstream shaderFile(this->filePath.c_str(), ios::in);
 
   if (shaderFile.is_open()) {
     ostringstream buffer;

@@ -46,7 +46,7 @@ typedef struct {
     double amplitude = 0.4f;                        // Amplitude as Float
     double period = 1.0f * M_PI;                    // Period as Multiples of PI
     int orbits = 4;                                 // Orbit count as Integer
-    int resolution = 180;                           // Resolution as Integer
+    int resolution = 360;                           // Resolution as Integer
     bool superposition = false;                     // Superposition as Bool
     bool cpu = false;                                // GPU rendering as Bool
     bool parallel = false;                           // Parallel waves as Bool
@@ -55,24 +55,6 @@ typedef struct {
     std::string frag = "wave.frag";                 // Fragment shader as String
 } WaveConfig;
 Q_DECLARE_METATYPE(WaveConfig);
-
-/* Wave-circle config struct 
-typedef struct {
-    double wavelength = 2.0 * M_PI;                 // Wavelength as Multiples of PI
-    double amplitude = 0.4f;                        // Amplitude as Float
-    double period = 1.0f * M_PI;                    // Period as Multiples of PI
-    int orbits = 4;                                 // Orbit count as Integer
-    int resolution = 360;                           // Resolution as Integer
-    //uint flags = 0;                               // Bit flags for superpos, para, cpu, and sphere
-    bool superposition = false;                     // Superposition as Bool
-    bool cpu = false;                               // GPU rendering as Bool
-    bool parallel = false;                          // Parallel waves as Bool
-    bool sphere = false;                            // Spherical waves as Bool
-    std::string shader = "gpu_ortho_circle.vert";   // Vertex shader as String
-    std::string frag = "wave.frag";                 // Fragment shader as String
-} WaveConfig;
-Q_DECLARE_METATYPE(WaveConfig);
-*/
 
 
 class ConfigParser {

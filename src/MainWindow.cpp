@@ -108,8 +108,6 @@ void MainWindow::loadConfig() {
     int comboID = qCombo->currentData().toInt();
     WaveConfig *cfg = nullptr;
 
-    //cout << "comboID: " << comboID << endl;
-
     if (comboID <= files) {
         assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1]));
         cfg = cfgParser->config;

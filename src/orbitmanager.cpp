@@ -237,7 +237,7 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
         float g = 0.8f;
         float b = 0.8f;
 
-        double wavefunc = amplitude * sin((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const);
+        double wavefunc = sin((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const);
         double displacement = amplitude * wavefunc;
 
         if (config->parallel) {
@@ -332,16 +332,18 @@ void OrbitManager::superposition(int idx) {
         double diffZ = abs(a.z) - abs(b.z);
 
         if (diffX >= 0 && diffZ >= 0) {
-            //myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
-            //priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
-
+            // Calculate interference
             float avgX = (a.x + b.x) / 2;
             float avgZ = (a.z + b.z) / 2;
-
             vec avg = vec(avgX, 0.0f, avgZ);
 
+            // Adjust vertices for interference
             (*orbitVertices[idx])[dt] = avg;
             (*orbitVertices[idx - 1])[dt] = avg;
+
+            // Highlight adjusted vertices
+            (*orbitVertices[idx])[dt+1] = vec(1.0f, 0.0f, 0.0f);
+            (*orbitVertices[idx - 1])[dt+1] = vec(1.0f, 0.0f, 0.0f);
         }
     }
 }

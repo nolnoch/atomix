@@ -272,7 +272,7 @@ int ConfigParser::loadConfigFileGUI(string path) {
     errors = 0;
 
     name = path.substr(path.find_last_of("/") + 1);
-    cout << "Using config file: " << name << endl;
+    //cout << "Using config file: " << name << endl;
 
     ifstream file(path);
 

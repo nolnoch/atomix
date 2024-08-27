@@ -52,9 +52,6 @@ void GWidget::cleanup() {
 void GWidget::configReceived(WaveConfig *cfg) {
     setUpdatesEnabled(false);
     
-    //cout << "\nConfig received! Changing from: \n";
-    //printConfig(renderConfig]);
-
     renderConfig.orbits = cfg->orbits;
     renderConfig.amplitude = cfg->amplitude;
     renderConfig.period = cfg->period;
@@ -67,13 +64,8 @@ void GWidget::configReceived(WaveConfig *cfg) {
     renderConfig.vert = cfg->vert;
     renderConfig.frag = cfg->frag;
     
-    //cout << "\nTo: \n";
-    //printConfig(renderConfig]);
-
-    updateOrbits();
-
+    updateRequired = true;
     setUpdatesEnabled(true);
-    update();
 }
 
 void GWidget::crystalProgram() {
@@ -119,11 +111,14 @@ void GWidget::crystalProgram() {
     crystalProg->detachDelete();
     crystalProg->initVAO();
     crystalProg->bindVAO();
-    crystalProg->bindVBO(sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
-    crystalProg->attributePointer(0, 3, 6 * sizeof(float), (void*)0);                       // Vertices
-    crystalProg->attributePointer(1, 3, 6 * sizeof(float), (void*)(3 * sizeof(float)));     // Colours
-    crystalProg->enableAttributes();
-    crystalProg->bindEBO(sizeof(indices), indices.data());
+    GLuint vboID = crystalProg->bindVBO(sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
+    crystalProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
+    crystalProg->enableAttribute(0);
+    crystalProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                       // Vertices
+    crystalProg->enableAttribute(1);
+    crystalProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);     // Colours
+    //crystalProg->enableAttributes();
+    crystalProg->bindEBO(sizeof(indices), indices.data(), GL_STATIC_DRAW);
 
     /* Release */
     crystalProg->endRender();
@@ -132,7 +127,7 @@ void GWidget::crystalProgram() {
 
 void GWidget::initWaveProgram() {
     /* Orbits */
-    orbits = new OrbitManager(&renderConfig);
+    orbitManager = new OrbitManager(&renderConfig);
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
@@ -155,11 +150,14 @@ void GWidget::initWaveProgram() {
     // Load and bind vertices and attributes
     waveProg->initVAO();
     waveProg->bindVAO();
-    waveProg->bindVBO(orbits->getVertexSize(), orbits->getVertexData(), static_dynamic);
-    waveProg->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords or factorsA
-    waveProg->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour or factorsB
-    waveProg->enableAttributes();
-    waveProg->bindEBO(orbits->getIndexSize(), orbits->getIndexData());
+    GLuint vboID = waveProg->bindVBO(orbitManager->getVertexSize(), orbitManager->getVertexData(), static_dynamic);
+    waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
+    waveProg->enableAttribute(0);
+    waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
+    waveProg->enableAttribute(1);
+    waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
+    //waveProg->enableAttributes();
+    waveProg->bindEBO(orbitManager->getIndexSize(), orbitManager->getIndexData(), static_dynamic);
 
     /* Release */
     waveProg->endRender();
@@ -167,32 +165,33 @@ void GWidget::initWaveProgram() {
 }
 
 void GWidget::updateOrbits() {
-    // Unbind and delete previous VAO, VBO, and EBO
-    waveProg->deleteBuffers();
-    
+    // Gen new VBO & EBO for new Orbits
+    waveProg->addBuffers();
+    this->vboIdx++;
+
     // Re-create Orbits with new params from config
-    orbits->newConfig(&renderConfig);
-    orbits->newOrbits();
+    orbitManager->newConfig(&renderConfig);
+    orbitManager->newOrbits();
 
     // Attach and link new shaders and validate program
-    updateWaveProgram();
+    swapShaders();
 
-    // Load and bind new vertices and attributes
-    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    waveProg->initVAO();
+    // Load and bind new vertices and attributes 
+    waveProg->enable();
     waveProg->bindVAO();
-    waveProg->bindVBO(orbits->getVertexSize(), orbits->getVertexData(), static_dynamic);
-    //waveProg->attributePointer(0, 3, 6 * sizeof(float), (void *)0);                         // x,y,z coords or factorsA
-    //waveProg->attributePointer(1, 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));       // r,g,b colour or factorsB
-    waveProg->enableAttributes();
-    waveProg->bindEBO(orbits->getIndexSize(), orbits->getIndexData());
-
-    // Release
-    waveProg->endRender();
     waveProg->clearBuffers();
+    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    GLuint vboID = waveProg->bindVBO(orbitManager->getVertexSize(), orbitManager->getVertexData(), static_dynamic);
+    waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
+    waveProg->bindEBO(orbitManager->getIndexSize(), orbitManager->getIndexData(), static_dynamic);
+    waveProg->endRender();
+
+    // Cleanup
+    waveProg->deleteBuffers();
+    updateRequired = false;
 }
 
-void GWidget::updateWaveProgram() {
+void GWidget::swapShaders() {
     // Detach current shaders
     waveProg->detachShaders();
     
@@ -268,6 +267,10 @@ void GWidget::paintGL() {
         gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
 
+    /* Pre-empt painting for new Orbits */
+    if (updateRequired)
+        updateOrbits();
+
     /* Per-frame Setup */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
@@ -290,20 +293,69 @@ void GWidget::paintGL() {
     /* (CPU) Update -- Waves */
     waveProg->beginRender();
 
+    /*
+    if (notChecked) {
+        GLuint params;
+        glGetVertexAttribIuiv(0, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &params);
+        cout << "Currently bound buffer index: " << params << endl;
+
+        GLfloat vertBuffer[540];
+        GLuint bufID = waveProg->vbo[vboIdx];
+        GLintptr offset = 0;
+        GLsizeiptr s = sizeof(GLfloat) * 3 * 180;
+        void *data = &vertBuffer;
+
+        //glGetNamedBufferSubData(bufID, offset, s, data);
+        glGetBufferSubData(GL_ARRAY_BUFFER, offset, s, data);
+        cout << "\nVBO contents: \n";
+        for (auto f : vertBuffer) {
+            cout << f << ", ";
+        }
+        cout << endl;
+
+        int idxBuffer[180];
+        bufID = waveProg->ebo[vboIdx];
+        s = sizeof(int) * 180;
+        data = &idxBuffer;
+
+        //glGetNamedBufferSubData(bufID, offset, s, data);
+        glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, s, data);
+        cout << "\nEBO contents: \n";
+        for (auto d : idxBuffer) {
+            cout << d << ", ";
+        }
+        cout << endl;
+
+        notChecked = false;
+    }
+    */
+
+    /*
+    if (renderConfig.sphere) {
+        GLint id;
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &id);
+        cout << "Currently bound VAO: " << id << endl;
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &id);
+        cout << "Currently bound VBO: " << id << endl;
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &id);
+        cout << "Currently bound EBO: " << id << endl;
+    }
+    */
+
     if (renderConfig.cpu) {
-        orbits->updateOrbits(time);
-        waveProg->updateVBO(0, orbits->getVertexSize(), orbits->getVertexData());
+        orbitManager->updateOrbits(time);
+        waveProg->updateVBO(0, orbitManager->getVertexSize(), orbitManager->getVertexData());
     }
     
     /* Render -- Waves */
     waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
     waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
     waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-    waveProg->setUniform(GL_FLOAT, "two_pi_L", orbits->two_pi_L);
-    waveProg->setUniform(GL_FLOAT, "two_pi_T", orbits->two_pi_T);
-    waveProg->setUniform(GL_FLOAT, "amp", orbits->amplitude);
+    waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
+    waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
+    waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
     waveProg->setUniform(GL_FLOAT, "time", time);
-    glDrawElements(GL_POINTS, orbits->getIndexSize(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_POINTS, orbitManager->getIndexCount(), GL_UNSIGNED_INT, 0);
     waveProg->endRender();
 
     q_TotalRot.normalize();
@@ -417,4 +469,17 @@ void GWidget::keyPressEvent(QKeyEvent * e) {
         update();
     } else
         QWidget::keyPressEvent(e);
+}
+
+void GWidget::checkErrors(string str) {
+    GLenum err;
+    int messages = 0;
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        cout << "\n" << str << hex << err;
+        messages++;
+    }
+    
+    if (messages)
+        cout << endl;
 }

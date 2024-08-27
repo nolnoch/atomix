@@ -56,6 +56,7 @@ class OrbitManager {
         void newConfig(WaveConfig *cfg);
         
         int getVertexSize();
+        int getIndexCount();
         int getIndexSize();
         const float* getVertexData();
         const uint* getIndexData();

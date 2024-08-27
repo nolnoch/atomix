@@ -73,7 +73,7 @@
  *
  *  [Resources]
  *
- *  My four favorite resources for understanding quaternions (in addition
+ *  My four favourite resources for understanding quaternions (in addition
  *  to Wikipedia) are listed below:
  *
  *  http://www.youtube.com/watch?v=LB6U849kwXc

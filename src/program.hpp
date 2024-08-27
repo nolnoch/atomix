@@ -73,71 +73,74 @@ typedef struct {
  * and management of all sources and bindings.
  */
 class Program {
- public:
-  Program(QOpenGLFunctions_4_5_Core *funcPointer);
-  virtual ~Program();
+    public:
+        Program(QOpenGLFunctions_4_5_Core *funcPointer);
+        virtual ~Program();
 
-  int addShader(std::string fName, GLuint type);
-  int addAllShaders(std::vector<std::string> *fList, GLuint type);
-  void addDefaultShaders();
-  void addSampler(std::string sName);
+        int addShader(std::string fName, GLuint type);
+        int addAllShaders(std::vector<std::string> *fList, GLuint type);
+        void addDefaultShaders();
+        void addSampler(std::string sName);
 
-  void init();
-  void bindAttribute(int location, std::string name);
-  GLuint getShaderIdFromName(std::string& fileName);
-  void attachShader(std::string& name);
-  GLint linkAndValidate();
-  void detachShaders();
-  void detachDelete();
-  void enable();
-  void disable();
+        void init();
+        void bindAttribute(int location, std::string name);
+        GLuint getShaderIdFromName(std::string& fileName);
+        void attachShader(std::string& name);
+        GLint linkAndValidate();
+        void detachShaders();
+        void detachDelete();
+        void enable();
+        void disable();
 
-  void initVAO();
-  void bindVAO();
-  void clearVAO();
+        void initVAO();
+        void bindVAO();
+        void clearVAO();
 
-  void bindVBO(uint bufSize, const GLfloat *buf, uint mode);
-  void attributePointer(uint idx, uint count, uint stride, const void *offset);
-  void enableAttributes();
-  void updateVBO(uint offset, uint bufSize, const GLfloat *buf);
-  void clearVBO();
+        GLuint bindVBO(uint bufSize, const GLfloat *buf, uint mode);
+        void setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step = 0);
+        void setAttributeBuffer(GLuint binding, GLuint vboIdx, GLsizei stride);
+        void enableAttribute(GLuint idx);
+        void enableAttributes();
+        void disableAttributes();
+        void updateVBO(uint offset, uint bufSize, const GLfloat *buf);
+        void clearVBO();
 
-  void bindEBO(uint bufSize, const GLuint *buf);
-  void clearEBO();
+        void bindEBO(uint bufSize, const GLuint *buf, uint mode);
+        void clearEBO();
 
-  void beginRender();
-  void endRender();
-  void clearBuffers();
-  
-  void deleteBuffers();
+        void beginRender();
+        void endRender();
+        
+        void clearBuffers();
+        void deleteBuffers();
+        void addBuffers();
 
-  void setUniform(int type, std::string name, float n);
-  void setUniformv(int count, int type, std::string name, const float *n);
-  void setUniformMatrix(int size, std::string name, float *m);
-  //void setTexture(int samplerIdx, TexInfo& texInfo);
+        void setUniform(int type, std::string name, float n);
+        void setUniformv(int count, int type, std::string name, const float *n);
+        void setUniformMatrix(int size, std::string name, float *m);
+        //void setTexture(int samplerIdx, TexInfo& texInfo);
 
-  GLuint getProgramId();
+        GLuint getProgramId();
 
-  void displayLogProgram();
-  void displayLogShader(GLenum shader);
+        void displayLogProgram();
+        void displayLogShader(GLenum shader);
 
-  
+    private:
+        QOpenGLFunctions_4_5_Core *qgf = nullptr;
+        std::vector<SamplerInfo> *samplers = nullptr;
+        std::vector<Shader> registeredShaders;
+        std::vector<GLuint> attribs;
+        std::map<std::string, GLuint> compiledShaders;
+        std::vector<GLuint> attachedShaders;
 
- private:
-  QOpenGLFunctions_4_5_Core *qgf = nullptr;
-  std::vector<SamplerInfo> *samplers = nullptr;
-  std::vector<Shader> registeredShaders;
-  std::vector<GLuint> attribs;
-  std::map<std::string, GLuint> compiledShaders;
-  std::vector<GLuint> attachedShaders;
-
-  GLuint programId = 0;
-  GLuint vao = 0;
-  GLuint vbo = 0;
-  GLuint ebo = 0;
-  bool enabled = false;
-  
-  int stage = 0;
+        GLuint programId = 0;
+        GLuint vao;
+        std::vector<GLuint> vbo;
+        std::vector<GLuint> ebo;
+        
+        bool enabled = false;
+        
+        int stage = 0;
 };
 
 #endif /* PROGRAM_HPP_ */

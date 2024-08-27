@@ -388,6 +388,10 @@ int OrbitManager::getVertexSize() {
     return this->vertexSize;
 }
 
+int OrbitManager::getIndexCount() {
+    return this->indexCount;
+}
+
 int OrbitManager::getIndexSize() {
     return this->indexSize;
 }

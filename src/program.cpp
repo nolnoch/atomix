@@ -42,8 +42,9 @@ Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
 Program::~Program() {
     if (samplers)
         delete samplers;
-    if (vao)
+    if (vao) {
         qgf->glDeleteVertexArrays(1, &vao);
+    }
     if (stage >= 2) {
         //for (auto sh : shaders)
         //  delete (&sh);
@@ -326,31 +327,53 @@ void Program::disable() {
 }
 
 void Program::initVAO() {
-    qgf->glGenVertexArrays(1, &vao);
+    qgf->glGenVertexArrays(1, &this->vao);
 }
 
 void Program::bindVAO() {
-    qgf->glBindVertexArray(vao);
+    qgf->glBindVertexArray(this->vao);
 }
 
 void Program::clearVAO() {
     qgf->glBindVertexArray(0);
 }
 
-void Program::bindVBO(uint bufSize, const GLfloat *buf, uint mode) {
-    qgf->glGenBuffers(1, &this->vbo);
-    qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+GLuint Program::bindVBO(uint bufSize, const GLfloat *buf, uint mode) {
+    this->vbo.push_back(0);
+    qgf->glGenBuffers(1, &this->vbo.back());
+    qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
     qgf->glBufferData(GL_ARRAY_BUFFER, bufSize, buf, mode);
+
+    int vboCount = vbo.size();
+
+    return this->vbo.back();
 }
 
-void Program::attributePointer(uint idx, uint count, uint stride, const void *offset) {
-    attribs.push_back(idx);
-    qgf->glVertexAttribPointer(idx, count, GL_FLOAT, GL_FALSE, stride, offset);
+void Program::setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step) {
+    if (std::find(attribs.begin(), attribs.end(), attrIdx) != attribs.end())
+        attribs.push_back(attrIdx);
+    //qgf->glVertexAttribPointer(idx, count, GL_FLOAT, GL_FALSE, stride, offset);
+    qgf->glVertexArrayAttribFormat(this->vao, attrIdx, count, type, GL_FALSE, offset);
+    qgf->glVertexArrayAttribBinding(this->vao, attrIdx, binding);
+    qgf->glVertexArrayBindingDivisor(this->vao, attrIdx, step);
+}
+
+void Program::setAttributeBuffer(GLuint binding, GLuint vboIdx, GLsizei stride) {
+    qgf->glVertexArrayVertexBuffer(this->vao, binding, vboIdx, 0, stride);
+}
+
+void Program::enableAttribute(GLuint idx) {
+    qgf->glEnableVertexArrayAttrib(this->vao, idx);
 }
 
 void Program::enableAttributes() {
-    for (auto i: attribs)
-        qgf->glEnableVertexArrayAttrib(this->vao, i);
+    for (auto a : attribs)
+        qgf->glEnableVertexArrayAttrib(this->vao, a);
+}
+
+void Program::disableAttributes() {
+    for (auto a : attribs)
+        qgf->glDisableVertexArrayAttrib(this->vao, a);
 }
 
 void Program::updateVBO(uint offset, uint bufSize, const GLfloat *buf) {
@@ -362,10 +385,13 @@ void Program::clearVBO() {
     qgf->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Program::bindEBO(uint bufSize, const GLuint *buf) {
-    qgf->glGenBuffers(1, &this->ebo);
-    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
-    qgf->glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufSize, buf, GL_STATIC_DRAW);
+void Program::bindEBO(uint bufSize, const GLuint *buf, uint mode) {
+    this->ebo.push_back(0);
+    qgf->glGenBuffers(1, &this->ebo.back());
+    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
+    qgf->glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufSize, buf, mode);
+
+    int eboCount = ebo.size();
 }
 
 void Program::clearEBO() {
@@ -375,7 +401,8 @@ void Program::clearEBO() {
 void Program::beginRender() {
     enable();
     bindVAO();
-    qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+    qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
+    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
 }
 
 void Program::endRender() {
@@ -390,12 +417,16 @@ void Program::clearBuffers() {
 
 void Program::deleteBuffers() {
     assert(!enabled);
-    
-    bindVAO();
 
-    qgf->glDeleteBuffers(1, &this->ebo);
-    qgf->glDeleteBuffers(1, &this->vbo);
-    qgf->glDeleteVertexArrays(1, &this->vao);
+    qgf->glDeleteBuffers(1, &this->ebo.front());
+    this->ebo.front() = 0;
+    qgf->glDeleteBuffers(1, &this->vbo.front());
+    this->vbo.front() = 0;
+}
+
+void Program::addBuffers() {
+    vbo.push_back(0);
+    ebo.push_back(0);
 }
 
 /**

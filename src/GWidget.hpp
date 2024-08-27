@@ -80,14 +80,15 @@ private:
     void crystalProgram();
     void initWaveProgram();
     void updateOrbits();
-    void updateWaveProgram();
+    void swapShaders();
     void clearProgram(uint i);
+    void checkErrors(string str);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
     Program *waveProg = nullptr;
     ConfigParser *cfgParser = nullptr;
-    OrbitManager *orbits = nullptr;
+    OrbitManager *orbitManager = nullptr;
     //AtomixProgs ap;
     //std::vector<Program *> firstProgs;
     //std::vector<Orbit *> firstOrbits;
@@ -121,7 +122,11 @@ private:
     uint gw_movement = 0;
     bool gw_pause = false;
     bool gw_init = false;
+    int vboIdx = 0;
     //WaveConfig gw_config;
+
+    bool notChecked = true;
+    bool updateRequired = false;
 };
 
 #endif

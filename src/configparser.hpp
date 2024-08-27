@@ -48,10 +48,10 @@ typedef struct {
     int orbits = 4;                                 // Orbit count as Integer
     int resolution = 360;                           // Resolution as Integer
     bool superposition = false;                     // Superposition as Bool
-    bool cpu = false;                                // GPU rendering as Bool
-    bool parallel = false;                           // Parallel waves as Bool
-    bool sphere = false;                             // Spherical waves as Bool
-    std::string vert = "gpu_ortho_circle.vert";         // Vertex shader as String
+    bool cpu = false;                               // GPU rendering as Bool
+    bool parallel = false;                          // Parallel waves as Bool
+    bool sphere = false;                            // Spherical waves as Bool
+    std::string vert = "gpu_ortho_circle.vert";     // Vertex shader as String
     std::string frag = "wave.frag";                 // Fragment shader as String
 } WaveConfig;
 Q_DECLARE_METATYPE(WaveConfig);

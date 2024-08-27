@@ -29,7 +29,7 @@ MainWindow::MainWindow() {
 }
 
 void MainWindow::lockConfig(WaveConfig *cfg) {
-    cout << "Updating config." << endl;
+    //cout << "Updating config." << endl;
     emit sendConfig(cfg);
 }
 

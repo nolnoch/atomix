@@ -15,13 +15,9 @@ uniform mat4 viewMat;
 uniform mat4 projMat;
 
 void main() {
-    float a = factorsA.x;
-    float k = factorsA.y;
-    float w = factorsA.z;
-
-    float theta = factorsB.x;
-    float phi = factorsB.y;
-    float r = factorsB.z;
+    float theta = factorsA.x;
+    float phi = factorsA.y;
+    float r = factorsA.z;
 
     float sin_theta = sin(theta);
     float cos_theta = cos(theta);
@@ -41,6 +37,6 @@ void main() {
     float y_coord = (r + 0) * cos_phi;
 
     vertColour = vec3(wavefunc, 1 - wavefunc, 1.0f);
-    //vertColour = vec3(1.0f, 1.0f, 1.0f);
+    //vertColour = factorsB;
     gl_Position = projMat * viewMat * worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
 };

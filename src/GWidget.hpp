@@ -50,6 +50,8 @@ typedef struct {
 } AtomixProgs;
 Q_DECLARE_METATYPE(AtomixProgs);
 
+enum changeFlags {ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024};
+
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
     Q_OBJECT
@@ -79,8 +81,10 @@ private:
     void initVecsAndMatrices();
     void crystalProgram();
     void initWaveProgram();
-    void updateOrbits();
+    void processConfigChange();
     void swapShaders();
+    void swapBuffers();
+    void swapVertices();
     void clearProgram(uint i);
     void checkErrors(string str);
 
@@ -89,19 +93,9 @@ private:
     Program *waveProg = nullptr;
     ConfigParser *cfgParser = nullptr;
     OrbitManager *orbitManager = nullptr;
-    //AtomixProgs ap;
-    //std::vector<Program *> firstProgs;
-    //std::vector<Orbit *> firstOrbits;
-    //std::vector<Program *> secondProgs;
-    //std::vector<Orbit *> secondOrbits;
-    //std::vector<Program *> *renderProgs = nullptr;
-    //std::vector<Orbit *> *renderOrbits = nullptr;
-    //std::vector<OrbitManager *> waveOrbits;
-    //ivec allIndices;
-    //gvec allVertices;
-    WaveConfig renderConfig;
-
     QTimer *gw_timer = nullptr;
+
+    WaveConfig renderConfig;
     glm::mat4 m4_proj;
     glm::mat4 m4_view;
     glm::mat4 m4_world;
@@ -116,15 +110,14 @@ private:
     int64_t gw_timeStart;
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
+    
     uint gw_faces = 0;
     int gw_scrHeight = 0;
     int gw_scrWidth = 0;
     uint gw_movement = 0;
     bool gw_pause = false;
     bool gw_init = false;
-    int vboIdx = 0;
-    //WaveConfig gw_config;
-
+    uint updateFlags = 0;
     bool notChecked = true;
     bool updateRequired = false;
 };

@@ -171,15 +171,15 @@ void OrbitManager::circleOrbitGPU(int idx) {
         double theta = i * deg_fac;
         orbitIndices[idx]->push_back(l + i);
 
-        float a = amplitude;
-        float k = two_pi_L * radius * theta;
-        float w = two_pi_T;
-        float r = (float) radius;
-        float c = cos(theta);
-        float s = sin(theta);
+        float h = theta;
+        float p = 0;
+        float d = (float) radius;
+        float r = 0;
+        float g = 0;
+        float b = 0;
 
-        vec factorsA = vec(a, k, w);
-        vec factorsB = vec(r, c, s);
+        vec factorsA = vec(h, p, d);
+        vec factorsB = vec(r, g, b);
         
         orbitVertices[idx]->push_back(factorsA);
         orbitVertices[idx]->push_back(factorsB);
@@ -198,15 +198,15 @@ void OrbitManager::sphereOrbitGPU(int idx) {
             
             orbitIndices[idx]->push_back(l + m + j);
 
-            float a = amplitude;
-            float k = two_pi_L;
-            float w = two_pi_T;
             float h = (float) theta;
             float p = (float) phi;
-            float r = (float) radius;
+            float d = (float) radius;
+            float r = 0;
+            float g = 0;
+            float b = 0;
 
-            vec factorsA = vec(a, k, w);
-            vec factorsB = vec(h, p, r);
+            vec factorsA = vec(h, p, d);
+            vec factorsB = vec(r, g, b);
             
             orbitVertices[idx]->push_back(factorsA);
             orbitVertices[idx]->push_back(factorsB);

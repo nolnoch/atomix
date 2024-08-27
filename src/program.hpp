@@ -55,6 +55,7 @@
 
 #include <iostream>
 #include <vector>
+#include <deque>
 #include "shaderobj.hpp"
 #include "global.hpp"
 
@@ -135,8 +136,8 @@ class Program {
 
         GLuint programId = 0;
         GLuint vao;
-        std::vector<GLuint> vbo;
-        std::vector<GLuint> ebo;
+        std::deque<GLuint> vbo;
+        std::deque<GLuint> ebo;
         
         bool enabled = false;
         

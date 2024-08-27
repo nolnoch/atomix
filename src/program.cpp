@@ -344,7 +344,7 @@ GLuint Program::bindVBO(uint bufSize, const GLfloat *buf, uint mode) {
     qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
     qgf->glBufferData(GL_ARRAY_BUFFER, bufSize, buf, mode);
 
-    int vboCount = vbo.size();
+    //int vboCount = vbo.size();
 
     return this->vbo.back();
 }
@@ -391,7 +391,7 @@ void Program::bindEBO(uint bufSize, const GLuint *buf, uint mode) {
     qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
     qgf->glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufSize, buf, mode);
 
-    int eboCount = ebo.size();
+    //int eboCount = ebo.size();
 }
 
 void Program::clearEBO() {
@@ -419,9 +419,9 @@ void Program::deleteBuffers() {
     assert(!enabled);
 
     qgf->glDeleteBuffers(1, &this->ebo.front());
-    this->ebo.front() = 0;
+    this->ebo.pop_front();
     qgf->glDeleteBuffers(1, &this->vbo.front());
-    this->vbo.front() = 0;
+    this->vbo.pop_front();
 }
 
 void Program::addBuffers() {

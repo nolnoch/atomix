@@ -1,5 +1,5 @@
 # (orbits: int <= 8) Number of wave-circle orbits [default = 4]
-orbits:4
+orbits: 6
 
 # (amplitude: float) Delta displacement of waves [default = 0.4]
 amplitude: 0.4
@@ -15,7 +15,7 @@ resolution: 360
 
 # (orientation: 'orthogonal','parallel') Whether waves should be 'parallel' (coplanar) or
 # 'orthogonal' to orbital plane [default = orthogonal]
-orientation: orthogonal
+orientation: parallel
 
 # (superposition: 'true','false') Whether to respect superposition in coplanar wavefunctions
 # (irrelevant to orthogonal waves) [default = false]
@@ -29,8 +29,8 @@ processor: gpu
 sphere: false
 
 # (vertex shader: filename) Vertex shader file name for this render
-# [default = "ortho_wave.vert"]
-vertex: gpu_ortho_circle.vert
+# [default = "gpu_ortho_circle.vert"]
+vertex: gpu_para_circle.vert
 
 # (fragment shader: filename) Fragment shader file name for this render
 # [default = "wave.frag"]

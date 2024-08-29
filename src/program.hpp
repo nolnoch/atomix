@@ -107,6 +107,7 @@ class Program {
         void clearVBO();
 
         void bindEBO(uint bufSize, const GLuint *buf, uint mode);
+        void updateEBO(uint offset, uint bufSize, const GLuint *buf);
         void clearEBO();
 
         void beginRender();

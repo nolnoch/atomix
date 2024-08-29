@@ -50,6 +50,7 @@ void MainWindow::onAddNew() {
     connect(this, &MainWindow::sendConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
     connect(qCombo, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(qMorb, &QPushButton::clicked, this, &MainWindow::handleMorb);
+    connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedOrbits, Qt::DirectConnection);
 
     setWindowTitle(tr("atomix"));
 }
@@ -146,8 +147,12 @@ void MainWindow::setupDock() {
     wDock = new QWidget;
     controlBox = new QDockWidget(this);
     qMorb = new QPushButton("Morb", this);
+    QHBoxLayout *orbitSelectLayout = new QHBoxLayout();
+
+    QSizePolicy qPolicy = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QGroupBox *groupConfig = new QGroupBox("Configuration");
+    QGroupBox *groupOrbits = new QGroupBox("Visible Orbits");
     
     QHBoxLayout *row1 = new QHBoxLayout;
     QHBoxLayout *row2 = new QHBoxLayout;
@@ -207,6 +212,43 @@ void MainWindow::setupDock() {
     buttGroupSphere->addButton(entrySphere, 128);
     entryCircle->toggle();
 
+    QCheckBox *orbit1 = new QCheckBox("1");
+    QCheckBox *orbit2 = new QCheckBox("2");
+    QCheckBox *orbit3 = new QCheckBox("3");
+    QCheckBox *orbit4 = new QCheckBox("4");
+    QCheckBox *orbit5 = new QCheckBox("5");
+    QCheckBox *orbit6 = new QCheckBox("6");
+    QCheckBox *orbit7 = new QCheckBox("7");
+    QCheckBox *orbit8 = new QCheckBox("8");
+    orbitSelectLayout->addWidget(orbit1);
+    orbitSelectLayout->addWidget(orbit2);
+    orbitSelectLayout->addWidget(orbit3);
+    orbitSelectLayout->addWidget(orbit4);
+    orbitSelectLayout->addWidget(orbit5);
+    orbitSelectLayout->addWidget(orbit6);
+    orbitSelectLayout->addWidget(orbit7);
+    orbitSelectLayout->addWidget(orbit8);
+    
+    orbit1->setCheckState(Qt::CheckState::Checked);
+    orbit2->setCheckState(Qt::CheckState::Checked);
+    orbit3->setCheckState(Qt::CheckState::Checked);
+    orbit4->setCheckState(Qt::CheckState::Checked);
+    orbit5->setCheckState(Qt::CheckState::Unchecked);
+    orbit6->setCheckState(Qt::CheckState::Unchecked);
+    orbit7->setCheckState(Qt::CheckState::Unchecked);
+    orbit8->setCheckState(Qt::CheckState::Unchecked);
+
+    buttGroupOrbits = new QButtonGroup();
+    buttGroupOrbits->setExclusive(false);
+    buttGroupOrbits->addButton(orbit1, 1);
+    buttGroupOrbits->addButton(orbit2, 2);
+    buttGroupOrbits->addButton(orbit3, 4);
+    buttGroupOrbits->addButton(orbit4, 8);
+    buttGroupOrbits->addButton(orbit5, 16);
+    buttGroupOrbits->addButton(orbit6, 32);
+    buttGroupOrbits->addButton(orbit7, 64);
+    buttGroupOrbits->addButton(orbit8, 128);
+
     row1->addWidget(labelOrbit, 2, Qt::AlignLeft);
     row1->addWidget(entryOrbit, 2, Qt::AlignRight);
     row2->addWidget(labelAmp, 2, Qt::AlignLeft);
@@ -247,18 +289,22 @@ void MainWindow::setupDock() {
     cfgGrid->addLayout(row11);
 
     groupConfig->setLayout(cfgGrid);
+    groupOrbits->setLayout(orbitSelectLayout);
     
     layGrid->addWidget(labelConfig);
     layGrid->addWidget(qCombo);
     layGrid->addStretch(1);
     layGrid->addWidget(groupConfig);
     layGrid->addStretch(1);
+    layGrid->addWidget(groupOrbits);
+    layGrid->addStretch(1);
     layGrid->addWidget(qMorb);
 
     layGrid->setStretchFactor(labelConfig, 1);
     layGrid->setStretchFactor(qCombo, 1);
     layGrid->setStretchFactor(groupConfig, 8);
-    layGrid->setStretchFactor(qMorb, 1);
+    layGrid->setStretchFactor(groupOrbits, 2);
+    layGrid->setStretchFactor(qMorb, 2);
     
     wDock->setLayout(layGrid);
     wDock->setMinimumSize(500,0);

@@ -52,8 +52,9 @@ class OrbitManager {
         void createOrbits();
         void updateOrbits(double time);
         
-        void newOrbits();
         void newConfig(WaveConfig *cfg);
+        void newOrbits();
+        uint selectOrbits(int id, bool checked);
         
         int getVertexSize();
         int getIndexCount();
@@ -73,7 +74,6 @@ class OrbitManager {
         void sphereOrbitGPU(int idx);
         void updateOrbitCPUCircle(int idx, double time);
         void updateOrbitCPUSphere(int idx, double time);
-        void proximityDetect(int idx);
         void superposition(int idx);
 
         void genVertexArray();
@@ -88,11 +88,10 @@ class OrbitManager {
         WaveConfig *config;
         std::vector<gvec *> orbitVertices;
         std::vector<ivec *> orbitIndices;
-        //dvec myComponents;
-        //OrbitManager *priorOrbit = nullptr;
         gvec allVertices;
         ivec allIndices;
-
+        
+        uint renderedOrbits = -1;
         int orbitCount = 0;
         int vertexCount = 0;
         int vertexSize = 0;

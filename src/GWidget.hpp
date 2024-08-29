@@ -65,6 +65,7 @@ public:
 public slots:
     void cleanup();
     void configReceived(WaveConfig *cfg);
+    void selectRenderedOrbits(int id, bool checked);
 
 protected:
     void initializeGL() override;
@@ -79,12 +80,13 @@ protected:
 
 private:
     void initVecsAndMatrices();
-    void crystalProgram();
+    void initCrystalProgram();
     void initWaveProgram();
     void processConfigChange();
     void swapShaders();
     void swapBuffers();
     void swapVertices();
+    void swapIndices();
     void clearProgram(uint i);
     void checkErrors(string str);
 
@@ -110,6 +112,7 @@ private:
     int64_t gw_timeStart;
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
+    uint renderedOrbits;
     
     uint gw_faces = 0;
     int gw_scrHeight = 0;
@@ -119,6 +122,8 @@ private:
     bool gw_init = false;
     uint updateFlags = 0;
     bool notChecked = true;
+    bool newVertices = false;
+    bool newIndices = false;
     bool updateRequired = false;
 };
 

@@ -39,14 +39,17 @@ GWidget::~GWidget() {
 }
 
 void GWidget::cleanup() {
-    makeCurrent();
+    //makeCurrent();
 
     //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
     delete crystalProg;
     delete waveProg;
+    delete orbitManager;
+    delete cfgParser;
+    delete gw_timer;
 
-    doneCurrent();
+    //doneCurrent();
 }
 
 void GWidget::configReceived(WaveConfig *cfg) {
@@ -101,9 +104,16 @@ void GWidget::configReceived(WaveConfig *cfg) {
     setUpdatesEnabled(true);
 }
 
-void GWidget::processConfigChange() {
-    bool newVertices = false;
+void GWidget::selectRenderedOrbits(int id, bool checked) {
+    // Send selection(s) to OrbitManager for regeneration of indices
+    renderedOrbits = orbitManager->selectOrbits(id, checked);
 
+    // Flag for EBO update
+    newIndices = true;
+    updateRequired = true;
+}
+
+void GWidget::processConfigChange() {
     // Re-create Orbits with new params from config
     if ((updateFlags & (ORBITS | RESOLUTION | SPHERE | CPU)) ||
         (renderConfig.cpu && (updateFlags & (AMPLITUDE | PERIOD | WAVELENGTH | PARALLEL)))) {
@@ -122,6 +132,8 @@ void GWidget::processConfigChange() {
         swapBuffers();
     } else if (newVertices) {
         swapVertices();
+    } else if (newIndices) {
+        swapIndices();
     }
     
     updateFlags = 0;
@@ -158,13 +170,23 @@ void GWidget::swapVertices() {
     waveProg->beginRender();
     waveProg->updateVBO(0, orbitManager->getVertexSize(), orbitManager->getVertexData());
     waveProg->endRender();
+
+    newVertices = false;
 }
+
+void GWidget::swapIndices() {
+    waveProg->beginRender();
+    waveProg->updateEBO(0, orbitManager->getIndexSize(), orbitManager->getIndexData());
+    waveProg->endRender();
+
+    newIndices = false;
+} 
 
 void GWidget::clearProgram(uint i) {
     //TODO necessary?
 }
 
-void GWidget::crystalProgram() {
+void GWidget::initCrystalProgram() {
     std::string vertName = "crystal.vert";
     std::string fragName = "crystal.frag";
 
@@ -304,7 +326,7 @@ void GWidget::initializeGL() {
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
 
     /* Init -- Programs and Shaders */
-    crystalProgram();
+    initCrystalProgram();
     initWaveProgram();
 
     /* Init -- Time */
@@ -319,9 +341,10 @@ void GWidget::paintGL() {
         gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
 
-    /* Pre-empt painting for new and updated Orbits */
-    if (updateRequired)
+    /* Pre-empt painting for new or updated Orbit configuration */
+    if (updateRequired) {
         processConfigChange();
+    }
     if (renderConfig.cpu)
         orbitManager->updateOrbits(time);
 
@@ -345,18 +368,20 @@ void GWidget::paintGL() {
     crystalProg->endRender();
 
     /* Render -- Orbits */
-    waveProg->beginRender();
-    if (renderConfig.cpu)
-        waveProg->updateVBO(0, orbitManager->getVertexSize(), orbitManager->getVertexData());
-    waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-    waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-    waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-    waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
-    waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
-    waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
-    waveProg->setUniform(GL_FLOAT, "time", time);
-    glDrawElements(GL_POINTS, orbitManager->getIndexCount(), GL_UNSIGNED_INT, 0);
-    waveProg->endRender();
+    if (renderedOrbits) {
+        waveProg->beginRender();
+        if (renderConfig.cpu)
+            waveProg->updateVBO(0, orbitManager->getVertexSize(), orbitManager->getVertexData());
+        waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+        waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+        waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
+        waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
+        waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
+        waveProg->setUniform(GL_FLOAT, "time", time);
+        glDrawElements(GL_POINTS, orbitManager->getIndexCount(), GL_UNSIGNED_INT, 0);
+        waveProg->endRender();
+    }
 
     q_TotalRot.normalize();
 }
@@ -366,20 +391,6 @@ void GWidget::resizeGL(int w, int h) {
     gw_scrWidth = width();
     m4_proj = glm::mat4(1.0f);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, 0.1f, 100.0f);
-}
-
-void GWidget::printConfig(WaveConfig *cfg) {
-    cout << "Orbits: " << cfg->orbits << "\n";
-    cout << "Amplitude: " << cfg->amplitude << "\n";
-    cout << "Period: " << cfg->period << "\n";
-    cout << "Wavelength: " << cfg->wavelength << "\n";
-    cout << "Resolution: " << cfg->resolution << "\n";
-    cout << "Parallel: " << cfg->parallel << "\n";
-    cout << "Superposition: " << cfg->superposition << "\n";
-    cout << "CPU: " << cfg->cpu << "\n";
-    cout << "Sphere: " << cfg->sphere << "\n";
-    cout << "Vert Shader: " << cfg->vert << "\n";
-    cout << "Frag Shader: " << cfg->frag << endl;
 }
 
 void GWidget::wheelEvent(QWheelEvent *e) {
@@ -409,7 +420,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
     //GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
 
     if (gw_movement & Qt::RightButton) {
-        /* Right-click-drag HORIZONTAL movement will orbit about Y axis */
+        /* Right-click-drag HORIZONTAL movement will rotate about Y axis */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
             float dragRatio = (v3_mouseEnd.x - v3_mouseBegin.x) / gw_scrWidth;
             GLfloat orbitAngleH = TWO_PI * dragRatio;
@@ -417,7 +428,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
             Quaternion qOrbitRotH = Quaternion(orbitAngleH, orbitAxisH, RAD);
             q_TotalRot = qOrbitRotH * q_TotalRot;
         }
-        /* Right-click-drag VERTICAL movement will orbit about X and Z axes */
+        /* Right-click-drag VERTICAL movement will rotate about X and Z axes */
         if (v3_mouseBegin.y != v3_mouseEnd.y) {
             float dragRatio = (v3_mouseBegin.y - v3_mouseEnd.y) / gw_scrHeight;
             GLfloat orbitAngleV = TWO_PI * dragRatio;
@@ -435,7 +446,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         }
         
     } else if (gw_movement & Qt::MiddleButton) {
-        /* Middle-click-drag will orbit about camera look vector */
+        /* Middle-click-drag will rotate about camera look vector */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
             float dragRatio = (v3_mouseBegin.x - v3_mouseEnd.x) / gw_scrWidth;
             GLfloat orbitAngleL = TWO_PI * dragRatio;
@@ -482,4 +493,18 @@ void GWidget::checkErrors(string str) {
     
     if (messages)
         cout << endl;
+}
+
+void GWidget::printConfig(WaveConfig *cfg) {
+    cout << "Orbits: " << cfg->orbits << "\n";
+    cout << "Amplitude: " << cfg->amplitude << "\n";
+    cout << "Period: " << cfg->period << "\n";
+    cout << "Wavelength: " << cfg->wavelength << "\n";
+    cout << "Resolution: " << cfg->resolution << "\n";
+    cout << "Parallel: " << cfg->parallel << "\n";
+    cout << "Superposition: " << cfg->superposition << "\n";
+    cout << "CPU: " << cfg->cpu << "\n";
+    cout << "Sphere: " << cfg->sphere << "\n";
+    cout << "Vert Shader: " << cfg->vert << "\n";
+    cout << "Frag Shader: " << cfg->frag << endl;
 }

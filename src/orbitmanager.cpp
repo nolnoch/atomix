@@ -27,13 +27,7 @@
 
 OrbitManager::OrbitManager(WaveConfig *cfg)
     : config(cfg) {
-    this->orbitCount = config->orbits;
-    this->amplitude = config->amplitude;
-    this->resolution = config->resolution;
-    this->two_pi_L = TWO_PI / config->wavelength;
-    this->two_pi_T = TWO_PI / config->period;
-    this->deg_fac = TWO_PI / this->resolution;
-
+    newConfig(cfg);
     createOrbits();
 }
 
@@ -79,11 +73,6 @@ void OrbitManager::updateOrbits(double time) {
     genVertexArray();
 }
 
-void OrbitManager::newOrbits() {
-    resetManager();
-    createOrbits();
-}
-
 void OrbitManager::newConfig(WaveConfig *cfg) {
     this->config = cfg;
     this->orbitCount = config->orbits;
@@ -94,80 +83,35 @@ void OrbitManager::newConfig(WaveConfig *cfg) {
     this->deg_fac = TWO_PI / this->resolution;
 }
 
-/*
-void OrbitManager::sphereOrbitA() {
-    orbitVertices[idx]->clear();
-    orbitIndices[idx]->clear();
-
-    for (int i = 0; i < config->resolution; i++) {
-        double theta = i * deg_fac;
-        
-        orbitIndices[idx]->push_back(i);
-
-        float x = 1.0f;
-        float y = (float) (this->idx - 1);          //idx=1: 0, idx=2: 1
-        float z = (float) -(this->idx - 2);         //idx=1: 1, idx=2: 0
-        float h = (float) theta;
-        float c = (float) cos(theta);
-        float s = (float) sin(theta);
-
-        vec factorsA = vec(x, y, z);
-        vec factorsB = vec(h, c, s);
-        
-        orbitVertices[idx]->push_back(factorsA);
-        // std::cout << glm::to_string(factorsA) << "\n";
-        orbitVertices[idx]->push_back(factorsB);
-    }
+void OrbitManager::newOrbits() {
+    resetManager();
+    createOrbits();
 }
-*/
-/*
-void OrbitManager::sphereOrbitCPU() {
-    double radius = (double) this->idx;
-    orbitVertices[idx]->clear();
-    orbitIndices[idx]->clear();
 
-    for (int i = 0; i < config->resolution; i++) {
-        for (int j = 0; j < config->resolution; j++) {
-            double theta = i * deg_fac;
-            double phi = j * deg_fac;
-            
-            orbitIndices[idx]->push_back(i*config->resolution + j);
-            vaoIndices->push_back(i*config->resolution + j);
+uint OrbitManager::selectOrbits(int id, bool checked) {
+    uint flag = id;
 
-            float r = 0.8f;
-            float g = 0.8f;
-            float b = 0.8f;
+    if (checked)
+        renderedOrbits |= flag;
+    else
+        renderedOrbits &= ~(flag);
 
-            float wavefunc = sin((two_pi_L * radius * theta) - (two_pi_T * 0));
-            float displacement = amplitude * wavefunc;
+    allIndices.clear();
+    genIndexBuffer();
 
-            float x = (float) (radius + displacement) * (sin(phi) * sin(theta));
-            float y = (float) cos(phi);
-            float z = (float) (radius + displacement) * (sin(phi) * cos(theta));
-
-            vec factorsA = vec(x, y, z);
-            vec factorsB = vec(r, g, b);
-            
-            orbitVertices[idx]->push_back(factorsA);
-            orbitVertices[idx]->push_back(factorsB);
-
-            vaoVerts->push_back(factorsA);
-            vaoVerts->push_back(factorsB);
-        }
-    }
+    return renderedOrbits;
 }
-*/
 
 void OrbitManager::circleOrbitGPU(int idx) {
     double radius = (double) (idx + 1);
-    int l = idx * config->resolution;
+    int l = idx * this->resolution;
 
     /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
     /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
-    for (int i = 0; i < config->resolution; i++) {
+    for (int i = 0; i < this->resolution; i++) {
         double theta = i * deg_fac;
         orbitIndices[idx]->push_back(l + i);
 
@@ -188,11 +132,11 @@ void OrbitManager::circleOrbitGPU(int idx) {
 
 void OrbitManager::sphereOrbitGPU(int idx) {
     double radius = (double) (idx + 1);
-    int l = idx * config->resolution * config->resolution;
+    int l = idx * this->resolution * this->resolution;
 
-    for (int i = 0; i < config->resolution; i++) {
-        int m = i * config->resolution;
-        for (int j = 0; j < config->resolution; j++) {
+    for (int i = 0; i < this->resolution; i++) {
+        int m = i * this->resolution;
+        for (int j = 0; j < this->resolution; j++) {
             double theta = i * deg_fac;
             double phi = j * deg_fac;
             
@@ -219,14 +163,14 @@ void OrbitManager::sphereOrbitGPU(int idx) {
 
 void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
     double radius = (double) (idx + 1);
-    int l = idx * config->resolution;
+    int l = idx * this->resolution;
 
     /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
     /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
 
-    for (int i = 0; i < config->resolution; i++) {
+    for (int i = 0; i < this->resolution; i++) {
         double theta = i * deg_fac;
         float x, y, z;
         
@@ -263,11 +207,11 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
 
 void OrbitManager::updateOrbitCPUSphere(int idx, double t) {
     double radius = (double) (idx + 1);
-    int l = idx * config->resolution * config->resolution;
+    int l = idx * this->resolution * this->resolution;
 
-    for (int i = 0; i < config->resolution; i++) {
-        int m = i * config->resolution;
-        for (int j = 0; j < config->resolution; j++) {
+    for (int i = 0; i < this->resolution; i++) {
+        int m = i * this->resolution;
+        for (int j = 0; j < this->resolution; j++) {
             double theta = i * deg_fac;
             double phi = j * deg_fac;
             
@@ -291,33 +235,6 @@ void OrbitManager::updateOrbitCPUSphere(int idx, double t) {
             orbitVertices[idx]->push_back(vertex);
             orbitVertices[idx]->push_back(colour);
         }
-    }
-}
-
-void OrbitManager::proximityDetect(int idx) {
-    int verts = orbitVertices[idx]->size();
-
-    for (int dt = 0; dt < verts; dt += 2) {
-        vec a = (*orbitVertices[idx - 1])[dt];
-        vec b = (*orbitVertices[idx])[dt];
-
-        double diffX = abs(a.x) - abs(b.x);
-        double diffZ = abs(a.z) - abs(b.z);
-
-        bool crossX = diffX > 0 && diffX < 0.05;
-        bool crossZ = diffZ > 0 && diffZ < 0.05;
-
-        /* Interesection highlight */
-        if (crossX && crossZ) {
-            (*orbitVertices[idx])[dt+1] = vec(1.0f, 0.0f, 0.0f);
-            (*orbitVertices[idx - 1])[dt+1] = vec(1.0f, 0.0f, 0.0f);
-        }
-
-        /* Crossing region highlight 
-        if (diffX >= 0 && diffZ >= 0) {
-            myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
-            priorOrbit->myVertices[dt+1] = vec(1.0f, 0.0f, 0.0f);
-        }*/
     }
 }
 
@@ -378,8 +295,11 @@ void OrbitManager::genVertexArray() {
 }
 
 void OrbitManager::genIndexBuffer() {
+    assert(!allIndices.size());
+
     for (int i = 0; i < orbitCount; i++) {
-        std::copy(orbitIndices[i]->begin(), orbitIndices[i]->end(), std::back_inserter(this->allIndices));
+        if (renderedOrbits & (1 << i))
+            std::copy(orbitIndices[i]->begin(), orbitIndices[i]->end(), std::back_inserter(this->allIndices));
     }
 
     this->indexCount = setIndexCount();
@@ -428,7 +348,9 @@ int OrbitManager::setIndexSize() {
 }
 
 const uint* OrbitManager::getIndexData() {
-    assert(indexCount);
+    if (!indexCount)
+        return 0;
+
     return &allIndices[0];
 }
 

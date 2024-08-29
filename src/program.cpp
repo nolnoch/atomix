@@ -394,6 +394,11 @@ void Program::bindEBO(uint bufSize, const GLuint *buf, uint mode) {
     //int eboCount = ebo.size();
 }
 
+void Program::updateEBO(uint offset, uint bufSize, const GLuint *buf) {
+    qgf->glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bufSize, buf);
+    displayLogProgram();
+}
+
 void Program::clearEBO() {
     qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

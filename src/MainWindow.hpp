@@ -35,6 +35,8 @@
 #include <QButtonGroup>
 #include <QComboBox>
 #include <QBoxLayout>
+#include <QCheckBox>
+#include <QListWidget>
 #include "GWidget.hpp"
 
 const QString DEFAULT = "default-config.wave";
@@ -51,6 +53,7 @@ protected:
 
 signals:
     void sendConfig(WaveConfig *cfg);
+    void changeRenderedOrbits(uint selectedOrbits);
 
 private slots:
     void onAddNew();
@@ -86,6 +89,9 @@ private:
     QButtonGroup *buttGroupSuper = nullptr;
     QButtonGroup *buttGroupCPU = nullptr;
     QButtonGroup *buttGroupSphere = nullptr;
+    QButtonGroup *buttGroupOrbits = nullptr;
+
+    QListWidget *orbitSelector = nullptr;
 
     GWidget *graph = nullptr;
 

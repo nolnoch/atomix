@@ -27,10 +27,11 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
 * Pre-define a configuration using the config.wave files (feel free to create your own!) and/or use the GUI options to adjust model parameters such as:
   * Number of orbit-waves (for *n*>=1, *n* waves where wave[*n*] has r = *n*)
   * Wave amplitude, period, and wavelength (in radians)
-  * Wave-circle resolution (in raw \# of vertices; suggest >360)
+  * Wave resolution (in raw \# of vertices; suggest >360)
   * Custom vertex shader file selection (there are two; you may specify any)
   * CPU vs GPU rendering
-  * Parallel (coplanar) or orthogonal wave orientation
+  * Parallel-transverse (coplanar) or orthogonal-transverse wave orientation for circles
+  * Spherical harmonic waves
 * Mouse and keyboard controls
   * Left-click-drag translates the model up/down/left/right in the window
   * Right-click-drag rotates the model in 3-space
@@ -38,11 +39,13 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
   * "Home" key resets the model to starting state in case you're upside down
   * "Spacebar" will seamlessly pause and unpause time in the model's world
   * "Escape" will exit the program
+* Granularity options
+  * Selecting which waves are rendered (n = {1, 2, 3, ...})
  
 #### Development Platform and Possible Requirements:
 - Ubuntu 24.04 Mantic
-- gcc/g++ 12.3.0+
-- CMake 3.25.1+
+- gcc/g++ 13.2.0+
+- CMake 3.28.3+
 - OpenGL 4.6
 - Qt 6.5.3+  <== [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
 

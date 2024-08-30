@@ -91,7 +91,7 @@ class OrbitManager {
         gvec allVertices;
         ivec allIndices;
         
-        uint renderedOrbits = -1;
+        ushort renderedOrbits = 255;
         int orbitCount = 0;
         int vertexCount = 0;
         int vertexSize = 0;

@@ -298,8 +298,9 @@ void OrbitManager::genIndexBuffer() {
     assert(!allIndices.size());
 
     for (int i = 0; i < orbitCount; i++) {
-        if (renderedOrbits & (1 << i))
+        if (renderedOrbits & (1 << i)) {
             std::copy(orbitIndices[i]->begin(), orbitIndices[i]->end(), std::back_inserter(this->allIndices));
+        }
     }
 
     this->indexCount = setIndexCount();

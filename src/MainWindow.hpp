@@ -40,6 +40,7 @@
 #include "GWidget.hpp"
 
 const QString DEFAULT = "default-config.wave";
+const int MAX_ORBITS = 8;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -99,6 +100,7 @@ private:
     void setupDock();
     void refreshConfigs();
     void refreshShaders();
+    void refreshOrbits(WaveConfig *cfg);
 
     void handleMorb();
     void handleComboCfg();

@@ -114,6 +114,8 @@ void GWidget::selectRenderedOrbits(int id, bool checked) {
 }
 
 void GWidget::processConfigChange() {
+    assert(!newVertices);
+    
     // Re-create Orbits with new params from config
     if ((updateFlags & (ORBITS | RESOLUTION | SPHERE | CPU)) ||
         (renderConfig.cpu && (updateFlags & (AMPLITUDE | PERIOD | WAVELENGTH | PARALLEL)))) {
@@ -164,6 +166,8 @@ void GWidget::swapBuffers() {
 
     // Cleanup
     waveProg->deleteBuffers();
+    newVertices = false;
+    newIndices = false;
 }
 
 void GWidget::swapVertices() {

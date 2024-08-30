@@ -104,6 +104,22 @@ void MainWindow::refreshShaders() {
     entryFrag->setCurrentText(QString::fromStdString(cfgParser->config->frag));
 }
 
+void MainWindow::refreshOrbits(WaveConfig *cfg) {
+    ushort renderedOrbits = 0;
+    
+    for (int i = 0; i < cfg->orbits; i++) {
+        renderedOrbits |= (1 << i);
+    }
+    for (int i = 0; i < MAX_ORBITS; i++) {
+        uint checkID = 1 << i;
+        QAbstractButton *checkBox = buttGroupOrbits->button(checkID);
+        bool checkState = (renderedOrbits & checkID);
+
+        checkBox->setEnabled(checkState);
+        checkBox->setChecked(checkState);
+    }
+}
+
 void MainWindow::loadConfig() {
     int files = cfgParser->cfgFiles.size();
     int comboID = qCombo->currentData().toInt();
@@ -138,6 +154,8 @@ void MainWindow::loadConfig() {
     
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
+
+    refreshOrbits(cfg);
 }
 
 void MainWindow::setupDock() {
@@ -327,6 +345,8 @@ void MainWindow::handleMorb() {
     cfgParser->config->sphere = entrySphere->isChecked();
     cfgParser->config->vert = entryVertex->currentText().toStdString();
     cfgParser->config->frag = entryFrag->currentText().toStdString();
+
+    refreshOrbits(cfgParser->config);
 
     lockConfig(cfgParser->config);
 }

@@ -112,7 +112,7 @@ private:
     int64_t gw_timeStart;
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
-    uint renderedOrbits;
+    ushort renderedOrbits;
     
     uint gw_faces = 0;
     int gw_scrHeight = 0;

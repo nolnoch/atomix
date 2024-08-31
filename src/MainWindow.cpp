@@ -48,7 +48,7 @@ void MainWindow::onAddNew() {
     loadConfig();
     
     connect(this, &MainWindow::sendConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
-    connect(qCombo, &QComboBox::activated, this, &MainWindow::handleComboCfg);
+    connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(qMorb, &QPushButton::clicked, this, &MainWindow::handleMorb);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedOrbits, Qt::DirectConnection);
 
@@ -63,12 +63,12 @@ void MainWindow::refreshConfigs() {
         files = cfgParser->findFiles(std::string(ROOT_DIR) + std::string(CONFIGS), CFGEXT, &cfgParser->cfgFiles);
     assert(files);
 
-    qCombo->clear();
+    comboConfigFile->clear();
     for (int i = 0; i < files; i++) {
-        qCombo->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength), i + 1);
+        comboConfigFile->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength), i + 1);
     }
-    qCombo->addItem(tr("Custom"), files + 1);
-    qCombo->setCurrentText(DEFAULT);
+    comboConfigFile->addItem(tr("Custom"), files + 1);
+    comboConfigFile->setCurrentText(DEFAULT);
 }
 
 void MainWindow::refreshShaders() {
@@ -122,7 +122,7 @@ void MainWindow::refreshOrbits(WaveConfig *cfg) {
 
 void MainWindow::loadConfig() {
     int files = cfgParser->cfgFiles.size();
-    int comboID = qCombo->currentData().toInt();
+    int comboID = comboConfigFile->currentData().toInt();
     WaveConfig *cfg = nullptr;
 
     if (comboID <= files) {
@@ -159,43 +159,47 @@ void MainWindow::loadConfig() {
 }
 
 void MainWindow::setupDock() {
-    qCombo = new QComboBox(this);
-    layGrid = new QVBoxLayout;
-    cfgGrid = new QVBoxLayout;
-    wDock = new QWidget;
+    comboConfigFile = new QComboBox(this);
+    wDock = new QWidget(this);
     controlBox = new QDockWidget(this);
     qMorb = new QPushButton("Morb", this);
-    QHBoxLayout *orbitSelectLayout = new QHBoxLayout();
 
     QSizePolicy qPolicy = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    QGroupBox *groupConfig = new QGroupBox("Configuration");
-    QGroupBox *groupOrbits = new QGroupBox("Visible Orbits");
-    
-    QHBoxLayout *row1 = new QHBoxLayout;
-    QHBoxLayout *row2 = new QHBoxLayout;
-    QHBoxLayout *row3 = new QHBoxLayout;
-    QHBoxLayout *row4 = new QHBoxLayout;
-    QHBoxLayout *row5 = new QHBoxLayout;
-    QHBoxLayout *row6 = new QHBoxLayout;
-    QHBoxLayout *row7 = new QHBoxLayout;
-    QHBoxLayout *row8 = new QHBoxLayout;
-    QHBoxLayout *row9 = new QHBoxLayout;
-    QHBoxLayout *row10 = new QHBoxLayout;
-    QHBoxLayout *row11 = new QHBoxLayout;
+    QVBoxLayout *layDock = new QVBoxLayout;
+    QVBoxLayout *layConfigFile = new QVBoxLayout;
+    QVBoxLayout *layOptionBox = new QVBoxLayout;
+    QHBoxLayout *layOrbitSelect = new QHBoxLayout;
+    QHBoxLayout *layOptionRow1 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow2 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow3 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow4 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow5 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow6 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow7 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow8 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow9 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow10 = new QHBoxLayout;
+    QHBoxLayout *layOptionRow11 = new QHBoxLayout;
+    QHBoxLayout *layColorPicker = new QHBoxLayout;
 
-    QLabel *labelConfig = new QLabel("Select Config File:");
-    QLabel *labelOrbit = new QLabel("Number of orbit waves (0,8]");
-    QLabel *labelAmp = new QLabel("Amplitude of waves");
-    QLabel *labelPeriod = new QLabel("Period of waves (n * PI)");
-    QLabel *labelWavelength = new QLabel("Wavelength of waves (n * PI)");
-    QLabel *labelResolution = new QLabel("Resolution (points) per wave");
-    QLabel *labelOrthoPara = new QLabel("Orthogonal vs Parallel waves");
-    QLabel *labelSuper = new QLabel("Superposition on/off");
-    QLabel *labelCPU = new QLabel("CPU vs GPU rendering");
-    QLabel *labelSphere = new QLabel("Spherical vs Circular waves");
-    QLabel *labelVertex = new QLabel("Select Vertex Shader file");
-    QLabel *labelFrag = new QLabel("Select Fragment Shader file");
+    QGroupBox *groupConfig = new QGroupBox("Config File");
+    QGroupBox *groupOptions = new QGroupBox("Config Options");
+    QGroupBox *groupColors = new QGroupBox("Wave Colors");
+    QGroupBox *groupOrbits = new QGroupBox("Visible Orbits");
+
+    //QLabel *labelConfig = new QLabel("Select Config File:");
+    QLabel *labelOrbit = new QLabel("Number of orbits:");
+    QLabel *labelAmp = new QLabel("Amplitude:");
+    QLabel *labelPeriod = new QLabel("Period (N * pi):");
+    QLabel *labelWavelength = new QLabel("Wavelength (N * pi):");
+    QLabel *labelResolution = new QLabel("Resolution:");
+    QLabel *labelOrthoPara = new QLabel("Orthogonal vs Parallel:");
+    QLabel *labelSuper = new QLabel("Superposition:");
+    QLabel *labelCPU = new QLabel("CPU vs GPU:");
+    QLabel *labelSphere = new QLabel("Spherical vs Circular:");
+    QLabel *labelVertex = new QLabel("Vertex Shader:");
+    QLabel *labelFrag = new QLabel("Fragment Shader:");
 
     entryOrbit = new QLineEdit("4");
     entryAmp = new QLineEdit("0.4");
@@ -212,6 +216,12 @@ void MainWindow::setupDock() {
     entrySphere = new QRadioButton("Sphere");
     entryVertex = new QComboBox(this);
     entryFrag = new QComboBox(this);
+
+    entryOrbit->setAlignment(Qt::AlignRight);
+    entryAmp->setAlignment(Qt::AlignRight);
+    entryPeriod->setAlignment(Qt::AlignRight);
+    entryWavelength->setAlignment(Qt::AlignRight);
+    entryResolution->setAlignment(Qt::AlignRight);
 
     buttGroupOrtho = new QButtonGroup();
     buttGroupOrtho->addButton(entryOrtho, 1);
@@ -238,23 +248,14 @@ void MainWindow::setupDock() {
     QCheckBox *orbit6 = new QCheckBox("6");
     QCheckBox *orbit7 = new QCheckBox("7");
     QCheckBox *orbit8 = new QCheckBox("8");
-    orbitSelectLayout->addWidget(orbit1);
-    orbitSelectLayout->addWidget(orbit2);
-    orbitSelectLayout->addWidget(orbit3);
-    orbitSelectLayout->addWidget(orbit4);
-    orbitSelectLayout->addWidget(orbit5);
-    orbitSelectLayout->addWidget(orbit6);
-    orbitSelectLayout->addWidget(orbit7);
-    orbitSelectLayout->addWidget(orbit8);
-    
-    orbit1->setCheckState(Qt::CheckState::Checked);
-    orbit2->setCheckState(Qt::CheckState::Checked);
-    orbit3->setCheckState(Qt::CheckState::Checked);
-    orbit4->setCheckState(Qt::CheckState::Checked);
-    orbit5->setCheckState(Qt::CheckState::Unchecked);
-    orbit6->setCheckState(Qt::CheckState::Unchecked);
-    orbit7->setCheckState(Qt::CheckState::Unchecked);
-    orbit8->setCheckState(Qt::CheckState::Unchecked);
+    layOrbitSelect->addWidget(orbit1);
+    layOrbitSelect->addWidget(orbit2);
+    layOrbitSelect->addWidget(orbit3);
+    layOrbitSelect->addWidget(orbit4);
+    layOrbitSelect->addWidget(orbit5);
+    layOrbitSelect->addWidget(orbit6);
+    layOrbitSelect->addWidget(orbit7);
+    layOrbitSelect->addWidget(orbit8);
 
     buttGroupOrbits = new QButtonGroup();
     buttGroupOrbits->setExclusive(false);
@@ -267,64 +268,79 @@ void MainWindow::setupDock() {
     buttGroupOrbits->addButton(orbit7, 64);
     buttGroupOrbits->addButton(orbit8, 128);
 
-    row1->addWidget(labelOrbit, 2, Qt::AlignLeft);
-    row1->addWidget(entryOrbit, 2, Qt::AlignRight);
-    row2->addWidget(labelAmp, 2, Qt::AlignLeft);
-    row2->addWidget(entryAmp, 2, Qt::AlignRight);
-    row3->addWidget(labelPeriod, 2, Qt::AlignLeft);
-    row3->addWidget(entryPeriod, 2, Qt::AlignRight);
-    row4->addWidget(labelWavelength, 2, Qt::AlignLeft);
-    row4->addWidget(entryWavelength, 2, Qt::AlignRight);
-    row5->addWidget(labelResolution, 2, Qt::AlignLeft);
-    row5->addWidget(entryResolution, 2, Qt::AlignRight);
-    row6->addWidget(labelOrthoPara, 2, Qt::AlignLeft);
-    row6->addWidget(entryPara, 1, Qt::AlignRight);
-    row6->addWidget(entryOrtho, 1, Qt::AlignRight);
-    row7->addWidget(labelSuper, 2, Qt::AlignLeft);
-    row7->addWidget(entrySuperOn, 1, Qt::AlignRight);
-    row7->addWidget(entrySuperOff, 1, Qt::AlignRight);
-    row8->addWidget(labelCPU, 2, Qt::AlignLeft);
-    row8->addWidget(entryCPU, 1, Qt::AlignRight);
-    row8->addWidget(entryGPU, 1, Qt::AlignRight);
-    row9->addWidget(labelSphere, 2, Qt::AlignLeft);
-    row9->addWidget(entrySphere, 1, Qt::AlignRight);
-    row9->addWidget(entryCircle, 1, Qt::AlignRight);
-    row10->addWidget(labelVertex, 2, Qt::AlignLeft);
-    row10->addWidget(entryVertex, 2, Qt::AlignRight);
-    row11->addWidget(labelFrag, 2, Qt::AlignLeft);
-    row11->addWidget(entryFrag, 2, Qt::AlignRight);
-    
-    cfgGrid->addLayout(row1);
-    cfgGrid->addLayout(row2);
-    cfgGrid->addLayout(row3);
-    cfgGrid->addLayout(row4);
-    cfgGrid->addLayout(row5);
-    cfgGrid->addLayout(row6);
-    cfgGrid->addLayout(row7);
-    cfgGrid->addLayout(row8);
-    cfgGrid->addLayout(row9);
-    cfgGrid->addLayout(row10);
-    cfgGrid->addLayout(row11);
+    //layConfigFile->addWidget(labelConfig);
+    layConfigFile->addWidget(comboConfigFile);
 
-    groupConfig->setLayout(cfgGrid);
-    groupOrbits->setLayout(orbitSelectLayout);
+    layOptionRow1->addWidget(labelOrbit, 2, Qt::AlignLeft);
+    layOptionRow1->addWidget(entryOrbit, 2, Qt::AlignRight);
+    layOptionRow2->addWidget(labelAmp, 2, Qt::AlignLeft);
+    layOptionRow2->addWidget(entryAmp, 2, Qt::AlignRight);
+    layOptionRow3->addWidget(labelPeriod, 2, Qt::AlignLeft);
+    layOptionRow3->addWidget(entryPeriod, 2, Qt::AlignRight);
+    layOptionRow4->addWidget(labelWavelength, 2, Qt::AlignLeft);
+    layOptionRow4->addWidget(entryWavelength, 2, Qt::AlignRight);
+    layOptionRow5->addWidget(labelResolution, 2, Qt::AlignLeft);
+    layOptionRow5->addWidget(entryResolution, 2, Qt::AlignRight);
+    layOptionRow6->addWidget(labelOrthoPara, 2, Qt::AlignLeft);
+    layOptionRow6->addWidget(entryPara, 1, Qt::AlignRight);
+    layOptionRow6->addWidget(entryOrtho, 1, Qt::AlignRight);
+    layOptionRow7->addWidget(labelSuper, 2, Qt::AlignLeft);
+    layOptionRow7->addWidget(entrySuperOn, 1, Qt::AlignRight);
+    layOptionRow7->addWidget(entrySuperOff, 1, Qt::AlignRight);
+    layOptionRow8->addWidget(labelCPU, 2, Qt::AlignLeft);
+    layOptionRow8->addWidget(entryCPU, 1, Qt::AlignRight);
+    layOptionRow8->addWidget(entryGPU, 1, Qt::AlignRight);
+    layOptionRow9->addWidget(labelSphere, 2, Qt::AlignLeft);
+    layOptionRow9->addWidget(entrySphere, 1, Qt::AlignRight);
+    layOptionRow9->addWidget(entryCircle, 1, Qt::AlignRight);
+    layOptionRow10->addWidget(labelVertex, 2, Qt::AlignLeft);
+    layOptionRow10->addWidget(entryVertex, 2, Qt::AlignRight);
+    layOptionRow11->addWidget(labelFrag, 2, Qt::AlignLeft);
+    layOptionRow11->addWidget(entryFrag, 2, Qt::AlignRight);
     
-    layGrid->addWidget(labelConfig);
-    layGrid->addWidget(qCombo);
-    layGrid->addStretch(1);
-    layGrid->addWidget(groupConfig);
-    layGrid->addStretch(1);
-    layGrid->addWidget(groupOrbits);
-    layGrid->addStretch(1);
-    layGrid->addWidget(qMorb);
+    layOptionBox->addLayout(layOptionRow1);
+    layOptionBox->addLayout(layOptionRow2);
+    layOptionBox->addLayout(layOptionRow3);
+    layOptionBox->addLayout(layOptionRow4);
+    layOptionBox->addLayout(layOptionRow5);
+    layOptionBox->addLayout(layOptionRow6);
+    layOptionBox->addLayout(layOptionRow7);
+    layOptionBox->addLayout(layOptionRow8);
+    layOptionBox->addLayout(layOptionRow9);
+    layOptionBox->addLayout(layOptionRow10);
+    layOptionBox->addLayout(layOptionRow11);
 
-    layGrid->setStretchFactor(labelConfig, 1);
-    layGrid->setStretchFactor(qCombo, 1);
-    layGrid->setStretchFactor(groupConfig, 8);
-    layGrid->setStretchFactor(groupOrbits, 2);
-    layGrid->setStretchFactor(qMorb, 2);
+    QPushButton *buttColorBase = new QPushButton("Base");
+    QPushButton *buttColorPeak = new QPushButton("Peak");
+    QPushButton *buttColorTrough = new QPushButton("Trough");
+
+    layColorPicker->addWidget(buttColorBase);
+    layColorPicker->addWidget(buttColorPeak);
+    layColorPicker->addWidget(buttColorTrough);
+
+    groupConfig->setLayout(layConfigFile);
+    groupOptions->setLayout(layOptionBox);
+    groupColors->setLayout(layColorPicker);
+    groupOrbits->setLayout(layOrbitSelect);
     
-    wDock->setLayout(layGrid);
+    layDock->addStretch(2);
+    layDock->addWidget(groupConfig);
+    layDock->addStretch(1);
+    layDock->addWidget(groupOptions);
+    layDock->addWidget(qMorb);
+    layDock->addStretch(2);
+    layDock->addWidget(groupColors);
+    layDock->addWidget(groupOrbits);    
+
+    layDock->setStretchFactor(groupConfig, 1);
+    layDock->setStretchFactor(groupOptions, 6);
+    layDock->setStretchFactor(qMorb, 1);
+    layDock->setStretchFactor(groupColors, 1);
+    layDock->setStretchFactor(groupOrbits, 1);
+
+    qMorb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    
+    wDock->setLayout(layDock);
     wDock->setMinimumSize(500,0);
     controlBox->setWidget(wDock);
 }

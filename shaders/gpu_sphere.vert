@@ -27,8 +27,8 @@ void main() {
     float r_theta = r * theta;
     float r_phi = r * phi;
    
-    //       sin((2pi / L * x) - (2pi / T * t))
-    //       sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
+    //              sin((2pi / L * x)            - (2pi / T * t))
+    // sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
     float wavefunc = sin((two_pi_L * r_theta) - (two_pi_T * time));
     float displacement = amp * wavefunc;
 

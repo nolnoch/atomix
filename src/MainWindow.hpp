@@ -63,10 +63,8 @@ private:
     //Window *container = nullptr;
     QWidget *wDock = nullptr;
     QDockWidget *controlBox = nullptr;
-    QComboBox *qCombo = nullptr;
+    QComboBox *comboConfigFile = nullptr;
     QPushButton *qMorb = nullptr;
-    QVBoxLayout *layGrid = nullptr;
-    QVBoxLayout *cfgGrid = nullptr;
     ConfigParser *cfgParser = nullptr;
     WaveConfig *customConfig = nullptr;
 

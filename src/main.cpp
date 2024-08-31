@@ -27,6 +27,7 @@
 #include <QSurfaceFormat>
 #include <QScreen>
 #include <QCommandLineParser>
+#include <QFont>
 #include "GWidget.hpp"
 #include "MainWindow.hpp"
 
@@ -66,6 +67,10 @@ int main(int argc, char* argv[]) {
     int dispX = dispXY.width() * ratio ?: SWIDTH;
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);
+
+    QFont myFont;
+    myFont.setPointSize(13);
+    app.setFont(myFont);
 
     /* Engage */
     mainWindow.show();

@@ -46,11 +46,13 @@ void MainWindow::onAddNew() {
     refreshConfigs();
     refreshShaders();
     loadConfig();
+    refreshOrbits(cfgParser->config);
     
     connect(this, &MainWindow::sendConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
-    connect(qMorb, &QPushButton::clicked, this, &MainWindow::handleMorb);
+    connect(buttMorb, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedOrbits, Qt::DirectConnection);
+    connect(buttGroupColors, &QButtonGroup::idToggled, this, &MainWindow::handleButtColors);
 
     setWindowTitle(tr("atomix"));
 }
@@ -155,16 +157,17 @@ void MainWindow::loadConfig() {
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
 
-    refreshOrbits(cfg);
+    //refreshOrbits(cfg);
 }
 
 void MainWindow::setupDock() {
     comboConfigFile = new QComboBox(this);
     wDock = new QWidget(this);
     controlBox = new QDockWidget(this);
-    qMorb = new QPushButton("Morb", this);
+    buttMorb = new QPushButton("Morb", this);
+    buttGroupColors = new QButtonGroup(this);
 
-    QSizePolicy qPolicy = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QVBoxLayout *layDock = new QVBoxLayout;
     QVBoxLayout *layConfigFile = new QVBoxLayout;
@@ -223,19 +226,19 @@ void MainWindow::setupDock() {
     entryWavelength->setAlignment(Qt::AlignRight);
     entryResolution->setAlignment(Qt::AlignRight);
 
-    buttGroupOrtho = new QButtonGroup();
+    QButtonGroup *buttGroupOrtho = new QButtonGroup();
     buttGroupOrtho->addButton(entryOrtho, 1);
     buttGroupOrtho->addButton(entryPara, 2);
     entryOrtho->toggle();
-    buttGroupSuper = new QButtonGroup();
+    QButtonGroup *buttGroupSuper = new QButtonGroup();
     buttGroupSuper->addButton(entrySuperOn, 4);
     buttGroupSuper->addButton(entrySuperOff, 8);
     entrySuperOff->toggle();
-    buttGroupCPU = new QButtonGroup();
+    QButtonGroup *buttGroupCPU = new QButtonGroup();
     buttGroupCPU->addButton(entryCPU, 16);
     buttGroupCPU->addButton(entryGPU, 32);
     entryGPU->toggle();
-    buttGroupSphere = new QButtonGroup();
+    QButtonGroup *buttGroupSphere = new QButtonGroup();
     buttGroupSphere->addButton(entryCircle, 64);
     buttGroupSphere->addButton(entrySphere, 128);
     entryCircle->toggle();
@@ -310,12 +313,18 @@ void MainWindow::setupDock() {
     layOptionBox->addLayout(layOptionRow10);
     layOptionBox->addLayout(layOptionRow11);
 
-    QPushButton *buttColorBase = new QPushButton("Base");
     QPushButton *buttColorPeak = new QPushButton("Peak");
+    QPushButton *buttColorBase = new QPushButton("Base");
     QPushButton *buttColorTrough = new QPushButton("Trough");
+    buttGroupColors->addButton(buttColorPeak, 1);
+    buttGroupColors->addButton(buttColorBase, 2);
+    buttGroupColors->addButton(buttColorTrough, 3);
+    buttColorPeak->setStyleSheet("QPushButton {background-color: #FF00FF; color: #000000;}");
+    buttColorBase->setStyleSheet("QPushButton {background-color: #0000FF; color: #000000;}");
+    buttColorTrough->setStyleSheet("QPushButton {background-color: #00FFFF; color: #000000;}");
 
-    layColorPicker->addWidget(buttColorBase);
     layColorPicker->addWidget(buttColorPeak);
+    layColorPicker->addWidget(buttColorBase);
     layColorPicker->addWidget(buttColorTrough);
 
     groupConfig->setLayout(layConfigFile);
@@ -327,18 +336,18 @@ void MainWindow::setupDock() {
     layDock->addWidget(groupConfig);
     layDock->addStretch(1);
     layDock->addWidget(groupOptions);
-    layDock->addWidget(qMorb);
+    layDock->addWidget(buttMorb);
     layDock->addStretch(2);
     layDock->addWidget(groupColors);
     layDock->addWidget(groupOrbits);    
 
     layDock->setStretchFactor(groupConfig, 1);
     layDock->setStretchFactor(groupOptions, 6);
-    layDock->setStretchFactor(qMorb, 1);
+    layDock->setStretchFactor(buttMorb, 1);
     layDock->setStretchFactor(groupColors, 1);
     layDock->setStretchFactor(groupOrbits, 1);
 
-    qMorb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    buttMorb->setSizePolicy(qPolicyExpand);
     
     wDock->setLayout(layDock);
     wDock->setMinimumSize(500,0);
@@ -349,7 +358,7 @@ void MainWindow::handleComboCfg() {
     this->loadConfig();
 }
 
-void MainWindow::handleMorb() {
+void MainWindow::handleButtMorb() {
     cfgParser->config->orbits = entryOrbit->text().toInt();
     cfgParser->config->amplitude = entryAmp->text().toDouble();
     cfgParser->config->period = entryPeriod->text().toDouble() * M_PI;
@@ -365,6 +374,24 @@ void MainWindow::handleMorb() {
     refreshOrbits(cfgParser->config);
 
     lockConfig(cfgParser->config);
+}
+
+void MainWindow::handleButtColors(int id) {
+    QColorDialog::ColorDialogOptions colOpts = QFlag(QColorDialog::ShowAlphaChannel);
+    QColor colorChoice = QColorDialog::getColor(Qt::white, this, tr("Choose a Color"), colOpts);
+    uint color = 0;
+
+    color |= colorChoice.red();
+    color <<= 2;
+    color |= colorChoice.green();
+    color <<= 2;
+    color |= colorChoice.blue();
+    color <<= 2;
+    color |= colorChoice.alpha();
+
+    cout << "Incoming color #" << id << ": (" << colorChoice.red() << ", " << colorChoice.green() << ", " << colorChoice.blue() << ", " << colorChoice.alpha() << ")" << endl;
+
+    graph->setColorsOrbits(id, color);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

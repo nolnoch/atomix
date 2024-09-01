@@ -42,5 +42,6 @@ void main() {
       final.a = (scale * trghA) + ((1 - scale) * baseA);
    }
 
-   FragColour = vec4(final);
+   //FragColour = final;
+   FragColour = vec4(wavefunc, 1.0f - wavefunc, 1.0f, 1.0f);
 };

@@ -61,6 +61,7 @@ public:
     ~GWidget();
 
     void printConfig(WaveConfig *cfg);
+    void setColorsOrbits(int id, uint colorChoice);
 
 public slots:
     void cleanup();
@@ -124,6 +125,8 @@ private:
     bool notChecked = true;
     bool newVertices = false;
     bool newIndices = false;
+    bool newUniformsMaths = false;
+    bool newUniformsColor = false;
     bool updateRequired = false;
 };
 

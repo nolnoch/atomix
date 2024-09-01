@@ -38,6 +38,10 @@ const double H = 6.626070e-34;      // Planck's constant
 const double C = 299792458;         // Speed of massless particles
 const double HC = 1.98644586e-25;   // Convenience product of above
 
+enum {ALPHA = 0, BLUE = 8, GREEN = 16, RED = 24};
+#define MASK 0xFF
+#define SHIFT(a, b) (((a >> b) & MASK) / MASK)
+
 using gvec = std::vector<glm::vec3>;
 using dvec = std::vector<glm::vec2>;
 using ivec = std::vector<uint>;
@@ -65,6 +69,10 @@ class OrbitManager {
         void printIndices();
         void printVertices();
 
+        uint peak = 0xFF00FFFF;
+        uint base = 0x0000FFFF;
+        uint trough = 0x00FFFFFF;
+        
         double amplitude = 0;
         double two_pi_L = 0;
         double two_pi_T = 0;
@@ -97,9 +105,8 @@ class OrbitManager {
         int vertexSize = 0;
         int indexCount = 0;
         int indexSize = 0;
-
-        int resolution = 0;
         
+        int resolution = 0;
         double phase_const = 0;
         double deg_fac = 0;
 

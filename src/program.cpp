@@ -239,7 +239,6 @@ void Program::attachShader(std::string& name) {
  * Automatically validates the program and displays the info log if the
  * info log is not empty.
  *
- * Note: Some cards print only errors while some print a success statement.
  * @return GLEW_OK on success or an error code on failure.
  */
 GLint Program::linkAndValidate() {
@@ -248,7 +247,7 @@ GLint Program::linkAndValidate() {
         return 0;
     }
 
-    GLint programValid;
+    GLint programValid = 0;
     
     // Link the compiled and attached program to this code.
     qgf->glLinkProgram(programId);
@@ -403,6 +402,10 @@ void Program::clearEBO() {
     qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void Program::assignFragColour() {
+    qgf->glBindFragDataLocation(this->programId, GL_COLOR_ATTACHMENT0, "FragColour");
+}
+
 void Program::beginRender() {
     enable();
     bindVAO();
@@ -440,56 +443,101 @@ void Program::addBuffers() {
  * @param name - string representation of the GLSL uniform name
  * @param n - uniform value
  */
+void Program::setUniform(int type, string name, double n) {
+    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+    float m = static_cast<float>(n);
+
+    if (type == GL_FLOAT) {
+        qgf->glUniform1f(loc, n);
+    } else
+        cout << "Uniform failure: double to float" << endl;
+}
+
 void Program::setUniform(int type, string name, float n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
-            qgf->glUniform1f(loc, n);
-    } else if (type == GL_INT) {
-            qgf->glUniform1i(loc, static_cast<int>(n));
-    }
+        qgf->glUniform1f(loc, n);
+    } else
+        cout << "Uniform failure: float to float" << endl;
+}
+
+void Program::setUniform(int type, string name, int n) {
+    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+
+    if (type == GL_INT) {
+        qgf->glUniform1i(loc, n);
+    } else
+        cout << "Uniform failure: int to int" << endl;
+}
+
+void Program::setUniform(int type, string name, uint n) {
+    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+
+    if (type == GL_UNSIGNED_INT) {
+        qgf->glUniform1ui(loc, n);
+    } else
+        cout << "Uniform failure: uint to uint" << endl;
 }
 
 /**
  * A quick wrapper for array of referenced uniform values.
- * @param count - number of values in the array
+ * @param count - number of vectors in the array
+ * @param size - number of values per vector
  * @param type - GL_FLOAT or GL_INT
  * @param name - string representation of the GLSL uniform name
  * @param n - pointer to the array of values
  */
-void Program::setUniformv(int count, int type, string name, const float *n) {
+void Program::setUniformv(int count, int size, int type, string name, const float *n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
-        switch (count) {
+        switch (size) {
         case 1:
-            qgf->glUniform1fv(loc, 1, n);
+            qgf->glUniform1fv(loc, count, n);
             break;
         case 2:
-            qgf->glUniform2fv(loc, 1, n);
+            qgf->glUniform2fv(loc, count, n);
             break;
         case 3:
-            qgf->glUniform3fv(loc, 1, n);
+            qgf->glUniform3fv(loc, count, n);
             break;
         case 4:
-            qgf->glUniform4fv(loc, 1, n);
+            qgf->glUniform4fv(loc, count, n);
             break;
         default:
             break;
         }
     } else if (type == GL_INT) {
-        switch (count) {
+        switch (size) {
         case 1:
-            qgf->glUniform1iv(loc, 1, reinterpret_cast<const int *>(n));
+            qgf->glUniform1iv(loc, count, reinterpret_cast<const int *>(n));
             break;
         case 2:
-            qgf->glUniform2iv(loc, 1, reinterpret_cast<const int *>(n));
+            qgf->glUniform2iv(loc, count, reinterpret_cast<const int *>(n));
             break;
         case 3:
-            qgf->glUniform3iv(loc, 1, reinterpret_cast<const int *>(n));
+            qgf->glUniform3iv(loc, count, reinterpret_cast<const int *>(n));
             break;
         case 4:
-            qgf->glUniform4iv(loc, 1, reinterpret_cast<const int *>(n));
+            qgf->glUniform4iv(loc, count, reinterpret_cast<const int *>(n));
+            break;
+        default:
+            break;
+        }
+    } else if (type == GL_UNSIGNED_INT) {
+        switch (size) {
+        case 1:
+            qgf->glUniform1uiv(loc, count, reinterpret_cast<const uint *>(n));
+            break;
+        case 2:
+            qgf->glUniform2uiv(loc, count, reinterpret_cast<const uint *>(n));
+            break;
+        case 3:
+            qgf->glUniform3uiv(loc, count, reinterpret_cast<const uint *>(n));
+            break;
+        case 4:
+            qgf->glUniform4uiv(loc, count, reinterpret_cast<const uint *>(n));
             break;
         default:
             break;
@@ -528,20 +576,19 @@ void Program::displayLogProgram() {
     GLsizei logLength;
     qgf->glGetProgramiv(this->programId, GL_INFO_LOG_LENGTH, &logLength);
 
-    if (!logLength) {
-        //cout << "No Program Info Log content available." << endl;
-        return;
-    }
+    if (logLength) {
+        cout << "Program Info Log content available." << endl;
 
-    GLsizei MAXLENGTH = 1 << 30;
-    GLchar *logBuffer = new GLchar[logLength];
-    qgf->glGetProgramInfoLog(this->programId, MAXLENGTH, &logLength, logBuffer);
-    if (strlen(logBuffer)) {
-        cout << "************ Begin Program Log ************" << "\n";
-        cout << logBuffer << "\n";
-        cout << "************* End Program Log *************" << endl;
+        GLsizei MAXLENGTH = 1 << 30;
+        GLchar *logBuffer = new GLchar[logLength];
+        qgf->glGetProgramInfoLog(this->programId, MAXLENGTH, &logLength, logBuffer);
+        if (strlen(logBuffer)) {
+            cout << "************ Begin Program Log ************" << "\n";
+            cout << logBuffer << "\n";
+            cout << "************* End Program Log *************" << endl;
+        }
+        delete[] logBuffer;
     }
-    delete[] logBuffer;
 }
 
 /**
@@ -549,6 +596,11 @@ void Program::displayLogProgram() {
  * @param shader - the shader to be evaluated
  */
 void Program::displayLogShader(GLenum shader) {
+    GLint success;
+    qgf->glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+        cout << "Shader compile failure for shader #" << shader << endl;
+    
     GLsizei logLength;
     qgf->glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
 

@@ -177,10 +177,6 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
         if (!update)
             orbitIndices[idx]->push_back(l + i);
 
-        float r = 0.8f;
-        float g = 0.8f;
-        float b = 0.8f;
-
         double wavefunc = sin((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const);
         double displacement = amplitude * wavefunc;
 
@@ -193,6 +189,51 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
             y = displacement;
             z = radius * sin(theta);
         }
+
+        float r = 1.0f;
+        float g = 1.0f;
+        float b = 1.0f;
+
+        /*
+        uint mask = 0xFF;
+
+        float peakA = (peak & mask) / mask;
+        float peakB = ((peak >> 8) & mask) / mask;
+        float peakG = ((peak >> 16) & mask) / mask;
+        float peakR = ((peak >> 24) & mask) / mask;
+
+        //std::cout << "Peak Color: (" << peakR << ", " << peakG << ", " << peakB << ", " << peakA << ")" << std::endl;
+
+        float baseA = (base & mask) / mask;
+        float baseB = ((base >> 8) & mask) / mask;
+        float baseG = ((base >> 16) & mask) / mask;
+        float baseR = ((base >> 24) & mask) / mask;
+
+        //std::cout << "Base Color: (" << baseR << ", " << baseG << ", " << baseB << ", " << baseA << ")" << std::endl;
+
+        float trghA = (trough & mask) / mask;
+        float trghB = ((trough >> 8) & mask) / mask;
+        float trghG = ((trough >> 16) & mask) / mask;
+        float trghR = ((trough >> 24) & mask) / mask;
+
+        //std::cout << "Trgh Color: (" << trghR << ", " << trghG << ", " << trghB << ", " << trghA << ")" << std::endl;
+        */
+
+        float scale = abs(wavefunc);
+
+        if (wavefunc >= 0) {
+            r = (scale * SHIFT(peak, RED)) + ((1 - scale) * SHIFT(base, RED));
+            g = (scale * SHIFT(peak, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
+            b = (scale * SHIFT(peak, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
+            //final.a = (scale * SHIFT(peak, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
+        } else {
+            r = (scale * SHIFT(trough, RED)) + ((1 - scale) * SHIFT(base, RED));
+            g = (scale * SHIFT(trough, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
+            b = (scale * SHIFT(trough, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
+            //final.a = (scale * SHIFT(trough, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
+        }
+
+        //std::cout << "Point Color: (" << final.r << ", " << final.g << ", " << final.b << ", " << final.a << ")" << std::endl;
 
         vec vertex = vec(x, y, z);
         vec colour = vec(r, g, b);
@@ -218,16 +259,30 @@ void OrbitManager::updateOrbitCPUSphere(int idx, double t) {
             if (!update)
                 orbitIndices[idx]->push_back(l + m + j);
 
-            float r = 0.8f;
-            float g = 0.8f;
-            float b = 0.8f;
-
             float wavefunc = sin((two_pi_L * radius * theta) - (two_pi_T * t));
             float displacement = amplitude * wavefunc;
 
             float x = (float) (radius + displacement) * (sin(phi) * sin(theta));
             float y = (float) cos(phi);
             float z = (float) (radius + displacement) * (sin(phi) * cos(theta));
+
+            float r = 0;
+            float g = 0;
+            float b = 0;
+            
+            float scale = abs(wavefunc);
+
+            if (wavefunc >= 0) {
+                r = (scale * SHIFT(peak, RED)) + ((1 - scale) * SHIFT(base, RED));
+                g = (scale * SHIFT(peak, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
+                b = (scale * SHIFT(peak, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
+                //final.a = (scale * SHIFT(peak, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
+            } else {
+                r = (scale * SHIFT(trough, RED)) + ((1 - scale) * SHIFT(base, RED));
+                g = (scale * SHIFT(trough, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
+                b = (scale * SHIFT(trough, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
+                //final.a = (scale * SHIFT(trough, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
+            }
 
             vec vertex = vec(x, y, z);
             vec colour = vec(r, g, b);

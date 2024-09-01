@@ -27,6 +27,7 @@
 
 #include <QMainWindow>
 #include <QDockWidget>
+#include <QColorDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -63,8 +64,6 @@ private:
     //Window *container = nullptr;
     QWidget *wDock = nullptr;
     QDockWidget *controlBox = nullptr;
-    QComboBox *comboConfigFile = nullptr;
-    QPushButton *qMorb = nullptr;
     ConfigParser *cfgParser = nullptr;
     WaveConfig *customConfig = nullptr;
 
@@ -83,12 +82,12 @@ private:
     QRadioButton *entrySphere = nullptr;
     QComboBox *entryVertex = nullptr;
     QComboBox *entryFrag = nullptr;
+    QComboBox *comboConfigFile = nullptr;
 
-    QButtonGroup *buttGroupOrtho = nullptr;
-    QButtonGroup *buttGroupSuper = nullptr;
-    QButtonGroup *buttGroupCPU = nullptr;
-    QButtonGroup *buttGroupSphere = nullptr;
     QButtonGroup *buttGroupOrbits = nullptr;
+    QButtonGroup *buttGroupColors = nullptr;
+
+    QPushButton *buttMorb = nullptr;
 
     QListWidget *orbitSelector = nullptr;
 
@@ -100,8 +99,9 @@ private:
     void refreshShaders();
     void refreshOrbits(WaveConfig *cfg);
 
-    void handleMorb();
+    void handleButtMorb();
     void handleComboCfg();
+    void handleButtColors(int id);
 };
 
 #endif

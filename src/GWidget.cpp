@@ -114,6 +114,7 @@ void GWidget::selectRenderedOrbits(int id, bool checked) {
 }
 
 void GWidget::processConfigChange() {
+    //TODO get rid of this debug statement:
     assert(!newVertices);
     
     // Re-create Orbits with new params from config
@@ -124,10 +125,13 @@ void GWidget::processConfigChange() {
         newVertices = true;
     } else if (!renderConfig.cpu && (updateFlags & (AMPLITUDE | PERIOD | WAVELENGTH))) {
         orbitManager->newConfig(&renderConfig);
+        newUniformsMaths = true;
     }
 
     if (updateFlags & (VERTSHADER | FRAGSHADER)) {
         swapShaders();
+        newUniformsMaths = true;
+        newUniformsColor = true;
     }
     
     if (updateFlags & (ORBITS | RESOLUTION | SPHERE)) {
@@ -266,6 +270,7 @@ void GWidget::initWaveProgram() {
     waveProg->attachShader(renderConfig.vert);
     waveProg->attachShader(renderConfig.frag);
     waveProg->linkAndValidate();
+    checkErrors("Post-validate:");
     waveProg->detachShaders();
     
     // Load and bind vertices and attributes
@@ -278,10 +283,13 @@ void GWidget::initWaveProgram() {
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
     waveProg->bindEBO(orbitManager->getIndexSize(), orbitManager->getIndexData(), static_dynamic);
+    //waveProg->assignFragColour();
 
     /* Release */
     waveProg->endRender();
     waveProg->clearBuffers();
+    newUniformsMaths = true;
+    newUniformsColor = true;
 }
 
 void GWidget::initVecsAndMatrices() {
@@ -349,8 +357,6 @@ void GWidget::paintGL() {
     if (updateRequired) {
         processConfigChange();
     }
-    if (renderConfig.cpu)
-        orbitManager->updateOrbits(time);
 
     /* Per-frame Setup */
     const qreal retinaScale = devicePixelRatio();
@@ -374,14 +380,25 @@ void GWidget::paintGL() {
     /* Render -- Orbits */
     if (renderedOrbits) {
         waveProg->beginRender();
-        if (renderConfig.cpu)
+        if (renderConfig.cpu) {
+            orbitManager->updateOrbits(time);
             waveProg->updateVBO(0, orbitManager->getVertexSize(), orbitManager->getVertexData());
+        }
+        if (newUniformsMaths) {
+            waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
+            waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
+            waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
+            newUniformsMaths = false;
+        }
+        if (newUniformsColor) {
+            waveProg->setUniform(GL_UNSIGNED_INT, "peak", orbitManager->peak);
+            waveProg->setUniform(GL_UNSIGNED_INT, "base", orbitManager->base);
+            waveProg->setUniform(GL_UNSIGNED_INT, "trough", orbitManager->trough);
+            newUniformsColor = false;
+        }
         waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
         waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
         waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-        waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
-        waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
-        waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
         waveProg->setUniform(GL_FLOAT, "time", time);
         glDrawElements(GL_POINTS, orbitManager->getIndexCount(), GL_UNSIGNED_INT, 0);
         waveProg->endRender();
@@ -497,6 +514,25 @@ void GWidget::checkErrors(string str) {
     
     if (messages)
         cout << endl;
+}
+
+void GWidget::setColorsOrbits(int id, uint colorChoice) {
+    switch (id) {
+    case 1:
+        orbitManager->peak = colorChoice;
+        break;
+    case 2:
+        orbitManager->base = colorChoice;
+        break;
+    case 3:
+        orbitManager->trough = colorChoice;
+        break;
+    default:
+        break;
+    }
+
+    newUniformsColor = true;
+    updateRequired = true;
 }
 
 void GWidget::printConfig(WaveConfig *cfg) {

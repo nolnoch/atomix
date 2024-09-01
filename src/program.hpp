@@ -110,6 +110,8 @@ class Program {
         void updateEBO(uint offset, uint bufSize, const GLuint *buf);
         void clearEBO();
 
+        void assignFragColour();
+
         void beginRender();
         void endRender();
         
@@ -117,8 +119,11 @@ class Program {
         void deleteBuffers();
         void addBuffers();
 
+        void setUniform(int type, std::string name, double n);
         void setUniform(int type, std::string name, float n);
-        void setUniformv(int count, int type, std::string name, const float *n);
+        void setUniform(int type, std::string name, int n);
+        void setUniform(int type, std::string name, uint n);
+        void setUniformv(int count, int size, int type, std::string name, const float *n);
         void setUniformMatrix(int size, std::string name, float *m);
         //void setTexture(int samplerIdx, TexInfo& texInfo);
 

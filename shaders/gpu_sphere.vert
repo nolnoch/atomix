@@ -22,6 +22,7 @@ void main() {
     float theta = factorsA.x;
     float phi = factorsA.y;
     float r = factorsA.z;
+    float phase_const = factorsB.r;
 
     float sin_theta = sin(theta);
     float cos_theta = cos(theta);
@@ -33,7 +34,7 @@ void main() {
    
     //              sin((2pi / L * x)            - (2pi / T * t))
     // sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
-    float wavefunc = sin((two_pi_L * r_theta) - (two_pi_T * time));
+    float wavefunc = cos((two_pi_L * r_theta) - (two_pi_T * time) + phase_const);
     float displacement = amp * wavefunc;
 
     float x_coord = (r + displacement) * sin_phi * sin_theta;

@@ -39,6 +39,7 @@ void OrbitManager::createOrbits() {
     for (int i = 0; i < orbitCount; i++) {
         orbitVertices.push_back(new gvec);
         orbitIndices.push_back(new ivec);
+        phase_const.push_back(phase_base * i);
     
         if (config->sphere) {
             if (config->cpu)
@@ -62,12 +63,14 @@ void OrbitManager::updateOrbits(double time) {
     allVertices.clear();
     
     for (int i = 0; i < orbitCount; i++) {
-        orbitVertices[i]->clear();
+        if (renderedOrbits & RENDORBS[i]) {
+            orbitVertices[i]->clear();
 
-        if (config->sphere)
-            updateOrbitCPUSphere(i, time);
-        else
-            updateOrbitCPUCircle(i, time);
+            if (config->sphere)
+                updateOrbitCPUSphere(i, time);
+            else
+                updateOrbitCPUCircle(i, time);
+        }
     }
 
     genVertexArray();
@@ -115,8 +118,8 @@ void OrbitManager::circleOrbitGPU(int idx) {
         double theta = i * deg_fac;
         orbitIndices[idx]->push_back(l + i);
 
-        float h = theta;
-        float p = 0;
+        float h = (float) theta;
+        float p = (float) phase_const[idx];
         float d = (float) radius;
         float r = 0;
         float g = 0;
@@ -145,7 +148,7 @@ void OrbitManager::sphereOrbitGPU(int idx) {
             float h = (float) theta;
             float p = (float) phi;
             float d = (float) radius;
-            float r = 0;
+            float r = (float) phase_const[idx];
             float g = 0;
             float b = 0;
 
@@ -157,8 +160,6 @@ void OrbitManager::sphereOrbitGPU(int idx) {
             //std::cout << glm::to_string(factorsB) << "\n";
         }
     }
-
-    //std::cout << "Sphere " << this->idx << " generation complete." << std::endl;
 }
 
 void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
@@ -177,7 +178,7 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
         if (!update)
             orbitIndices[idx]->push_back(l + i);
 
-        double wavefunc = sin((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const);
+        double wavefunc = cos((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const[idx]);
         double displacement = amplitude * wavefunc;
 
         if (config->parallel) {
@@ -193,47 +194,16 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
         float r = 1.0f;
         float g = 1.0f;
         float b = 1.0f;
-
-        /*
-        uint mask = 0xFF;
-
-        float peakA = (peak & mask) / mask;
-        float peakB = ((peak >> 8) & mask) / mask;
-        float peakG = ((peak >> 16) & mask) / mask;
-        float peakR = ((peak >> 24) & mask) / mask;
-
-        //std::cout << "Peak Color: (" << peakR << ", " << peakG << ", " << peakB << ", " << peakA << ")" << std::endl;
-
-        float baseA = (base & mask) / mask;
-        float baseB = ((base >> 8) & mask) / mask;
-        float baseG = ((base >> 16) & mask) / mask;
-        float baseR = ((base >> 24) & mask) / mask;
-
-        //std::cout << "Base Color: (" << baseR << ", " << baseG << ", " << baseB << ", " << baseA << ")" << std::endl;
-
-        float trghA = (trough & mask) / mask;
-        float trghB = ((trough >> 8) & mask) / mask;
-        float trghG = ((trough >> 16) & mask) / mask;
-        float trghR = ((trough >> 24) & mask) / mask;
-
-        //std::cout << "Trgh Color: (" << trghR << ", " << trghG << ", " << trghB << ", " << trghA << ")" << std::endl;
-        */
-
         float scale = abs(wavefunc);
 
         if (wavefunc >= 0) {
             r = (scale * SHIFT(peak, RED)) + ((1 - scale) * SHIFT(base, RED));
             g = (scale * SHIFT(peak, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
             b = (scale * SHIFT(peak, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
-            //final.a = (scale * SHIFT(peak, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
-            //if (testBool && scale > 0.8f)
-                //std::cout << "Point Color: (" << r << ", " << g << ", " << b << ")" << std::endl;
         } else {
             r = (scale * SHIFT(trough, RED)) + ((1 - scale) * SHIFT(base, RED));
             g = (scale * SHIFT(trough, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
             b = (scale * SHIFT(trough, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
-            //final.a = (scale * SHIFT(trough, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
-            
         }
 
         vec vertex = vec(x, y, z);
@@ -242,9 +212,9 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
         orbitVertices[idx]->push_back(vertex);
         orbitVertices[idx]->push_back(colour);
     }
-
-    if (config->superposition && idx > 0)
+    if (config->superposition && idx > 0) {
         superposition(idx);
+    }
 }
 
 void OrbitManager::updateOrbitCPUSphere(int idx, double t) {
@@ -260,7 +230,7 @@ void OrbitManager::updateOrbitCPUSphere(int idx, double t) {
             if (!update)
                 orbitIndices[idx]->push_back(l + m + j);
 
-            float wavefunc = sin((two_pi_L * radius * theta) - (two_pi_T * t));
+            float wavefunc = cos((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const[idx]);
             float displacement = amplitude * wavefunc;
 
             float x = (float) (radius + displacement) * (sin(phi) * sin(theta));
@@ -292,31 +262,30 @@ void OrbitManager::updateOrbitCPUSphere(int idx, double t) {
             orbitVertices[idx]->push_back(colour);
         }
     }
+    if (config->superposition && idx > 0) {
+        superposition(idx);
+    }
 }
 
 void OrbitManager::superposition(int idx) {
     int verts = orbitVertices[idx]->size();
+    vec red = vec(1.0f, 0.0f, 0.0f);
 
     for (int dt = 0; dt < verts; dt += 2) {
-        vec a = (*orbitVertices[idx - 1])[dt];
-        vec b = (*orbitVertices[idx])[dt];
+        vec &a = (*orbitVertices[idx - 1])[dt];
+        vec &b = (*orbitVertices[idx])[dt];
 
-        double diffX = abs(a.x) - abs(b.x);
-        double diffZ = abs(a.z) - abs(b.z);
-
-        if (diffX >= 0 && diffZ >= 0) {
+        if (length(a) > length(b)) {
             // Calculate interference
-            float avgX = (a.x + b.x) / 2;
-            float avgZ = (a.z + b.z) / 2;
-            vec avg = vec(avgX, 0.0f, avgZ);
+            vec avg = (a + b) * 0.5f;
 
             // Adjust vertices for interference
-            (*orbitVertices[idx])[dt] = avg;
-            (*orbitVertices[idx - 1])[dt] = avg;
+            b = avg;
+            a = avg;
 
             // Highlight adjusted vertices
-            (*orbitVertices[idx])[dt+1] = vec(1.0f, 0.0f, 0.0f);
-            (*orbitVertices[idx - 1])[dt+1] = vec(1.0f, 0.0f, 0.0f);
+            (*orbitVertices[idx])[dt+1] = red;
+            (*orbitVertices[idx - 1])[dt+1] = red;
         }
     }
 }

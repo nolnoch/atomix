@@ -270,7 +270,6 @@ void GWidget::initWaveProgram() {
     waveProg->attachShader(renderConfig.vert);
     waveProg->attachShader(renderConfig.frag);
     waveProg->linkAndValidate();
-    checkErrors("Post-validate:");
     waveProg->detachShaders();
     
     // Load and bind vertices and attributes
@@ -328,7 +327,7 @@ void GWidget::initializeGL() {
     }
 
     /* Init -- Camera and OpenGL State */
-    glClearColor(0.03f, 0.00f, 0.06f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
@@ -496,7 +495,7 @@ void GWidget::keyPressEvent(QKeyEvent * e) {
             gw_timePaused = QDateTime::currentMSecsSinceEpoch();
         } else {
             gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-        gw_timeStart += gw_timeEnd - gw_timePaused;
+            gw_timeStart += gw_timeEnd - gw_timePaused;
         }
         update();
     } else
@@ -517,31 +516,20 @@ void GWidget::checkErrors(string str) {
 }
 
 void GWidget::setColorsOrbits(int id, uint colorChoice) {
-    uint old = 0;
-    
     switch (id) {
     case 1:
-        old = orbitManager->peak;
         orbitManager->peak = colorChoice;
         break;
     case 2:
-        old = orbitManager->base;
         orbitManager->base = colorChoice;
         break;
     case 3:
-        old = orbitManager->trough;
         orbitManager->trough = colorChoice;
         break;
     default:
         break;
     }
-
-    //cout << "Changed from #" << hex << old << " to #" << colorChoice << endl;
-
-    orbitManager->testBool = true;
-
     newUniformsColor = true;
-    updateRequired = true;
 }
 
 void GWidget::printConfig(WaveConfig *cfg) {

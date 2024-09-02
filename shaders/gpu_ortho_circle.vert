@@ -20,13 +20,14 @@ uniform mat4 projMat;
 
 void main() {
     float theta = factorsA.x;
+    float phase_const = factorsA.y;
     float r = factorsA.z;
 
     float cos_th = cos(theta);
     float sin_th = sin(theta);
    
     //                         sin(2pi / L * x) - (2pi / T * t)
-    float wavefunc = sin((two_pi_L * r * theta) - (two_pi_T * time));
+    float wavefunc = cos((two_pi_L * r * theta) - (two_pi_T * time) + phase_const);
     float displacement = amp * wavefunc;
 
     float x_coord = r * cos_th;

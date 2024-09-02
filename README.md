@@ -41,6 +41,7 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
   * "Escape" will exit the program
 * Granularity options
   * Selecting which waves are rendered (n = {1, 2, 3, ...})
+  * Selecting colors for base, peak, and trough
  
 #### Development Platform and Possible Requirements:
 - Ubuntu 24.04 Noble

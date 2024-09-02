@@ -43,7 +43,7 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
   * Selecting which waves are rendered (n = {1, 2, 3, ...})
  
 #### Development Platform and Possible Requirements:
-- Ubuntu 24.04 Mantic
+- Ubuntu 24.04 Noble
 - gcc/g++ 13.2.0+
 - CMake 3.28.3+
 - OpenGL 4.6

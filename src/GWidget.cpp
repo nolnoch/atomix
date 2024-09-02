@@ -517,19 +517,28 @@ void GWidget::checkErrors(string str) {
 }
 
 void GWidget::setColorsOrbits(int id, uint colorChoice) {
+    uint old = 0;
+    
     switch (id) {
     case 1:
+        old = orbitManager->peak;
         orbitManager->peak = colorChoice;
         break;
     case 2:
+        old = orbitManager->base;
         orbitManager->base = colorChoice;
         break;
     case 3:
+        old = orbitManager->trough;
         orbitManager->trough = colorChoice;
         break;
     default:
         break;
     }
+
+    //cout << "Changed from #" << hex << old << " to #" << colorChoice << endl;
+
+    orbitManager->testBool = true;
 
     newUniformsColor = true;
     updateRequired = true;

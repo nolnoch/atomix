@@ -226,14 +226,15 @@ void OrbitManager::updateOrbitCPUCircle(int idx, double t) {
             g = (scale * SHIFT(peak, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
             b = (scale * SHIFT(peak, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
             //final.a = (scale * SHIFT(peak, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
+            //if (testBool && scale > 0.8f)
+                //std::cout << "Point Color: (" << r << ", " << g << ", " << b << ")" << std::endl;
         } else {
             r = (scale * SHIFT(trough, RED)) + ((1 - scale) * SHIFT(base, RED));
             g = (scale * SHIFT(trough, GREEN)) + ((1 - scale) * SHIFT(base, GREEN));
             b = (scale * SHIFT(trough, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
             //final.a = (scale * SHIFT(trough, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
+            
         }
-
-        //std::cout << "Point Color: (" << final.r << ", " << final.g << ", " << final.b << ", " << final.a << ")" << std::endl;
 
         vec vertex = vec(x, y, z);
         vec colour = vec(r, g, b);

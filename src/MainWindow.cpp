@@ -52,7 +52,7 @@ void MainWindow::onAddNew() {
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorb, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedOrbits, Qt::DirectConnection);
-    connect(buttGroupColors, &QButtonGroup::idToggled, this, &MainWindow::handleButtColors);
+    connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
 
     setWindowTitle(tr("atomix"));
 }
@@ -381,16 +381,25 @@ void MainWindow::handleButtColors(int id) {
     QColor colorChoice = QColorDialog::getColor(Qt::white, this, tr("Choose a Color"), colOpts);
     uint color = 0;
 
-    color |= colorChoice.red();
-    color <<= 2;
-    color |= colorChoice.green();
-    color <<= 2;
-    color |= colorChoice.blue();
-    color <<= 2;
-    color |= colorChoice.alpha();
+    int dRed = colorChoice.red();
+    color |= dRed;
+    color <<= 8;
+    int dGreen = colorChoice.green();
+    color |= dGreen;
+    color <<= 8;
+    int dBlue = colorChoice.blue();
+    color |= dBlue;
+    uint nbc = color;
+    color <<= 8;
+    int dAlpha = colorChoice.alpha();
+    color |= dAlpha;
 
-    cout << "Incoming color #" << id << ": (" << colorChoice.red() << ", " << colorChoice.green() << ", " << colorChoice.blue() << ", " << colorChoice.alpha() << ")" << endl;
+    //cout << "Incoming color " << id << ": (" << hex << dRed << ", " << dGreen << ", " << dBlue << ", " << dAlpha << ") as #" << color << endl;
 
+    string nbcHex = std::format("{:06X}", nbc);
+    string ss = "QPushButton {background-color: #" + nbcHex + "; color: #000000;}";
+    QString qss = QString::fromStdString(ss);
+    buttGroupColors->button(id)->setStyleSheet(qss);
     graph->setColorsOrbits(id, color);
 }
 

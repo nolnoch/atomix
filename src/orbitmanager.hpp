@@ -40,7 +40,7 @@ const double HC = 1.98644586e-25;   // Convenience product of above
 
 enum {ALPHA = 0, BLUE = 8, GREEN = 16, RED = 24};
 #define MASK 0xFF
-#define SHIFT(a, b) (((a >> b) & MASK) / MASK)
+#define SHIFT(a, b) (static_cast<float>((a >> b) & MASK) / MASK)
 
 using gvec = std::vector<glm::vec3>;
 using dvec = std::vector<glm::vec2>;
@@ -76,6 +76,8 @@ class OrbitManager {
         double amplitude = 0;
         double two_pi_L = 0;
         double two_pi_T = 0;
+
+        bool testBool = false;
 
     private:
         void circleOrbitGPU(int idx);

@@ -395,9 +395,11 @@ void MainWindow::handleButtColors(int id) {
     color |= dAlpha;
 
     //cout << "Incoming color " << id << ": (" << hex << dRed << ", " << dGreen << ", " << dBlue << ", " << dAlpha << ") as #" << color << endl;
-
+    string ntcHex = "000000";
+    if (dRed + dGreen + dBlue < 128)
+        ntcHex = "FFFFFF";
     string nbcHex = std::format("{:06X}", nbc);
-    string ss = "QPushButton {background-color: #" + nbcHex + "; color: #000000;}";
+    string ss = "QPushButton {background-color: #" + nbcHex + "; color: #" + ntcHex + ";}";
     QString qss = QString::fromStdString(ss);
     buttGroupColors->button(id)->setStyleSheet(qss);
     graph->setColorsOrbits(id, color);

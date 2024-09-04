@@ -35,7 +35,6 @@ enum { DEG = 1, RAD = 0 };
 
 const float RAD_FAC = (float) M_PI / 180.0f;
 
-using namespace std;
 
 /**
  * Quaternion class.
@@ -45,7 +44,7 @@ class Quaternion {
   // Data
   float W, X, Y, Z;
   int dirty;
-  vector<float> rotMatrix;
+  std::vector<float> rotMatrix;
 
   // Constructor Init -- UT Servers use GCC 4.6 with no ctor delegation.
   void initQAngleAxis(float theta, float *v);
@@ -60,7 +59,7 @@ class Quaternion {
   void normalizeVector(float *v);
   Quaternion inverse();
   Quaternion pureQuaternion(float *v);
-  vector<float> rotateVector(float *v);
+  std::vector<float> rotateVector(float *v);
 
  public:
   // Constructors
@@ -68,20 +67,20 @@ class Quaternion {
   Quaternion(const Quaternion &b);
   explicit Quaternion(glm::vec3 m, int deg_rad);
   explicit Quaternion(float w, float x, float y, float z);
-  explicit Quaternion(float theta, vector<float> axis, int deg_rad);
+  explicit Quaternion(float theta, std::vector<float> axis, int deg_rad);
   explicit Quaternion(float theta, glm::vec3 axis, int deg_rad);
   explicit Quaternion(float theta, float axis[3], int deg_rad);
   explicit Quaternion(float yaw, float pitch, float roll, int deg_rad);
   explicit Quaternion(float *m, int construct, int deg_rad);
-  explicit Quaternion(vector<float> m, int con, int deg_rad);
+  explicit Quaternion(std::vector<float> m, int con, int deg_rad);
 
   // Destructor
   virtual ~Quaternion();
 
   // Public
-  vector<float> matrix();
-  vector<float> rotate(vector<float> v);
-  vector<float> rotate(float v[3]);
+  std::vector<float> matrix();
+  std::vector<float> rotate(std::vector<float> v);
+  std::vector<float> rotate(float v[3]);
   glm::vec3 rotate(glm::vec3 v);
   void toString();
   void matrixToString();

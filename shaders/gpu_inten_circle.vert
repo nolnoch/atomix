@@ -20,32 +20,22 @@ uniform mat4 projMat;
 
 void main() {
     float theta = factorsA.x;
-    float phi = factorsA.y;
+    float phase_const = factorsA.y;
     float r = factorsA.z;
-    float phase_const = factorsB.r;
 
-    float sin_theta = sin(theta);
-    float cos_theta = cos(theta);
-    float sin_phi = sin(phi);
-    float cos_phi = cos(phi);
-
-    float r_theta = r * theta;
-    float r_phi = r * phi;
+    float cos_th = cos(theta);
+    float sin_th = sin(theta);
    
-    //              sin((2pi / L * x)            - (2pi / T * t))
-    // sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
-    float wavefunc = cos((two_pi_L * r_theta) - (two_pi_T * time) + phase_const);
-    //float wavefunc = cos((two_pi_L * r * cos_phi) + (two_pi_L * r * sin_phi) - (two_pi_T * time) + phase_const);
-    //float wavefunc = abs(sin_theta * cos_theta);
+    /* Wavefunction */
+    //                         sin(2pi / L * x) - (2pi / T * t)
+    float wavefunc = cos((two_pi_L * r * theta) - (two_pi_T * time) + phase_const);
     float displacement = amp * wavefunc;
 
-    float x_coord = (r + displacement) * sin_phi * sin_theta;
-    float z_coord = (r + displacement) * sin_phi * cos_theta;
-    float y_coord = (r + displacement) * cos_phi;
+    /* Position */
+    float x_coord = r * cos_th;
+    float z_coord = r * sin_th;
 
-    //vertColour = vec3(wavefunc, 1 - wavefunc, 1.0f);
-    //vertColour = factorsB;
-
+    /* Color */
     uint mask = 0xFF;
     float fMask = float(mask);
     vec4 final = vec4(0.0f);
@@ -79,5 +69,5 @@ void main() {
     }
 
     vertColour = final;
-    gl_Position = projMat * viewMat * worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
+    gl_Position = projMat * viewMat * worldMat * vec4(x_coord, displacement, z_coord, 1.0f);
 };

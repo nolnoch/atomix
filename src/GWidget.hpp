@@ -33,6 +33,7 @@
 #include <QKeyEvent>
 #include <QDateTime>
 #include <QOpenGLFunctions_4_5_Core>
+#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "program.hpp"
@@ -89,7 +90,7 @@ private:
     void swapVertices();
     void swapIndices();
     void clearProgram(uint i);
-    void checkErrors(string str);
+    void checkErrors(std::string str);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;

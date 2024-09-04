@@ -116,9 +116,6 @@
 const float N_TOLERANCE = 1.0001f;          // Normalization tolerance
 const float T_TOLERANCE = 0.0001f;          // Trace tolerance
 
-using namespace std;
-
-
 
 /***************************
  * Constructors
@@ -204,12 +201,12 @@ Quaternion::Quaternion(glm::vec3 v3Angles, int deg_rad)
 
 /**
  * Create quaternion from an angle and axis of rotation.
- * Axis given by a vector<float> array of 3 terms.
+ * Axis given by a std::vector<float> array of 3 terms.
  * @param theta - angle of rotation
  * @param axis - axis of rotation
  * @param deg_rad - constant flag specifying degrees [DEG] or radians [RAD]
  */
-Quaternion::Quaternion(float theta, vector<float> axis, int deg_rad)
+Quaternion::Quaternion(float theta, std::vector<float> axis, int deg_rad)
 : W(0), X(0), Y(0), Z(0), dirty(1) {
   if (deg_rad) {
     theta *= (RAD_FAC);
@@ -253,7 +250,7 @@ Quaternion::Quaternion(float theta, float axis[3], int deg_rad)
  * EULER      - Euler Angles [Z, Y, X]
  * EXPLICIT   - Explicit [W, X, Y, Z]
  * ANGLE_AXIS - Angle-Axis [Theta, X, Y, Z]
- * MATRIX     - Rotation Matrix vector<float>[16]
+ * MATRIX     - Rotation Matrix std::vector<float>[16]
  * @param m - float[] of size 3, 4, or 16
  * @param construct - constant flag to determine how the values are used:
  *                       EULER, EXPLICIT, ANGLE_AXIS, or MATRIX
@@ -265,18 +262,18 @@ Quaternion::Quaternion(float *m, int construct, int deg_rad)
 }
 
 /**
- * Takes an array in the form of a vector<float>.
+ * Takes an array in the form of a std::vector<float>.
  * Depending on the flag given, create from:
  * EULER      - Euler Angles [Z, Y, X]
  * EXPLICIT   - Explicit [W, X, Y, Z]
  * ANGLE_AXIS - Angle-Axis [Theta, X, Y, Z]
- * MATRIX     - Rotation Matrix vector<float>[16]
- * @param m - vector<float> of size 3, 4, or 16
+ * MATRIX     - Rotation Matrix std::vector<float>[16]
+ * @param m - std::vector<float> of size 3, 4, or 16
  * @param construct - constant flag to determine how the values are used:
  *                       EULER, EXPLICIT, ANGLE_AXIS, or MATRIX
  * @param deg_rad - constant flag specifying degrees [DEG] or radians [RAD]
  */
-Quaternion::Quaternion(vector<float> m, int construct, int deg_rad)
+Quaternion::Quaternion(std::vector<float> m, int construct, int deg_rad)
 : W(0), X(0), Y(0), Z(0), dirty(1) {
   this->initQArrayUnknown(&m[0], construct, deg_rad);
 }
@@ -409,8 +406,8 @@ void Quaternion::initQRotationMatrix(float *m) {
  * EULER      - Euler Angles [Z, Y, X]
  * EXPLICIT   - Explicit [W, X, Y, Z]
  * ANGLE_AXIS - Angle-Axis [Theta, X, Y, Z]
- * MATRIX     - Rotation Matrix vector<float>[16]
- * @param m - vector<float> of size 3, 4, or 16
+ * MATRIX     - Rotation Matrix std::vector<float>[16]
+ * @param m - std::vector<float> of size 3, 4, or 16
  * @param construction - constant flag to determine how the values are used:
  *                       EULER, EXPLICIT, ANGLE_AXIS, or MATRIX
  * @param deg_rad - constant flag specifying degrees [DEG] or radians [RAD]
@@ -567,13 +564,13 @@ Quaternion Quaternion::pureQuaternion(float *v) {
  * @param v - the vector or vertex to be rotated
  * @return a copy of the rotated vector or vertex
  */
-vector<float> Quaternion::rotateVector(float *v) {
+std::vector<float> Quaternion::rotateVector(float *v) {
   Quaternion qPure = pureQuaternion(v);
   Quaternion qInv = this->inverse();
 
   Quaternion qResult = (*this * (qPure * qInv));
 
-  vector<float> vRotated;
+  std::vector<float> vRotated;
   vRotated.push_back(qResult.X);
   vRotated.push_back(qResult.Y);
   vRotated.push_back(qResult.Z);
@@ -596,7 +593,7 @@ vector<float> Quaternion::rotateVector(float *v) {
  * been changed recently, perform that calculation first.
  * @return a copy of the instance's rotation matrix representation
  */
-vector<float> Quaternion::matrix() {
+std::vector<float> Quaternion::matrix() {
   if (this->dirty)
     this->makeMatrix();
 
@@ -606,21 +603,21 @@ vector<float> Quaternion::matrix() {
 /**
  * Perform a quaternion rotation on the passed vector object. Because it
  * is an object, we can return a copy of the vector prime. This is ideal.
- * @param v - vector<float> form of the 3-value vector or vertex to be rotated
+ * @param v - std::vector<float> form of the 3-value vector or vertex to be rotated
  * @return a copy of the rotated vector or vertex
  */
-vector<float> Quaternion::rotate(vector<float> v) {
+std::vector<float> Quaternion::rotate(std::vector<float> v) {
   return rotateVector(&v[0]);
 }
 
 /**
  * Perform a quaternion rotation on the passed vector object. Since it's
  * a primitive array, we'll enforce a size of [3] in the parameters and
- * return a copy of a vector<float>. See header comments on Return Types.
+ * return a copy of a std::vector<float>. See header comments on Return Types.
  * @param v - float[] form of the 3-value vector or vertex to be rotated
  * @return a copy of the rotated vector as an STL vector
  */
-vector<float> Quaternion::rotate(float v[3]) {
+std::vector<float> Quaternion::rotate(float v[3]) {
   return rotateVector(v);
 }
 
@@ -631,7 +628,7 @@ vector<float> Quaternion::rotate(float v[3]) {
  * @return a copy of the rotated glm::vec3
  */
 glm::vec3 Quaternion::rotate(glm::vec3 v) {
-  vector<float> vResult = rotateVector(&v[0]);
+  std::vector<float> vResult = rotateVector(&v[0]);
   return glm::vec3(vResult[0], vResult[1], vResult[2]);
 }
 
@@ -639,7 +636,7 @@ glm::vec3 Quaternion::rotate(glm::vec3 v) {
  * Provides a current string representation of this quaternion.
  */
 void Quaternion::toString() {
-  cout << "[" << W << ", " << X << ", " << Y << ", " << Z << "]" << endl;
+  std::cout << "[" << W << ", " << X << ", " << Y << ", " << Z << "]" << std::endl;
 }
 
 /**
@@ -650,14 +647,14 @@ void Quaternion::matrixToString() {
   if (dirty)
     this->makeMatrix();
 
-  cout << "[" << rotMatrix[0] << ", " << rotMatrix[1] << ", " << rotMatrix[2]
-       << ", " << rotMatrix[3] << "]" << endl;
-  cout << "|" << rotMatrix[4] << ", " << rotMatrix[5] << ", " << rotMatrix[6]
-       << ", " << rotMatrix[7] << "|" << endl;
-  cout << "|" << rotMatrix[8] << ", " << rotMatrix[9] << ", " << rotMatrix[10]
-       << ", " << rotMatrix[11] << "|" << endl;
-  cout << "[" << rotMatrix[12] << ", " << rotMatrix[13] << ", " << rotMatrix[14]
-       << ", " << rotMatrix[15] << "]" << endl;
+  std::cout << "[" << rotMatrix[0] << ", " << rotMatrix[1] << ", " << rotMatrix[2]
+       << ", " << rotMatrix[3] << "]" << std::endl;
+  std::cout << "|" << rotMatrix[4] << ", " << rotMatrix[5] << ", " << rotMatrix[6]
+       << ", " << rotMatrix[7] << "|" << std::endl;
+  std::cout << "|" << rotMatrix[8] << ", " << rotMatrix[9] << ", " << rotMatrix[10]
+       << ", " << rotMatrix[11] << "|" << std::endl;
+  std::cout << "[" << rotMatrix[12] << ", " << rotMatrix[13] << ", " << rotMatrix[14]
+       << ", " << rotMatrix[15] << "]" << std::endl;
 }
 
 /**

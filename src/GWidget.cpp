@@ -41,7 +41,7 @@ GWidget::~GWidget() {
 void GWidget::cleanup() {
     //makeCurrent();
 
-    //std::cout << "Rendered " << gw_frame << " frames." << std::endl;
+    //std::std::cout << "Rendered " << gw_frame << " frames." << std::endl;
 
     delete crystalProg;
     delete waveProg;
@@ -502,17 +502,17 @@ void GWidget::keyPressEvent(QKeyEvent * e) {
         QWidget::keyPressEvent(e);
 }
 
-void GWidget::checkErrors(string str) {
+void GWidget::checkErrors(std::string str) {
     GLenum err;
     int messages = 0;
 
     while ((err = glGetError()) != GL_NO_ERROR) {
-        cout << "\n" << str << hex << err;
+        std::cout << "\n" << str << std::hex << err;
         messages++;
     }
     
     if (messages)
-        cout << endl;
+        std::cout << std::endl;
 }
 
 void GWidget::setColorsOrbits(int id, uint colorChoice) {
@@ -533,15 +533,15 @@ void GWidget::setColorsOrbits(int id, uint colorChoice) {
 }
 
 void GWidget::printConfig(WaveConfig *cfg) {
-    cout << "Orbits: " << cfg->orbits << "\n";
-    cout << "Amplitude: " << cfg->amplitude << "\n";
-    cout << "Period: " << cfg->period << "\n";
-    cout << "Wavelength: " << cfg->wavelength << "\n";
-    cout << "Resolution: " << cfg->resolution << "\n";
-    cout << "Parallel: " << cfg->parallel << "\n";
-    cout << "Superposition: " << cfg->superposition << "\n";
-    cout << "CPU: " << cfg->cpu << "\n";
-    cout << "Sphere: " << cfg->sphere << "\n";
-    cout << "Vert Shader: " << cfg->vert << "\n";
-    cout << "Frag Shader: " << cfg->frag << endl;
+    std::cout << "Orbits: " << cfg->orbits << "\n";
+    std::cout << "Amplitude: " << cfg->amplitude << "\n";
+    std::cout << "Period: " << cfg->period << "\n";
+    std::cout << "Wavelength: " << cfg->wavelength << "\n";
+    std::cout << "Resolution: " << cfg->resolution << "\n";
+    std::cout << "Parallel: " << cfg->parallel << "\n";
+    std::cout << "Superposition: " << cfg->superposition << "\n";
+    std::cout << "CPU: " << cfg->cpu << "\n";
+    std::cout << "Sphere: " << cfg->sphere << "\n";
+    std::cout << "Vert Shader: " << cfg->vert << "\n";
+    std::cout << "Frag Shader: " << cfg->frag << std::endl;
 }

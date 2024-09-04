@@ -39,6 +39,7 @@
 #include "program.hpp"
 #include "quaternion.hpp"
 #include "orbitmanager.hpp"
+#include "cloudmanager.hpp"
 
 
 /* Program/Orbit pointer struct */
@@ -97,6 +98,7 @@ private:
     Program *waveProg = nullptr;
     ConfigParser *cfgParser = nullptr;
     OrbitManager *orbitManager = nullptr;
+    CloudManager *cloudManager = nullptr;
     QTimer *gw_timer = nullptr;
 
     WaveConfig renderConfig;
@@ -129,6 +131,8 @@ private:
     bool newUniformsMaths = false;
     bool newUniformsColor = false;
     bool updateRequired = false;
+
+    bool renderCloud = true;
 };
 
 #endif

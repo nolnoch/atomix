@@ -252,7 +252,7 @@ void GWidget::initCrystalProgram() {
 
 void GWidget::initWaveProgram() {
     /* Orbits */
-    orbitManager = new OrbitManager(&renderConfig);
+    cloudManager = new CloudManager(&renderConfig);
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
@@ -275,20 +275,18 @@ void GWidget::initWaveProgram() {
     // Load and bind vertices and attributes
     waveProg->initVAO();
     waveProg->bindVAO();
-    GLuint vboID = waveProg->bindVBO(orbitManager->getVertexSize(), orbitManager->getVertexData(), static_dynamic);
+    GLuint vboID = waveProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
     waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
     waveProg->enableAttribute(0);
     waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
-    waveProg->bindEBO(orbitManager->getIndexSize(), orbitManager->getIndexData(), static_dynamic);
+    waveProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
     //waveProg->assignFragColour();
 
     /* Release */
     waveProg->endRender();
     waveProg->clearBuffers();
-    newUniformsMaths = true;
-    newUniformsColor = true;
 }
 
 void GWidget::initVecsAndMatrices() {
@@ -377,29 +375,29 @@ void GWidget::paintGL() {
     crystalProg->endRender();
 
     /* Render -- Orbits */
-    if (renderedOrbits) {
+    if (renderCloud || renderedOrbits) {
         waveProg->beginRender();
-        if (renderConfig.cpu) {
-            orbitManager->updateOrbits(time);
-            waveProg->updateVBO(0, orbitManager->getVertexSize(), orbitManager->getVertexData());
+        if (!renderCloud && renderConfig.cpu) {
+            cloudManager->updateOrbits(time);
+            waveProg->updateVBO(0, cloudManager->getVertexSize(), cloudManager->getVertexData());
         }
         if (newUniformsMaths) {
-            waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
-            waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
-            waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
+            waveProg->setUniform(GL_FLOAT, "two_pi_L", cloudManager->two_pi_L);
+            waveProg->setUniform(GL_FLOAT, "two_pi_T", cloudManager->two_pi_T);
+            waveProg->setUniform(GL_FLOAT, "amp", cloudManager->amplitude);
             newUniformsMaths = false;
         }
         if (newUniformsColor) {
-            waveProg->setUniform(GL_UNSIGNED_INT, "peak", orbitManager->peak);
-            waveProg->setUniform(GL_UNSIGNED_INT, "base", orbitManager->base);
-            waveProg->setUniform(GL_UNSIGNED_INT, "trough", orbitManager->trough);
+            waveProg->setUniform(GL_UNSIGNED_INT, "peak", cloudManager->peak);
+            waveProg->setUniform(GL_UNSIGNED_INT, "base", cloudManager->base);
+            waveProg->setUniform(GL_UNSIGNED_INT, "trough", cloudManager->trough);
             newUniformsColor = false;
         }
         waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
         waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
         waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
         waveProg->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_POINTS, orbitManager->getIndexCount(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_POINTS, cloudManager->getIndexCount(), GL_UNSIGNED_INT, 0);
         waveProg->endRender();
     }
 

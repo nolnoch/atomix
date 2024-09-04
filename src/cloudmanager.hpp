@@ -1,7 +1,7 @@
 /**
- * orbit.hpp
+ * cloudmanager.hpp
  *
- *    Created on: Oct 18, 2023
+ *    Created on: Sep 4, 2024
  *   Last Update: Oct 18, 2023
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  * 
@@ -22,8 +22,8 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ORBIT_H
-#define ORBIT_H
+#ifndef CLOUDMANAGER_H
+#define CLOUDMANAGER_H
 
 #include <vector>
 #include <algorithm>
@@ -41,12 +41,13 @@ using ivec = std::vector<uint>;
 using vec = glm::vec3;
 
 
-class OrbitManager {
+class CloudManager {
     public:
-        OrbitManager(WaveConfig *cfg);
-        virtual ~OrbitManager();
+        CloudManager(WaveConfig *cfg);
+        virtual ~CloudManager();
 
-        void createOrbits();
+        void createCloud();
+        void createCloudCPU();
         void updateOrbits(double time);
         
         void newConfig(WaveConfig *cfg);
@@ -105,6 +106,8 @@ class OrbitManager {
         int resolution = 0;
         double deg_fac = 0;
         double phase_base = PI_TWO;
+
+        int cloudLayers = 0;
 
         bool update = false;
 };

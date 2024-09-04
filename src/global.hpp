@@ -43,4 +43,15 @@ inline constexpr std::string_view ROOT_DIR = "/home/braer/dev/atomix/";
 inline constexpr std::string_view SHADERS = "shaders/";
 inline constexpr std::string_view CONFIGS = "configs/";
 
+/* Math constants */
+const double TWO_PI = 2.0 * M_PI;   // 2pi is used a lot
+const double PI_TWO = M_PI * 2.0;   // pi/2 is used sometimes
+const double H = 6.626070e-34;      // Planck's constant
+const double C = 299792458;         // Speed of massless particles (m/s)
+const double HC = 1.98644586e-25;   // Convenience product of above
+
+const int RENDORBS[] = {1, 2, 4, 8, 16, 32, 64, 128};
+
+enum {ALPHA = 0, BLUE = 8, GREEN = 16, RED = 24};
+
 #endif

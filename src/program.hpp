@@ -2,7 +2,7 @@
  * program.hpp
  *
  *    Created on: Apr 8, 2013
- *   Last Update: Oct 14, 2023
+ *   Last Update: Sep 9, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  *
  *  This class was created to automate (and generally make easier) the use
@@ -33,7 +33,7 @@
  *
  *  This is a work in progress and will be continually improved as I use it.
  *
- *  Copyright 2013,2023 Wade Burch (GPLv3)
+ *  Copyright 2013, 2023, 2024 Wade Burch (GPLv3)
  * 
  *  This file is part of atomix.
  * 

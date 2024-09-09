@@ -4,7 +4,7 @@
  *  atomix
  * 
  *    Created on: Mar 8, 2013
- *   Last Update: Oct 14, 2023
+ *   Last Update: Sep 9, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  * 
  *  This Quaternion class was designed for use in CS354 Computer Graphics.
@@ -83,7 +83,7 @@
  *                 OpenGL:Tutorials:Using_Quaternions_to_represent_rotation
  *
  * 
- *  Copyright 2013,2023 Wade Burch (GPLv3)
+ *  Copyright 2013,2023,2024 Wade Burch (GPLv3)
  * 
  *  This file is part of atomix.
  * 

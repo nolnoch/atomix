@@ -2,10 +2,10 @@
  * configparser.hpp
  *
  *    Created on: Oct 15, 2023
- *   Last Update: Oct 15, 2023
- *  Orig-> Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Sep 9, 2024
+ *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  * 
- *  Copyright 2023 Wade Burch (GPLv3)
+ *  Copyright 2023, 2024 Wade Burch (GPLv3)
  * 
  *  This file is part of atomix.
  * 

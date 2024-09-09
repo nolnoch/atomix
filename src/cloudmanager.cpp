@@ -36,26 +36,31 @@ CloudManager::~CloudManager() {
 }
 
 void CloudManager::createCloud() {
-    int idx = 0;
-    int orbits = 4;
-    int layersPerOrbit = 8;
-    double layerDistance = 1.0 / layersPerOrbit;
-    this->cloudLayers = orbits * layersPerOrbit;
+    this->cloudOrbitCount = 8;
+    this->cloudOrbitDivisor = 10;
+    this->cloudLayerDelta = 1.0 / this->cloudOrbitDivisor;
+    this->cloudLayerCount = this->cloudOrbitCount * this->cloudOrbitDivisor;
 
-    for (int k = 1; k <= cloudLayers; k++) {
-        orbitVertices.push_back(new gvec);
-        orbitIndices.push_back(new ivec);
+    for (int k = 1; k <= cloudLayerCount; k++) {
+        pixelVertices.push_back(new gvec);
+        pixelColours.push_back(new gvec);
+        pixelIndices.push_back(new ivec);
         
-        int steps = k * layersPerOrbit;
+        int steps = k * this->cloudOrbitDivisor;
         this->deg_fac = TWO_PI / steps;
         int kb = k - 1;
+
+        double radius = k * this->cloudLayerDelta;
+        float h, p, d, r, g, b;
+
+        r = 0.0f;
+        g = 0.0f;
+        b = 0.0f;
     
         for (int i = 0; i < steps; i++) {
             double theta = i * deg_fac;
             for (int j = 0; j < steps; j++) {
                 double phi = j * deg_fac;
-                double radius = k * layerDistance;
-                float h, p, d;
 
                 if (config->cpu) {
                     h = radius * sin(phi) * sin(theta);
@@ -66,41 +71,127 @@ void CloudManager::createCloud() {
                     p = (float) phi;
                     d = (float) radius;
                 }
-                float r = 0.6f;
-                float g = 0.6f;
-                float b = 0.6f;
-
+                
                 vec pos = vec(h, p, d);
                 vec colour = vec(r, g, b);
                 
-                orbitVertices[kb]->push_back(pos);
-                orbitVertices[kb]->push_back(colour);
-
-                orbitIndices[kb]->push_back(idx++);
+                pixelVertices[kb]->push_back(pos);
+                pixelColours[kb]->push_back(colour);
             }
         }
     }
 
     genVertexArray();
-    genIndexBuffer();
+    genColourArray();
 }
 
-void CloudManager::updateOrbits(double time) {
-    this->update = true;
-    allVertices.clear();
-    
-    for (int i = 0; i < orbitCount; i++) {
-        if (renderedOrbits & RENDORBS[i]) {
-            orbitVertices[i]->clear();
+/*
+void CloudManager::orbit1s() {
+    double Z = 1.0;                         // effective nuclear charge for that orbital in that atom
+    double n = 1.0;                         // principal quantum number
 
-            if (config->sphere)
-                updateOrbitCPUSphere(i, time);
-            else
-                updateOrbitCPUCircle(i, time);
+    for (int i = 0; i < vertexCount; i ++) {
+        int layer = ceil((sqrt(8.0*(i/10.0)+1.0)-1.0)/2.0);
+        double radius = layer * cloudLayerDelta;
+        //double rho = Z * radius / n;
+        int lv = layer - 1;
+
+        /*  FF0000 -> FFFF00 -> 00FF00 -> 00FFFF -> 0000FF -> FF00FF -> FFFFFF  
+
+        /*                    R1s * Y1s = 2Z^(3/2)e^(-rho/2) * (1/sqrt(4PI))                 
+        //double wavefunction = 2.0 * pow(Z,(3.0/2.0)) * pow(M_E,(-1 * rho)) * sqrt(1.0/(4.0 * M_PI));
+        //double rpd = wavefunction * wavefunction * 4.0 * M_PI * radius * radius;
+        float rpd = static_cast<float>(std::clamp((4.0 * exp(-2.0 * radius) * radius * radius), 0.0, 1.0));
+
+        if (rpd >= 0.01f){
+            allColours[i] = vec(rpd, rpd, rpd);
+            pixelIndices[lv]->push_back(i);
         }
     }
 
-    genVertexArray();
+    genIndexBuffer();
+}
+*/
+
+void CloudManager::orbit1s() {
+    double Z = 1.0;                         // effective nuclear charge for that orbital in that atom
+    double n = 1.0;                         // principal quantum number
+
+    for (int k = 1; k <= cloudLayerCount; k++) {
+        double radius = k * cloudLayerDelta;
+        //double rho = Z * radius / n;
+        int lv = k - 1;
+        int steps = k * this->cloudOrbitDivisor;
+        int fdn = ((2*lv*lv*lv)+(3*lv*lv)+lv)/6*(this->cloudOrbitDivisor*this->cloudOrbitDivisor);
+        
+        //double wavefunction = 2.0 * pow(Z,(3.0/2.0)) * pow(M_E,(-1 * rho)) * sqrt(1.0/(4.0 * M_PI));
+        //double rpd = wavefunction * wavefunction * 4.0 * M_PI * radius * radius;
+        double wavefunction = 4.0 * exp(-2.0 * radius) * radius * radius;
+        
+        float rpd = static_cast<float>(std::clamp((wavefunction * wavefunction * 4.0), 0.0, 1.0));
+
+        //std::cout << rpd << "\n";
+
+        if (rpd >= 0.1f) {
+        
+            for (int i = 0; i < steps; i++) {
+                int base = i * steps;
+                for (int j = 0; j < steps; j++) {
+                    int inLayerIdx = base + j;
+                    int inCloudIdx = fdn + inLayerIdx;
+
+                    (*this->pixelColours[lv])[inLayerIdx] = vec(rpd, rpd, rpd);
+                    pixelIndices[lv]->push_back(inCloudIdx);
+                }
+            }
+        }
+    }
+
+    genColourArray();
+    genIndexBuffer();
+}
+
+void CloudManager::orbit2p() {
+    double Z = 1.0;                         // effective nuclear charge for that orbital in that atom
+    double n = 1.0;                         // principal quantum number
+
+    for (int k = 1; k <= cloudLayerCount; k++) {
+        double radius = k * cloudLayerDelta;
+        //double rho = Z * radius / n;
+        int lv = k - 1;
+        int steps = k * this->cloudOrbitDivisor;
+        int fdn = ((2*lv*lv*lv)+(3*lv*lv)+lv)/6*(this->cloudOrbitDivisor*this->cloudOrbitDivisor);
+        
+        //double wavefunction = 2.0 * pow(Z,(3.0/2.0)) * pow(M_E,(-1 * rho)) * sqrt(1.0/(4.0 * M_PI));
+        //double rpd = wavefunction * wavefunction * 4.0 * M_PI * radius * radius;
+        double wavefunction = 4.0 * exp(-2.0 * radius) * radius * radius;
+        
+        float rpd = static_cast<float>(std::clamp((wavefunction * wavefunction * 4.0), 0.0, 1.0));
+
+        //std::cout << rpd << "\n";
+
+        if (rpd >= 0.1f) {
+        
+            for (int i = 0; i < steps; i++) {
+                int base = i * steps;
+                for (int j = 0; j < steps; j++) {
+                    int inLayerIdx = base + j;
+                    int inCloudIdx = fdn + inLayerIdx;
+
+                    (*this->pixelColours[lv])[inLayerIdx] = vec(rpd, rpd, rpd);
+                    pixelIndices[lv]->push_back(inCloudIdx);
+                }
+            }
+        }
+    }
+
+    genColourArray();
+    genIndexBuffer();
+}
+
+void CloudManager::updateCloud(double time) {
+    this->update = true;
+    //TODO implement for CPU updates over time
 }
 
 void CloudManager::newConfig(WaveConfig *cfg) {
@@ -113,12 +204,12 @@ void CloudManager::newConfig(WaveConfig *cfg) {
     this->deg_fac = TWO_PI / this->resolution;
 }
 
-void CloudManager::newOrbits() {
+void CloudManager::newCloud() {
     resetManager();
-    //createOrbits();
+    //createCloud();
 }
 
-uint CloudManager::selectOrbits(int id, bool checked) {
+uint CloudManager::selectCloud(int id, bool checked) {
     uint flag = id;
 
     if (checked)
@@ -143,7 +234,7 @@ void CloudManager::circleOrbitGPU(int idx) {
 
     for (int i = 0; i < this->resolution; i++) {
         double theta = i * deg_fac;
-        orbitIndices[idx]->push_back(l + i);
+        pixelIndices[idx]->push_back(l + i);
 
         float h = (float) theta;
         float p = (float) phase_const[idx];
@@ -155,8 +246,8 @@ void CloudManager::circleOrbitGPU(int idx) {
         vec factorsA = vec(h, p, d);
         vec factorsB = vec(r, g, b);
         
-        orbitVertices[idx]->push_back(factorsA);
-        orbitVertices[idx]->push_back(factorsB);
+        pixelVertices[idx]->push_back(factorsA);
+        pixelVertices[idx]->push_back(factorsB);
     }
 }
 
@@ -170,7 +261,7 @@ void CloudManager::sphereOrbitGPU(int idx) {
             double theta = i * deg_fac;
             double phi = j * deg_fac;
             
-            orbitIndices[idx]->push_back(l + m + j);
+            pixelIndices[idx]->push_back(l + m + j);
 
             float h = (float) theta;
             float p = (float) phi;
@@ -182,8 +273,8 @@ void CloudManager::sphereOrbitGPU(int idx) {
             vec factorsA = vec(h, p, d);
             vec factorsB = vec(r, g, b);
             
-            orbitVertices[idx]->push_back(factorsA);
-            orbitVertices[idx]->push_back(factorsB);
+            pixelVertices[idx]->push_back(factorsA);
+            pixelVertices[idx]->push_back(factorsB);
             //std::cout << glm::to_string(factorsB) << "\n";
         }
     }
@@ -203,7 +294,7 @@ void CloudManager::updateOrbitCPUCircle(int idx, double t) {
         float x, y, z;
         
         if (!update)
-            orbitIndices[idx]->push_back(l + i);
+            pixelIndices[idx]->push_back(l + i);
 
         double wavefunc = cos((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const[idx]);
         double displacement = amplitude * wavefunc;
@@ -236,8 +327,8 @@ void CloudManager::updateOrbitCPUCircle(int idx, double t) {
         vec vertex = vec(x, y, z);
         vec colour = vec(r, g, b);
         
-        orbitVertices[idx]->push_back(vertex);
-        orbitVertices[idx]->push_back(colour);
+        pixelVertices[idx]->push_back(vertex);
+        pixelVertices[idx]->push_back(colour);
     }
     if (config->superposition && idx > 0) {
         superposition(idx);
@@ -255,7 +346,7 @@ void CloudManager::updateOrbitCPUSphere(int idx, double t) {
             double phi = j * deg_fac;
             
             if (!update)
-                orbitIndices[idx]->push_back(l + m + j);
+                pixelIndices[idx]->push_back(l + m + j);
 
             float wavefunc = cos((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const[idx]);
             float displacement = amplitude * wavefunc;
@@ -285,8 +376,8 @@ void CloudManager::updateOrbitCPUSphere(int idx, double t) {
             vec vertex = vec(x, y, z);
             vec colour = vec(r, g, b);
             
-            orbitVertices[idx]->push_back(vertex);
-            orbitVertices[idx]->push_back(colour);
+            pixelVertices[idx]->push_back(vertex);
+            pixelVertices[idx]->push_back(colour);
         }
     }
     if (config->superposition && idx > 0) {
@@ -295,12 +386,12 @@ void CloudManager::updateOrbitCPUSphere(int idx, double t) {
 }
 
 void CloudManager::superposition(int idx) {
-    int verts = orbitVertices[idx]->size();
+    int verts = pixelVertices[idx]->size();
     vec red = vec(1.0f, 0.0f, 0.0f);
 
     for (int dt = 0; dt < verts; dt += 2) {
-        vec &a = (*orbitVertices[idx - 1])[dt];
-        vec &b = (*orbitVertices[idx])[dt];
+        vec &a = (*pixelVertices[idx - 1])[dt];
+        vec &b = (*pixelVertices[idx])[dt];
 
         if (length(a) > length(b)) {
             // Calculate interference
@@ -311,46 +402,66 @@ void CloudManager::superposition(int idx) {
             a = avg;
 
             // Highlight adjusted vertices
-            (*orbitVertices[idx])[dt+1] = red;
-            (*orbitVertices[idx - 1])[dt+1] = red;
+            (*pixelVertices[idx])[dt+1] = red;
+            (*pixelVertices[idx - 1])[dt+1] = red;
         }
     }
 }
 
 void CloudManager::resetManager() {
-    for (auto v : orbitVertices) {
+    for (auto v : pixelVertices) {
         delete (v);
     }
-    orbitVertices.clear();
-    for (auto c : orbitIndices) {
+    pixelVertices.clear();
+    for (auto v : pixelColours) {
+        delete (v);
+    }
+    pixelColours.clear();
+    for (auto c : pixelIndices) {
         delete (c);
     }
-    orbitIndices.clear();
+    pixelIndices.clear();
 
     allVertices.clear();
+    allColours.clear();
     allIndices.clear();
 
     this->vertexCount = 0;
     this->vertexSize = 0;
+    this->colourCount = 0;
+    this->colourSize = 0;
     this->indexCount = 0;
     this->indexSize = 0;
     this->update = false;
 }
 
 void CloudManager::genVertexArray() {
-    for (int i = 0; i < cloudLayers; i++) {
-        std::copy(orbitVertices[i]->begin(), orbitVertices[i]->end(), std::back_inserter(this->allVertices));
+    allVertices.clear();
+
+    for (int i = 0; i < cloudLayerCount; i++) {
+        std::copy(pixelVertices[i]->begin(), pixelVertices[i]->end(), std::back_inserter(this->allVertices));
     }
 
     this->vertexCount = setVertexCount();
     this->vertexSize = setVertexSize();
 }
 
-void CloudManager::genIndexBuffer() {
-    assert(!allIndices.size());
+void CloudManager::genColourArray() {
+    allColours.clear();
 
-    for (int i = 0; i < cloudLayers; i++) {
-        std::copy(orbitIndices[i]->begin(), orbitIndices[i]->end(), std::back_inserter(this->allIndices));
+    for (int i = 0; i < cloudLayerCount; i++) {
+        std::copy(pixelColours[i]->begin(), pixelColours[i]->end(), std::back_inserter(this->allColours));
+    }
+
+    this->colourCount = setColourCount();
+    this->colourSize = setColourSize();
+}
+
+void CloudManager::genIndexBuffer() {
+    allIndices.clear();
+
+    for (int i = 0; i < cloudLayerCount; i++) {
+        std::copy(pixelIndices[i]->begin(), pixelIndices[i]->end(), std::back_inserter(this->allIndices));
     }
 
     this->indexCount = setIndexCount();
@@ -359,6 +470,10 @@ void CloudManager::genIndexBuffer() {
 
 int CloudManager::getVertexSize() {
     return this->vertexSize;
+}
+
+int CloudManager::getColourSize() {
+    return this->colourSize;
 }
 
 int CloudManager::getIndexCount() {
@@ -382,8 +497,25 @@ int CloudManager::setVertexSize() {
 }
 
 const float* CloudManager::getVertexData() {
-    assert(vertexCount);
+    assert(colourCount);
     return glm::value_ptr(allVertices.front());
+}
+
+int CloudManager::setColourCount() {
+    return allColours.size();
+}
+
+int CloudManager::setColourSize() {
+    int chunks = colourCount ?: setColourCount();
+    int chunkSize = sizeof(glm::vec3);
+
+    //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
+    return chunks * chunkSize;
+}
+
+const float* CloudManager::getColourData() {
+    assert(colourCount == vertexCount);
+    return glm::value_ptr(allColours.front());
 }
 
 int CloudManager::setIndexCount() {

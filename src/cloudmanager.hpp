@@ -27,6 +27,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -47,17 +48,21 @@ class CloudManager {
         virtual ~CloudManager();
 
         void createCloud();
-        void createCloudCPU();
-        void updateOrbits(double time);
+        void updateCloud(double time);
+
+        void orbit1s();
+        void orbit2p();
         
         void newConfig(WaveConfig *cfg);
-        void newOrbits();
-        uint selectOrbits(int id, bool checked);
+        void newCloud();
+        uint selectCloud(int id, bool checked);
         
         int getVertexSize();
+        int getColourSize();
         int getIndexCount();
         int getIndexSize();
         const float* getVertexData();
+        const float* getColourData();
         const uint* getIndexData();
 
         void printIndices();
@@ -81,18 +86,29 @@ class CloudManager {
         void superposition(int idx);
 
         void genVertexArray();
+        void genColourArray();
         void genIndexBuffer();
         void resetManager();
         
         int setVertexCount();
         int setVertexSize();
+        int setColourCount();
+        int setColourSize();
         int setIndexCount();
         int setIndexSize();
 
+        double wavefuncRadial(int n, int l, double r);
+        double wavefuncSpherical(int l, int m, double theta, double phi);
+        double wavefuncPsi(double R, double Y);
+        double wavefuncRadialDistribution(double P, double r, int n);
+
         WaveConfig *config;
-        std::vector<gvec *> orbitVertices;
-        std::vector<ivec *> orbitIndices;
+        std::vector<gvec *> pixelVertices;
+        std::vector<gvec *> pixelColours;
+        std::vector<ivec *> pixelIndices;
+        std::vector<int> dirtyLayers;
         gvec allVertices;
+        gvec allColours;
         ivec allIndices;
         std::vector<double> phase_const;
         
@@ -100,6 +116,8 @@ class CloudManager {
         int orbitCount = 0;
         int vertexCount = 0;
         int vertexSize = 0;
+        int colourCount = 0;
+        int colourSize = 0;
         int indexCount = 0;
         int indexSize = 0;
         
@@ -107,7 +125,10 @@ class CloudManager {
         double deg_fac = 0;
         double phase_base = PI_TWO;
 
-        int cloudLayers = 0;
+        int cloudOrbitCount = 0;
+        int cloudOrbitDivisor = 0;
+        int cloudLayerCount = 0;
+        double cloudLayerDelta = 0;
 
         bool update = false;
 };

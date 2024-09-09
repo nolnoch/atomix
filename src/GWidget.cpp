@@ -199,7 +199,7 @@ void GWidget::initCrystalProgram() {
     std::string fragName = "crystal.frag";
 
     float zero, peak, edge, back, forX, forZ, root;
-    edge = 0.6f;  // <-- Change this to scale diamond
+    edge = 0.3f;  // <-- Change this to scale diamond
     peak = edge;
     zero = 0.0f;
     root = sqrt(3);
@@ -253,6 +253,7 @@ void GWidget::initCrystalProgram() {
 void GWidget::initWaveProgram() {
     /* Orbits */
     cloudManager = new CloudManager(&renderConfig);
+    cloudManager->orbit1s();
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
@@ -273,6 +274,7 @@ void GWidget::initWaveProgram() {
     waveProg->detachShaders();
     
     // Load and bind vertices and attributes
+    /*
     waveProg->initVAO();
     waveProg->bindVAO();
     GLuint vboID = waveProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
@@ -282,7 +284,21 @@ void GWidget::initWaveProgram() {
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
     waveProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
-    //waveProg->assignFragColour();
+    */
+    waveProg->initVAO();
+    waveProg->bindVAO();
+
+    GLuint vboIDa = waveProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
+    waveProg->setAttributeBuffer(0, vboIDa, 6 * sizeof(GLfloat));
+    waveProg->enableAttribute(0);
+    waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
+
+    GLuint vboIDb = waveProg->bindVBO(cloudManager->getColourSize(), cloudManager->getColourData(), static_dynamic);
+    waveProg->setAttributeBuffer(1, vboIDb, 6 * sizeof(GLfloat));
+    waveProg->enableAttribute(1);
+    waveProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
+
+    waveProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
 
     /* Release */
     waveProg->endRender();
@@ -378,7 +394,7 @@ void GWidget::paintGL() {
     if (renderCloud || renderedOrbits) {
         waveProg->beginRender();
         if (!renderCloud && renderConfig.cpu) {
-            cloudManager->updateOrbits(time);
+            cloudManager->updateCloud(time);
             waveProg->updateVBO(0, cloudManager->getVertexSize(), cloudManager->getVertexData());
         }
         if (newUniformsMaths) {

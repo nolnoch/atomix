@@ -30,6 +30,6 @@ void main() {
         pointColour = vec3(rpd);
     }
 
-    vertColour = vec4(pointColour, 0.1f);
+    vertColour = vec4(factorsB, 0.1f);
     gl_Position = projMat * viewMat * worldMat * vec4(posX, posY, posZ, 1.0f);
 };

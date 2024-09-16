@@ -28,6 +28,9 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <complex>
+#include <format>
+#include <map>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -35,9 +38,11 @@
 
 #define MASK 0xFF
 #define SHIFT(a, b) (static_cast<float>((a >> b) & MASK) / MASK)
+#define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
 using gvec = std::vector<glm::vec3>;
 using dvec = std::vector<glm::vec2>;
+using fvec = std::vector<float>;
 using ivec = std::vector<uint>;
 using vec = glm::vec3;
 
@@ -51,7 +56,7 @@ class CloudManager {
         void updateCloud(double time);
 
         void orbit1s();
-        void orbit2p();
+        void genShell(int n, int l, int m_l);
         
         void newConfig(WaveConfig *cfg);
         void newCloud();
@@ -79,11 +84,13 @@ class CloudManager {
         bool testBool = false;
 
     private:
-        void circleOrbitGPU(int idx);
-        void sphereOrbitGPU(int idx);
-        void updateOrbitCPUCircle(int idx, double time);
-        void updateOrbitCPUSphere(int idx, double time);
-        void superposition(int idx);
+        double wavefuncRadial(int n, int l, double r);
+        std::complex<double> wavefuncAngular(int l, int m_l, double theta, double phi);
+        std::complex<double> wavefuncPsi(double radial, std::complex<double> angular);
+        double wavefuncRDP(double R, double r, int l);
+        double wavefuncRDP2(std::complex<double> Psi, double r, int l);
+        double wavefuncPsi2(int n, int l, int m_l, double r, double theta, double phi);
+        void wavefuncNorms(int n);
 
         void genVertexArray();
         void genColourArray();
@@ -97,20 +104,23 @@ class CloudManager {
         int setIndexCount();
         int setIndexSize();
 
-        double wavefuncRadial(int n, int l, double r);
-        double wavefuncSpherical(int l, int m, double theta, double phi);
-        double wavefuncPsi(double R, double Y);
-        double wavefuncRadialDistribution(double P, double r, int n);
+        int fact(int n);
 
         WaveConfig *config;
         std::vector<gvec *> pixelVertices;
-        std::vector<gvec *> pixelColours;
+        //std::vector<gvec *> pixelColours;
+        std::vector<fvec *> pixelRDPs;
         std::vector<ivec *> pixelIndices;
         std::vector<int> dirtyLayers;
         gvec allVertices;
         gvec allColours;
         ivec allIndices;
         std::vector<double> phase_const;
+        std::unordered_map<int, double> norm_constR;
+        std::unordered_map<int, double> norm_constY;
+
+        int atomZ = 1;
+        const int MAX_SHELLS = 8;
         
         ushort renderedOrbits = 255;
         int orbitCount = 0;
@@ -122,7 +132,7 @@ class CloudManager {
         int indexSize = 0;
         
         int resolution = 0;
-        double deg_fac = 0;
+        //double deg_fac = 0;
         double phase_base = PI_TWO;
 
         int cloudOrbitCount = 0;

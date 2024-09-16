@@ -253,7 +253,7 @@ void GWidget::initCrystalProgram() {
 void GWidget::initWaveProgram() {
     /* Orbits */
     cloudManager = new CloudManager(&renderConfig);
-    cloudManager->orbit1s();
+    cloudManager->genShell(3,1,0);
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
@@ -285,19 +285,24 @@ void GWidget::initWaveProgram() {
     waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
     waveProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
     */
+
+    /* VAO */
     waveProg->initVAO();
     waveProg->bindVAO();
 
+    /* VBO 1: Vertices */
     GLuint vboIDa = waveProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
     waveProg->setAttributeBuffer(0, vboIDa, 6 * sizeof(GLfloat));
     waveProg->enableAttribute(0);
     waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
 
+    /* VBO 2: Colours */
     GLuint vboIDb = waveProg->bindVBO(cloudManager->getColourSize(), cloudManager->getColourData(), static_dynamic);
     waveProg->setAttributeBuffer(1, vboIDb, 6 * sizeof(GLfloat));
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
 
+    /* EBO: Indices */
     waveProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
 
     /* Release */

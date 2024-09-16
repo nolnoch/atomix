@@ -46,7 +46,7 @@ typedef struct {
     double amplitude = 0.4f;                        // Amplitude as Float
     double period = 1.0f * M_PI;                    // Period as Multiples of PI
     int orbits = 4;                                 // Orbit count as Integer
-    int resolution = 360;                           // Resolution as Integer
+    int resolution = 45;                           // Resolution as Integer
     bool superposition = false;                     // Superposition as Bool
     bool cpu = false;                               // GPU rendering as Bool
     bool parallel = false;                          // Parallel waves as Bool

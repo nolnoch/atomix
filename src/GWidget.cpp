@@ -253,7 +253,13 @@ void GWidget::initCrystalProgram() {
 void GWidget::initWaveProgram() {
     /* Orbits */
     cloudManager = new CloudManager(&renderConfig);
+    cloudManager->genShell(1,0,0);
+    cloudManager->genShell(2,0,0);
+    cloudManager->genShell(2,1,0);
+    cloudManager->genShell(3,0,0);
     cloudManager->genShell(3,1,0);
+    cloudManager->RDPtoColours();
+    assert(!"Stopping here for review.");
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)

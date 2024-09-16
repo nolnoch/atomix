@@ -83,78 +83,10 @@ void CloudManager::createCloud() {
     wavefuncNorms(MAX_SHELLS);
 }
 
-/*
-void CloudManager::orbit1s() {
-    double Z = 1.0;                         // effective nuclear charge for that orbital in that atom
-    double n = 1.0;                         // principal quantum number
-
-    for (int i = 0; i < vertexCount; i ++) {
-        int layer = ceil((sqrt(8.0*(i/10.0)+1.0)-1.0)/2.0);
-        double radius = layer * cloudLayerDelta;
-        //double rho = Z * radius / n;
-        int lv = layer - 1;
-
-        /*  FF0000 -> FFFF00 -> 00FF00 -> 00FFFF -> 0000FF -> FF00FF -> FFFFFF  
-
-        /*                    R1s * Y1s = 2Z^(3/2)e^(-rho/2) * (1/sqrt(4PI))                 
-        //double wavefunction = 2.0 * pow(Z,(3.0/2.0)) * pow(M_E,(-1 * rho)) * sqrt(1.0/(4.0 * M_PI));
-        //double rdp = wavefunction * wavefunction * 4.0 * M_PI * radius * radius;
-        float rdp = static_cast<float>(std::clamp((4.0 * exp(-2.0 * radius) * radius * radius), 0.0, 1.0));
-
-        if (rdp >= 0.01f){
-            allColours[i] = vec(rdp, rdp, rdp);
-            pixelIndices[lv]->push_back(i);
-        }
-    }
-
-    genIndexBuffer();
-}
-*/
-
-void CloudManager::orbit1s() {
-    double Z = 1.0;                         // effective nuclear charge for that orbital in that atom
-    double n = 1.0;                         // principal quantum number
-
-    for (int k = 1; k <= cloudLayerCount; k++) {
-        double radius = k * cloudLayerDelta;
-        //double rho = Z * radius / n;
-        int lv = k - 1;
-        int steps = k * this->cloudOrbitDivisor;
-        int fdn = ((2*lv*lv*lv)+(3*lv*lv)+lv)/6*(this->cloudOrbitDivisor*this->cloudOrbitDivisor);
-        
-        //double wavefunction = 2.0 * pow(Z,(3.0/2.0)) * pow(M_E,(-1 * rho)) * sqrt(1.0/(4.0 * M_PI));
-        //double rdp = wavefunction * wavefunction * 4.0 * M_PI * radius * radius;
-        double wavefunction = 4.0 * exp(-2.0 * radius) * radius * radius;
-        
-        float rdp = static_cast<float>(std::clamp((wavefunction * wavefunction * 4.0), 0.0, 1.0));
-
-        //std::cout << rdp << "\n";
-
-        if (rdp >= 0.1f) {
-        
-            for (int i = 0; i < steps; i++) {
-                int base = i * steps;
-                for (int j = 0; j < steps; j++) {
-                    int inLayerIdx = base + j;
-                    int inCloudIdx = fdn + inLayerIdx;
-
-                    (*this->pixelColours[lv])[inLayerIdx] = vec(rdp, rdp, rdp);
-                    pixelIndices[lv]->push_back(inCloudIdx);
-                }
-            }
-        }
-    }
-
-    genColourArray();
-    genIndexBuffer();
-}
-
 void CloudManager::genShell(int n, int l, int m_l) {
-    double max_R = 0, max_rdp = 0, max_Y = 0, max_rdp2 = 0, max_Psi = 0;
-    double r_maxR = 0, r_maxRDP = 0, r_maxY = 0, r_maxRDP2 = 0, r_maxPsi = 0;
+    double max_rdp2 = 0, r_maxRDP2 = 0;
     std::vector<double> rdp_spread;
     int fdn = 0;
-
 
     for (int k = 1; k <= cloudLayerCount; k++) {
         double radius = k * this->cloudLayerDelta;
@@ -165,16 +97,6 @@ void CloudManager::genShell(int n, int l, int m_l) {
 
         double R = wavefuncRadial(n, l, radius);
         double rdp = wavefuncRDP(R, radius, l);
-
-        if (R > max_R) {
-            max_R = R;
-            r_maxR = radius;
-        }
-        if (rdp > max_rdp) {
-            max_rdp = rdp;
-            r_maxRDP = radius;
-        }
-        rdp_spread.push_back(rdp);
 
         if (rdp > 0.01f) {
 
@@ -190,25 +112,16 @@ void CloudManager::genShell(int n, int l, int m_l) {
                     std::complex<double> Psi = wavefuncPsi(R, Y);
                     double rdp2 = wavefuncRDP2(Psi, radius, l);
 
-                    /*
-                    if (Y.real() > max_Y) {
-                        max_Y = Y.real();
-                        r_maxY = radius;
-                    }
-                    if (Psi.real() > max_Psi){
-                        max_Psi = Psi.real();
-                        r_maxPsi = radius;
-                    }
-                    */
                     if (rdp2 > max_rdp2) {
                         max_rdp2 = rdp2;
                         r_maxRDP2 = radius;
                     }
                     
-                    float safeRDP = static_cast<float>(std::clamp((rdp2 * 40), 0.0, 1.0));
+                    //float safeRDP = static_cast<float>(std::clamp((rdp2 * 40), 0.0, 1.0));
 
-                    if (safeRDP >= 0.1f) {
-                        (*this->pixelColours[lv])[inLayerIdx] += vec(safeRDP);
+                    if (rdp2 >= 0.1f) {
+                        //(*this->pixelColours[lv])[inLayerIdx] += vec(safeRDP);
+                        (*this->pixelRDPs[lv])[inLayerIdx] += rdp2;
                         pixelIndices[lv]->push_back(inCloudIdx);
                     }
                     
@@ -218,24 +131,11 @@ void CloudManager::genShell(int n, int l, int m_l) {
 
         fdn += (steps * steps);
     }
+    max_RDPs.push_back(max_rdp2);
+    max_rads.push_back(r_maxRDP2);
 
-    std::cout << "R: " << max_R << " at r=" << r_maxR << "\n";
-    std::cout << "RDP: " << max_rdp << " at r=" << r_maxRDP << "\n";
-    //std::cout << "Y: " << max_Y << " at r=" << r_maxY << "\n";
-    //std::cout << "Psi: " << max_Psi << " at r=" << r_maxPsi << "\n";
-    std::cout << "RDP2: " << max_rdp2 << " at r=" << r_maxRDP2 << std::endl;
-
-    std::cout << "\nRDP per r: \n";
-    int q = 1;
-    for (auto it : rdp_spread) {
-        double r = q++ * cloudLayerDelta;
-        std::string index = std::format("{:.1f}", r);
-        std::cout << index << ", " << it << "\n";
-    }
-    std::cout << std::endl;
-
-    genColourArray();
-    genIndexBuffer();
+    //genColourArray();
+    //genIndexBuffer();
 }
 
 void CloudManager::updateCloud(double time) {
@@ -364,6 +264,27 @@ void CloudManager::wavefuncNorms(int max_n) {
     }
 }
 
+void CloudManager::RDPtoColours() {
+    genRDPs();
+
+
+
+    /*
+    for (auto f : max_rads) {
+        std::cout << f << ", ";
+    }
+    std::cout << std::endl;
+    for (auto f : max_RDPs) {
+        std::cout << f << ", ";
+    }
+    std::cout << std::endl;
+
+    std::vector<float>::iterator fIt = std::max_element(allRDPs.begin(), allRDPs.end());
+    int idx = std::distance(allRDPs.begin(), fIt);
+    std::cout << "Max value " << *fIt << " at index " << idx << std::endl;
+    */
+}
+
 void CloudManager::resetManager() {
     for (auto v : pixelVertices) {
         delete (v);
@@ -411,6 +332,17 @@ void CloudManager::genColourArray() {
 
     this->colourCount = setColourCount();
     this->colourSize = setColourSize();
+}
+
+void CloudManager::genRDPs() {
+    allRDPs.clear();
+
+    for (int i = 0; i < cloudLayerCount; i++) {
+        std::copy(pixelRDPs[i]->begin(), pixelRDPs[i]->end(), std::back_inserter(this->allRDPs));
+    }
+
+    this->RDPCount = setRDPCount();
+    this->RDPSize = setRDPSize();
 }
 
 void CloudManager::genIndexBuffer() {
@@ -464,6 +396,18 @@ int CloudManager::setColourCount() {
 int CloudManager::setColourSize() {
     int chunks = colourCount ?: setColourCount();
     int chunkSize = sizeof(glm::vec3);
+
+    //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
+    return chunks * chunkSize;
+}
+
+int CloudManager::setRDPCount() {
+    return allRDPs.size();
+}
+
+int CloudManager::setRDPSize() {
+    int chunks = RDPCount ?: setRDPCount();
+    int chunkSize = sizeof(float);
 
     //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;

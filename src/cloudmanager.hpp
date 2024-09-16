@@ -55,7 +55,6 @@ class CloudManager {
         void createCloud();
         void updateCloud(double time);
 
-        void orbit1s();
         void genShell(int n, int l, int m_l);
         
         void newConfig(WaveConfig *cfg);
@@ -69,6 +68,8 @@ class CloudManager {
         const float* getVertexData();
         const float* getColourData();
         const uint* getIndexData();
+
+        void RDPtoColours();
 
         void printIndices();
         void printVertices();
@@ -94,6 +95,7 @@ class CloudManager {
 
         void genVertexArray();
         void genColourArray();
+        void genRDPs();
         void genIndexBuffer();
         void resetManager();
         
@@ -101,6 +103,8 @@ class CloudManager {
         int setVertexSize();
         int setColourCount();
         int setColourSize();
+        int setRDPCount();
+        int setRDPSize();
         int setIndexCount();
         int setIndexSize();
 
@@ -108,16 +112,19 @@ class CloudManager {
 
         WaveConfig *config;
         std::vector<gvec *> pixelVertices;
-        //std::vector<gvec *> pixelColours;
+        std::vector<gvec *> pixelColours;
         std::vector<fvec *> pixelRDPs;
         std::vector<ivec *> pixelIndices;
         std::vector<int> dirtyLayers;
         gvec allVertices;
         gvec allColours;
+        fvec allRDPs;
         ivec allIndices;
         std::vector<double> phase_const;
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
+        std::vector<float> max_RDPs;
+        std::vector<float> max_rads;
 
         int atomZ = 1;
         const int MAX_SHELLS = 8;
@@ -128,6 +135,8 @@ class CloudManager {
         int vertexSize = 0;
         int colourCount = 0;
         int colourSize = 0;
+        int RDPCount = 0;
+        int RDPSize = 0;
         int indexCount = 0;
         int indexSize = 0;
         

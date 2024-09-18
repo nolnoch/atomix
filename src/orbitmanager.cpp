@@ -37,8 +37,8 @@ OrbitManager::~OrbitManager() {
 
 void OrbitManager::createOrbits() {
     for (int i = 0; i < orbitCount; i++) {
-        orbitVertices.push_back(new gvec);
-        orbitIndices.push_back(new ivec);
+        orbitVertices.push_back(new vVec3);
+        orbitIndices.push_back(new uvec);
         phase_const.push_back(phase_base * i);
     
         if (config->sphere) {

@@ -1,7 +1,7 @@
 #version 450 core
 
 layout(location = 0) in vec3 factorsA;
-layout(location = 1) in vec3 factorsB;
+layout(location = 1) in float rdp;
 
 out vec4 vertColour;
 
@@ -21,15 +21,28 @@ void main() {
     float posZ = radius * sin(phi) * cos(theta);
 
     /* Colour */
-    double wavefunction = 4.0 * exp(-2.0 * radius) * radius * radius;
-    float rpd = float(clamp((wavefunction * wavefunction * 3.0), 0.0, 1.0));
-    vec3 pointColour = vec3(0.0f);
+    //  FF0000 -> FFFF00 -> 00FF00 -> 00FFFF -> 0000FF -> FF00FF -> FFFFFF
+    //    red     yellow     green     cyan      blue     magenta    white
+    
+    //  magenta    blue      green    yellow     red      
+    //  FF00FF -> 0000FF -> 00FF00 -> FFFF00 -> FF0000
+    //  16,711,935 -> 255 -> 65,280 -> 16,776,960 -> 16,711,680
 
-    /* Assign Colour iff Visible */
-    if (rpd >= 0.1f) {
-        pointColour = vec3(rpd);
+    // 0000FF -> 00FFFF -> FFFFFF
+    //  Blue      Cyan     White
+
+    if (rdp > 0.8f) {
+        vertColour = vec4(rdp, 0.0f, 0.0f, rdp);
+    } else if (rdp > 0.6f) {
+        vertColour = vec4(rdp, rdp, 0.0f, rdp);
+    } else if (rdp > 0.4f) {
+        vertColour = vec4(0.0f, rdp, 0.0f, rdp);
+    } else if (rdp > 0.2f) {
+        vertColour = vec4(0.0f, 0.0f, rdp, rdp);
+    } else {
+        vertColour = vec4(rdp, 0.0f, rdp, rdp);
     }
 
-    vertColour = vec4(factorsB, 0.1f);
+    // vertColour = pointColour;
     gl_Position = projMat * viewMat * worldMat * vec4(posX, posY, posZ, 1.0f);
 };

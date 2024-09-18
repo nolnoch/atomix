@@ -29,6 +29,7 @@ CloudManager::CloudManager(WaveConfig *cfg)
     : config(cfg) {
     newConfig(cfg);
     createCloud();
+    wavefuncNorms(MAX_SHELLS);
 }
 
 CloudManager::~CloudManager() {
@@ -40,21 +41,15 @@ void CloudManager::createCloud() {
     this->cloudOrbitDivisor = 2;
     this->cloudLayerDelta = 1.0 / this->cloudOrbitDivisor;
     this->cloudLayerCount = this->cloudOrbitCount * this->cloudOrbitDivisor;
-
     vec pos = vec(0.0f);
-    vec colour = vec(0.0f);
 
     for (int k = 1; k <= cloudLayerCount; k++) {
-        pixelVertices.push_back(new gvec);
-        //pixelColours.push_back(new gvec);
-        pixelRDPs.push_back(new fvec);
-        pixelIndices.push_back(new ivec);
+        pixelVertices.push_back(new vVec3);
         
         double radius = k * this->cloudLayerDelta;
         int steps = radius * this->resolution;
         double deg_fac = TWO_PI / steps;
         int lv = k - 1;
-        float rdp = 0;
     
         for (int i = 0; i < steps; i++) {
             double theta = i * deg_fac;
@@ -72,21 +67,18 @@ void CloudManager::createCloud() {
                 }
                 
                 pixelVertices[lv]->push_back(pos);
-                //pixelColours[lv]->push_back(colour);
-                pixelRDPs[lv]->push_back(rdp);
+                pixelRDPs.push_back(0.0);
             }
         }
     }
 
     genVertexArray();
-    //genColourArray();
-    wavefuncNorms(MAX_SHELLS);
 }
 
-void CloudManager::genShell(int n, int l, int m_l) {
-    double max_rdp2 = 0, r_maxRDP2 = 0;
-    std::vector<double> rdp_spread;
+double CloudManager::genOrbital(int n, int l, int m_l) {
     int fdn = 0;
+    double max_rdp = 0;
+    double correction = (l) ? 1.0 : 0.1;
 
     for (int k = 1; k <= cloudLayerCount; k++) {
         double radius = k * this->cloudLayerDelta;
@@ -95,6 +87,7 @@ void CloudManager::genShell(int n, int l, int m_l) {
         int lv = k - 1;
         double fac = (this->resolution / this->cloudOrbitDivisor);
 
+        double orbNorm = this->norm_constY[DSQ(l, m_l)];
         double R = wavefuncRadial(n, l, radius);
         double rdp = wavefuncRDP(R, radius, l);
 
@@ -103,39 +96,94 @@ void CloudManager::genShell(int n, int l, int m_l) {
             for (int i = 0; i < steps; i++) {
                 int base = i * steps;
                 double theta = i * deg_fac;
+                std::complex<double> orbExp = wavefuncAngExp(m_l, theta);
                 for (int j = 0; j < steps; j++) {
                     double phi = j * deg_fac;
-                    int inLayerIdx = base + j;
-                    int inCloudIdx = fdn + inLayerIdx;
-
-                    std::complex<double> Y = wavefuncAngular(l, m_l, theta, phi);
-                    std::complex<double> Psi = wavefuncPsi(R, Y);
-                    double rdp2 = wavefuncRDP2(Psi, radius, l);
-
-                    if (rdp2 > max_rdp2) {
-                        max_rdp2 = rdp2;
-                        r_maxRDP2 = radius;
-                    }
+                    int inCloudIdx = fdn + base + j;
                     
-                    //float safeRDP = static_cast<float>(std::clamp((rdp2 * 40), 0.0, 1.0));
+                    // double orbLeg = wavefuncAngLeg(l, m_l, phi);
+                    std::complex<double> Y = orbExp * orbNorm * wavefuncAngLeg(l, m_l, phi);
+                    double rdp2 = wavefuncRDP2(R * Y, radius, l) * correction;
 
-                    if (rdp2 >= 0.1f) {
-                        //(*this->pixelColours[lv])[inLayerIdx] += vec(safeRDP);
-                        (*this->pixelRDPs[lv])[inLayerIdx] += rdp2;
-                        pixelIndices[lv]->push_back(inCloudIdx);
+                    pixelRDPs[inCloudIdx] += rdp2;
+
+                    if (rdp2 > max_rdp) {
+                        max_rdp = rdp2;
                     }
-                    
                 }
             }
         }
-
         fdn += (steps * steps);
     }
-    max_RDPs.push_back(max_rdp2);
-    max_rads.push_back(r_maxRDP2);
 
-    //genColourArray();
-    //genIndexBuffer();
+    return max_rdp;
+}
+
+double CloudManager::genOrbitalsThroughN(int n_max, double opt_maxRDP) {
+    double max_val = opt_maxRDP;
+    int idx = 0;
+    
+    for (int n = n_max; n > 0; n--) {
+        for (int l = n-1; l >= 0; l--) {
+            for (int m_l = l; m_l >= -l; m_l--) {
+                double maxRDP = genOrbital(n, l, m_l);
+                if (maxRDP > max_val)
+                    max_val = maxRDP;
+                std::cout << std::setw(3) << idx++ << ") " << n << "  " << l << " " << ((m_l >= 0) ? " " : "") << m_l << " :: " << maxRDP << "\n";
+            }
+        }
+    }
+    std::cout << std::endl;
+
+    return max_val;
+}
+
+double CloudManager::genOrbitalsOfN(int n, double opt_maxRDP) {
+    double max_val = opt_maxRDP;
+    int idx = 0;
+    
+    for (int l = n-1; l > 0; l--) {
+        for (int m_l = l; m_l >= -l; m_l--) {
+            double maxRDP = genOrbital(n, l, m_l);
+            if (maxRDP > max_val)
+                max_val = maxRDP;
+            std::cout << std::setw(3) << idx++ << ") " << n << "  " << l << " " << ((m_l >= 0) ? " " : "") << m_l << " :: " << maxRDP << "\n";
+        }
+    }
+    std::cout << std::endl;
+
+    return max_val;
+}
+
+double CloudManager::genOrbitalExplicit(int n, int l, int m_l, double opt_maxRDP) {
+    double max_val = opt_maxRDP;
+    double maxRDP = genOrbital(n, l, m_l);
+
+    if (maxRDP > max_val) {
+        max_val = maxRDP;
+    }
+    
+    std::cout << std::setw(3) << "1) " << n << "  " << l << " " << ((m_l >= 0) ? " " : "") << m_l << " :: " << maxRDP << "\n";
+    
+    return max_val;
+}
+
+void CloudManager::bakeOrbitalsForRender(double maxRDP) {
+    genRDPs(maxRDP);
+    genIndexBuffer();
+}
+
+void CloudManager::cloudTest(int n_max) {
+    int idx = 0;
+
+    for (int n = n_max; n > 0; n--) {
+        for (int l = n-1; l >= 0; l--) {
+            for (int m_l = l; m_l >= -l; m_l--) {
+                std::cout << idx++ << ": " << n << "  " << l << " " << (m_l >= 0 ? " " : "") << m_l << "\n";
+            }
+        }
+    }
+    std::cout << std::endl;
 }
 
 void CloudManager::updateCloud(double time) {
@@ -205,6 +253,16 @@ std::complex<double> CloudManager::wavefuncAngular(int l, int m_l, double theta,
     return expFunc * legendre * this->norm_constY[DSQ(l, m_l)];
 }
 
+std::complex<double> CloudManager::wavefuncAngExp(int m_l, double theta) {
+    using namespace std::complex_literals;
+    std::complex<double> ibase = 1i;
+    return exp(ibase * (m_l * theta));
+}
+
+double CloudManager::wavefuncAngLeg(int l, int m_l, double phi) {
+    return std::assoc_legendre(l, abs(m_l), cos(phi));
+}
+
 std::complex<double> CloudManager::wavefuncPsi(double radial, std::complex<double> angular) {
     return radial * angular;
 }
@@ -265,8 +323,8 @@ void CloudManager::wavefuncNorms(int max_n) {
 }
 
 void CloudManager::RDPtoColours() {
-    genRDPs();
-
+    // genRDPs();
+    // TODO implement RDP-to-Colour conversion for CPU
 
 
     /*
@@ -312,6 +370,10 @@ void CloudManager::resetManager() {
     this->update = false;
 }
 
+/* 
+ *  Generators
+ */
+
 void CloudManager::genVertexArray() {
     allVertices.clear();
 
@@ -334,11 +396,16 @@ void CloudManager::genColourArray() {
     this->colourSize = setColourSize();
 }
 
-void CloudManager::genRDPs() {
-    allRDPs.clear();
+void CloudManager::genRDPs(double max_val) {
+    int pixels = this->pixelRDPs.size();
+    
+    for (int pIdx = 0; pIdx < pixels; pIdx++) {
+        double new_val = pixelRDPs[pIdx] / max_val;
+        allRDPs.push_back(static_cast<float>(new_val));
 
-    for (int i = 0; i < cloudLayerCount; i++) {
-        std::copy(pixelRDPs[i]->begin(), pixelRDPs[i]->end(), std::back_inserter(this->allRDPs));
+        if (new_val > 0.06) {
+            allIndices.push_back(pIdx);
+        }
     }
 
     this->RDPCount = setRDPCount();
@@ -346,15 +413,13 @@ void CloudManager::genRDPs() {
 }
 
 void CloudManager::genIndexBuffer() {
-    allIndices.clear();
-
-    for (int i = 0; i < cloudLayerCount; i++) {
-        std::copy(pixelIndices[i]->begin(), pixelIndices[i]->end(), std::back_inserter(this->allIndices));
-    }
-
     this->indexCount = setIndexCount();
     this->indexSize = setIndexSize();
 }
+
+/* 
+ *  Getters -- Size
+ */
 
 int CloudManager::getVertexSize() {
     return this->vertexSize;
@@ -364,17 +429,49 @@ int CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-int CloudManager::getIndexCount() {
-    return this->indexCount;
+int CloudManager::getRDPSize() {
+    return this->RDPSize;
 }
 
 int CloudManager::getIndexSize() {
     return this->indexSize;
 }
 
-int CloudManager::setVertexCount() {
-    return allVertices.size();
+/* 
+ *  Getters -- Count
+ */
+
+int CloudManager::getIndexCount() {
+    return this->indexCount;
 }
+
+/* 
+ *  Getters -- Data
+ */
+
+const float* CloudManager::getVertexData() {
+    assert(vertexCount);
+    return glm::value_ptr(allVertices.front());
+}
+
+const float* CloudManager::getColourData() {
+    assert(colourCount == vertexCount);
+    return glm::value_ptr(allColours.front());
+}
+
+const float* CloudManager::getRDPData() {
+    assert(RDPCount);
+    return &allRDPs[0];
+}
+
+const uint* CloudManager::getIndexData() {
+    assert(indexCount);
+    return &allIndices[0];
+}
+
+/* 
+ *  Setters -- Size
+ */
 
 int CloudManager::setVertexSize() {
     int chunks = vertexCount ?: setVertexCount();
@@ -382,15 +479,6 @@ int CloudManager::setVertexSize() {
 
     //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
-}
-
-const float* CloudManager::getVertexData() {
-    assert(colourCount);
-    return glm::value_ptr(allVertices.front());
-}
-
-int CloudManager::setColourCount() {
-    return allColours.size();
 }
 
 int CloudManager::setColourSize() {
@@ -401,25 +489,12 @@ int CloudManager::setColourSize() {
     return chunks * chunkSize;
 }
 
-int CloudManager::setRDPCount() {
-    return allRDPs.size();
-}
-
 int CloudManager::setRDPSize() {
     int chunks = RDPCount ?: setRDPCount();
     int chunkSize = sizeof(float);
 
     //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
-}
-
-const float* CloudManager::getColourData() {
-    assert(colourCount == vertexCount);
-    return glm::value_ptr(allColours.front());
-}
-
-int CloudManager::setIndexCount() {
-    return allIndices.size();
 }
 
 int CloudManager::setIndexSize() {
@@ -430,12 +505,29 @@ int CloudManager::setIndexSize() {
     return chunks * chunkSize;
 }
 
-const uint* CloudManager::getIndexData() {
-    if (!indexCount)
-        return 0;
+/* 
+ *  Setters -- Count
+ */
 
-    return &allIndices[0];
+int CloudManager::setVertexCount() {
+    return allVertices.size();
 }
+
+int CloudManager::setColourCount() {
+    return allColours.size();
+}
+
+int CloudManager::setRDPCount() {
+    return allRDPs.size();
+}
+
+int CloudManager::setIndexCount() {
+    return allIndices.size();
+}
+
+/* 
+ *  Printers
+ */
 
 void CloudManager::printIndices() {
     for (auto v : this->allIndices) {

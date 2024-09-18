@@ -35,9 +35,11 @@
 #define MASK 0xFF
 #define SHIFT(a, b) (static_cast<float>((a >> b) & MASK) / MASK)
 
-using gvec = std::vector<glm::vec3>;
-using dvec = std::vector<glm::vec2>;
-using ivec = std::vector<uint>;
+using vVec3 = std::vector<glm::vec3>;
+using vVec2 = std::vector<glm::vec2>;
+using fvec = std::vector<float>;
+using dvec = std::vector<double>;
+using uvec = std::vector<uint>;
 using vec = glm::vec3;
 
 
@@ -89,10 +91,10 @@ class OrbitManager {
         int setIndexSize();
 
         WaveConfig *config;
-        std::vector<gvec *> orbitVertices;
-        std::vector<ivec *> orbitIndices;
-        gvec allVertices;
-        ivec allIndices;
+        std::vector<vVec3 *> orbitVertices;
+        std::vector<uvec *> orbitIndices;
+        vVec3 allVertices;
+        uvec allIndices;
         std::vector<double> phase_const;
         
         ushort renderedOrbits = 255;

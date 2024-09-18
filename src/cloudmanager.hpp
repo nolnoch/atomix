@@ -31,6 +31,7 @@
 #include <complex>
 #include <format>
 #include <map>
+#include <unordered_set>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -40,44 +41,47 @@
 #define SHIFT(a, b) (static_cast<float>((a >> b) & MASK) / MASK)
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
-using gvec = std::vector<glm::vec3>;
-using dvec = std::vector<glm::vec2>;
+using vVec3 = std::vector<glm::vec3>;
+using vVec2 = std::vector<glm::vec2>;
 using fvec = std::vector<float>;
-using ivec = std::vector<uint>;
+using dvec = std::vector<double>;
+using uvec = std::vector<uint>;
 using vec = glm::vec3;
+using fset = std::unordered_set<float>;
 
 
 class CloudManager {
     public:
         CloudManager(WaveConfig *cfg);
         virtual ~CloudManager();
-
-        void createCloud();
+        
         void updateCloud(double time);
 
-        void genShell(int n, int l, int m_l);
+        double genOrbitalsThroughN(int n, double opt_maxRDP = 0);
+        double genOrbitalsOfN(int n, double opt_maxRDP = 0);
+        double genOrbitalExplicit(int n, int l, int m_l, double opt_maxRDP = 0);
+        void bakeOrbitalsForRender(double max_rdp);
+        void cloudTest(int n_max);
         
         void newConfig(WaveConfig *cfg);
         void newCloud();
         uint selectCloud(int id, bool checked);
         
+        void RDPtoColours();
+
         int getVertexSize();
         int getColourSize();
-        int getIndexCount();
+        int getRDPSize();
         int getIndexSize();
+        int getIndexCount();
         const float* getVertexData();
         const float* getColourData();
+        const float* getRDPData();
         const uint* getIndexData();
-
-        void RDPtoColours();
 
         void printIndices();
         void printVertices();
 
-        uint peak = 0xFF00FFFF;
-        uint base = 0x0000FFFF;
-        uint trough = 0x00FFFFFF;
-        
         double amplitude = 0;
         double two_pi_L = 0;
         double two_pi_T = 0;
@@ -85,17 +89,22 @@ class CloudManager {
         bool testBool = false;
 
     private:
+        void createCloud();
+        
         double wavefuncRadial(int n, int l, double r);
         std::complex<double> wavefuncAngular(int l, int m_l, double theta, double phi);
+        std::complex<double> wavefuncAngExp(int m_l, double theta);
+        double wavefuncAngLeg(int l, int m_l, double phi);
         std::complex<double> wavefuncPsi(double radial, std::complex<double> angular);
         double wavefuncRDP(double R, double r, int l);
         double wavefuncRDP2(std::complex<double> Psi, double r, int l);
         double wavefuncPsi2(int n, int l, int m_l, double r, double theta, double phi);
         void wavefuncNorms(int n);
 
+        double genOrbital(int n, int l, int m_l);
         void genVertexArray();
         void genColourArray();
-        void genRDPs();
+        void genRDPs(double max_val);
         void genIndexBuffer();
         void resetManager();
         
@@ -111,20 +120,17 @@ class CloudManager {
         int fact(int n);
 
         WaveConfig *config;
-        std::vector<gvec *> pixelVertices;
-        std::vector<gvec *> pixelColours;
-        std::vector<fvec *> pixelRDPs;
-        std::vector<ivec *> pixelIndices;
+        std::vector<vVec3 *> pixelVertices;
+        std::vector<vVec3 *> pixelColours;
+        dvec pixelRDPs;
+        std::vector<uvec *> pixelIndices;
         std::vector<int> dirtyLayers;
-        gvec allVertices;
-        gvec allColours;
+        vVec3 allVertices;
+        vVec3 allColours;
         fvec allRDPs;
-        ivec allIndices;
-        std::vector<double> phase_const;
+        uvec allIndices;
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
-        std::vector<float> max_RDPs;
-        std::vector<float> max_rads;
 
         int atomZ = 1;
         const int MAX_SHELLS = 8;

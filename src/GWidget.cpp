@@ -253,13 +253,20 @@ void GWidget::initCrystalProgram() {
 void GWidget::initWaveProgram() {
     /* Orbits */
     cloudManager = new CloudManager(&renderConfig);
-    cloudManager->genShell(1,0,0);
+    std::cout << "Vertex generation complete." << std::endl;
+    /* cloudManager->genShell(1,0,0);
     cloudManager->genShell(2,0,0);
     cloudManager->genShell(2,1,0);
-    cloudManager->genShell(3,0,0);
-    cloudManager->genShell(3,1,0);
-    cloudManager->RDPtoColours();
-    assert(!"Stopping here for review.");
+    cloudManager->genShell(3,0,0); */
+    /* cloudManager->genOrbital(3,1,0);
+    cloudManager->RDPtoColours(); */
+    double testVal = cloudManager->genOrbitalExplicit(3, 2, -1);
+    testVal = cloudManager->genOrbitalExplicit(3, 1, 0, testVal);
+    testVal = cloudManager->genOrbitalExplicit(1, 0, 0, testVal);
+    cloudManager->bakeOrbitalsForRender(testVal);
+    // cloudManager->genOrbitalsOfN(3);
+    std::cout << "Orbital generation complete." << std::endl;
+    // assert(!"Stopping here for review.");
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
@@ -298,13 +305,13 @@ void GWidget::initWaveProgram() {
 
     /* VBO 1: Vertices */
     GLuint vboIDa = waveProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
-    waveProg->setAttributeBuffer(0, vboIDa, 6 * sizeof(GLfloat));
+    waveProg->setAttributeBuffer(0, vboIDa, 3 * sizeof(GLfloat));
     waveProg->enableAttribute(0);
     waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
 
-    /* VBO 2: Colours */
-    GLuint vboIDb = waveProg->bindVBO(cloudManager->getColourSize(), cloudManager->getColourData(), static_dynamic);
-    waveProg->setAttributeBuffer(1, vboIDb, 6 * sizeof(GLfloat));
+    /* VBO 2: RDPs */
+    GLuint vboIDb = waveProg->bindVBO(cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
+    waveProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
 
@@ -317,7 +324,7 @@ void GWidget::initWaveProgram() {
 }
 
 void GWidget::initVecsAndMatrices() {
-    float camStart = renderConfig.orbits * 2.0f;
+    float camStart = 60.0f;        // TODO Rescale for Cloud
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -408,16 +415,16 @@ void GWidget::paintGL() {
             cloudManager->updateCloud(time);
             waveProg->updateVBO(0, cloudManager->getVertexSize(), cloudManager->getVertexData());
         }
-        if (newUniformsMaths) {
+        if (false && newUniformsMaths) {
             waveProg->setUniform(GL_FLOAT, "two_pi_L", cloudManager->two_pi_L);
             waveProg->setUniform(GL_FLOAT, "two_pi_T", cloudManager->two_pi_T);
             waveProg->setUniform(GL_FLOAT, "amp", cloudManager->amplitude);
             newUniformsMaths = false;
         }
-        if (newUniformsColor) {
-            waveProg->setUniform(GL_UNSIGNED_INT, "peak", cloudManager->peak);
-            waveProg->setUniform(GL_UNSIGNED_INT, "base", cloudManager->base);
-            waveProg->setUniform(GL_UNSIGNED_INT, "trough", cloudManager->trough);
+        if (false && newUniformsColor) {
+            waveProg->setUniform(GL_UNSIGNED_INT, "peak", orbitManager->peak);
+            waveProg->setUniform(GL_UNSIGNED_INT, "base", orbitManager->base);
+            waveProg->setUniform(GL_UNSIGNED_INT, "trough", orbitManager->trough);
             newUniformsColor = false;
         }
         waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));

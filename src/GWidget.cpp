@@ -254,18 +254,18 @@ void GWidget::initWaveProgram() {
     /* Orbits */
     cloudManager = new CloudManager(&renderConfig);
     std::cout << "Vertex generation complete." << std::endl;
-    /* cloudManager->genShell(1,0,0);
-    cloudManager->genShell(2,0,0);
-    cloudManager->genShell(2,1,0);
-    cloudManager->genShell(3,0,0); */
-    /* cloudManager->genOrbital(3,1,0);
-    cloudManager->RDPtoColours(); */
-    double testVal = cloudManager->genOrbitalExplicit(3, 2, -1);
-    testVal = cloudManager->genOrbitalExplicit(3, 1, 0, testVal);
-    testVal = cloudManager->genOrbitalExplicit(1, 0, 0, testVal);
-    cloudManager->bakeOrbitalsForRender(testVal);
-    // cloudManager->genOrbitalsOfN(3);
+
+    // cloudManager->cloudTest(8);
+    
+    // cloudManager->genOrbitalExplicit(1, 0, 0);
+    // cloudManager->genOrbitalExplicit(2, 0, 0);
+    // cloudManager->genOrbitalExplicit(3, 0, 0);
+    cloudManager->genOrbitalsOfN(8);
+    
+    cloudManager->bakeOrbitalsForRender(0);
+    
     std::cout << "Orbital generation complete." << std::endl;
+    printSize();
     // assert(!"Stopping here for review.");
 
     /* Program */
@@ -562,6 +562,19 @@ void GWidget::setColorsOrbits(int id, uint colorChoice) {
         break;
     }
     newUniformsColor = true;
+}
+
+void GWidget::printSize() {
+    int VSize, DSize, ISize;
+    VSize = cloudManager->getVertexSize();
+    DSize = cloudManager->getRDPSize() * (1 + 1 + 8);
+    ISize = cloudManager->getIndexSize();
+
+    int divisorMB = 1024 * 1024;
+
+    std::cout << "Vertex Total Size: " << VSize / divisorMB << " MB\n";
+    std::cout << "RDProb Total Size: " << DSize / divisorMB << " MB\n";
+    std::cout << "Indice Total Size: " << ISize / divisorMB << " MB" << std::endl;
 }
 
 void GWidget::printConfig(WaveConfig *cfg) {

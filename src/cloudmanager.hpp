@@ -79,6 +79,7 @@ class CloudManager {
         const float* getRDPData();
         const uint* getIndexData();
 
+        void printMaxRDP(int n, int l, int m_l, double maxRDP);
         void printIndices();
         void printVertices();
 
@@ -104,7 +105,7 @@ class CloudManager {
         double genOrbital(int n, int l, int m_l);
         void genVertexArray();
         void genColourArray();
-        void genRDPs(double max_val);
+        void genRDPs(int subshells);
         void genIndexBuffer();
         void resetManager();
         
@@ -123,12 +124,15 @@ class CloudManager {
         std::vector<vVec3 *> pixelVertices;
         std::vector<vVec3 *> pixelColours;
         dvec pixelRDPs;
+        dvec shellRDPMaxima;
         std::vector<uvec *> pixelIndices;
-        std::vector<int> dirtyLayers;
+        std::vector<dvec *> rdpStaging;
+        
         vVec3 allVertices;
         vVec3 allColours;
         fvec allRDPs;
         uvec allIndices;
+        
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
 
@@ -145,8 +149,10 @@ class CloudManager {
         int RDPSize = 0;
         int indexCount = 0;
         int indexSize = 0;
+        int pixelCount = 0;
         
         int resolution = 0;
+        int orbitalIdx = 0;
         //double deg_fac = 0;
         double phase_base = PI_TWO;
 

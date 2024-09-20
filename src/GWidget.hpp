@@ -92,6 +92,7 @@ private:
     void swapIndices();
     void clearProgram(uint i);
     void checkErrors(std::string str);
+    void printSize();
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;

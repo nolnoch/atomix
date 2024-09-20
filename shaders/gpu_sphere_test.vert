@@ -31,16 +31,34 @@ void main() {
     // 0000FF -> 00FFFF -> FFFFFF
     //  Blue      Cyan     White
 
-    if (rdp > 0.8f) {
-        vertColour = vec4(rdp, 0.0f, 0.0f, rdp);
+    float alpha = 1.0f - (radius / 30.0f);
+
+    /* if (rdp > 0.8f) {
+        vertColour = vec4(rdp, 0.0f, 0.0f, alpha);
     } else if (rdp > 0.6f) {
-        vertColour = vec4(rdp, rdp, 0.0f, rdp);
+        vertColour = vec4(rdp, rdp, 0.0f, alpha);
     } else if (rdp > 0.4f) {
-        vertColour = vec4(0.0f, rdp, 0.0f, rdp);
+        vertColour = vec4(0.0f, rdp, 0.0f, alpha);
     } else if (rdp > 0.2f) {
-        vertColour = vec4(0.0f, 0.0f, rdp, rdp);
+        vertColour = vec4(0.0f, 0.0f, rdp, alpha);
     } else {
-        vertColour = vec4(rdp, 0.0f, rdp, rdp);
+        vertColour = vec4(rdp, 0.0f, rdp, alpha);
+    } */
+
+    if (rdp > 0.97f) {
+        vertColour = vec4(rdp, rdp, rdp, alpha);
+    } else if (rdp > 0.80f) {
+        vertColour = vec4(rdp, 0.0f, 0.0f, alpha);
+    } else if (rdp > 0.65f) {
+        vertColour = vec4(rdp, rdp, 0.0f, alpha);
+    } else if (rdp > 0.50f) {
+        vertColour = vec4(0.0f, rdp, 0.0f, alpha);
+    } else if (rdp > 0.35f) {
+        vertColour = vec4(0.0f, rdp, rdp, alpha);
+    } else if (rdp > 0.15f) {
+        vertColour = vec4(0.0f, 0.0f, rdp, alpha);
+    } else {
+        vertColour = vec4(rdp, 0.0f, rdp, alpha);
     }
 
     // vertColour = pointColour;

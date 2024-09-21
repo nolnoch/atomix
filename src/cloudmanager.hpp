@@ -65,21 +65,21 @@ class CloudManager {
         
         void newConfig(WaveConfig *cfg);
         void newCloud();
-        uint selectCloud(int id, bool checked);
         
         void RDPtoColours();
 
-        int getVertexSize();
-        int getColourSize();
-        int getRDPSize();
-        int getIndexSize();
-        int getIndexCount();
+        uint getVertexSize();
+        uint getColourSize();
+        uint getRDPSize();
+        uint getIndexSize();
+        uint getIndexCount();
         const float* getVertexData();
         const float* getColourData();
         const float* getRDPData();
         const uint* getIndexData();
 
         void printMaxRDP(int n, int l, int m_l, double maxRDP);
+        void printMaxRDP_CSV(int n, int l, int m_l, double maxRDP);
         void printIndices();
         void printVertices();
 
@@ -88,6 +88,7 @@ class CloudManager {
         double two_pi_T = 0;
 
         bool testBool = false;
+        double max_r = 0, max_theta = 0, max_phi = 0;
 
     private:
         void createCloud();
@@ -118,15 +119,14 @@ class CloudManager {
         int setIndexCount();
         int setIndexSize();
 
-        int fact(int n);
+        int64_t fact(int n);
 
         WaveConfig *config;
         std::vector<vVec3 *> pixelVertices;
         std::vector<vVec3 *> pixelColours;
-        dvec pixelRDPs;
-        dvec shellRDPMaxima;
         std::vector<uvec *> pixelIndices;
         std::vector<dvec *> rdpStaging;
+        dvec shellRDPMaxima;
         
         vVec3 allVertices;
         vVec3 allColours;
@@ -139,7 +139,6 @@ class CloudManager {
         int atomZ = 1;
         const int MAX_SHELLS = 8;
         
-        ushort renderedOrbits = 255;
         int orbitCount = 0;
         int vertexCount = 0;
         int vertexSize = 0;

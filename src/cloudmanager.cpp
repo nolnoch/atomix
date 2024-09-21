@@ -36,15 +36,13 @@ CloudManager::~CloudManager() {
 }
 
 void CloudManager::createCloud() {
-    this->cloudOrbitCount = 30;
-    this->cloudOrbitDivisor = 4;
+    this->cloudOrbitCount = 150;
+    this->cloudOrbitDivisor = 1;
     this->cloudLayerDelta = 1.0 / this->cloudOrbitDivisor;
     this->cloudLayerCount = this->cloudOrbitCount * this->cloudOrbitDivisor;
     vec pos = vec(0.0f);
 
     for (int k = 1; k <= cloudLayerCount; k++) {
-        pixelVertices.push_back(new vVec3);
-        
         double radius = k * this->cloudLayerDelta;
         int steps = radius * this->resolution;
         double deg_fac = TWO_PI / steps;
@@ -65,10 +63,9 @@ void CloudManager::createCloud() {
                     pos.z = (float) radius;
                 }
                 
-                pixelVertices[lv]->push_back(pos);
-                pixelRDPs.push_back(0.0);
-                pixelCount++;
+                allVertices.push_back(pos);
                 allRDPs.push_back(0.0);
+                pixelCount++;
             }
         }
     }
@@ -97,7 +94,7 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
         double R = wavefuncRadial(n, l, radius);
         double rdp = wavefuncRDP(R, radius, l);
 
-        if (rdp > 0.01f) {
+        if (rdp) {
 
             for (int i = 0; i < steps; i++) {
                 int base = i * steps;
@@ -106,12 +103,20 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
                 for (int j = 0; j < steps; j++) {
                     double phi = j * deg_fac;
                     int inCloudIdx = fdn + base + j;
+                    double orbLeg = wavefuncAngLeg(l, m_l, phi);
                     
-                    std::complex<double> Y = orbExp * orbNorm * wavefuncAngLeg(l, m_l, phi);
+                    std::complex<double> Y = orbExp * orbNorm * orbLeg;
                     double rdp2 = wavefuncRDP2(R * Y, radius, l);
+
+                    /* if (rdp2 > 7.0) {
+                        std::cout << "(" << radius << "," << theta << "," << phi << "): " << rdp2 << std::endl;
+                    } */
 
                     if (rdp2 > max_rdp) {
                         max_rdp = rdp2;
+                        max_r = radius;
+                        max_theta = theta;
+                        max_phi = phi;
                     }
 
                     (*rdpStaging[l])[inCloudIdx] += rdp2;
@@ -140,7 +145,7 @@ double CloudManager::genOrbitalsThroughN(int n_max, double opt_maxRDP) {
         for (int l = n-1; l >= 0; l--) {
             for (int m_l = l; m_l >= -l; m_l--) {
                 double maxRDP = genOrbital(n, l, m_l);
-                printMaxRDP(n, l, m_l, maxRDP);
+                printMaxRDP_CSV(n, l, m_l, maxRDP);
             }
         }
     }
@@ -223,26 +228,18 @@ void CloudManager::newCloud() {
     //createCloud();
 }
 
-uint CloudManager::selectCloud(int id, bool checked) {
-    uint flag = id;
-
-    if (checked)
-        renderedOrbits |= flag;
-    else
-        renderedOrbits &= ~(flag);
-
-    allIndices.clear();
-    genIndexBuffer();
-
-    return renderedOrbits;
-}
-
-int CloudManager::fact(int n) {
-    int prod = n ?: 1;
+int64_t CloudManager::fact(int n) {
+    int64_t prod = n ?: 1;
+    int orig = n;
     
     while (n > 2) {
         prod *= --n;
     }
+
+    /* if (orig && prod > std::numeric_limits<int>::max()) {
+        std::cout << orig << "! was too large for [int] type." << std::endl;
+        orig = 0;
+    } */
 
     return prod;
 }
@@ -298,8 +295,12 @@ double CloudManager::wavefuncRDP2(std::complex<double> Psi, double r, int l) {
     double factor = r * r;
 
     if (!l) {
-        factor *= 4.0 * M_PI;
+        factor *= 0.4 * M_PI;
     }
+
+    /* std::complex<double> term1 = std::conj(Psi);
+    std::complex<double> term2 = term1 * Psi;
+    double term3 = term2.real(); */
 
     return (std::conj(Psi) * Psi).real() * factor;
 }
@@ -467,19 +468,19 @@ void CloudManager::genIndexBuffer() {
  *  Getters -- Size
  */
 
-int CloudManager::getVertexSize() {
+uint CloudManager::getVertexSize() {
     return this->vertexSize;
 }
 
-int CloudManager::getColourSize() {
+uint CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-int CloudManager::getRDPSize() {
+uint CloudManager::getRDPSize() {
     return this->RDPSize;
 }
 
-int CloudManager::getIndexSize() {
+uint CloudManager::getIndexSize() {
     return this->indexSize;
 }
 
@@ -487,7 +488,7 @@ int CloudManager::getIndexSize() {
  *  Getters -- Count
  */
 
-int CloudManager::getIndexCount() {
+uint CloudManager::getIndexCount() {
     return this->indexCount;
 }
 
@@ -576,7 +577,12 @@ int CloudManager::setIndexCount() {
  */
 
 void CloudManager::printMaxRDP(int n, int l, int m_l, double maxRDP) {
-    std::cout << std::setw(3) << ++(this->orbitalIdx) << ")  " << n << "  " << l << " " << ((m_l >= 0) ? " " : "") << m_l << " :: " << maxRDP << "\n";
+    std::cout << std::setw(3) << ++(this->orbitalIdx) << ")  " << n << "  " << l << " " << ((m_l >= 0) ? " " : "") << m_l << " :: " << std::setw(9) << maxRDP\
+     << " at (" << this->max_r << ", " << this->max_theta << ", " << this->max_phi << ")\n";
+}
+
+void CloudManager::printMaxRDP_CSV(int n, int l, int m_l, double maxRDP) {
+    std::cout << n << "," << l << "," << m_l << "," << maxRDP << "\n";
 }
 
 void CloudManager::printIndices() {

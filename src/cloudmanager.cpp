@@ -4,21 +4,21 @@
  *    Created on: Sep 4, 2024
  *   Last Update: Sep 9, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
- * 
+ *
  *  Copyright 2024 Wade Burch (GPLv3)
- * 
+ *
  *  This file is part of atomix.
- * 
+ *
  *  atomix is free software: you can redistribute it and/or modify it under the
- *  terms of the GNU General Public License as published by the Free Software 
- *  Foundation, either version 3 of the License, or (at your option) any later 
+ *  terms of the GNU General Public License as published by the Free Software
+ *  Foundation, either version 3 of the License, or (at your option) any later
  *  version.
- * 
- *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ *
+ *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- *  You should have received a copy of the GNU General Public License along with 
+ *
+ *  You should have received a copy of the GNU General Public License along with
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -37,17 +37,17 @@ CloudManager::~CloudManager() {
 
 void CloudManager::createCloud() {
     this->cloudOrbitCount = 150;
-    this->cloudOrbitDivisor = 1;
+    this->cloudOrbitDivisor = 2;
     this->cloudLayerDelta = 1.0 / this->cloudOrbitDivisor;
     this->cloudLayerCount = this->cloudOrbitCount * this->cloudOrbitDivisor;
-    vec pos = vec(0.0f);
+    vec3 pos = vec3(0.0f);
 
     for (int k = 1; k <= cloudLayerCount; k++) {
         double radius = k * this->cloudLayerDelta;
         int steps = radius * this->resolution;
         double deg_fac = TWO_PI / steps;
         int lv = k - 1;
-    
+
         for (int i = 0; i < steps; i++) {
             double theta = i * deg_fac;
             for (int j = 0; j < steps; j++) {
@@ -62,17 +62,19 @@ void CloudManager::createCloud() {
                     pos.y = (float) phi;
                     pos.z = (float) radius;
                 }
-                
+
                 allVertices.push_back(pos);
                 allRDPs.push_back(0.0);
+                rdpStaging.push_back(0.0);
+
                 pixelCount++;
             }
         }
     }
 
     for (int i = 0; i < MAX_SHELLS; i++) {
-        rdpStaging.push_back(new dvec(pixelCount, 0.0));
         shellRDPMaxima.push_back(0.0);
+        shellRDPMaximaCum.push_back(0.0);
     }
 
     wavefuncNorms(MAX_SHELLS);
@@ -104,13 +106,9 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
                     double phi = j * deg_fac;
                     int inCloudIdx = fdn + base + j;
                     double orbLeg = wavefuncAngLeg(l, m_l, phi);
-                    
+
                     std::complex<double> Y = orbExp * orbNorm * orbLeg;
                     double rdp2 = wavefuncRDP2(R * Y, radius, l);
-
-                    /* if (rdp2 > 7.0) {
-                        std::cout << "(" << radius << "," << theta << "," << phi << "): " << rdp2 << std::endl;
-                    } */
 
                     if (rdp2 > max_rdp) {
                         max_rdp = rdp2;
@@ -119,79 +117,78 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
                         max_phi = phi;
                     }
 
-                    (*rdpStaging[l])[inCloudIdx] += rdp2;
+                    rdpStaging[inCloudIdx] += rdp2;
                 }
             }
         }
         fdn += (steps * steps);
     }
 
-    /* for (int pIdx = 0; pIdx < pixelCount; pIdx++) {
-        (*rdpStaging[l])[pIdx] += pixelRDPs[pIdx];
-        pixelRDPs[pIdx] = 0.0;
-    } */
-
-    if (max_rdp > shellRDPMaxima[l])
-        shellRDPMaxima[l] = max_rdp;
+    if (max_rdp > shellRDPMaxima[n-1])
+        shellRDPMaxima[n-1] = max_rdp;
 
     return max_rdp;
 }
 
-double CloudManager::genOrbitalsThroughN(int n_max, double opt_maxRDP) {
-    double max_val = opt_maxRDP;
-    int idx = 0;
-    
+void CloudManager::genOrbitalsThroughN(int n_max) {
     for (int n = n_max; n > 0; n--) {
         for (int l = n-1; l >= 0; l--) {
             for (int m_l = l; m_l >= -l; m_l--) {
-                double maxRDP = genOrbital(n, l, m_l);
-                printMaxRDP_CSV(n, l, m_l, maxRDP);
+                cloudOrbitals[n].push_back(ivec2(l, m_l));
             }
         }
-    }
-    std::cout << std::endl;
 
-    return *std::max_element(shellRDPMaxima.begin(), shellRDPMaxima.end());
+        activeShells.insert(n);
+    }
 }
 
-double CloudManager::genOrbitalsOfN(int n, double opt_maxRDP) {
-    double max_val = opt_maxRDP;
-    int idx = 0;
-
+void CloudManager::genOrbitalsOfN(int n) {
     for (int l = n-1; l >= 0; l--) {
         for (int m_l = l; m_l >= -l; m_l--) {
-            double maxRDP = genOrbital(n, l, m_l);
-            if (maxRDP > max_val)
-                max_val = maxRDP;
-            printMaxRDP(n, l, m_l, maxRDP);
+            cloudOrbitals[n].push_back(ivec2(l, m_l));
         }
     }
-    std::cout << std::endl;
-
-    if (max_val > shellRDPMaxima[n-1])
-        shellRDPMaxima[n-1] = max_val;
-
-    return max_val;
+    activeShells.insert(n);
 }
 
-double CloudManager::genOrbitalExplicit(int n, int l, int m_l, double opt_maxRDP) {
-    double maxRDP = genOrbital(n, l, m_l);
-
-    if (maxRDP > shellRDPMaxima[n-1])
-        shellRDPMaxima[n-1] = maxRDP;
-
-    printMaxRDP(n, l, m_l, maxRDP);
-    
-    return maxRDP;
+void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
+    cloudOrbitals[n].push_back(ivec2(l, m_l));
+    activeShells.insert(n);
 }
 
-void CloudManager::bakeOrbitalsForRender(double maxRDP) {
-    genRDPs(this->orbitalIdx);
-    genIndexBuffer();
+void CloudManager::bakeOrbitalsForRender() {
+    for (auto const &[key, val] : cloudOrbitals) {
+        for (auto const &v : val) {
+            double maxRDP = genOrbital(key, v.x, v.y);
+            printMaxRDP(key, v.x, v.y, maxRDP);
+        }
+        // For each N: Get max element from accumulated rdpStaging values
+        shellRDPMaximaCum[key - 1] = *std::max_element(rdpStaging.begin(), rdpStaging.end());
 
-    for (auto& v : rdpStaging)
-        std::fill((*v).begin(), (*v).end(), 0.0);
+        // For each N: Normalize accumulated pixelRDPs, add to allRDPs, and reset pixelRDP vector
+        for (uint p = 0; p < this->pixelCount; p++) {
+            double new_val = rdpStaging[p] / shellRDPMaximaCum[key - 1];
+            if (new_val > 0.06) {
+                allRDPs[p] += static_cast<float>(new_val);
+                allIndices.push_back(p);
+            }
+            rdpStaging[p] = 0.0;
+        }
+    }
+    // End: check actual value of accumulated allRDPs
+    double actual_max = *std::max_element(allRDPs.begin(), allRDPs.end());
+    std::cout << "Cumulative Max RDP for allRDPs was: " << actual_max << std::endl;
+
+    // End: Clamp all accumulated values in allRDPs to [0,1]
+    std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto d){ return std::clamp(d, 0.0f, 1.0f); });
+
+    // End: Reset state for next orbital calculation(s)
+    std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
     this->orbitalIdx = 0;
+    cloudOrbitals.clear();
+
+    genRDPs();
+    genIndexBuffer();
 }
 
 void CloudManager::cloudTest(int n_max) {
@@ -215,12 +212,10 @@ void CloudManager::updateCloud(double time) {
 
 void CloudManager::newConfig(WaveConfig *cfg) {
     this->config = cfg;
-    this->orbitCount = config->orbits;
     this->amplitude = config->amplitude;
     this->resolution = config->resolution;
     this->two_pi_L = TWO_PI / config->wavelength;
     this->two_pi_T = TWO_PI / config->period;
-    //this->deg_fac = TWO_PI / this->resolution;
 }
 
 void CloudManager::newCloud() {
@@ -231,7 +226,7 @@ void CloudManager::newCloud() {
 int64_t CloudManager::fact(int n) {
     int64_t prod = n ?: 1;
     int orig = n;
-    
+
     while (n > 2) {
         prod *= --n;
     }
@@ -309,7 +304,7 @@ double CloudManager::wavefuncPsi2(int n, int l, int m_l, double r, double theta,
     std::complex<double> R = wavefuncRadial(n, l, r);
     std::complex<double> Y = wavefuncAngular(l, m_l, theta, phi);
     std::complex<double> Psi = R * Y;
-    
+
     std::complex<double> term = std::conj(Psi) * Psi;
 
     return term.real();
@@ -362,18 +357,10 @@ void CloudManager::RDPtoColours() {
 }
 
 void CloudManager::resetManager() {
-    for (auto v : pixelVertices) {
-        delete (v);
-    }
-    pixelVertices.clear();
     for (auto v : pixelColours) {
         delete (v);
     }
     pixelColours.clear();
-    for (auto c : pixelIndices) {
-        delete (c);
-    }
-    pixelIndices.clear();
 
     allVertices.clear();
     allColours.clear();
@@ -392,24 +379,13 @@ void CloudManager::resetManager() {
     this->update = false;
 }
 
-/* 
+/*
  *  Generators
  */
 
 void CloudManager::genVertexArray() {
-    allVertices.clear();
-
-    for (int i = 0; i < cloudLayerCount; i++) {
-        std::copy(pixelVertices[i]->begin(), pixelVertices[i]->end(), std::back_inserter(this->allVertices));
-    }
-
     this->vertexCount = setVertexCount();
     this->vertexSize = setVertexSize();
-
-    for (auto& p : pixelVertices) {
-        delete (p);
-    }
-    pixelVertices.clear();
 }
 
 void CloudManager::genColourArray() {
@@ -423,38 +399,7 @@ void CloudManager::genColourArray() {
     this->colourSize = setColourSize();
 }
 
-void CloudManager::genRDPs(int subshells) {
-    // TODO Finish normalizing Per-Shell!
-
-    /* for (int n = 0; n < MAX_SHELLS; n++) {
-        for (int pIdx = 0; pIdx < this->pixelCount; pIdx++) {
-            double new_val = (*rdpStaging[n])[pIdx] / shellRDPMaxima[n];
-            assert(new_val <= 1.0);
-            allRDPs[pIdx] += (static_cast<float>(new_val));     // This needs to be changed. All subshell maxima per shell are condensed to one shall maximum. All RDPs per shell are normalized to shell maximum.
-
-            if (new_val > 0.06) {
-                allIndices.push_back(pIdx);
-            }
-        }
-    } */
-
-    for (int pIdx = 0; pIdx < this->pixelCount; pIdx++) {
-        double new_val = 0;
-        int activeShells = 0;
-        
-        for (int l = 0; l < MAX_SHELLS; l++) {
-            if (shellRDPMaxima[l] > 0) {
-                activeShells++;
-                new_val += (*rdpStaging[l])[pIdx] / shellRDPMaxima[l];
-            }
-        }
-        new_val = std::clamp(new_val, 0.0, 1.0);
-        if (new_val > 0.06) {
-            allIndices.push_back(pIdx);
-        }
-        allRDPs[pIdx] = (static_cast<float>(new_val));
-    }
-
+void CloudManager::genRDPs() {
     this->RDPCount = setRDPCount();
     this->RDPSize = setRDPSize();
 }
@@ -464,7 +409,7 @@ void CloudManager::genIndexBuffer() {
     this->indexSize = setIndexSize();
 }
 
-/* 
+/*
  *  Getters -- Size
  */
 
@@ -484,7 +429,7 @@ uint CloudManager::getIndexSize() {
     return this->indexSize;
 }
 
-/* 
+/*
  *  Getters -- Count
  */
 
@@ -492,7 +437,7 @@ uint CloudManager::getIndexCount() {
     return this->indexCount;
 }
 
-/* 
+/*
  *  Getters -- Data
  */
 
@@ -516,7 +461,7 @@ const uint* CloudManager::getIndexData() {
     return &allIndices[0];
 }
 
-/* 
+/*
  *  Setters -- Size
  */
 
@@ -552,7 +497,7 @@ int CloudManager::setIndexSize() {
     return chunks * chunkSize;
 }
 
-/* 
+/*
  *  Setters -- Count
  */
 
@@ -572,28 +517,28 @@ int CloudManager::setIndexCount() {
     return allIndices.size();
 }
 
-/* 
+/*
  *  Printers
  */
 
-void CloudManager::printMaxRDP(int n, int l, int m_l, double maxRDP) {
+void CloudManager::printMaxRDP(const int &n, const int &l, const int &m_l, const double &maxRDP) {
     std::cout << std::setw(3) << ++(this->orbitalIdx) << ")  " << n << "  " << l << " " << ((m_l >= 0) ? " " : "") << m_l << " :: " << std::setw(9) << maxRDP\
      << " at (" << this->max_r << ", " << this->max_theta << ", " << this->max_phi << ")\n";
 }
 
-void CloudManager::printMaxRDP_CSV(int n, int l, int m_l, double maxRDP) {
+void CloudManager::printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP) {
     std::cout << n << "," << l << "," << m_l << "," << maxRDP << "\n";
 }
 
 void CloudManager::printIndices() {
-    for (auto v : this->allIndices) {
+    for (const auto &v : this->allIndices) {
         std::cout << v << ", ";
     }
     std::cout << std::endl;
 }
 
 void CloudManager::printVertices() {
-    for (auto v : this->allVertices) {
+    for (const auto &v : this->allVertices) {
         std::cout << glm::to_string(v) << ", ";
     }
     std::cout << std::endl;

@@ -257,13 +257,16 @@ void GWidget::initWaveProgram() {
 
     // cloudManager->cloudTest(8);
     
-    cloudManager->genOrbitalExplicit(4, 1, 0);
-    // cloudManager->genOrbitalExplicit(2, 0, 0);
-    // cloudManager->genOrbitalExplicit(3, 0, 0);
+    cloudManager->genOrbitalExplicit(7, 5, 0);
+    cloudManager->genOrbitalExplicit(4, 2, 0);
+    // cloudManager->genOrbitalExplicit(3, 2, -1);
+    // cloudManager->genOrbitalExplicit(3, 2, -2);
+    cloudManager->genOrbitalExplicit(3, 1, 0);
+    // cloudManager->genOrbitalExplicit(3, 1, -1);
     // cloudManager->genOrbitalsThroughN(8);
-    // cloudManager->genOrbitalsOfN(8);
+    // cloudManager->genOrbitalsOfN(3);
     
-    cloudManager->bakeOrbitalsForRender(0);
+    cloudManager->bakeOrbitalsForRender();
     
     std::cout << "Orbital generation complete." << std::endl;
     printSize();
@@ -568,7 +571,7 @@ void GWidget::setColorsOrbits(int id, uint colorChoice) {
 void GWidget::printSize() {
     int64_t VSize, DSize, ISize;
     VSize = cloudManager->getVertexSize();
-    DSize = cloudManager->getRDPSize() * (1 + 8);
+    DSize = cloudManager->getRDPSize() * 2;
     ISize = cloudManager->getIndexSize();
 
     int64_t divisorMB = 1024 * 1024;

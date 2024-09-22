@@ -46,7 +46,8 @@ using vVec2 = std::vector<glm::vec2>;
 using fvec = std::vector<float>;
 using dvec = std::vector<double>;
 using uvec = std::vector<uint>;
-using vec = glm::vec3;
+using vec3 = glm::vec3;
+using ivec2 = glm::ivec2;
 using fset = std::unordered_set<float>;
 
 
@@ -57,10 +58,10 @@ class CloudManager {
         
         void updateCloud(double time);
 
-        double genOrbitalsThroughN(int n, double opt_maxRDP = 0);
-        double genOrbitalsOfN(int n, double opt_maxRDP = 0);
-        double genOrbitalExplicit(int n, int l, int m_l, double opt_maxRDP = 0);
-        void bakeOrbitalsForRender(double max_rdp);
+        void genOrbitalsThroughN(int n);
+        void genOrbitalsOfN(int n);
+        void genOrbitalExplicit(int n, int l, int m_l);
+        void bakeOrbitalsForRender();
         void cloudTest(int n_max);
         
         void newConfig(WaveConfig *cfg);
@@ -78,8 +79,8 @@ class CloudManager {
         const float* getRDPData();
         const uint* getIndexData();
 
-        void printMaxRDP(int n, int l, int m_l, double maxRDP);
-        void printMaxRDP_CSV(int n, int l, int m_l, double maxRDP);
+        void printMaxRDP(const int &n, const int &l, const int &m_l, const double &maxRDP);
+        void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
         void printIndices();
         void printVertices();
 
@@ -106,7 +107,7 @@ class CloudManager {
         double genOrbital(int n, int l, int m_l);
         void genVertexArray();
         void genColourArray();
-        void genRDPs(int subshells);
+        void genRDPs();
         void genIndexBuffer();
         void resetManager();
         
@@ -122,11 +123,10 @@ class CloudManager {
         int64_t fact(int n);
 
         WaveConfig *config;
-        std::vector<vVec3 *> pixelVertices;
         std::vector<vVec3 *> pixelColours;
-        std::vector<uvec *> pixelIndices;
-        std::vector<dvec *> rdpStaging;
+        dvec rdpStaging;
         dvec shellRDPMaxima;
+        dvec shellRDPMaximaCum;
         
         vVec3 allVertices;
         vVec3 allColours;
@@ -136,23 +136,24 @@ class CloudManager {
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
 
+        std::unordered_set<int> activeShells;
+        std::map<int, std::vector<glm::ivec2>> cloudOrbitals;
+
         int atomZ = 1;
         const int MAX_SHELLS = 8;
         
-        int orbitCount = 0;
-        int vertexCount = 0;
-        int vertexSize = 0;
-        int colourCount = 0;
-        int colourSize = 0;
-        int RDPCount = 0;
-        int RDPSize = 0;
-        int indexCount = 0;
-        int indexSize = 0;
-        int pixelCount = 0;
+        uint vertexCount = 0;
+        uint vertexSize = 0;
+        uint colourCount = 0;
+        uint colourSize = 0;
+        uint RDPCount = 0;
+        uint RDPSize = 0;
+        uint indexCount = 0;
+        uint indexSize = 0;
+        uint64_t pixelCount = 0;
         
         int resolution = 0;
         int orbitalIdx = 0;
-        //double deg_fac = 0;
         double phase_base = PI_TWO;
 
         int cloudOrbitCount = 0;

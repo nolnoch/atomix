@@ -25,9 +25,9 @@
 #include "cloudmanager.hpp"
 
 
-CloudManager::CloudManager(WaveConfig *cfg)
-    : config(cfg) {
+CloudManager::CloudManager(AtomixConfig *cfg) {
     newConfig(cfg);
+    this->cfg.vert = "gpu_sphere_test.vert";
     createCloud();
 }
 
@@ -36,15 +36,18 @@ CloudManager::~CloudManager() {
 }
 
 void CloudManager::createCloud() {
+    assert(!active);
+
     this->cloudOrbitCount = 150;
     this->cloudOrbitDivisor = 1;
+    this->cloudResolution = 12;
     this->cloudLayerDelta = 1.0 / this->cloudOrbitDivisor;
     this->cloudLayerCount = this->cloudOrbitCount * this->cloudOrbitDivisor;
     vec3 pos = vec3(0.0f);
 
     for (int k = 1; k <= cloudLayerCount; k++) {
         double radius = k * this->cloudLayerDelta;
-        int steps = radius * this->resolution;
+        int steps = radius * this->cloudResolution;
         double deg_fac = TWO_PI / steps;
         int lv = k - 1;
 
@@ -53,7 +56,7 @@ void CloudManager::createCloud() {
             for (int j = 0; j < steps; j++) {
                 double phi = j * deg_fac;
 
-                if (config->cpu) {
+                if (cfg.cpu) {
                     pos.x = radius * sin(phi) * sin(theta);
                     pos.y = radius * cos(phi);
                     pos.z = radius * sin(phi) * cos(theta);
@@ -87,10 +90,10 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
 
     for (int k = 1; k <= cloudLayerCount; k++) {
         double radius = k * this->cloudLayerDelta;
-        int steps = radius * this->resolution;
+        int steps = radius * this->cloudResolution;
         double deg_fac = TWO_PI / steps;
         int lv = k - 1;
-        double fac = (this->resolution / this->cloudOrbitDivisor);
+        double fac = (cfg.resolution / this->cloudOrbitDivisor);
 
         double orbNorm = this->norm_constY[DSQ(l, m_l)];
         double R = wavefuncRadial(n, l, radius);
@@ -157,6 +160,8 @@ void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
 }
 
 void CloudManager::bakeOrbitalsForRender() {
+    int nr = cloudOrbitals.size();
+    std::cout << nr << " recipe(s) loaded. Begin processing..." << std::endl;
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
@@ -210,14 +215,6 @@ void CloudManager::cloudTest(int n_max) {
 void CloudManager::updateCloud(double time) {
     this->update = true;
     //TODO implement for CPU updates over time
-}
-
-void CloudManager::newConfig(WaveConfig *cfg) {
-    this->config = cfg;
-    this->amplitude = config->amplitude;
-    this->resolution = config->resolution;
-    this->two_pi_L = TWO_PI / config->wavelength;
-    this->two_pi_T = TWO_PI / config->period;
 }
 
 void CloudManager::newCloud() {
@@ -367,9 +364,14 @@ void CloudManager::resetManager() {
     allVertices.clear();
     allColours.clear();
     allIndices.clear();
+    allRDPs.clear();
+    rdpStaging.clear();
     shellRDPMaxima.clear();
+    shellRDPMaximaCum.clear();
     norm_constR.clear();
     norm_constY.clear();
+    activeShells.clear();
+    cloudOrbitals.clear();
 
     this->pixelCount = 0;
     this->vertexCount = 0;
@@ -379,16 +381,21 @@ void CloudManager::resetManager() {
     this->indexCount = 0;
     this->indexSize = 0;
     this->update = false;
+    this->active = false;
+    this->atomZ = 1;
+    this->RDPCount = 0;
+    this->RDPSize = 0;
+    this->orbitalIdx = 0;
+    this->cloudOrbitCount = 0;
+    this->cloudOrbitDivisor = 0;
+    this->cloudLayerCount = 0;
+    this->cloudLayerDelta = 0.0;
+    this->cloudResolution = 0;
 }
 
 /*
  *  Generators
  */
-
-void CloudManager::genVertexArray() {
-    this->vertexCount = setVertexCount();
-    this->vertexSize = setVertexSize();
-}
 
 void CloudManager::genColourArray() {
     allColours.clear();
@@ -406,18 +413,9 @@ void CloudManager::genRDPs() {
     this->RDPSize = setRDPSize();
 }
 
-void CloudManager::genIndexBuffer() {
-    this->indexCount = setIndexCount();
-    this->indexSize = setIndexSize();
-}
-
 /*
  *  Getters -- Size
  */
-
-uint CloudManager::getVertexSize() {
-    return this->vertexSize;
-}
 
 uint CloudManager::getColourSize() {
     return this->colourSize;
@@ -427,53 +425,22 @@ uint CloudManager::getRDPSize() {
     return this->RDPSize;
 }
 
-uint CloudManager::getIndexSize() {
-    return this->indexSize;
-}
-
 /*
  *  Getters -- Count
  */
 
-uint CloudManager::getIndexCount() {
-    return this->indexCount;
-}
-
 /*
  *  Getters -- Data
  */
-
-const float* CloudManager::getVertexData() {
-    assert(vertexCount);
-    return glm::value_ptr(allVertices.front());
-}
-
-const float* CloudManager::getColourData() {
-    assert(colourCount == vertexCount);
-    return glm::value_ptr(allColours.front());
-}
 
 const float* CloudManager::getRDPData() {
     assert(RDPCount);
     return &allRDPs[0];
 }
 
-const uint* CloudManager::getIndexData() {
-    assert(indexCount);
-    return &allIndices[0];
-}
-
 /*
  *  Setters -- Size
  */
-
-int CloudManager::setVertexSize() {
-    int chunks = vertexCount ?: setVertexCount();
-    int chunkSize = sizeof(glm::vec3);
-
-    //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
-    return chunks * chunkSize;
-}
 
 int CloudManager::setColourSize() {
     int chunks = colourCount ?: setColourCount();
@@ -491,21 +458,9 @@ int CloudManager::setRDPSize() {
     return chunks * chunkSize;
 }
 
-int CloudManager::setIndexSize() {
-    int chunks = indexCount ?: setIndexCount();
-    int chunkSize = sizeof(uint);
-
-    //std::cout << "allIndices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
-    return chunks * chunkSize;
-}
-
 /*
  *  Setters -- Count
  */
-
-int CloudManager::setVertexCount() {
-    return allVertices.size();
-}
 
 int CloudManager::setColourCount() {
     return allColours.size();
@@ -513,10 +468,6 @@ int CloudManager::setColourCount() {
 
 int CloudManager::setRDPCount() {
     return allRDPs.size();
-}
-
-int CloudManager::setIndexCount() {
-    return allIndices.size();
 }
 
 /*
@@ -530,18 +481,4 @@ void CloudManager::printMaxRDP(const int &n, const int &l, const int &m_l, const
 
 void CloudManager::printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP) {
     std::cout << n << "," << l << "," << m_l << "," << maxRDP << "\n";
-}
-
-void CloudManager::printIndices() {
-    for (const auto &v : this->allIndices) {
-        std::cout << v << ", ";
-    }
-    std::cout << std::endl;
-}
-
-void CloudManager::printVertices() {
-    for (const auto &v : this->allVertices) {
-        std::cout << glm::to_string(v) << ", ";
-    }
-    std::cout << std::endl;
 }

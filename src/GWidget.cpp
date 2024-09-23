@@ -45,24 +45,26 @@ void GWidget::cleanup() {
 
     delete crystalProg;
     delete waveProg;
-    delete orbitManager;
+    delete cloudProg;
+    delete waveManager;
+    delete cloudManager;
     delete cfgParser;
     delete gw_timer;
 
     //doneCurrent();
 }
 
-void GWidget::lockAndRenderCloud() {
+void GWidget::newCloudConfig() {
     cloudMode = true;
     waveMode = false;
     updateRequired = true;
 }
 
-void GWidget::configReceived(WaveConfig *cfg) {
+void GWidget::newWaveConfig(AtomixConfig *cfg) {
     setUpdatesEnabled(false);
 
-    if (renderConfig.orbits != cfg->orbits) {
-        renderConfig.orbits = cfg->orbits;                  // Requires new {Vertices[cpu/gpu], VBO, EBO}
+    if (renderConfig.waves != cfg->waves) {
+        renderConfig.waves = cfg->waves;                  // Requires new {Vertices[cpu/gpu], VBO, EBO}
         updateFlags |= ORBITS;
     }
     if (renderConfig.amplitude != cfg->amplitude) {
@@ -112,9 +114,9 @@ void GWidget::configReceived(WaveConfig *cfg) {
     setUpdatesEnabled(true);
 }
 
-void GWidget::selectRenderedOrbits(int id, bool checked) {
-    // Send selection(s) to OrbitManager for regeneration of indices
-    renderedOrbits = orbitManager->selectOrbits(id, checked);
+void GWidget::selectRenderedWaves(int id, bool checked) {
+    // Send selection(s) to WaveManager for regeneration of indices
+    renderedWaves = waveManager->selectWaves(id, checked);
 
     // Flag for EBO update
     newIndices = true;
@@ -125,14 +127,14 @@ void GWidget::processConfigChange() {
     //TODO get rid of this debug statement:
     assert(!newVertices);
 
-    // Re-create Orbits with new params from config
+    // Re-create Waves with new params from config
     if ((updateFlags & (ORBITS | RESOLUTION | SPHERE | CPU)) ||
         (renderConfig.cpu && (updateFlags & (AMPLITUDE | PERIOD | WAVELENGTH | PARALLEL)))) {
-        orbitManager->newConfig(&renderConfig);
-        orbitManager->newOrbits();
+        waveManager->newConfig(&renderConfig);
+        waveManager->newWaves();
         newVertices = true;
     } else if (!renderConfig.cpu && (updateFlags & (AMPLITUDE | PERIOD | WAVELENGTH))) {
-        orbitManager->newConfig(&renderConfig);
+        waveManager->newConfig(&renderConfig);
         newUniformsMaths = true;
     }
 
@@ -171,9 +173,9 @@ void GWidget::swapBuffers() {
     waveProg->bindVAO();
     waveProg->clearBuffers();
     uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    GLuint vboID = waveProg->bindVBO(orbitManager->getVertexSize(), orbitManager->getVertexData(), static_dynamic);
+    GLuint vboID = waveProg->bindVBO(waveManager->getVertexSize(), waveManager->getVertexData(), static_dynamic);
     waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
-    waveProg->bindEBO(orbitManager->getIndexSize(), orbitManager->getIndexData(), static_dynamic);
+    waveProg->bindEBO(waveManager->getIndexSize(), waveManager->getIndexData(), static_dynamic);
     waveProg->endRender();
 
     // Cleanup
@@ -184,7 +186,7 @@ void GWidget::swapBuffers() {
 
 void GWidget::swapVertices() {
     waveProg->beginRender();
-    waveProg->updateVBO(0, orbitManager->getVertexSize(), orbitManager->getVertexData());
+    waveProg->updateVBO(0, waveManager->getVertexSize(), waveManager->getVertexData());
     waveProg->endRender();
 
     newVertices = false;
@@ -192,14 +194,10 @@ void GWidget::swapVertices() {
 
 void GWidget::swapIndices() {
     waveProg->beginRender();
-    waveProg->updateEBO(0, orbitManager->getIndexSize(), orbitManager->getIndexData());
+    waveProg->updateEBO(0, waveManager->getIndexSize(), waveManager->getIndexData());
     waveProg->endRender();
 
     newIndices = false;
-}
-
-void GWidget::clearProgram(uint i) {
-    //TODO necessary?
 }
 
 void GWidget::initCrystalProgram() {
@@ -258,9 +256,13 @@ void GWidget::initCrystalProgram() {
     crystalProg->clearBuffers();
 }
 
+void GWidget::initAtomixProg() {
+    
+}
+
 void GWidget::initWaveProgram() {
-    /* Orbits */
-    orbitManager = new OrbitManager(&renderConfig);
+    /* Waves */
+    waveManager = new WaveManager(&renderConfig);
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
@@ -275,21 +277,21 @@ void GWidget::initWaveProgram() {
     waveProg->init();
     
     // Attach shaders, link/validate program, and clean up
-    waveProg->attachShader(renderConfig.vert);
-    waveProg->attachShader(renderConfig.frag);
+    waveProg->attachShader(waveManager->getShaderVert());
+    waveProg->attachShader(waveManager->getShaderFrag());
     waveProg->linkAndValidate();
     waveProg->detachShaders();
     
     // Load and bind vertices and attributes
     waveProg->initVAO();
     waveProg->bindVAO();
-    GLuint vboID = waveProg->bindVBO(orbitManager->getVertexSize(), orbitManager->getVertexData(), static_dynamic);
+    GLuint vboID = waveProg->bindVBO(waveManager->getVertexSize(), waveManager->getVertexData(), static_dynamic);
     waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
     waveProg->enableAttribute(0);
     waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
-    waveProg->bindEBO(orbitManager->getIndexSize(), orbitManager->getIndexData(), static_dynamic);
+    waveProg->bindEBO(waveManager->getIndexSize(), waveManager->getIndexData(), static_dynamic);
     //waveProg->assignFragColour();
 
     /* Release */
@@ -297,21 +299,23 @@ void GWidget::initWaveProgram() {
     waveProg->clearBuffers();
     newUniformsMaths = true;
     newUniformsColor = true;
+    this->renderWave = true;
+    updateRequired = false;
 
     currentProg = waveProg;
+    currentManager = waveManager;
 }
 
 void GWidget::initCloudProgram() {
-    /* Orbits */
+    /* Waves */
     cloudManager = new CloudManager(&renderConfig);
-    std::cout << "Vertex generation complete." << std::endl;
 
     cloudManager->genOrbitalExplicit(4, 2, 0);
-    // cloudManager->genOrbitalExplicit(7, 1, 0);
-    // cloudManager->genOrbitalExplicit(3, 2, -1);
-    // cloudManager->genOrbitalExplicit(3, 2, -2);
-    // cloudManager->genOrbitalsThroughN(8);
-    // cloudManager->genOrbitalsOfN(3);
+    // cloudManager->genWavealExplicit(7, 1, 0);
+    // cloudManager->genWavealExplicit(3, 2, -1);
+    // cloudManager->genWavealExplicit(3, 2, -2);
+    // cloudManager->genWavealsThroughN(8);
+    // cloudManager->genWavealsOfN(3);
     // cloudManager->cloudTest(8);
     cloudManager->bakeOrbitalsForRender();
     this->printSize();
@@ -329,8 +333,8 @@ void GWidget::initCloudProgram() {
     cloudProg->init();
 
     // Attach shaders, link/validate program, and clean up
-    cloudProg->attachShader(renderConfig.vert);
-    cloudProg->attachShader(renderConfig.frag);
+    cloudProg->attachShader(cloudManager->getShaderVert());
+    cloudProg->attachShader(cloudManager->getShaderFrag());
     cloudProg->linkAndValidate();
     cloudProg->detachShaders();
 
@@ -360,22 +364,50 @@ void GWidget::initCloudProgram() {
     updateRequired = false;
 
     currentProg = cloudProg;
+    currentManager = cloudManager;
+}
+
+void GWidget::changeModes() {
+    delete currentManager;
+    delete currentProg;
+
+    if (waveMode) {
+        cloudManager = 0;
+        cloudProg = 0;
+    } else if (cloudMode) {
+        waveManager = 0;
+        waveProg = 0;
+    }
+
+    currentManager = 0;
+    currentProg = 0;
 }
 
 void GWidget::initVecsAndMatrices() {
-    float camStart = 80.0f;        // TODO Rescale for Cloud
-
+    if (!renderCloud) {
+        gw_startDist = 16.0f;
+        gw_nearDist = 0.1f;
+        gw_farDist = 500.0f;
+    } else {
+        gw_startDist = 80.0f;
+        gw_nearDist = 4.0f;
+        gw_farDist = 200.0f;
+    }
+    
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
     m4_translation = glm::mat4(1.0f);
     m4_proj = glm::mat4(1.0f);
     m4_view = glm::mat4(1.0f);
     m4_world = glm::mat4(1.0f);
-    v3_cameraPosition = glm::vec3(0.0f, 0.0f, camStart);
+    v3_cameraPosition = glm::vec3(0.0f, 0.0f, gw_startDist);
     v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     v3_mouseBegin = glm::vec3(0);
     v3_mouseEnd = glm::vec3(0);
+
+    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_farDist);
 }
 
 void GWidget::initializeGL() {
@@ -402,8 +434,7 @@ void GWidget::initializeGL() {
 
     /* Init -- Matrices */
     initVecsAndMatrices();
-    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 500.0f);
+    
 
     /* Init -- Programs and Shaders */
     initCrystalProgram();
@@ -420,16 +451,22 @@ void GWidget::paintGL() {
         gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
 
-    /* Pre-empt painting for new or updated Orbit configuration */
+    /* Pre-empt painting for new or updated Wave configuration */
     if (updateRequired) {
         if (waveMode) {
-            if (waveProg) {
+            if (renderWave) {
                 processConfigChange();
             } else {
+                renderCloud = false;
+                changeModes();
                 initWaveProgram();
+                initVecsAndMatrices();
             }
         } else if (cloudMode) {
+            renderWave = false;
+            changeModes();
             initCloudProgram();
+            initVecsAndMatrices();
         }
     }
 
@@ -451,31 +488,30 @@ void GWidget::paintGL() {
     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
     crystalProg->endRender();
 
-    /* Render -- Orbits */
+    /* Render -- Waves */
     if (renderCloud || renderWave) {
-        currentProg->renderCount = (waveProg) ? orbitManager->getIndexCount() : cloudManager->getIndexCount();
         currentProg->beginRender();
         if (renderWave && renderConfig.cpu) {
             cloudManager->updateCloud(time);
             waveProg->updateVBO(0, cloudManager->getVertexSize(), cloudManager->getVertexData());
         }
-        if (false && newUniformsMaths) {
-            waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
-            waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
-            waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
+        if (renderWave && newUniformsMaths) {
+            waveProg->setUniform(GL_FLOAT, "two_pi_L", waveManager->two_pi_L);
+            waveProg->setUniform(GL_FLOAT, "two_pi_T", waveManager->two_pi_T);
+            waveProg->setUniform(GL_FLOAT, "amp", waveManager->waveAmplitude);
             newUniformsMaths = false;
         }
-        if (false && newUniformsColor) {
-            waveProg->setUniform(GL_UNSIGNED_INT, "peak", orbitManager->peak);
-            waveProg->setUniform(GL_UNSIGNED_INT, "base", orbitManager->base);
-            waveProg->setUniform(GL_UNSIGNED_INT, "trough", orbitManager->trough);
+        if (renderWave && newUniformsColor) {
+            waveProg->setUniform(GL_UNSIGNED_INT, "peak", waveManager->peak);
+            waveProg->setUniform(GL_UNSIGNED_INT, "base", waveManager->base);
+            waveProg->setUniform(GL_UNSIGNED_INT, "trough", waveManager->trough);
             newUniformsColor = false;
         }
         currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
         currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
         currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
         currentProg->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_POINTS, currentProg->renderCount, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_POINTS, currentManager->getIndexCount(), GL_UNSIGNED_INT, 0);
         currentProg->endRender();
     }
 
@@ -485,13 +521,13 @@ void GWidget::paintGL() {
 void GWidget::resizeGL(int w, int h) {
     gw_scrHeight = height();
     gw_scrWidth = width();
-    m4_proj = glm::mat4(1.0f);
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, 0.1f, 500.0f);
+    // m4_proj = glm::mat4(1.0f);
+    m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, gw_nearDist, gw_farDist);
 }
 
 void GWidget::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
-    float scrollScale = 1.0f + ((float) scrollClicks / 8);
+    float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
     update();
 }
@@ -519,19 +555,19 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         /* Right-click-drag HORIZONTAL movement will rotate about Y axis */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
             float dragRatio = (v3_mouseEnd.x - v3_mouseBegin.x) / gw_scrWidth;
-            GLfloat orbitAngleH = TWO_PI * dragRatio;
-            glm::vec3 orbitAxisH = glm::vec3(0.0, 1.0f, 0.0);
-            Quaternion qOrbitRotH = Quaternion(orbitAngleH, orbitAxisH, RAD);
-            q_TotalRot = qOrbitRotH * q_TotalRot;
+            GLfloat waveAngleH = TWO_PI * dragRatio;
+            glm::vec3 waveAxisH = glm::vec3(0.0, 1.0f, 0.0);
+            Quaternion qWaveRotH = Quaternion(waveAngleH, waveAxisH, RAD);
+            q_TotalRot = qWaveRotH * q_TotalRot;
         }
         /* Right-click-drag VERTICAL movement will rotate about X and Z axes */
         if (v3_mouseBegin.y != v3_mouseEnd.y) {
             float dragRatio = (v3_mouseBegin.y - v3_mouseEnd.y) / gw_scrHeight;
-            GLfloat orbitAngleV = TWO_PI * dragRatio;
+            GLfloat waveAngleV = TWO_PI * dragRatio;
             glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
-            glm::vec3 orbitAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
-            Quaternion qOrbitRotV = Quaternion(orbitAngleV, orbitAxisV, RAD);
-            q_TotalRot = qOrbitRotV * q_TotalRot;
+            glm::vec3 waveAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
+            Quaternion qWaveRotV = Quaternion(waveAngleV, waveAxisV, RAD);
+            q_TotalRot = qWaveRotV * q_TotalRot;
         }
     } else if (gw_movement & Qt::LeftButton) {
         /* Left-click drag will grab and slide world */
@@ -545,10 +581,10 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         /* Middle-click-drag will rotate about camera look vector */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
             float dragRatio = (v3_mouseBegin.x - v3_mouseEnd.x) / gw_scrWidth;
-            GLfloat orbitAngleL = TWO_PI * dragRatio;
-            glm::vec3 orbitAxisL = glm::normalize(cameraVec);
-            Quaternion qOrbitRotL = Quaternion(orbitAngleL, orbitAxisL, RAD);
-            q_TotalRot = qOrbitRotL * q_TotalRot;
+            GLfloat waveAngleL = TWO_PI * dragRatio;
+            glm::vec3 waveAxisL = glm::normalize(cameraVec);
+            Quaternion qWaveRotL = Quaternion(waveAngleL, waveAxisL, RAD);
+            q_TotalRot = qWaveRotL * q_TotalRot;
         }
     }
     update();
@@ -591,16 +627,16 @@ void GWidget::checkErrors(std::string str) {
         std::cout << std::endl;
 }
 
-void GWidget::setColorsOrbits(int id, uint colorChoice) {
+void GWidget::setColorsWaves(int id, uint colorChoice) {
     switch (id) {
     case 1:
-        orbitManager->peak = colorChoice;
+        waveManager->peak = colorChoice;
         break;
     case 2:
-        orbitManager->base = colorChoice;
+        waveManager->base = colorChoice;
         break;
     case 3:
-        orbitManager->trough = colorChoice;
+        waveManager->trough = colorChoice;
         break;
     default:
         break;
@@ -619,13 +655,13 @@ void GWidget::printSize() {
     if (ISize > 1048576)
         ISize /= divisorMB;
 
-    std::cout << "Vertex Total Size: " << std::setw(6) << VSize / divisorMB << " MB\n";
+    std::cout << "\nVertex Total Size: " << std::setw(6) << VSize / divisorMB << " MB\n";
     std::cout << "RDProb Total Size: " << std::setw(6) << DSize / divisorMB << " MB\n";
     std::cout << "Indice Total Size: " << std::setw(6) << ISize  << ((ISize > 1048576) ? " MB" : "  B") << std::endl;
 }
 
-void GWidget::printConfig(WaveConfig *cfg) {
-    std::cout << "Orbits: " << cfg->orbits << "\n";
+void GWidget::printConfig(AtomixConfig *cfg) {
+    std::cout << "Waves: " << cfg->waves << "\n";
     std::cout << "Amplitude: " << cfg->amplitude << "\n";
     std::cout << "Period: " << cfg->period << "\n";
     std::cout << "Wavelength: " << cfg->wavelength << "\n";

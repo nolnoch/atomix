@@ -28,7 +28,7 @@ MainWindow::MainWindow() {
     onAddNew();
 }
 
-void MainWindow::lockConfig(WaveConfig *cfg) {
+void MainWindow::lockConfig(AtomixConfig *cfg) {
     //cout << "Updating config." << endl;
     emit sendConfig(cfg);
 }
@@ -36,7 +36,7 @@ void MainWindow::lockConfig(WaveConfig *cfg) {
 void MainWindow::onAddNew() {
     cfgParser = new ConfigParser;
     graph = new GWidget(this, cfgParser);
-    customConfig = new WaveConfig;
+    customConfig = new AtomixConfig;
 
     /* Setup Dock GUI */
     setupDockWaves();
@@ -50,10 +50,10 @@ void MainWindow::onAddNew() {
     loadConfig();
     refreshOrbits(cfgParser->config);
     
-    connect(this, &MainWindow::sendConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
+    connect(this, &MainWindow::sendConfig, graph, &GWidget::newWaveConfig, Qt::DirectConnection);
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
-    connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedOrbits, Qt::DirectConnection);
+    connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
 
@@ -109,10 +109,11 @@ void MainWindow::refreshShaders() {
     entryFrag->setCurrentText(QString::fromStdString(cfgParser->config->frag));
 }
 
-void MainWindow::refreshOrbits(WaveConfig *cfg) {
+void MainWindow::refreshOrbits(AtomixConfig *cfg) {
+    const QSignalBlocker blocker(buttGroupOrbits);
     ushort renderedOrbits = 0;
     
-    for (int i = 0; i < cfg->orbits; i++) {
+    for (int i = 0; i < cfg->waves; i++) {
         renderedOrbits |= (1 << i);
     }
     for (int i = 0; i < MAX_ORBITS; i++) {
@@ -128,7 +129,7 @@ void MainWindow::refreshOrbits(WaveConfig *cfg) {
 void MainWindow::loadConfig() {
     int files = cfgParser->cfgFiles.size();
     int comboID = comboConfigFile->currentData().toInt();
-    WaveConfig *cfg = nullptr;
+    AtomixConfig *cfg = nullptr;
 
     if (comboID <= files) {
         assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1]));
@@ -139,7 +140,7 @@ void MainWindow::loadConfig() {
         return;
     }
 
-    entryOrbit->setText(QString::number(cfg->orbits));
+    entryOrbit->setText(QString::number(cfg->waves));
     entryAmp->setText(QString::number(cfg->amplitude));
     entryPeriod->setText(QString::number(cfg->period));
     entryWavelength->setText(QString::number(cfg->wavelength));
@@ -388,7 +389,7 @@ void MainWindow::handleComboCfg() {
 }
 
 void MainWindow::handleButtMorb() {
-    cfgParser->config->orbits = entryOrbit->text().toInt();
+    cfgParser->config->waves = entryOrbit->text().toInt();
     cfgParser->config->amplitude = entryAmp->text().toDouble();
     cfgParser->config->period = entryPeriod->text().toDouble() * M_PI;
     cfgParser->config->wavelength = entryWavelength->text().toDouble() * M_PI;
@@ -406,7 +407,7 @@ void MainWindow::handleButtMorb() {
 }
 
 void MainWindow::handleButtMorbHarmonics() {
-    graph->lockAndRenderCloud();
+    graph->newCloudConfig();
 }
 
 void MainWindow::handleButtColors(int id) {
@@ -435,7 +436,7 @@ void MainWindow::handleButtColors(int id) {
     std::string ss = "QPushButton {background-color: #" + nbcHex + "; color: #" + ntcHex + ";}";
     QString qss = QString::fromStdString(ss);
     buttGroupColors->button(id)->setStyleSheet(qss);
-    graph->setColorsOrbits(id, color);
+    graph->setColorsWaves(id, color);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

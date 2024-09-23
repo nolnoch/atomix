@@ -132,15 +132,13 @@ class Program {
         void displayLogProgram();
         void displayLogShader(GLenum shader);
 
-        GLuint renderCount = 0;
-
     private:
         QOpenGLFunctions_4_5_Core *qgf = nullptr;
         std::vector<SamplerInfo> *samplers = nullptr;
         std::vector<Shader> registeredShaders;
-        std::vector<GLuint> attribs;
         std::map<std::string, GLuint> compiledShaders;
         std::vector<GLuint> attachedShaders;
+        std::vector<GLuint> attribs;
 
         GLuint programId = 0;
         GLuint vao;

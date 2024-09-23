@@ -43,18 +43,18 @@ const std::string FSHEXT = ".frag";
 /* Wave-circle config struct */
 typedef struct {
     double wavelength = 2.0 * M_PI;                 // Wavelength as Multiples of PI
-    double amplitude = 0.4f;                        // Amplitude as Float
-    double period = 1.0f * M_PI;                    // Period as Multiples of PI
-    int orbits = 4;                                 // Orbit count as Integer
-    int resolution = 12;                           // Resolution as Integer
+    double amplitude = 0.4;                         // Amplitude as Float
+    double period = 1.0 * M_PI;                     // Period as Multiples of PI
+    int waves = 6;                                  // Wave count as Integer
+    int resolution = 180;                           // Resolution as Integer
     bool superposition = false;                     // Superposition as Bool
     bool cpu = false;                               // GPU rendering as Bool
     bool parallel = false;                          // Parallel waves as Bool
-    bool sphere = true;                            // Spherical waves as Bool
-    std::string vert = "gpu_sphere_test.vert";     // Vertex shader as String
+    bool sphere = false;                            // Spherical waves as Bool
+    std::string vert = "gpu_ortho_circle.vert";     // Vertex shader as String
     std::string frag = "wave.frag";                 // Fragment shader as String
-} WaveConfig;
-Q_DECLARE_METATYPE(WaveConfig);
+} AtomixConfig;
+Q_DECLARE_METATYPE(AtomixConfig);
 
 
 class ConfigParser {
@@ -72,7 +72,7 @@ class ConfigParser {
         std::vector<std::string> cfgFiles;
         std::vector<std::string> vshFiles;
         std::vector<std::string> fshFiles;
-        WaveConfig *config;
+        AtomixConfig *config;
 
     private:
         int chooseConfigFile();

@@ -1,5 +1,5 @@
 # (orbits: int <= 8) Number of wave-circle orbits [default = 4]
-orbits:4
+orbits: 6
 
 # (amplitude: float) Delta displacement of waves [default = 0.4]
 amplitude: 0.4

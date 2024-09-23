@@ -38,19 +38,19 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "program.hpp"
 #include "quaternion.hpp"
-#include "orbitmanager.hpp"
+#include "wavemanager.hpp"
 #include "cloudmanager.hpp"
 
 
-/* Program/Orbit pointer struct */
-typedef struct {
+/* Program/Wave pointer struct */
+/* typedef struct {
     std::vector<std::vector<Program *> *> apProgs;      // Vector of pointers to Programs
-    std::vector<std::vector<OrbitManager *> *> apOrbits;       // Vector of pointers to Orbits
+    std::vector<std::vector<WaveManager *> *> apWaves;       // Vector of pointers to Waves
     std::vector<WaveConfig *> apConfigs;                // Vector of configs
     int apIdxRender = 0;                                // Current pointer index
     int apIdxCreate = 0;                                // Future pointer index
 } AtomixProgs;
-Q_DECLARE_METATYPE(AtomixProgs);
+Q_DECLARE_METATYPE(AtomixProgs); */
 
 enum changeFlags {ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024};
 
@@ -62,14 +62,14 @@ public:
     GWidget(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~GWidget();
 
-    void printConfig(WaveConfig *cfg);
-    void setColorsOrbits(int id, uint colorChoice);
+    void printConfig(AtomixConfig *cfg);
+    void setColorsWaves(int id, uint colorChoice);
 
 public slots:
     void cleanup();
-    void configReceived(WaveConfig *cfg);
-    void selectRenderedOrbits(int id, bool checked);
-    void lockAndRenderCloud();
+    void newWaveConfig(AtomixConfig *cfg);
+    void selectRenderedWaves(int id, bool checked);
+    void newCloudConfig();
 
 protected:
     void initializeGL() override;
@@ -84,15 +84,16 @@ protected:
 
 private:
     void initVecsAndMatrices();
+    void initAtomixProg();
     void initCrystalProgram();
     void initWaveProgram();
     void initCloudProgram();
+    void changeModes();
     void processConfigChange();
     void swapShaders();
     void swapBuffers();
     void swapVertices();
     void swapIndices();
-    void clearProgram(uint i);
     void checkErrors(std::string str);
     void printSize();
 
@@ -100,15 +101,16 @@ private:
     Program *crystalProg = nullptr;
     Program *waveProg = nullptr;
     Program *cloudProg = nullptr;
+    Program *atomixProg = nullptr;
     ConfigParser *cfgParser = nullptr;
-    OrbitManager *orbitManager = nullptr;
+    WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;
     QTimer *gw_timer = nullptr;
 
     Program *currentProg = nullptr;
-    // TODO Make parent Manager class for wave/cloud inheritance and shared pointer (for glDraw call)
+    Manager *currentManager = nullptr;
 
-    WaveConfig renderConfig;
+    AtomixConfig renderConfig;
     glm::mat4 m4_proj;
     glm::mat4 m4_view;
     glm::mat4 m4_world;
@@ -123,7 +125,10 @@ private:
     int64_t gw_timeStart;
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
-    ushort renderedOrbits = 0;
+    ushort renderedWaves = 0;
+    float gw_startDist = 0.0f;
+    float gw_farDist = 0.0f;
+    float gw_nearDist = 0.0f;
     
     uint gw_faces = 0;
     int gw_scrHeight = 0;
@@ -131,7 +136,10 @@ private:
     uint gw_movement = 0;
     bool gw_pause = false;
     bool gw_init = false;
+    
     uint updateFlags = 0;
+    // uint static_dynamic = 0;
+    
     bool notChecked = true;
     bool newConfig = false;
     bool newVertices = false;

@@ -2,7 +2,7 @@
  * program.cpp
  *
  *    Created on: Apr 8, 2013
- *   Last Update: Sep 9, 2024
+ *   Last Update: Sep 23, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  * 
  *  Copyright 2013,2023,2024 Wade Burch (GPLv3)
@@ -40,9 +40,14 @@ Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
  * Default Destructor.
  */
 Program::~Program() {
-    if (samplers)
-        delete samplers;
+    delete samplers;
     if (vao) {
+        for (auto &v : vbo) {
+            qgf->glDeleteBuffers(1, &v);
+        }
+        for (auto &e : ebo) {
+            qgf->glDeleteBuffers(1, &e);
+        }
         qgf->glDeleteVertexArrays(1, &vao);
     }
     if (stage >= 2) {

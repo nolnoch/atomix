@@ -42,7 +42,7 @@ ConfigParser::ConfigParser() {
     cfgValues["sphere"] = 10;
     cfgValues["fragment"] = 11;
 
-    config = new WaveConfig;
+    config = new AtomixConfig;
 }
 
 ConfigParser::~ConfigParser() {
@@ -53,7 +53,7 @@ ConfigParser::~ConfigParser() {
 
 void ConfigParser::fillConfigFile() {
     /* This is broken and currently unnecessary anyway. */
-    config->orbits = config->orbits >= 0 ?: 4;
+    config->waves = config->waves >= 0 ?: 4;
     config->amplitude = config->amplitude > 0 ?: 0.6f;
     config->period = config->period ?: 1.0f;
     config->wavelength = config->wavelength > 0 ?: 2.0f * M_PI;
@@ -148,7 +148,7 @@ int ConfigParser::loadConfigFileCLI(string path) {
 
         switch(iter->second) {
             case 1:
-                config->orbits = stoi(value);
+                config->waves = stoi(value);
                 changes++;
                 break;
             case 2:
@@ -300,7 +300,7 @@ int ConfigParser::loadConfigFileGUI(string path) {
 
         switch(iter->second) {
             case 1:
-                config->orbits = stoi(value);
+                config->waves = stoi(value);
                 changes++;
                 break;
             case 2:
@@ -416,7 +416,7 @@ int ConfigParser::populateConfig() {
 }
 
 void ConfigParser::printConfig() {
-    cout << "Orbits: " << config->orbits << "\n";
+    cout << "Orbits: " << config->waves << "\n";
     cout << "Amplitude: " << config->amplitude << "\n";
     cout << "Period: " << config->period << "\n";
     cout << "Wavelength: " << config->wavelength << "\n";

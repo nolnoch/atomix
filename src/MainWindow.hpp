@@ -38,6 +38,7 @@
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QListWidget>
+#include <QSignalBlocker>
 #include "GWidget.hpp"
 
 const QString DEFAULT = "default-config.wave";
@@ -48,13 +49,13 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow();
-    void lockConfig(WaveConfig *cfg);
+    void lockConfig(AtomixConfig *cfg);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 signals:
-    void sendConfig(WaveConfig *cfg);
+    void sendConfig(AtomixConfig *cfg);
     void changeRenderedOrbits(uint selectedOrbits);
 
 private slots:
@@ -67,7 +68,7 @@ private:
     QWidget *wTabHarmonics = nullptr;
     QDockWidget *dockTabs = nullptr;
     ConfigParser *cfgParser = nullptr;
-    WaveConfig *customConfig = nullptr;
+    AtomixConfig *customConfig = nullptr;
 
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;
@@ -102,7 +103,7 @@ private:
     void setupDockHarmonics();
     void refreshConfigs();
     void refreshShaders();
-    void refreshOrbits(WaveConfig *cfg);
+    void refreshOrbits(AtomixConfig *cfg);
 
     void handleButtMorb();
     void handleButtMorbHarmonics();

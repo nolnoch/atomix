@@ -69,6 +69,7 @@ public slots:
     void cleanup();
     void configReceived(WaveConfig *cfg);
     void selectRenderedOrbits(int id, bool checked);
+    void lockAndRenderCloud();
 
 protected:
     void initializeGL() override;
@@ -85,6 +86,7 @@ private:
     void initVecsAndMatrices();
     void initCrystalProgram();
     void initWaveProgram();
+    void initCloudProgram();
     void processConfigChange();
     void swapShaders();
     void swapBuffers();
@@ -97,10 +99,14 @@ private:
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
     Program *waveProg = nullptr;
+    Program *cloudProg = nullptr;
     ConfigParser *cfgParser = nullptr;
     OrbitManager *orbitManager = nullptr;
     CloudManager *cloudManager = nullptr;
     QTimer *gw_timer = nullptr;
+
+    Program *currentProg = nullptr;
+    // TODO Make parent Manager class for wave/cloud inheritance and shared pointer (for glDraw call)
 
     WaveConfig renderConfig;
     glm::mat4 m4_proj;
@@ -117,7 +123,7 @@ private:
     int64_t gw_timeStart;
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
-    ushort renderedOrbits;
+    ushort renderedOrbits = 0;
     
     uint gw_faces = 0;
     int gw_scrHeight = 0;
@@ -127,13 +133,18 @@ private:
     bool gw_init = false;
     uint updateFlags = 0;
     bool notChecked = true;
+    bool newConfig = false;
     bool newVertices = false;
     bool newIndices = false;
     bool newUniformsMaths = false;
     bool newUniformsColor = false;
+    bool newCloud = false;
     bool updateRequired = false;
 
-    bool renderCloud = true;
+    bool renderCloud = false;
+    bool renderWave = false;
+    bool waveMode = false;
+    bool cloudMode = false;
 };
 
 #endif

@@ -62,8 +62,10 @@ private slots:
 
 private:
     //Window *container = nullptr;
-    QWidget *wDock = nullptr;
-    QDockWidget *controlBox = nullptr;
+    QTabWidget *wTabs = nullptr;
+    QWidget *wTabWaves = nullptr;
+    QWidget *wTabHarmonics = nullptr;
+    QDockWidget *dockTabs = nullptr;
     ConfigParser *cfgParser = nullptr;
     WaveConfig *customConfig = nullptr;
 
@@ -87,19 +89,23 @@ private:
     QButtonGroup *buttGroupOrbits = nullptr;
     QButtonGroup *buttGroupColors = nullptr;
 
-    QPushButton *buttMorb = nullptr;
+    QPushButton *buttMorbWaves = nullptr;
+    QPushButton *buttMorbHarmonics = nullptr;
 
     QListWidget *orbitSelector = nullptr;
 
     GWidget *graph = nullptr;
 
     void loadConfig();
-    void setupDock();
+    void setupTabs();
+    void setupDockWaves();
+    void setupDockHarmonics();
     void refreshConfigs();
     void refreshShaders();
     void refreshOrbits(WaveConfig *cfg);
 
     void handleButtMorb();
+    void handleButtMorbHarmonics();
     void handleComboCfg();
     void handleButtColors(int id);
 };

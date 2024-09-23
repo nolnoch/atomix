@@ -39,8 +39,10 @@ void MainWindow::onAddNew() {
     customConfig = new WaveConfig;
 
     /* Setup Dock GUI */
-    setupDock();
-    addDockWidget(Qt::RightDockWidgetArea, controlBox);
+    setupDockWaves();
+    setupDockHarmonics();
+    setupTabs();
+    addDockWidget(Qt::RightDockWidgetArea, dockTabs);
     setCentralWidget(graph);
 
     refreshConfigs();
@@ -50,9 +52,10 @@ void MainWindow::onAddNew() {
     
     connect(this, &MainWindow::sendConfig, graph, &GWidget::configReceived, Qt::DirectConnection);
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
-    connect(buttMorb, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
+    connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedOrbits, Qt::DirectConnection);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
+    connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
 
     setWindowTitle(tr("atomix"));
 }
@@ -160,11 +163,24 @@ void MainWindow::loadConfig() {
     //refreshOrbits(cfg);
 }
 
-void MainWindow::setupDock() {
+void MainWindow::setupTabs() {
+    dockTabs = new QDockWidget(this);
+    wTabs = new QTabWidget(this);
+
+    wTabs->addTab(wTabWaves, tr("Waves"));
+    wTabs->addTab(wTabHarmonics, tr("Harmonics"));
+    // wTabs->setTabShape(QTabWidget::TabShape::Triangular);
+    wTabs->setStyleSheet("QTabBar::tab { height: 33px; width: 250px; }"\
+                         "QTabBar::tab:!selected { background: #222222 }");
+
+    dockTabs->setWidget(wTabs);
+}
+
+void MainWindow::setupDockWaves() {
     comboConfigFile = new QComboBox(this);
-    wDock = new QWidget(this);
-    controlBox = new QDockWidget(this);
-    buttMorb = new QPushButton("Morb", this);
+    wTabWaves = new QWidget(this);
+    
+    buttMorbWaves = new QPushButton("Morb", this);
     buttGroupColors = new QButtonGroup(this);
 
     QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -191,7 +207,6 @@ void MainWindow::setupDock() {
     QGroupBox *groupColors = new QGroupBox("Wave Colors");
     QGroupBox *groupOrbits = new QGroupBox("Visible Orbits");
 
-    //QLabel *labelConfig = new QLabel("Select Config File:");
     QLabel *labelOrbit = new QLabel("Number of orbits:");
     QLabel *labelAmp = new QLabel("Amplitude:");
     QLabel *labelPeriod = new QLabel("Period (N * pi):");
@@ -271,7 +286,6 @@ void MainWindow::setupDock() {
     buttGroupOrbits->addButton(orbit7, 64);
     buttGroupOrbits->addButton(orbit8, 128);
 
-    //layConfigFile->addWidget(labelConfig);
     layConfigFile->addWidget(comboConfigFile);
 
     layOptionRow1->addWidget(labelOrbit, 2, Qt::AlignLeft);
@@ -336,22 +350,37 @@ void MainWindow::setupDock() {
     layDock->addWidget(groupConfig);
     layDock->addStretch(1);
     layDock->addWidget(groupOptions);
-    layDock->addWidget(buttMorb);
+    layDock->addWidget(buttMorbWaves);
     layDock->addStretch(2);
     layDock->addWidget(groupColors);
     layDock->addWidget(groupOrbits);    
 
     layDock->setStretchFactor(groupConfig, 1);
     layDock->setStretchFactor(groupOptions, 6);
-    layDock->setStretchFactor(buttMorb, 1);
+    layDock->setStretchFactor(buttMorbWaves, 1);
     layDock->setStretchFactor(groupColors, 1);
     layDock->setStretchFactor(groupOrbits, 1);
 
-    buttMorb->setSizePolicy(qPolicyExpand);
+    buttMorbWaves->setSizePolicy(qPolicyExpand);
     
-    wDock->setLayout(layDock);
-    wDock->setMinimumSize(500,0);
-    controlBox->setWidget(wDock);
+    wTabWaves->setLayout(layDock);
+    wTabWaves->setMinimumSize(500,0);
+}
+
+void MainWindow::setupDockHarmonics() {
+    wTabHarmonics = new QWidget(this);
+    buttMorbHarmonics = new QPushButton("Morb", this);
+
+    QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    QVBoxLayout *layDockHarmonics = new QVBoxLayout;
+    layDockHarmonics->addWidget(buttMorbHarmonics);    
+    layDockHarmonics->setStretchFactor(buttMorbWaves, 1);
+
+    buttMorbWaves->setSizePolicy(qPolicyExpand);
+    
+    wTabHarmonics->setLayout(layDockHarmonics);
+    wTabHarmonics->setMinimumSize(500,0);
 }
 
 void MainWindow::handleComboCfg() {
@@ -374,6 +403,10 @@ void MainWindow::handleButtMorb() {
     refreshOrbits(cfgParser->config);
 
     lockConfig(cfgParser->config);
+}
+
+void MainWindow::handleButtMorbHarmonics() {
+    graph->lockAndRenderCloud();
 }
 
 void MainWindow::handleButtColors(int id) {

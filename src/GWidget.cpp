@@ -4,21 +4,21 @@
  *    Created on: Oct 3, 2023
  *   Last Update: Sep 9, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
- * 
+ *
  *  Copyright 2023, 2024 Wade Burch (GPLv3)
- * 
+ *
  *  This file is part of atomix.
- * 
+ *
  *  atomix is free software: you can redistribute it and/or modify it under the
- *  terms of the GNU General Public License as published by the Free Software 
- *  Foundation, either version 3 of the License, or (at your option) any later 
+ *  terms of the GNU General Public License as published by the Free Software
+ *  Foundation, either version 3 of the License, or (at your option) any later
  *  version.
- * 
- *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ *
+ *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- *  You should have received a copy of the GNU General Public License along with 
+ *
+ *  You should have received a copy of the GNU General Public License along with
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -52,9 +52,15 @@ void GWidget::cleanup() {
     //doneCurrent();
 }
 
+void GWidget::lockAndRenderCloud() {
+    cloudMode = true;
+    waveMode = false;
+    updateRequired = true;
+}
+
 void GWidget::configReceived(WaveConfig *cfg) {
     setUpdatesEnabled(false);
-    
+
     if (renderConfig.orbits != cfg->orbits) {
         renderConfig.orbits = cfg->orbits;                  // Requires new {Vertices[cpu/gpu], VBO, EBO}
         updateFlags |= ORBITS;
@@ -99,8 +105,10 @@ void GWidget::configReceived(WaveConfig *cfg) {
         renderConfig.frag = cfg->frag;                      // Requires new {Shader}
         updateFlags |= FRAGSHADER;
     }
-    
+
     updateRequired = true;
+    waveMode = true;
+    cloudMode = false;
     setUpdatesEnabled(true);
 }
 
@@ -116,7 +124,7 @@ void GWidget::selectRenderedOrbits(int id, bool checked) {
 void GWidget::processConfigChange() {
     //TODO get rid of this debug statement:
     assert(!newVertices);
-    
+
     // Re-create Orbits with new params from config
     if ((updateFlags & (ORBITS | RESOLUTION | SPHERE | CPU)) ||
         (renderConfig.cpu && (updateFlags & (AMPLITUDE | PERIOD | WAVELENGTH | PARALLEL)))) {
@@ -133,7 +141,7 @@ void GWidget::processConfigChange() {
         newUniformsMaths = true;
         newUniformsColor = true;
     }
-    
+
     if (updateFlags & (ORBITS | RESOLUTION | SPHERE)) {
         swapBuffers();
     } else if (newVertices) {
@@ -141,7 +149,7 @@ void GWidget::processConfigChange() {
     } else if (newIndices) {
         swapIndices();
     }
-    
+
     updateFlags = 0;
     updateRequired = false;
 }
@@ -149,7 +157,7 @@ void GWidget::processConfigChange() {
 void GWidget::swapShaders() {
     // Detach current shaders
     waveProg->detachShaders();
-    
+
     // Attach shaders, link/validate program, and clean up
     waveProg->attachShader(renderConfig.vert);
     waveProg->attachShader(renderConfig.frag);
@@ -158,7 +166,7 @@ void GWidget::swapShaders() {
 }
 
 void GWidget::swapBuffers() {
-    // Load and bind new vertices and attributes 
+    // Load and bind new vertices and attributes
     waveProg->enable();
     waveProg->bindVAO();
     waveProg->clearBuffers();
@@ -188,7 +196,7 @@ void GWidget::swapIndices() {
     waveProg->endRender();
 
     newIndices = false;
-} 
+}
 
 void GWidget::clearProgram(uint i) {
     //TODO necessary?
@@ -206,7 +214,7 @@ void GWidget::initCrystalProgram() {
     back = root / 3 * edge;
     forZ = root / 6 * edge;
     forX = edge / 2;
-    
+
     const std::array<GLfloat, 30> vertices = {
               //Vertex              //Colour
           zero,  peak,  zero,   0.6f, 0.6f, 0.6f,    //top
@@ -252,25 +260,7 @@ void GWidget::initCrystalProgram() {
 
 void GWidget::initWaveProgram() {
     /* Orbits */
-    cloudManager = new CloudManager(&renderConfig);
-    std::cout << "Vertex generation complete." << std::endl;
-
-    // cloudManager->cloudTest(8);
-    
-    cloudManager->genOrbitalExplicit(7, 5, 0);
-    cloudManager->genOrbitalExplicit(4, 2, 0);
-    // cloudManager->genOrbitalExplicit(3, 2, -1);
-    // cloudManager->genOrbitalExplicit(3, 2, -2);
-    cloudManager->genOrbitalExplicit(3, 1, 0);
-    // cloudManager->genOrbitalExplicit(3, 1, -1);
-    // cloudManager->genOrbitalsThroughN(8);
-    // cloudManager->genOrbitalsOfN(3);
-    
-    cloudManager->bakeOrbitalsForRender();
-    
-    std::cout << "Orbital generation complete." << std::endl;
-    printSize();
-    // assert(!"Stopping here for review.");
+    orbitManager = new OrbitManager(&renderConfig);
 
     /* Program */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
@@ -291,44 +281,89 @@ void GWidget::initWaveProgram() {
     waveProg->detachShaders();
     
     // Load and bind vertices and attributes
-    /*
     waveProg->initVAO();
     waveProg->bindVAO();
-    GLuint vboID = waveProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
+    GLuint vboID = waveProg->bindVBO(orbitManager->getVertexSize(), orbitManager->getVertexData(), static_dynamic);
     waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
     waveProg->enableAttribute(0);
     waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
-    waveProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
-    */
-
-    /* VAO */
-    waveProg->initVAO();
-    waveProg->bindVAO();
-
-    /* VBO 1: Vertices */
-    GLuint vboIDa = waveProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
-    waveProg->setAttributeBuffer(0, vboIDa, 3 * sizeof(GLfloat));
-    waveProg->enableAttribute(0);
-    waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
-
-    /* VBO 2: RDPs */
-    GLuint vboIDb = waveProg->bindVBO(cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
-    waveProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
-    waveProg->enableAttribute(1);
-    waveProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
-
-    /* EBO: Indices */
-    waveProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
+    waveProg->bindEBO(orbitManager->getIndexSize(), orbitManager->getIndexData(), static_dynamic);
+    //waveProg->assignFragColour();
 
     /* Release */
     waveProg->endRender();
     waveProg->clearBuffers();
+    newUniformsMaths = true;
+    newUniformsColor = true;
+
+    currentProg = waveProg;
+}
+
+void GWidget::initCloudProgram() {
+    /* Orbits */
+    cloudManager = new CloudManager(&renderConfig);
+    std::cout << "Vertex generation complete." << std::endl;
+
+    cloudManager->genOrbitalExplicit(4, 2, 0);
+    // cloudManager->genOrbitalExplicit(7, 1, 0);
+    // cloudManager->genOrbitalExplicit(3, 2, -1);
+    // cloudManager->genOrbitalExplicit(3, 2, -2);
+    // cloudManager->genOrbitalsThroughN(8);
+    // cloudManager->genOrbitalsOfN(3);
+    // cloudManager->cloudTest(8);
+    cloudManager->bakeOrbitalsForRender();
+    this->printSize();
+
+    /* Program */
+    // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
+    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+
+    // Create Program
+    cloudProg = new Program(this);
+
+    // Add all shaders
+    cloudProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
+    cloudProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
+    cloudProg->init();
+
+    // Attach shaders, link/validate program, and clean up
+    cloudProg->attachShader(renderConfig.vert);
+    cloudProg->attachShader(renderConfig.frag);
+    cloudProg->linkAndValidate();
+    cloudProg->detachShaders();
+
+    /* VAO */
+    cloudProg->initVAO();
+    cloudProg->bindVAO();
+
+    /* VBO 1: Vertices */
+    GLuint vboIDa = cloudProg->bindVBO(cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
+    cloudProg->setAttributeBuffer(0, vboIDa, 3 * sizeof(GLfloat));
+    cloudProg->enableAttribute(0);
+    cloudProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
+
+    /* VBO 2: RDPs */
+    GLuint vboIDb = cloudProg->bindVBO(cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
+    cloudProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
+    cloudProg->enableAttribute(1);
+    cloudProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
+
+    /* EBO: Indices */
+    cloudProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
+
+    /* Release */
+    cloudProg->endRender();
+    cloudProg->clearBuffers();
+    this->renderCloud = true;
+    updateRequired = false;
+
+    currentProg = cloudProg;
 }
 
 void GWidget::initVecsAndMatrices() {
-    float camStart = 60.0f;        // TODO Rescale for Cloud
+    float camStart = 80.0f;        // TODO Rescale for Cloud
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -339,8 +374,6 @@ void GWidget::initVecsAndMatrices() {
     v3_cameraPosition = glm::vec3(0.0f, 0.0f, camStart);
     v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    v3_mouseBegin = glm::vec3(0);
-    v3_mouseEnd = glm::vec3(0);
     v3_mouseBegin = glm::vec3(0);
     v3_mouseEnd = glm::vec3(0);
 }
@@ -370,11 +403,10 @@ void GWidget::initializeGL() {
     /* Init -- Matrices */
     initVecsAndMatrices();
     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
+    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 500.0f);
 
     /* Init -- Programs and Shaders */
     initCrystalProgram();
-    initWaveProgram();
 
     /* Init -- Time */
     gw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -390,7 +422,15 @@ void GWidget::paintGL() {
 
     /* Pre-empt painting for new or updated Orbit configuration */
     if (updateRequired) {
-        processConfigChange();
+        if (waveMode) {
+            if (waveProg) {
+                processConfigChange();
+            } else {
+                initWaveProgram();
+            }
+        } else if (cloudMode) {
+            initCloudProgram();
+        }
     }
 
     /* Per-frame Setup */
@@ -402,8 +442,7 @@ void GWidget::paintGL() {
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     m4_world = m4_translation * m4_rotation;
     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), 0.1f, 100.0f);
-    
+
     /* Render -- Crystal */
     crystalProg->beginRender();
     crystalProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
@@ -413,16 +452,17 @@ void GWidget::paintGL() {
     crystalProg->endRender();
 
     /* Render -- Orbits */
-    if (renderCloud || renderedOrbits) {
-        waveProg->beginRender();
-        if (!renderCloud && renderConfig.cpu) {
+    if (renderCloud || renderWave) {
+        currentProg->renderCount = (waveProg) ? orbitManager->getIndexCount() : cloudManager->getIndexCount();
+        currentProg->beginRender();
+        if (renderWave && renderConfig.cpu) {
             cloudManager->updateCloud(time);
             waveProg->updateVBO(0, cloudManager->getVertexSize(), cloudManager->getVertexData());
         }
         if (false && newUniformsMaths) {
-            waveProg->setUniform(GL_FLOAT, "two_pi_L", cloudManager->two_pi_L);
-            waveProg->setUniform(GL_FLOAT, "two_pi_T", cloudManager->two_pi_T);
-            waveProg->setUniform(GL_FLOAT, "amp", cloudManager->amplitude);
+            waveProg->setUniform(GL_FLOAT, "two_pi_L", orbitManager->two_pi_L);
+            waveProg->setUniform(GL_FLOAT, "two_pi_T", orbitManager->two_pi_T);
+            waveProg->setUniform(GL_FLOAT, "amp", orbitManager->amplitude);
             newUniformsMaths = false;
         }
         if (false && newUniformsColor) {
@@ -431,12 +471,12 @@ void GWidget::paintGL() {
             waveProg->setUniform(GL_UNSIGNED_INT, "trough", orbitManager->trough);
             newUniformsColor = false;
         }
-        waveProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-        waveProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-        waveProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-        waveProg->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_POINTS, cloudManager->getIndexCount(), GL_UNSIGNED_INT, 0);
-        waveProg->endRender();
+        currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+        currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+        currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        currentProg->setUniform(GL_FLOAT, "time", time);
+        glDrawElements(GL_POINTS, currentProg->renderCount, GL_UNSIGNED_INT, 0);
+        currentProg->endRender();
     }
 
     q_TotalRot.normalize();
@@ -446,12 +486,12 @@ void GWidget::resizeGL(int w, int h) {
     gw_scrHeight = height();
     gw_scrWidth = width();
     m4_proj = glm::mat4(1.0f);
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, 0.1f, 100.0f);
+    m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, 0.1f, 500.0f);
 }
 
 void GWidget::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
-    float scrollScale = 1.0f + ((float) scrollClicks/ 10);
+    float scrollScale = 1.0f + ((float) scrollClicks / 8);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
     update();
 }
@@ -496,11 +536,11 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
     } else if (gw_movement & Qt::LeftButton) {
         /* Left-click drag will grab and slide world */
         if (v3_mouseBegin != v3_mouseEnd) {
-            glm::vec3 deltaSlide = 0.01f * (v3_mouseEnd - v3_mouseBegin);
+            glm::vec3 deltaSlide = 0.02f * (v3_mouseEnd - v3_mouseBegin);
             glm::vec3 cameraSlide = glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
             m4_translation = glm::translate(m4_translation, cameraSlide);
         }
-        
+
     } else if (gw_movement & Qt::MiddleButton) {
         /* Middle-click-drag will rotate about camera look vector */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
@@ -510,7 +550,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
             Quaternion qOrbitRotL = Quaternion(orbitAngleL, orbitAxisL, RAD);
             q_TotalRot = qOrbitRotL * q_TotalRot;
         }
-    } 
+    }
     update();
 }
 
@@ -546,7 +586,7 @@ void GWidget::checkErrors(std::string str) {
         std::cout << "\n" << str << std::hex << err;
         messages++;
     }
-    
+
     if (messages)
         std::cout << std::endl;
 }
@@ -576,9 +616,12 @@ void GWidget::printSize() {
 
     int64_t divisorMB = 1024 * 1024;
 
-    std::cout << "Vertex Total Size: " << VSize / divisorMB << " MB\n";
-    std::cout << "RDProb Total Size: " << DSize / divisorMB << " MB\n";
-    std::cout << "Indice Total Size: " << ISize / divisorMB << " MB" << std::endl;
+    if (ISize > 1048576)
+        ISize /= divisorMB;
+
+    std::cout << "Vertex Total Size: " << std::setw(6) << VSize / divisorMB << " MB\n";
+    std::cout << "RDProb Total Size: " << std::setw(6) << DSize / divisorMB << " MB\n";
+    std::cout << "Indice Total Size: " << std::setw(6) << ISize  << ((ISize > 1048576) ? " MB" : "  B") << std::endl;
 }
 
 void GWidget::printConfig(WaveConfig *cfg) {

@@ -332,15 +332,15 @@ void OrbitManager::genIndexBuffer() {
     this->indexSize = setIndexSize();
 }
 
-int OrbitManager::getVertexSize() {
+uint OrbitManager::getVertexSize() {
     return this->vertexSize;
 }
 
-int OrbitManager::getIndexCount() {
+uint OrbitManager::getIndexCount() {
     return this->indexCount;
 }
 
-int OrbitManager::getIndexSize() {
+uint OrbitManager::getIndexSize() {
     return this->indexSize;
 }
 
@@ -352,7 +352,6 @@ int OrbitManager::setVertexSize() {
     int chunks = vertexCount ?: setVertexCount();
     int chunkSize = sizeof(glm::vec3);
 
-    //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
 }
 
@@ -369,7 +368,6 @@ int OrbitManager::setIndexSize() {
     int chunks = indexCount ?: setIndexCount();
     int chunkSize = sizeof(uint);
 
-    //std::cout << "allIndices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
 }
 

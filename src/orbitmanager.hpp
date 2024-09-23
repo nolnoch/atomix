@@ -55,9 +55,9 @@ class OrbitManager {
         void newOrbits();
         uint selectOrbits(int id, bool checked);
         
-        int getVertexSize();
-        int getIndexCount();
-        int getIndexSize();
+        uint getVertexSize();
+        uint getIndexCount();
+        uint getIndexSize();
         const float* getVertexData();
         const uint* getIndexData();
 

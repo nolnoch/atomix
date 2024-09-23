@@ -37,7 +37,7 @@ CloudManager::~CloudManager() {
 
 void CloudManager::createCloud() {
     this->cloudOrbitCount = 150;
-    this->cloudOrbitDivisor = 2;
+    this->cloudOrbitDivisor = 1;
     this->cloudLayerDelta = 1.0 / this->cloudOrbitDivisor;
     this->cloudLayerCount = this->cloudOrbitCount * this->cloudOrbitDivisor;
     vec3 pos = vec3(0.0f);
@@ -96,7 +96,7 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
         double R = wavefuncRadial(n, l, radius);
         double rdp = wavefuncRDP(R, radius, l);
 
-        if (rdp) {
+        if (rdp > 0.00001) {
 
             for (int i = 0; i < steps; i++) {
                 int base = i * steps;
@@ -157,6 +157,7 @@ void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
 }
 
 void CloudManager::bakeOrbitalsForRender() {
+    // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
             double maxRDP = genOrbital(key, v.x, v.y);
@@ -165,7 +166,7 @@ void CloudManager::bakeOrbitalsForRender() {
         // For each N: Get max element from accumulated rdpStaging values
         shellRDPMaximaCum[key - 1] = *std::max_element(rdpStaging.begin(), rdpStaging.end());
 
-        // For each N: Normalize accumulated pixelRDPs, add to allRDPs, and reset pixelRDP vector
+        // For each N: Normalize accumulated pixelRDPs, add to allRDPs, register indices, and reset pixelRDP vector
         for (uint p = 0; p < this->pixelCount; p++) {
             double new_val = rdpStaging[p] / shellRDPMaximaCum[key - 1];
             if (new_val > 0.06) {
@@ -176,11 +177,12 @@ void CloudManager::bakeOrbitalsForRender() {
         }
     }
     // End: check actual value of accumulated allRDPs
-    double actual_max = *std::max_element(allRDPs.begin(), allRDPs.end());
-    std::cout << "Cumulative Max RDP for allRDPs was: " << actual_max << std::endl;
+    this->allRDPMaximum = *std::max_element(allRDPs.begin(), allRDPs.end());
+    std::cout << "Cumulative Max RDP for allRDPs was: " << this->allRDPMaximum << std::endl;
 
     // End: Clamp all accumulated values in allRDPs to [0,1]
-    std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto d){ return std::clamp(d, 0.0f, 1.0f); });
+    std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });
+    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
 
     // End: Reset state for next orbital calculation(s)
     std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);

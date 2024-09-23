@@ -127,6 +127,7 @@ class CloudManager {
         dvec rdpStaging;
         dvec shellRDPMaxima;
         dvec shellRDPMaximaCum;
+        float allRDPMaximum;
         
         vVec3 allVertices;
         vVec3 allColours;

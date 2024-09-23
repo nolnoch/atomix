@@ -132,6 +132,8 @@ class Program {
         void displayLogProgram();
         void displayLogShader(GLenum shader);
 
+        GLuint renderCount = 0;
+
     private:
         QOpenGLFunctions_4_5_Core *qgf = nullptr;
         std::vector<SamplerInfo> *samplers = nullptr;

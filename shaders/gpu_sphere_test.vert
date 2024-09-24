@@ -45,17 +45,17 @@ void main() {
         vertColour = vec4(rdp, 0.0f, rdp, alpha);
     } */
 
-    if (rdp > 0.92f) {
+    if (rdp > 0.90f) {
         vertColour = vec4(rdp, rdp, rdp, alpha);
-    } else if (rdp > 0.80f) {
+    } else if (rdp > 0.75f) {
         vertColour = vec4(rdp, 0.0f, 0.0f, alpha);
-    } else if (rdp > 0.65f) {
+    } else if (rdp > 0.60f) {
         vertColour = vec4(rdp, rdp, 0.0f, alpha);
-    } else if (rdp > 0.50f) {
+    } else if (rdp > 0.45f) {
         vertColour = vec4(0.0f, rdp, 0.0f, alpha);
-    } else if (rdp > 0.35f) {
+    } else if (rdp > 0.30f) {
         vertColour = vec4(0.0f, rdp, rdp, alpha);
-    } else if (rdp > 0.20f) {
+    } else if (rdp > 0.15f) {
         vertColour = vec4(0.0f, 0.0f, rdp, alpha);
     } else {
         vertColour = vec4(rdp, 0.0f, rdp, alpha);

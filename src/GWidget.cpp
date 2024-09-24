@@ -153,7 +153,7 @@ void GWidget::processConfigChange() {
     }
 
     updateFlags = 0;
-    updateRequired = false;
+    // updateRequired = false;
 }
 
 void GWidget::swapShaders() {
@@ -200,7 +200,7 @@ void GWidget::swapIndices() {
     newIndices = false;
 }
 
-void GWidget::initCrystalProgram() {
+int GWidget::initCrystalProgram() {
     std::string vertName = "crystal.vert";
     std::string fragName = "crystal.frag";
 
@@ -232,6 +232,18 @@ void GWidget::initCrystalProgram() {
     };
     this->gw_faces = indices.size();
 
+    vVec3 crystalCircleVertices;
+    uvec crystalCircleIndices;
+    int crystalRes = 90;
+    double crystalDegFac = PI_TWO / crystalRes;
+    double crystalRadius = 0.5f;
+    for (int i = 0; i < crystalRes; i++) {
+        // double theta = i * crystalDegFac;
+        crystalCircleVertices.push_back(vec3(crystalRadius * cos(i * crystalDegFac), 0.0f, crystalRadius * sin(i * crystalDegFac)));
+        crystalCircleIndices.push_back(i);
+    }
+    this->gw_lines = crystalCircleIndices.size();
+
     /* Program */
     crystalProg = new Program(this);
     crystalProg->addShader(vertName, GL_VERTEX_SHADER);
@@ -254,13 +266,15 @@ void GWidget::initCrystalProgram() {
     /* Release */
     crystalProg->endRender();
     crystalProg->clearBuffers();
+
+    return flagExit::A_OKAY;
 }
 
-void GWidget::initAtomixProg() {
-    
+int GWidget::initAtomixProg() {
+    return flagExit::A_OKAY;
 }
 
-void GWidget::initWaveProgram() {
+int GWidget::initWaveProgram() {
     /* Waves */
     waveManager = new WaveManager(&renderConfig);
 
@@ -300,24 +314,31 @@ void GWidget::initWaveProgram() {
     newUniformsMaths = true;
     newUniformsColor = true;
     this->renderWave = true;
-    updateRequired = false;
+    // updateRequired = false;
 
     currentProg = waveProg;
     currentManager = waveManager;
+
+    return flagExit::A_OKAY;
 }
 
-void GWidget::initCloudProgram() {
+int GWidget::initCloudProgram() {
     /* Waves */
     cloudManager = new CloudManager(&renderConfig);
 
-    cloudManager->genOrbitalExplicit(4, 2, 0);
+    // cloudManager->genOrbitalExplicit(4, 2, 0);
     // cloudManager->genWavealExplicit(7, 1, 0);
     // cloudManager->genWavealExplicit(3, 2, -1);
     // cloudManager->genWavealExplicit(3, 2, -2);
     // cloudManager->genWavealsThroughN(8);
     // cloudManager->genWavealsOfN(3);
-    // cloudManager->cloudTest(8);
-    cloudManager->bakeOrbitalsForRender();
+    cloudManager->cloudTest(8);
+
+    // cloudManager->createCloud();
+    if (cloudManager->bakeOrbitalsForRender()) {
+        std::cout << "Failed to bake orbitals for render." << std::endl;
+        return flagExit::A_ERR;
+    }
     this->printSize();
 
     /* Program */
@@ -361,10 +382,12 @@ void GWidget::initCloudProgram() {
     cloudProg->endRender();
     cloudProg->clearBuffers();
     this->renderCloud = true;
-    updateRequired = false;
+    // updateRequired = false;
 
     currentProg = cloudProg;
     currentManager = cloudManager;
+
+    return flagExit::A_OKAY;
 }
 
 void GWidget::changeModes() {
@@ -457,17 +480,29 @@ void GWidget::paintGL() {
             if (renderWave) {
                 processConfigChange();
             } else {
-                renderCloud = false;
+                setUpdatesEnabled(false);
+                this->renderCloud = false;
                 changeModes();
                 initWaveProgram();
                 initVecsAndMatrices();
+                setUpdatesEnabled(true);
             }
         } else if (cloudMode) {
-            renderWave = false;
+            setUpdatesEnabled(false);
             changeModes();
-            initCloudProgram();
+            if (!initCloudProgram()) {
+                this->renderWave = false;
+            } else {
+                delete cloudProg;
+                delete cloudManager;
+                this->cloudProg = 0;
+                this->cloudManager = 0;
+                this->cloudMode = false;
+            }
             initVecsAndMatrices();
+            setUpdatesEnabled(true);
         }
+        updateRequired = false;
     }
 
     /* Per-frame Setup */

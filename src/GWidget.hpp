@@ -52,7 +52,7 @@
 } AtomixProgs;
 Q_DECLARE_METATYPE(AtomixProgs); */
 
-enum changeFlags {ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024};
+enum flagsConfig {ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024};
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -84,10 +84,10 @@ protected:
 
 private:
     void initVecsAndMatrices();
-    void initAtomixProg();
-    void initCrystalProgram();
-    void initWaveProgram();
-    void initCloudProgram();
+    int initAtomixProg();
+    int initCrystalProgram();
+    int initWaveProgram();
+    int initCloudProgram();
     void changeModes();
     void processConfigChange();
     void swapShaders();
@@ -101,7 +101,7 @@ private:
     Program *crystalProg = nullptr;
     Program *waveProg = nullptr;
     Program *cloudProg = nullptr;
-    Program *atomixProg = nullptr;
+    Program *atomixProg = nullptr; // TODO Consolidate or delete?
     ConfigParser *cfgParser = nullptr;
     WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;
@@ -131,6 +131,7 @@ private:
     float gw_nearDist = 0.0f;
     
     uint gw_faces = 0;
+    uint gw_lines = 0;
     int gw_scrHeight = 0;
     int gw_scrWidth = 0;
     uint gw_movement = 0;

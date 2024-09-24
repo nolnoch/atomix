@@ -171,7 +171,7 @@ void MainWindow::setupTabs() {
     wTabs->addTab(wTabWaves, tr("Waves"));
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
     // wTabs->setTabShape(QTabWidget::TabShape::Triangular);
-    wTabs->setStyleSheet("QTabBar::tab { height: 33px; width: 250px; }"\
+    wTabs->setStyleSheet("QTabBar::tab { height: 50px; width: 250px; }"\
                          "QTabBar::tab:!selected { background: #222222 }");
 
     dockTabs->setWidget(wTabs);

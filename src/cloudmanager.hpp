@@ -34,18 +34,21 @@
 
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
+enum flagStages {INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16};
+
 
 class CloudManager : public Manager {
     public:
         CloudManager(AtomixConfig *cfg);
         virtual ~CloudManager();
         
+        void createCloud();
         void updateCloud(double time);
 
         void genOrbitalsThroughN(int n);
         void genOrbitalsOfN(int n);
         void genOrbitalExplicit(int n, int l, int m_l);
-        void bakeOrbitalsForRender();
+        int bakeOrbitalsForRender();
         void cloudTest(int n_max);
         
         void newCloud();
@@ -63,7 +66,6 @@ class CloudManager : public Manager {
         double max_r = 0, max_theta = 0, max_phi = 0;
 
     private:
-        void createCloud();
         void resetManager() override;
         
         double wavefuncRadial(int n, int l, double r);
@@ -91,26 +93,24 @@ class CloudManager : public Manager {
         dvec shellRDPMaxima;
         dvec shellRDPMaximaCum;
         float allRDPMaximum;
-        
         vVec3 allColours;
         fvec allRDPs;
         
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
-
         std::unordered_set<int> activeShells;
         std::map<int, std::vector<glm::ivec2>> cloudOrbitals;
-
-        int atomZ = 1;
-        const int MAX_SHELLS = 8;
         
         uint colourCount = 0;
         uint colourSize = 0;
         uint RDPCount = 0;
         uint RDPSize = 0;
         uint64_t pixelCount = 0;
-        
+        uint stageFlags = 0;
+
         int orbitalIdx = 0;
+        int atomZ = 1;
+        const int MAX_SHELLS = 8;
         double phase_base = PI_TWO;
 
         int cloudOrbitCount = 0;
@@ -118,6 +118,7 @@ class CloudManager : public Manager {
         int cloudLayerCount = 0;
         int cloudResolution = 0;
         double cloudLayerDelta = 0;
+        double cloudTolerance = 0.01;
 };
 
 #endif

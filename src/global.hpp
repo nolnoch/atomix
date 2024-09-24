@@ -52,6 +52,7 @@ const double HC = 1.98644586e-25;   // Convenience product of above
 
 const int RENDORBS[] = {1, 2, 4, 8, 16, 32, 64, 128};
 
-enum {ALPHA = 0, BLUE = 8, GREEN = 16, RED = 24};
+enum flagExit {A_OKAY = 0x0, A_ERR = 0x1};
+enum bitsColors {ALPHA = 0, BLUE = 8, GREEN = 16, RED = 24};
 
 #endif

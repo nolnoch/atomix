@@ -28,7 +28,7 @@
 CloudManager::CloudManager(AtomixConfig *cfg) {
     newConfig(cfg);
     this->cfg.vert = "gpu_sphere_test.vert";
-    createCloud();
+    stageFlags |= flagStages::INIT;
 }
 
 CloudManager::~CloudManager() {
@@ -36,7 +36,7 @@ CloudManager::~CloudManager() {
 }
 
 void CloudManager::createCloud() {
-    assert(!active);
+    assert(stageFlags & flagStages::INIT);
 
     this->cloudOrbitCount = 150;
     this->cloudOrbitDivisor = 1;
@@ -82,9 +82,11 @@ void CloudManager::createCloud() {
 
     wavefuncNorms(MAX_SHELLS);
     genVertexArray();
+    stageFlags |= flagStages::VERTICES;
 }
 
 double CloudManager::genOrbital(int n, int l, int m_l) {
+    assert(stageFlags & flagStages::VERTICES);
     int fdn = 0;
     double max_rdp = 0;
 
@@ -140,9 +142,9 @@ void CloudManager::genOrbitalsThroughN(int n_max) {
                 cloudOrbitals[n].push_back(ivec2(l, m_l));
             }
         }
-
         activeShells.insert(n);
     }
+    stageFlags |= flagStages::RECIPES;
 }
 
 void CloudManager::genOrbitalsOfN(int n) {
@@ -152,16 +154,29 @@ void CloudManager::genOrbitalsOfN(int n) {
         }
     }
     activeShells.insert(n);
+    stageFlags |= flagStages::RECIPES;
 }
 
 void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
     cloudOrbitals[n].push_back(ivec2(l, m_l));
     activeShells.insert(n);
+    stageFlags |= flagStages::RECIPES;
 }
 
-void CloudManager::bakeOrbitalsForRender() {
+int CloudManager::bakeOrbitalsForRender() {
     int nr = cloudOrbitals.size();
-    std::cout << nr << " recipe(s) loaded. Begin processing..." << std::endl;
+    if (nr) {
+        std::cout << nr << " recipe(s) loaded. Begin processing..." << std::endl;
+    } else {
+        std::cout << "No recipes loaded. Aborting." << std::endl;
+        return A_ERR;
+    }
+    if (!(stageFlags & flagStages::VERTICES)) {
+        std::cout << ">> Vertices not created. Pre-empting for cloud creation." << std::endl;
+        createCloud();
+        std::cout << "Resume processing..." << std::endl;
+    }
+
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
@@ -174,7 +189,7 @@ void CloudManager::bakeOrbitalsForRender() {
         // For each N: Normalize accumulated pixelRDPs, add to allRDPs, register indices, and reset pixelRDP vector
         for (uint p = 0; p < this->pixelCount; p++) {
             double new_val = rdpStaging[p] / shellRDPMaximaCum[key - 1];
-            if (new_val > 0.06) {
+            if (new_val > this->cloudTolerance) {
                 allRDPs[p] += static_cast<float>(new_val);
                 allIndices.push_back(p);
             }
@@ -195,24 +210,41 @@ void CloudManager::bakeOrbitalsForRender() {
     cloudOrbitals.clear();
 
     genRDPs();
+    stageFlags |= flagStages::VBO;
     genIndexBuffer();
+    stageFlags |= flagStages::EBO;
+    return flagExit::A_OKAY;
 }
 
 void CloudManager::cloudTest(int n_max) {
     int idx = 0;
 
+    std::vector<int> cloudMap;
+
     for (int n = n_max; n > 0; n--) {
         for (int l = n-1; l >= 0; l--) {
-            std::cout << std::setw(3) << idx++ << ": " << n << "  " << l << "\n";
+            std::cout << std::setw(3) << idx++ << ")   (" << n << " , " << l << ")\n        ";
             for (int m_l = l; m_l >= -l; m_l--) {
-                // std::cout << std::setw(3) << idx++ << ": " << n << "  " << l << " " << (m_l >= 0 ? " " : "") << m_l << "\n";
+                std::cout << m_l << ((m_l == -l) ? "" : ", ");
+                cloudMap.push_back( ((n<<2)*(n<<2)) + ((l<<1) * (l<<1)) + m_l );
             }
+            std::cout << std::endl;
         }
     }
     std::cout << std::endl;
+
+    for (const auto &i : cloudMap) {
+        std::cout << i << ",";
+    }
+    std::cout << std::endl;
+
+    std::sort(cloudMap.begin(), cloudMap.end());
+    auto it = std::adjacent_find(cloudMap.begin(), cloudMap.end());
+    std::cout << "Duplicates " << ((it == cloudMap.end()) ? "NOT found!" : "found.") << std::endl;
 }
 
 void CloudManager::updateCloud(double time) {
+    assert(stageFlags & (flagStages::VERTICES | flagStages::VBO | flagStages::EBO));
     this->update = true;
     //TODO implement for CPU updates over time
 }
@@ -391,6 +423,7 @@ void CloudManager::resetManager() {
     this->cloudLayerCount = 0;
     this->cloudLayerDelta = 0.0;
     this->cloudResolution = 0;
+    this->stageFlags = 0;
 }
 
 /*

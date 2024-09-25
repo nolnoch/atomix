@@ -61,6 +61,6 @@ void main() {
         vertColour = vec4(rdp, 0.0f, rdp, alpha);
     }
 
-    // vertColour = pointColour;
+    // vertColour = vec4(1.0f);
     gl_Position = projMat * viewMat * worldMat * vec4(posX, posY, posZ, 1.0f);
 };

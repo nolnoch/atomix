@@ -154,6 +154,11 @@ private:
     bool renderWave = false;
     bool waveMode = false;
     bool cloudMode = false;
+
+    fvec crystalRingVertices;
+    uvec crystalRingIndices;
+    uint crystalRingCount;
+    uint crystalRingOffset;
 };
 
 #endif

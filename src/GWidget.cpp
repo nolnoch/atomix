@@ -232,17 +232,28 @@ int GWidget::initCrystalProgram() {
     };
     this->gw_faces = indices.size();
 
-    vVec3 crystalCircleVertices;
-    uvec crystalCircleIndices;
+    // vVec3 crystalRingVertices;
+    // uvec crystalRingIndices;
     int crystalRes = 90;
     double crystalDegFac = PI_TWO / crystalRes;
     double crystalRadius = 0.5f;
+    size_t vs = vertices.size() / 6;
+
+    std::copy(vertices.cbegin(), vertices.cend(), std::back_inserter(crystalRingVertices));
+    std::copy(indices.cbegin(), indices.cend(), std::back_inserter(crystalRingIndices));
+
     for (int i = 0; i < crystalRes; i++) {
         // double theta = i * crystalDegFac;
-        crystalCircleVertices.push_back(vec3(crystalRadius * cos(i * crystalDegFac), 0.0f, crystalRadius * sin(i * crystalDegFac)));
-        crystalCircleIndices.push_back(i);
+        crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos(i * crystalDegFac)));
+        crystalRingVertices.push_back(0.0f);
+        crystalRingVertices.push_back(static_cast<float>(crystalRadius * sin(i * crystalDegFac)));
+        crystalRingVertices.push_back(1.0f);
+        crystalRingVertices.push_back(1.0f);
+        crystalRingVertices.push_back(1.0f);
+        crystalRingIndices.push_back(vs + i);
     }
-    this->gw_lines = crystalCircleIndices.size();
+    this->crystalRingCount = crystalRingIndices.size() - gw_faces;
+    this->crystalRingOffset = gw_faces * sizeof(uint);
 
     /* Program */
     crystalProg = new Program(this);
@@ -255,13 +266,13 @@ int GWidget::initCrystalProgram() {
     crystalProg->detachDelete();
     crystalProg->initVAO();
     crystalProg->bindVAO();
-    GLuint vboID = crystalProg->bindVBO(sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
+    GLuint vboID = crystalProg->bindVBO(sizeof(float) * crystalRingVertices.size(), &crystalRingVertices[0], GL_STATIC_DRAW);
     crystalProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
     crystalProg->enableAttribute(0);
     crystalProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                       // Vertices
     crystalProg->enableAttribute(1);
     crystalProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);     // Colours
-    crystalProg->bindEBO(sizeof(indices), indices.data(), GL_STATIC_DRAW);
+    crystalProg->bindEBO(sizeof(uint) * crystalRingIndices.size(), &crystalRingIndices[0], GL_STATIC_DRAW);
 
     /* Release */
     crystalProg->endRender();
@@ -326,13 +337,13 @@ int GWidget::initCloudProgram() {
     /* Waves */
     cloudManager = new CloudManager(&renderConfig);
 
-    // cloudManager->genOrbitalExplicit(4, 2, 0);
+    cloudManager->genOrbitalExplicit(4, 2, 0);
     // cloudManager->genWavealExplicit(7, 1, 0);
     // cloudManager->genWavealExplicit(3, 2, -1);
     // cloudManager->genWavealExplicit(3, 2, -2);
     // cloudManager->genWavealsThroughN(8);
     // cloudManager->genWavealsOfN(3);
-    cloudManager->cloudTest(8);
+    // cloudManager->cloudTest(8);
 
     // cloudManager->createCloud();
     if (cloudManager->bakeOrbitalsForRender()) {
@@ -521,6 +532,7 @@ void GWidget::paintGL() {
     crystalProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
     crystalProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_POINTS, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
     crystalProg->endRender();
 
     /* Render -- Waves */

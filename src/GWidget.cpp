@@ -234,22 +234,23 @@ int GWidget::initCrystalProgram() {
 
     // vVec3 crystalRingVertices;
     // uvec crystalRingIndices;
-    int crystalRes = 90;
+    int crystalRes = 80;
     double crystalDegFac = PI_TWO / crystalRes;
-    double crystalRadius = 0.5f;
+    double crystalRadius = 0.4f;
     size_t vs = vertices.size() / 6;
 
     std::copy(vertices.cbegin(), vertices.cend(), std::back_inserter(crystalRingVertices));
     std::copy(indices.cbegin(), indices.cend(), std::back_inserter(crystalRingIndices));
 
     for (int i = 0; i < crystalRes; i++) {
-        // double theta = i * crystalDegFac;
-        crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos(i * crystalDegFac)));
+        double cos_t = cos(i * crystalDegFac);
+        double sin_t = sin(i * crystalDegFac);
+        crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos_t));
         crystalRingVertices.push_back(0.0f);
-        crystalRingVertices.push_back(static_cast<float>(crystalRadius * sin(i * crystalDegFac)));
-        crystalRingVertices.push_back(1.0f);
-        crystalRingVertices.push_back(1.0f);
-        crystalRingVertices.push_back(1.0f);
+        crystalRingVertices.push_back(static_cast<float>(crystalRadius * sin_t));
+        crystalRingVertices.push_back(0.9f);
+        crystalRingVertices.push_back(0.9f);
+        crystalRingVertices.push_back(0.9f);
         crystalRingIndices.push_back(vs + i);
     }
     this->crystalRingCount = crystalRingIndices.size() - gw_faces;
@@ -532,7 +533,7 @@ void GWidget::paintGL() {
     crystalProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
     crystalProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
-    glDrawElements(GL_POINTS, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
+    glDrawElements(GL_LINE_LOOP, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
     crystalProg->endRender();
 
     /* Render -- Waves */

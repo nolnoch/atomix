@@ -33,7 +33,6 @@
 #include <QKeyEvent>
 #include <QDateTime>
 #include <QOpenGLFunctions_4_5_Core>
-#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "program.hpp"

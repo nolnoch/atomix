@@ -38,6 +38,8 @@
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QListWidget>
+#include <QTreeWidget>
+#include <QHeaderView>
 #include <QSignalBlocker>
 #include "GWidget.hpp"
 
@@ -92,6 +94,7 @@ private:
 
     QPushButton *buttMorbWaves = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
+    QPushButton *buttGenVertices = nullptr;
 
     QListWidget *orbitSelector = nullptr;
 

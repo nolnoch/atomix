@@ -39,8 +39,6 @@ void MainWindow::onAddNew() {
     customConfig = new AtomixConfig;
 
     /* Setup Dock GUI */
-    setupDockWaves();
-    setupDockHarmonics();
     setupTabs();
     addDockWidget(Qt::RightDockWidgetArea, dockTabs);
     setCentralWidget(graph);
@@ -56,6 +54,7 @@ void MainWindow::onAddNew() {
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
+    connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
 
     setWindowTitle(tr("atomix"));
 }
@@ -168,12 +167,17 @@ void MainWindow::setupTabs() {
     dockTabs = new QDockWidget(this);
     wTabs = new QTabWidget(this);
 
+    setupDockWaves();
+    setupDockHarmonics();
     wTabs->addTab(wTabWaves, tr("Waves"));
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
     // wTabs->setTabShape(QTabWidget::TabShape::Triangular);
     int intTabWidth = wTabWaves->width() / wTabs->count();
-    QString strTabStyle = QString("QTabBar::tab { height: 40px; width: %1 px; }"\
-                                  "QTabBar::tab:selected { color: #BBBBBBFF; font-size: 16px; }"\
+    QString strTabStyle = QString("QWidget { font-size: 17px; }"\
+                                  "QLabel { font-size: 23px; }"\
+                                  "QLabel#configLabel { font-size: 17px; }"
+                                  "QTabBar::tab { height: 40px; width: %1 px; }"\
+                                  "QTabBar::tab:selected { color: #9999FF; font-size: 18px; }"\
                                   "QTabBar::tab:!selected { color: #999999; background: #222222; }").arg(intTabWidth);
     wTabs->setStyleSheet(strTabStyle);
 
@@ -212,9 +216,8 @@ void MainWindow::setupDockWaves() {
     QGroupBox *groupOrbits = new QGroupBox("Visible Orbits");
 
     QLabel *labelWaves = new QLabel("<p>Explore stable wave patterns in circular or spherical forms in this configuration</p>");
-    QFont fontTabLabel = labelWaves->font();
-    fontTabLabel.setPointSize(18);
-    labelWaves->setFont(fontTabLabel);
+    labelWaves->setMaximumHeight(intTabLabelHeight);
+    labelWaves->setMinimumHeight(intTabLabelHeight);
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelWaves->setLineWidth(3);
@@ -222,16 +225,27 @@ void MainWindow::setupDockWaves() {
     labelWaves->setAlignment(Qt::AlignCenter);
     
     QLabel *labelOrbit = new QLabel("Number of orbits:");
+    labelOrbit->setObjectName("configLabel");
     QLabel *labelAmp = new QLabel("Amplitude:");
+    labelAmp->setObjectName("configLabel");
     QLabel *labelPeriod = new QLabel("Period (N * pi):");
+    labelPeriod->setObjectName("configLabel");
     QLabel *labelWavelength = new QLabel("Wavelength (N * pi):");
+    labelWavelength->setObjectName("configLabel");
     QLabel *labelResolution = new QLabel("Resolution:");
+    labelResolution->setObjectName("configLabel");
     QLabel *labelOrthoPara = new QLabel("Orthogonal vs Parallel:");
+    labelOrthoPara->setObjectName("configLabel");
     QLabel *labelSuper = new QLabel("Superposition:");
+    labelSuper->setObjectName("configLabel");
     QLabel *labelCPU = new QLabel("CPU vs GPU:");
+    labelCPU->setObjectName("configLabel");
     QLabel *labelSphere = new QLabel("Spherical vs Circular:");
+    labelSphere->setObjectName("configLabel");
     QLabel *labelVertex = new QLabel("Vertex Shader:");
+    labelVertex->setObjectName("configLabel");
     QLabel *labelFrag = new QLabel("Fragment Shader:");
+    labelFrag->setObjectName("configLabel");
 
     entryOrbit = new QLineEdit("4");
     entryAmp = new QLineEdit("0.4");
@@ -363,10 +377,9 @@ void MainWindow::setupDockWaves() {
     layDock->addWidget(labelWaves);
     layDock->addStretch(2);
     layDock->addWidget(groupConfig);
-    layDock->addStretch(1);
     layDock->addWidget(groupOptions);
     layDock->addWidget(buttMorbWaves);
-    layDock->addStretch(1);
+    layDock->addStretch(2);
     layDock->addWidget(groupColors);
     layDock->addWidget(groupOrbits);    
 
@@ -380,99 +393,74 @@ void MainWindow::setupDockWaves() {
     buttMorbWaves->setSizePolicy(qPolicyExpand);
     
     wTabWaves->setLayout(layDock);
-    wTabWaves->setMinimumSize(500,0);
+    wTabWaves->setMinimumSize(intTabMinWidth,0);
 }
 
 void MainWindow::setupDockHarmonics() {
     wTabHarmonics = new QWidget(this);
     buttMorbHarmonics = new QPushButton("Generate Cloud", this);
+    buttMorbHarmonics->setDisabled(true);
     buttGenVertices = new QPushButton("Generate Vertices", this);
 
     QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QGroupBox *groupGenVertices = new QGroupBox("Vertex Generation");
     QGroupBox *groupRecipeBuilder = new QGroupBox("Orbital Selector");
-    QGroupBox *groupRecipeReporter = new QGroupBox("Selected Orbitals");
-
-    // groupGenVertices->setStyleSheet("QGroupBox {color: green;}");
-
-    QListWidget *listOrbitSelector = new QListWidget();
-    QListWidget *listOrbitReporter = new QListWidget();
+    groupRecipeReporter = new QGroupBox("Selected Orbitals");
 
     QLabel *labelHarmonics = new QLabel("Generate accurate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)");
-    QFont fontTabLabel = labelHarmonics->font();
-    fontTabLabel.setPointSize(18);
-    labelHarmonics->setFont(fontTabLabel);
+    labelHarmonics->setMaximumHeight(intTabLabelHeight);
+    labelHarmonics->setMinimumHeight(intTabLabelHeight);
     labelHarmonics->setWordWrap(true);
     labelHarmonics->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelHarmonics->setLineWidth(3);
     labelHarmonics->setMargin(12);
     labelHarmonics->setAlignment(Qt::AlignCenter);
 
-    QTreeWidget *treeOrbitalSelect = new QTreeWidget();
+    treeOrbitalSelect = new QTreeWidget();
     treeOrbitalSelect->setSortingEnabled(true);
-    QStringList strlistTreeHeaders = { "Orbital", "n", "l", "m_l" };
+    QStringList strlistTreeHeaders = { "Orbital" };
     treeOrbitalSelect->setHeaderLabels(strlistTreeHeaders);
-    int intTreeWidth = 60;
-    treeOrbitalSelect->setColumnWidth(0, 440 - (3 * intTreeWidth));
-    treeOrbitalSelect->setColumnWidth(1, intTreeWidth);
-    treeOrbitalSelect->setColumnWidth(2, intTreeWidth);
-    treeOrbitalSelect->setColumnWidth(3, intTreeWidth);
-    // QList<QTreeWidgetItem *> treeItems;
     treeOrbitalSelect->header()->setDefaultAlignment(Qt::AlignCenter);
-    treeOrbitalSelect->header()->setStretchLastSection(false);
     QFont fontTree = treeOrbitalSelect->font();
-    fontTree.setPointSize(13);
+    fontTree.setPointSize(14);
     treeOrbitalSelect->setFont(fontTree);
 
     QTreeWidgetItem *lastN = nullptr;
     QTreeWidgetItem *lastL = nullptr;
     QTreeWidgetItem *thisItem = nullptr;
     for (int n = 0; n <= MAX_ORBITS; n++) {
-        QStringList treeitemParentN = { QString("(%1, 0, 0)").arg(n), QString::number(n), QString("-"), QString("-") };
+        QStringList treeitemParentN = { QString("%1 _ _").arg(n), QString::number(n), QString("-"), QString("-") };
         thisItem = new QTreeWidgetItem(treeOrbitalSelect, treeitemParentN);
         thisItem->setTextAlignment(0, Qt::AlignLeft);
         thisItem->setTextAlignment(1, Qt::AlignCenter);
         thisItem->setTextAlignment(2, Qt::AlignCenter);
         thisItem->setTextAlignment(3, Qt::AlignCenter);
+        thisItem->setCheckState(0, Qt::Unchecked);
         lastN = thisItem;
         for (int l = 0; l < n; l++) {
-            QStringList treeitemParentL = { QString("(%1, %2, 0)").arg(n).arg(l), QString::number(n), QString::number(l), QString("-") };
+            QStringList treeitemParentL = { QString("%1 %2 _").arg(n).arg(l), QString::number(n), QString::number(l), QString("-") };
             thisItem = new QTreeWidgetItem(lastN, treeitemParentL);
             thisItem->setTextAlignment(0, Qt::AlignLeft);
             thisItem->setTextAlignment(1, Qt::AlignCenter);
             thisItem->setTextAlignment(2, Qt::AlignCenter);
             thisItem->setTextAlignment(3, Qt::AlignCenter);
+            thisItem->setCheckState(0, Qt::Unchecked);
             lastL = thisItem;
             for (int m_l = l; m_l >= -l; m_l--) {
-                // QString strTreeItem = QString("(%1, %2, %3)").arg(n).arg(l).arg(m_l);
-                QStringList treeitemFinal = { QString("(%1, %2, %3)").arg(n).arg(l).arg(m_l), QString::number(n), QString::number(l), QString::number(m_l) };
+                QStringList treeitemFinal = { QString("%1 %2 %3").arg(n).arg(l).arg(m_l), QString::number(n), QString::number(l), QString::number(m_l) };
                 thisItem = new QTreeWidgetItem(lastL, treeitemFinal);
                 thisItem->setTextAlignment(0, Qt::AlignLeft);
                 thisItem->setTextAlignment(1, Qt::AlignCenter);
                 thisItem->setTextAlignment(2, Qt::AlignCenter);
                 thisItem->setTextAlignment(3, Qt::AlignCenter);
                 thisItem->setCheckState(0, Qt::Unchecked);
-
-                /* if (l == 0) {
-                    thisItem = new QTreeWidgetItem(treeOrbitalSelect, treeitemParentN);
-                    lastN = thisItem;
-                } else {
-                    if (m_l == l) {
-                        thisItem = new QTreeWidgetItem(lastN, treeitemParentL);
-                        lastL = thisItem;
-                    } else {
-                        thisItem = new QTreeWidgetItem(lastL, treeitemFinal);
-                        thisItem->setCheckState(0, Qt::Unchecked);
-                    }
-                } */
-                thisItem->setTextAlignment(0, Qt::AlignLeft);
-                thisItem->setTextAlignment(1, Qt::AlignCenter);
-                thisItem->setTextAlignment(2, Qt::AlignCenter);
-                thisItem->setTextAlignment(3, Qt::AlignCenter);
             }
         }
     }
+
+    listOrbitalReport = new QListWidget();
+    listOrbitalReport->setFont(fontTree);
 
     QVBoxLayout *layGenVertices = new QVBoxLayout;
     layGenVertices->addWidget(buttGenVertices);
@@ -481,30 +469,80 @@ void MainWindow::setupDockHarmonics() {
     layRecipeBuilder->addWidget(treeOrbitalSelect);
     groupRecipeBuilder->setLayout(layRecipeBuilder);
     QVBoxLayout *layRecipeReporter = new QVBoxLayout;
-    layRecipeReporter->addWidget(listOrbitReporter);
+    layRecipeReporter->addWidget(listOrbitalReport);
     groupRecipeReporter->setLayout(layRecipeReporter);
+
+    QHBoxLayout *layRecipeIO = new QHBoxLayout;
+    layRecipeIO->addWidget(groupRecipeBuilder);
+    layRecipeIO->addWidget(groupRecipeReporter);
+    groupRecipeReporter->setAlignment(Qt::AlignRight);
+    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
+    groupRecipeBuilder->setMaximumWidth(235);
+    groupRecipeReporter->setMaximumWidth(235);
 
     QVBoxLayout *layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
+    layDockHarmonics->addStretch(1);
     layDockHarmonics->addWidget(groupGenVertices);
-    layDockHarmonics->addWidget(groupRecipeBuilder);
-    layDockHarmonics->addWidget(groupRecipeReporter);
+    layDockHarmonics->addStretch(1);
+    layDockHarmonics->addLayout(layRecipeIO);
+    layDockHarmonics->addStretch(1);
     layDockHarmonics->addWidget(buttMorbHarmonics);    
 
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
     layDockHarmonics->setStretchFactor(groupGenVertices, 2);
-    layDockHarmonics->setStretchFactor(groupRecipeBuilder, 5);
-    layDockHarmonics->setStretchFactor(groupRecipeReporter, 3);
+    layDockHarmonics->setStretchFactor(layRecipeIO, 7);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
     
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
     
     wTabHarmonics->setLayout(layDockHarmonics);
-    wTabHarmonics->setMinimumSize(500,0);
+    wTabHarmonics->setMinimumSize(intTabMinWidth,0);
 }
 
 void MainWindow::handleComboCfg() {
     this->loadConfig();
+}
+
+void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
+    bool checked = item->checkState(col);
+
+    if (checked) {
+        QString strItem = item->text(col);
+        QStringList strlistItem = strItem.split(u' ');
+        QListWidgetItem *thisItem = new QListWidgetItem(strItem, listOrbitalReport);
+        listOrbitalReport->addItem(thisItem);
+        thisItem->setTextAlignment(Qt::AlignRight);
+
+        if (!buttMorbHarmonics->isEnabled()) {
+            buttMorbHarmonics->setEnabled(true);
+        }
+
+        int nlm[3] = { 0, 0, 0}, i = 0;
+        bool hasInt = false;
+
+        for (auto &str : strlistItem) {
+            nlm[i++] = str.toInt(&hasInt);
+
+            if (!hasInt)
+                nlm[i-1] = -1;
+        }
+
+        // TODO register recipes in cloudManager
+    } else {
+        QListWidgetItem *thisItem = listOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first();
+        listOrbitalReport->takeItem(listOrbitalReport->row(thisItem));
+        delete (thisItem);
+
+        if (!listOrbitalReport->count() && buttMorbHarmonics->isEnabled()) {
+            buttMorbHarmonics->setEnabled(false);
+        }
+
+        // TODO unregister recipes in cloudManager
+    }
+
+    QString strRecipes = (listOrbitalReport->count()) ? "QGroupBox { color: #77FF77; }" : "QGroupBox { color: #FF7777; }";
+    groupRecipeReporter->setStyleSheet(strRecipes);
 }
 
 void MainWindow::handleButtMorb() {

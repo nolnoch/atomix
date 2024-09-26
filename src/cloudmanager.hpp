@@ -47,6 +47,7 @@ class CloudManager : public Manager {
 
         void genOrbitalsThroughN(int n);
         void genOrbitalsOfN(int n);
+        void genOrbitalsOfL(int n, int l);
         void genOrbitalExplicit(int n, int l, int m_l);
         int bakeOrbitalsForRender();
         void cloudTest(int n_max);

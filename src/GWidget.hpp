@@ -63,6 +63,7 @@ public:
 
     void printConfig(AtomixConfig *cfg);
     void setColorsWaves(int id, uint colorChoice);
+    void addCloudRecipes(int n, int l, int m_l);
 
 public slots:
     void cleanup();

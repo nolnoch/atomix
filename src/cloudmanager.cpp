@@ -157,6 +157,15 @@ void CloudManager::genOrbitalsOfN(int n) {
     stageFlags |= flagStages::RECIPES;
 }
 
+void CloudManager::genOrbitalsOfL(int n, int l) {
+
+    for (int m_l = l; m_l >= -l; m_l--) {
+        cloudOrbitals[n].push_back(ivec2(l, m_l));
+    }
+    activeShells.insert(n);
+    stageFlags |= flagStages::RECIPES;
+}
+
 void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
     cloudOrbitals[n].push_back(ivec2(l, m_l));
     activeShells.insert(n);

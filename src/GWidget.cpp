@@ -692,6 +692,20 @@ void GWidget::setColorsWaves(int id, uint colorChoice) {
     newUniformsColor = true;
 }
 
+void GWidget::addCloudRecipes(int n, int l, int m_l) {
+    if (!cloudManager) {
+        // TODO initCloudManager();
+    }
+
+    if (m_l >= 0) {
+        cloudManager->genOrbitalExplicit(n, l, m_l);
+    } else if (l >= 0) {
+        cloudManager->genOrbitalsOfL(n, l);
+    } else {
+        cloudManager->genOrbitalsOfN(n);
+    }
+}
+
 void GWidget::printSize() {
     int64_t VSize, DSize, ISize;
     VSize = cloudManager->getVertexSize();

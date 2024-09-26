@@ -96,9 +96,14 @@ private:
     QPushButton *buttMorbHarmonics = nullptr;
     QPushButton *buttGenVertices = nullptr;
 
-    QListWidget *orbitSelector = nullptr;
+    QGroupBox *groupRecipeReporter = nullptr;
+    QTreeWidget *treeOrbitalSelect = nullptr;
+    QListWidget *listOrbitalReport = nullptr;
 
     GWidget *graph = nullptr;
+
+    int intTabMinWidth = 500;
+    int intTabLabelHeight = 200;
 
     void loadConfig();
     void setupTabs();
@@ -108,9 +113,10 @@ private:
     void refreshShaders();
     void refreshOrbits(AtomixConfig *cfg);
 
+    void handleComboCfg();
+    void handleRecipeCheck(QTreeWidgetItem *item, int col);
     void handleButtMorb();
     void handleButtMorbHarmonics();
-    void handleComboCfg();
     void handleButtColors(int id);
 };
 

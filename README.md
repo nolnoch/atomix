@@ -16,7 +16,7 @@ I sincerely doubt anyone will ever see this but me, but it's always good to comm
 ## Current State
 
 #### Description and Features
-As of 27 Aug 2024:
+As of 26 Sep 2024:
 
 The model is a central hexahedral crystal with polar colouring, orbited by circular transverse waves, the wavefunction being either parallel or orthogonal to the equatorial plane (both are options). At the moment, colouring is inconsistent and potentially garish, but that's WIP.
 
@@ -42,6 +42,7 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
 * Granularity options
   * Selecting which waves are rendered (n = {1, 2, 3, ...})
   * Selecting colors for base, peak, and trough
+* Second tab for quantum Spherical Harmonics
  
 #### Development Platform and Possible Requirements:
 - Ubuntu 24.04 Noble

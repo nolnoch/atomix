@@ -335,10 +335,10 @@ int GWidget::initWaveProgram() {
 }
 
 int GWidget::initCloudProgram() {
-    /* Waves */
-    cloudManager = new CloudManager(&renderConfig);
+    assert(cloudManager);
 
-    cloudManager->genOrbitalExplicit(4, 2, 0);
+    /* Waves */
+    // cloudManager->genOrbitalExplicit(4, 2, 0);
     // cloudManager->genWavealExplicit(7, 1, 0);
     // cloudManager->genWavealExplicit(3, 2, -1);
     // cloudManager->genWavealExplicit(3, 2, -2);
@@ -347,6 +347,7 @@ int GWidget::initCloudProgram() {
     // cloudManager->cloudTest(8);
 
     // cloudManager->createCloud();
+
     if (cloudManager->bakeOrbitalsForRender()) {
         std::cout << "Failed to bake orbitals for render." << std::endl;
         return flagExit::A_ERR;
@@ -704,6 +705,16 @@ void GWidget::addCloudRecipes(int n, int l, int m_l) {
     } else {
         cloudManager->genOrbitalsOfN(n);
     }
+}
+
+void GWidget::lockCloudRecipes(harmap &cloudMap) {
+    assert(cloudManager);
+    cloudManager->receiveCloudMap(cloudMap);
+}
+
+void GWidget::genCloudVertices() {
+    cloudManager = new CloudManager(&renderConfig);
+    cloudManager->createCloud();
 }
 
 void GWidget::printSize() {

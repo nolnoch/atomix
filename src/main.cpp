@@ -29,7 +29,7 @@
 #include <QCommandLineParser>
 #include <QFont>
 #include "GWidget.hpp"
-#include "MainWindow.hpp"
+#include "mainwindow.hpp"
 
 #define SWIDTH 1280
 #define SHEIGHT 720

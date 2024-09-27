@@ -258,6 +258,10 @@ void CloudManager::updateCloud(double time) {
     //TODO implement for CPU updates over time
 }
 
+void CloudManager::receiveCloudMap(harmap &inMap) {
+    cloudOrbitals = inMap;
+}
+
 void CloudManager::newCloud() {
     resetManager();
     //createCloud();

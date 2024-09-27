@@ -1,5 +1,5 @@
 /**
- * MainWindow.hpp
+ * mainwindow.hpp
  *
  *    Created on: Oct 3, 2023
  *   Last Update: Sep 9, 2024
@@ -95,15 +95,19 @@ private:
     QPushButton *buttMorbWaves = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
     QPushButton *buttGenVertices = nullptr;
+    QPushButton *buttLockRecipes = nullptr;
 
     QGroupBox *groupRecipeReporter = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
     QListWidget *listOrbitalReport = nullptr;
 
     GWidget *graph = nullptr;
+    harmap cloudRecipes;
 
     int intTabMinWidth = 500;
     int intTabLabelHeight = 200;
+
+    bool recipeLoaded = false;
 
     void loadConfig();
     void setupTabs();
@@ -115,7 +119,9 @@ private:
 
     void handleComboCfg();
     void handleRecipeCheck(QTreeWidgetItem *item, int col);
+    void handleButtLockRecipes();
     void handleButtMorb();
+    void handleButtGenVerts();
     void handleButtMorbHarmonics();
     void handleButtColors(int id);
 };

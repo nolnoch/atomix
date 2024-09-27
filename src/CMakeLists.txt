@@ -3,7 +3,7 @@ set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets)
 
-add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp program.cpp MainWindow.cpp GWidget.cpp configparser.cpp wavemanager.cpp cloudmanager.cpp manager.cpp)
+add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp program.cpp mainwindow.cpp GWidget.cpp configparser.cpp wavemanager.cpp cloudmanager.cpp manager.cpp)
 
 target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets)
 

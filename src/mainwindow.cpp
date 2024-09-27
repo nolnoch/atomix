@@ -22,7 +22,7 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "MainWindow.hpp"
+#include "mainwindow.hpp"
 
 MainWindow::MainWindow() {
     onAddNew();
@@ -55,6 +55,8 @@ void MainWindow::onAddNew() {
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
     connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
+    connect(buttGenVertices, &QPushButton::clicked, this, &MainWindow::handleButtGenVerts);
+    connect(buttLockRecipes, &QPushButton::clicked, this, &MainWindow::handleButtLockRecipes);
 
     setWindowTitle(tr("atomix"));
 }
@@ -373,6 +375,9 @@ void MainWindow::setupDockWaves() {
     groupOptions->setLayout(layOptionBox);
     groupColors->setLayout(layColorPicker);
     groupOrbits->setLayout(layOrbitSelect);
+
+    groupConfig->setAlignment(Qt::AlignRight);
+    groupOptions->setAlignment(Qt::AlignRight);
     
     layDock->addWidget(labelWaves);
     layDock->addStretch(2);
@@ -399,12 +404,13 @@ void MainWindow::setupDockWaves() {
 void MainWindow::setupDockHarmonics() {
     wTabHarmonics = new QWidget(this);
     buttMorbHarmonics = new QPushButton("Generate Cloud", this);
-    buttMorbHarmonics->setDisabled(true);
+    buttMorbHarmonics->setEnabled(recipeLoaded);
     buttGenVertices = new QPushButton("Generate Vertices", this);
 
     QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QGroupBox *groupGenVertices = new QGroupBox("Vertex Generation");
+    groupGenVertices->setAlignment(Qt::AlignRight);
     QGroupBox *groupRecipeBuilder = new QGroupBox("Orbital Selector");
     groupRecipeReporter = new QGroupBox("Selected Orbitals");
 
@@ -458,9 +464,8 @@ void MainWindow::setupDockHarmonics() {
             }
         }
     }
-
     listOrbitalReport = new QListWidget();
-    listOrbitalReport->setFont(fontTree);
+    // listOrbitalReport->setFont(fontTree);
 
     QVBoxLayout *layGenVertices = new QVBoxLayout;
     layGenVertices->addWidget(buttGenVertices);
@@ -480,18 +485,28 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeBuilder->setMaximumWidth(235);
     groupRecipeReporter->setMaximumWidth(235);
 
+    buttLockRecipes = new QPushButton("Lock Recipes");
+    buttLockRecipes->setEnabled(false);
+
+    QVBoxLayout *layOrbitalSection = new QVBoxLayout;
+    layOrbitalSection->addLayout(layRecipeIO);
+    layOrbitalSection->addWidget(buttLockRecipes);
+
     QVBoxLayout *layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addStretch(1);
-    layDockHarmonics->addLayout(layRecipeIO);
+    layDockHarmonics->addLayout(layOrbitalSection);
     layDockHarmonics->addStretch(1);
-    layDockHarmonics->addWidget(buttMorbHarmonics);    
+    layDockHarmonics->addWidget(buttMorbHarmonics);
+
+    layOrbitalSection->setStretchFactor(layRecipeIO, 7);
+    layOrbitalSection->setStretchFactor(buttLockRecipes, 1);
 
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
     layDockHarmonics->setStretchFactor(groupGenVertices, 2);
-    layDockHarmonics->setStretchFactor(layRecipeIO, 7);
+    layDockHarmonics->setStretchFactor(layOrbitalSection, 8);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
     
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
@@ -505,44 +520,77 @@ void MainWindow::handleComboCfg() {
 }
 
 void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
-    bool checked = item->checkState(col);
+    QTreeWidgetItem *ptrParent = item->parent();
+    Qt::CheckState checked = item->checkState(col);
+    int itemChildren = item->childCount();
 
-    if (checked) {
+    /* Parents nodes recurse to children while checking/unchecking */
+    if (itemChildren) {
+        for (int i = 0; i < item->childCount(); i++) {
+            item->child(i)->setCheckState(0,(checked) ? Qt::Checked : Qt::Unchecked);
+        }
+
+        // TODO Check/uncheck parent if all children are checked
+
+    /* Leaf nodes */
+    } else {
         QString strItem = item->text(col);
         QStringList strlistItem = strItem.split(u' ');
-        QListWidgetItem *thisItem = new QListWidgetItem(strItem, listOrbitalReport);
-        listOrbitalReport->addItem(thisItem);
-        thisItem->setTextAlignment(Qt::AlignRight);
+        // int nlm[3] = { strlistItem.at(0).toInt(), strlistItem.at(1).toInt(), strlistItem.at(2).toInt()};
+        int n = strlistItem.at(0).toInt();
+        std::vector<ivec2> *vecElem = &cloudRecipes[n];
+        ivec2 lm = ivec2(strlistItem.at(1).toInt(), strlistItem.at(2).toInt());
 
-        if (!buttMorbHarmonics->isEnabled()) {
-            buttMorbHarmonics->setEnabled(true);
+        if (checked) {
+            /* Leaf node checked */
+            QListWidgetItem *thisItem = new QListWidgetItem(strItem, listOrbitalReport);
+            listOrbitalReport->addItem(thisItem);
+            thisItem->setTextAlignment(Qt::AlignRight);
+
+            if (!buttLockRecipes->isEnabled()) {
+                buttLockRecipes->setEnabled(true);
+            }
+
+            vecElem->push_back(lm);
+
+        } else {
+            /* Leaf node unchecked */
+            QListWidgetItem *thisItem = listOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first();
+            listOrbitalReport->takeItem(listOrbitalReport->row(thisItem));
+            delete (thisItem);
+
+            if (!listOrbitalReport->count() && buttLockRecipes->isEnabled()) {
+                buttLockRecipes->setEnabled(false);
+            }
+
+            std::vector<ivec2>::iterator it = std::find(vecElem->begin(), vecElem->end(), lm);
+            if (it != vecElem->end()) {
+                vecElem->erase(it);
+            }
         }
+    }
 
-        int nlm[3] = { 0, 0, 0}, i = 0;
-        bool hasInt = false;
+    if (ptrParent) {
+        int intSiblings = ptrParent->childCount();
+        bool siblingChecked;
 
-        for (auto &str : strlistItem) {
-            nlm[i++] = str.toInt(&hasInt);
-
-            if (!hasInt)
-                nlm[i-1] = -1;
+        for (int i = 0; i < intSiblings; i++) {
+            if (ptrParent->child(i)->checkState(col) != checked) {
+                return;
+            }
         }
-
-        // TODO register recipes in cloudManager
-    } else {
-        QListWidgetItem *thisItem = listOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first();
-        listOrbitalReport->takeItem(listOrbitalReport->row(thisItem));
-        delete (thisItem);
-
-        if (!listOrbitalReport->count() && buttMorbHarmonics->isEnabled()) {
-            buttMorbHarmonics->setEnabled(false);
-        }
-
-        // TODO unregister recipes in cloudManager
+        const QSignalBlocker blocker(treeOrbitalSelect);
+        ptrParent->setCheckState(col, checked); // Will this kick off recursion again?
     }
 
     QString strRecipes = (listOrbitalReport->count()) ? "QGroupBox { color: #77FF77; }" : "QGroupBox { color: #FF7777; }";
     groupRecipeReporter->setStyleSheet(strRecipes);
+}
+
+void MainWindow::handleButtLockRecipes() {
+    assert(cloudRecipes.size());
+    graph->lockCloudRecipes(this->cloudRecipes);
+    buttMorbHarmonics->setEnabled(true);
 }
 
 void MainWindow::handleButtMorb() {
@@ -561,6 +609,10 @@ void MainWindow::handleButtMorb() {
     refreshOrbits(cfgParser->config);
 
     lockConfig(cfgParser->config);
+}
+
+void MainWindow::handleButtGenVerts() {
+    graph->genCloudVertices();
 }
 
 void MainWindow::handleButtMorbHarmonics() {

@@ -44,6 +44,7 @@ class CloudManager : public Manager {
         
         void createCloud();
         void updateCloud(double time);
+        void receiveCloudMap(harmap &inMap);
 
         void genOrbitalsThroughN(int n);
         void genOrbitalsOfN(int n);
@@ -100,7 +101,7 @@ class CloudManager : public Manager {
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
         std::unordered_set<int> activeShells;
-        std::map<int, std::vector<glm::ivec2>> cloudOrbitals;
+        harmap cloudOrbitals;
         
         uint colourCount = 0;
         uint colourSize = 0;

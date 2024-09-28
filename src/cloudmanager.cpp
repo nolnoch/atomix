@@ -169,16 +169,8 @@ void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
 }
 
 int CloudManager::bakeOrbitalsForRender() {
-    int nr = cloudOrbitals.size();
-    if (nr) {
-        std::cout << nr << " recipe(s) loaded. Begin processing..." << std::endl;
-        // TODO Why extra element count if unselected from List?
-        for (auto const &[key, val] : cloudOrbitals) {
-            for (auto const &v : val) {
-                std::cout << key << ": " << glm::to_string(v) << ", ";
-            }
-        }
-        std::cout << std::endl;
+    if (numOrbitals) {
+        std::cout << numOrbitals << " recipe(s) loaded. Begin processing..." << std::endl;
     } else {
         std::cout << "No recipes loaded. Aborting." << std::endl;
         return A_ERR;
@@ -262,8 +254,9 @@ void CloudManager::updateCloud(double time) {
     //TODO implement for CPU updates over time
 }
 
-void CloudManager::receiveCloudMap(harmap &inMap) {
+void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
     cloudOrbitals = inMap;
+    this->numOrbitals = numRecipes;
 }
 
 void CloudManager::newCloud() {

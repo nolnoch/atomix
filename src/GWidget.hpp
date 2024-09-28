@@ -92,7 +92,7 @@ public:
     void printConfig(AtomixConfig *cfg);
     void setColorsWaves(int id, uint colorChoice);
     void addCloudRecipes(int n, int l, int m_l);
-    void lockCloudRecipes(harmap & cloudMap);
+    void lockCloudRecipes(harmap & cloudMap, int numRecipes);
     void genCloudVertices();
     void updateCloudBuffers();
     int genCloudRDPs();

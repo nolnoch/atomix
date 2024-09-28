@@ -409,9 +409,9 @@ void MainWindow::setupDockHarmonics() {
 
     QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    QGroupBox *groupGenVertices = new QGroupBox("Vertex Generation");
+    groupGenVertices = new QGroupBox("Vertex Generation");
     groupGenVertices->setAlignment(Qt::AlignRight);
-    QGroupBox *groupRecipeBuilder = new QGroupBox("Orbital Selector");
+    groupRecipeBuilder = new QGroupBox("Orbital Selector");
     groupRecipeReporter = new QGroupBox("Selected Orbitals");
 
     QLabel *labelHarmonics = new QLabel("Generate accurate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)");
@@ -470,6 +470,7 @@ void MainWindow::setupDockHarmonics() {
     QVBoxLayout *layGenVertices = new QVBoxLayout;
     layGenVertices->addWidget(buttGenVertices);
     groupGenVertices->setLayout(layGenVertices);
+    groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
     QVBoxLayout *layRecipeBuilder = new QVBoxLayout;
     layRecipeBuilder->addWidget(treeOrbitalSelect);
     groupRecipeBuilder->setLayout(layRecipeBuilder);
@@ -484,6 +485,9 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeBuilder->setMaximumWidth(235);
     groupRecipeReporter->setMaximumWidth(235);
+
+    groupRecipeBuilder->setEnabled(false);
+    groupRecipeReporter->setEnabled(false);
 
     buttLockRecipes = new QPushButton("Lock Recipes");
     buttLockRecipes->setEnabled(false);
@@ -551,29 +555,33 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 
             // Add item to harmap
             vecElem->push_back(lm);
+            numRecipes++;
 
         } else {
             /* Leaf node unchecked */
             QListWidgetItem *thisItem = listOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first();
             listOrbitalReport->takeItem(listOrbitalReport->row(thisItem));
             delete (thisItem);
+            numRecipes--;
 
-            // Disable button if list is now empty
-            if (!listOrbitalReport->count() && buttLockRecipes->isEnabled()) {
+            // Disable button and clear harmap if list is now empty
+            if (!numRecipes) {
                 buttLockRecipes->setEnabled(false);
-            }
-
-            // Remove unchecked item from harmap
-            std::vector<ivec2>::iterator it = std::find(vecElem->begin(), vecElem->end(), lm);
-            if (it != vecElem->end()) {
-                vecElem->erase(it);
+                this->cloudRecipes.clear();
+            } else {
+                // Remove unchecked item from harmap
+                std::vector<ivec2>::iterator it = std::find(vecElem->begin(), vecElem->end(), lm);
+                if (it != vecElem->end()) {
+                    vecElem->erase(it);
+                }
             }
         }
     }
 
     /* ALL Nodes make it here */
+    // numRecipes = listOrbitalReport->count();
     // Change list group title colour to reflect empty/not-empty
-    QString strRecipes = (listOrbitalReport->count()) ? "QGroupBox { color: #77FF77; }" : "QGroupBox { color: #FF7777; }";
+    QString strRecipes = (numRecipes) ? "QGroupBox { color: #77FF77; }" : "QGroupBox { color: #FF7777; }";
     groupRecipeReporter->setStyleSheet(strRecipes);
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent [EARLY RETURN]
@@ -593,8 +601,9 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 
 void MainWindow::handleButtLockRecipes() {
     assert(cloudRecipes.size());
-    graph->lockCloudRecipes(this->cloudRecipes);
+    graph->lockCloudRecipes(this->cloudRecipes, this->numRecipes);
     buttMorbHarmonics->setEnabled(true);
+    buttMorbHarmonics->setStyleSheet("QPushButton { background-color: #339933; }");
 }
 
 void MainWindow::handleButtMorb() {
@@ -617,6 +626,9 @@ void MainWindow::handleButtMorb() {
 
 void MainWindow::handleButtGenVerts() {
     graph->genCloudVertices();
+    groupGenVertices->setStyleSheet("QGroupBox { color: #77FF77; }");
+    groupRecipeBuilder->setEnabled(true);
+    groupRecipeReporter->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbHarmonics() {

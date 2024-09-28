@@ -44,7 +44,7 @@ class CloudManager : public Manager {
         
         void createCloud();
         void updateCloud(double time);
-        void receiveCloudMap(harmap &inMap);
+        void receiveCloudMap(harmap &inMap, int numRecipes);
 
         void genOrbitalsThroughN(int n);
         void genOrbitalsOfN(int n);
@@ -112,6 +112,7 @@ class CloudManager : public Manager {
         uint flStages = 0;
 
         int orbitalIdx = 0;
+        int numOrbitals = 0;
         int atomZ = 1;
         const int MAX_SHELLS = 8;
 

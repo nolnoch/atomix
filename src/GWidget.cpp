@@ -414,12 +414,12 @@ void GWidget::changeModes() {
 void GWidget::initVecsAndMatrices() {
     if (flGraphState.hasNone(egs::CLOUD_MODE)) {
         gw_startDist = 16.0f;
-        gw_nearDist = 1.0f;
-        gw_farDist = 200.0f;
+        gw_nearDist = 1.6f;
+        gw_farDist = 160.0f;
     } else {
         gw_startDist = 80.0f;
-        gw_nearDist = 3.0f;
-        gw_farDist = 600.0f;
+        gw_nearDist = 8.0f;
+        gw_farDist = 800.0f;
     }
 
     q_TotalRot.zero();
@@ -698,12 +698,12 @@ void GWidget::addCloudRecipes(int n, int l, int m_l) {
     }
 }
 
-void GWidget::lockCloudRecipes(harmap &cloudMap) {
+void GWidget::lockCloudRecipes(harmap &cloudMap, int numRecipes) {
     if (!cloudManager) {
         cloudManager = new CloudManager(&renderConfig);
         flGraphState.set(egs::CLOUD_MANAGER_INIT);
     }
-    cloudManager->receiveCloudMap(cloudMap);
+    cloudManager->receiveCloudMap(cloudMap, numRecipes);
     flGraphState.set(egs::CLOUD_MAP_READY);
 }
 

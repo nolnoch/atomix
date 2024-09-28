@@ -97,12 +97,15 @@ private:
     QPushButton *buttGenVertices = nullptr;
     QPushButton *buttLockRecipes = nullptr;
 
+    QGroupBox *groupRecipeBuilder = nullptr;
     QGroupBox *groupRecipeReporter = nullptr;
+    QGroupBox *groupGenVertices = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
     QListWidget *listOrbitalReport = nullptr;
 
     GWidget *graph = nullptr;
     harmap cloudRecipes;
+    int numRecipes = 0;
 
     int intTabMinWidth = 500;
     int intTabLabelHeight = 200;

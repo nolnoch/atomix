@@ -39,6 +39,36 @@
 #define PARA    config.parallel      // Parallel or Orthogonal waves
 */
 
+/* Custom BitFlag struct */
+struct BitFlag {
+    void set(uint flag) {
+        bf |= flag;
+    }
+    void clear(uint flag) {
+        bf &= ~flag;
+    }
+    void toggle(uint flag) {
+        bf ^= flag;
+    }
+    bool hasAll(uint flag) {
+        return (bf & flag) == flag;
+    }
+    bool hasAny(uint flag) {
+        return (bf & flag) > 0;
+    }
+    bool hasOne(uint flag) {
+        return ((bf & flag) != flag) && ((bf & flag) > 0);
+    }
+    bool hasNone(uint flag) {
+        return (bf & flag) == 0;
+    }
+    void reset() {
+        bf = 0;
+    }
+
+    uint32_t bf = 0;
+};
+
 inline constexpr std::string_view ROOT_DIR = "/home/braer/dev/atomix/";
 inline constexpr std::string_view SHADERS = "shaders/";
 inline constexpr std::string_view CONFIGS = "configs/";

@@ -385,6 +385,11 @@ void Program::updateVBO(uint offset, uint bufSize, const GLfloat *buf) {
     displayLogProgram();
 }
 
+void Program::updateVBOTarget(GLuint bufId, uint offset, uint bufSize, const GLfloat *buf) {
+    qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
+    displayLogProgram();
+}
+
 void Program::clearVBO() {
     qgf->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -572,6 +577,10 @@ void Program::setUniformMatrix(int size, string name, float *m) {
  */
 GLuint Program::getProgramId() {
     return this->programId;
+}
+
+GLuint Program::getLastVBOId() {
+    return this->vbo.back();
 }
 
 /**

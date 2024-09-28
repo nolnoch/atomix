@@ -104,6 +104,7 @@ class Program {
         void enableAttributes();
         void disableAttributes();
         void updateVBO(uint offset, uint bufSize, const GLfloat *buf);
+        void updateVBOTarget(GLuint bufId, uint offset, uint bufSize, const GLfloat *buf);
         void clearVBO();
 
         void bindEBO(uint bufSize, const GLuint *buf, uint mode);
@@ -128,6 +129,7 @@ class Program {
         //void setTexture(int samplerIdx, TexInfo& texInfo);
 
         GLuint getProgramId();
+        GLuint getLastVBOId();
 
         void displayLogProgram();
         void displayLogShader(GLenum shader);

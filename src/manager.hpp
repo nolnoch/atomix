@@ -32,19 +32,13 @@
 #include <glm/gtx/string_cast.hpp>
 #include "configparser.hpp"
 
-// std::vector<glm::vec3>
 using vVec3 = std::vector<glm::vec3>;
-// std::vector<glm::vec2>
 using vVec2 = std::vector<glm::vec2>;
-// std::vector<float>
 using fvec = std::vector<float>;
-// std::vector<double>
 using dvec = std::vector<double>;
-// std::vector<uint>
 using uvec = std::vector<uint>;
 using vec3 = glm::vec3;
 using ivec2 = glm::ivec2;
-// std::map<int, std::vector<glm::ivec2>>
 using harmap = std::map<int, std::vector<glm::ivec2>>;
 
 

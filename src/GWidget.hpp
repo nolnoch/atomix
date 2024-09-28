@@ -51,7 +51,35 @@
 } AtomixProgs;
 Q_DECLARE_METATYPE(AtomixProgs); */
 
-enum flagsConfig {ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024};
+enum ewc { ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024 };
+enum egs {
+    WAVE_MODE =             1,          // Button from Wave tab clicked, only making Waves
+    CLOUD_MODE =            2,          // Button from Cloud tab clicked, only making Clouds
+    WAVE_PROG_INIT =        2 << 1,     // Wave program has been initialized (pointer valid)
+    CLOUD_PROG_INIT =       2 << 2,     // Cloud program has been initialized (pointer valid)
+    WAVE_MANAGER_INIT =     2 << 3,     // Wave Manager has been initialized (pointer valid)
+    CLOUD_MANAGER_INIT =    2 << 4,     // Cloud Manager has been initialized (pointer valid)
+    CLOUD_VERT_READY =      2 << 5,     // Cloud vertices have been generated into allVertices
+    CLOUD_MAP_READY =       2 << 6,     // Cloud harmap has been loaded with recipes
+    CLOUD_RDP_READY =       2 << 7,     // Cloud processed into allRDPs
+    WAVE_VBO_BOUND =        2 << 8,     // Wave VBO has been loaded
+    CLOUD_VBO_BOUND =       2 << 9,     // Cloud VBO has been loaded
+    WAVE_EBO_BOUND =        2 << 10,     // Wave EBO has been loaded
+    CLOUD_EBO_BOUND =       2 << 11,    // Cloud EBO has been loaded
+    WAVE_UPD_CFG =          2 << 12,    // Wave AtomixCfg has been changed
+    CLOUD_UPD_CFG =         2 << 13,    // Cloud AtomixCfg has been changed
+    WAVE_UPD_VBO =          2 << 14,    // Wave VBO needs to be updated
+    CLOUD_UPD_VBO =         2 << 15,    // Cloud VBO needs to be updated
+    WAVE_UPD_EBO =          2 << 16,    // Wave EBO needs to be updated
+    CLOUD_UPD_EBO =         2 << 17,    // Cloud EBO needs to be updated
+    UPD_UNI_COLOUR =        2 << 18,    // [Wave] Colour Uniforms need to be updated
+    UPD_UNI_MATHS =         2 << 19,    // [Wave] Maths Uniforms need to be updated
+    UPDATE_REQUIRED =       2 << 20     // An update must execute on next render
+};
+
+const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_PROG_INIT | egs::WAVE_MANAGER_INIT | egs::WAVE_VBO_BOUND | egs::WAVE_EBO_BOUND | egs::WAVE_UPD_CFG | egs::WAVE_UPD_VBO | egs::WAVE_UPD_EBO;
+const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_PROG_INIT | egs::CLOUD_MANAGER_INIT | egs::CLOUD_VBO_BOUND | egs::CLOUD_EBO_BOUND | egs::CLOUD_UPD_CFG | egs::CLOUD_UPD_VBO | egs::CLOUD_UPD_EBO\
+                       | egs::CLOUD_VERT_READY | egs::CLOUD_MAP_READY | egs::CLOUD_RDP_READY;
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -66,12 +94,14 @@ public:
     void addCloudRecipes(int n, int l, int m_l);
     void lockCloudRecipes(harmap & cloudMap);
     void genCloudVertices();
+    void updateCloudBuffers();
+    int genCloudRDPs();
 
 public slots:
     void cleanup();
     void newWaveConfig(AtomixConfig *cfg);
     void selectRenderedWaves(int id, bool checked);
-    void newCloudConfig();
+    void newCloudMessage();
 
 protected:
     void initializeGL() override;
@@ -86,12 +116,12 @@ protected:
 
 private:
     void initVecsAndMatrices();
-    int initAtomixProg();
-    int initCrystalProgram();
-    int initWaveProgram();
-    int initCloudProgram();
+    void initAtomixProg();
+    void initCrystalProgram();
+    void initWaveProgram();
+    void initCloudProgram();
     void changeModes();
-    void processConfigChange();
+    void processWaveConfigChange();
     void swapShaders();
     void swapBuffers();
     void swapVertices();
@@ -140,22 +170,8 @@ private:
     bool gw_pause = false;
     bool gw_init = false;
     
-    uint updateFlags = 0;
-    // uint static_dynamic = 0;
-    
-    bool notChecked = true;
-    bool newConfig = false;
-    bool newVertices = false;
-    bool newIndices = false;
-    bool newUniformsMaths = false;
-    bool newUniformsColor = false;
-    bool newCloud = false;
-    bool updateRequired = false;
-
-    bool renderCloud = false;
-    bool renderWave = false;
-    bool waveMode = false;
-    bool cloudMode = false;
+    BitFlag flWaveCfg;
+    BitFlag flGraphState;
 
     fvec crystalRingVertices;
     uvec crystalRingIndices;

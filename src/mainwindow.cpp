@@ -53,10 +53,10 @@ void MainWindow::onAddNew() {
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
-    connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
-    connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
     connect(buttGenVertices, &QPushButton::clicked, this, &MainWindow::handleButtGenVerts);
+    connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
     connect(buttLockRecipes, &QPushButton::clicked, this, &MainWindow::handleButtLockRecipes);
+    connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
 
     setWindowTitle(tr("atomix"));
 }
@@ -524,19 +524,16 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     Qt::CheckState checked = item->checkState(col);
     int itemChildren = item->childCount();
 
-    /* Parents nodes recurse to children while checking/unchecking */
+    /* Parent nodes recurse to children while checking/unchecking */
     if (itemChildren) {
         for (int i = 0; i < item->childCount(); i++) {
             item->child(i)->setCheckState(0,(checked) ? Qt::Checked : Qt::Unchecked);
         }
 
-        // TODO Check/uncheck parent if all children are checked
-
     /* Leaf nodes */
     } else {
         QString strItem = item->text(col);
         QStringList strlistItem = strItem.split(u' ');
-        // int nlm[3] = { strlistItem.at(0).toInt(), strlistItem.at(1).toInt(), strlistItem.at(2).toInt()};
         int n = strlistItem.at(0).toInt();
         std::vector<ivec2> *vecElem = &cloudRecipes[n];
         ivec2 lm = ivec2(strlistItem.at(1).toInt(), strlistItem.at(2).toInt());
@@ -547,10 +544,12 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             listOrbitalReport->addItem(thisItem);
             thisItem->setTextAlignment(Qt::AlignRight);
 
+            // Enable button now that at least one item exists in list
             if (!buttLockRecipes->isEnabled()) {
                 buttLockRecipes->setEnabled(true);
             }
 
+            // Add item to harmap
             vecElem->push_back(lm);
 
         } else {
@@ -559,10 +558,12 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             listOrbitalReport->takeItem(listOrbitalReport->row(thisItem));
             delete (thisItem);
 
+            // Disable button if list is now empty
             if (!listOrbitalReport->count() && buttLockRecipes->isEnabled()) {
                 buttLockRecipes->setEnabled(false);
             }
 
+            // Remove unchecked item from harmap
             std::vector<ivec2>::iterator it = std::find(vecElem->begin(), vecElem->end(), lm);
             if (it != vecElem->end()) {
                 vecElem->erase(it);
@@ -570,6 +571,12 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
         }
     }
 
+    /* ALL Nodes make it here */
+    // Change list group title colour to reflect empty/not-empty
+    QString strRecipes = (listOrbitalReport->count()) ? "QGroupBox { color: #77FF77; }" : "QGroupBox { color: #FF7777; }";
+    groupRecipeReporter->setStyleSheet(strRecipes);
+
+    // If has parent and all siblings are now checked/unchecked, check/uncheck parent [EARLY RETURN]
     if (ptrParent) {
         int intSiblings = ptrParent->childCount();
         bool siblingChecked;
@@ -580,11 +587,8 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             }
         }
         const QSignalBlocker blocker(treeOrbitalSelect);
-        ptrParent->setCheckState(col, checked); // Will this kick off recursion again?
+        ptrParent->setCheckState(col, checked);
     }
-
-    QString strRecipes = (listOrbitalReport->count()) ? "QGroupBox { color: #77FF77; }" : "QGroupBox { color: #FF7777; }";
-    groupRecipeReporter->setStyleSheet(strRecipes);
 }
 
 void MainWindow::handleButtLockRecipes() {
@@ -616,7 +620,7 @@ void MainWindow::handleButtGenVerts() {
 }
 
 void MainWindow::handleButtMorbHarmonics() {
-    graph->newCloudConfig();
+    graph->newCloudMessage();
 }
 
 void MainWindow::handleButtColors(int id) {

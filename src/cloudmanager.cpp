@@ -28,7 +28,7 @@
 CloudManager::CloudManager(AtomixConfig *cfg) {
     newConfig(cfg);
     this->cfg.vert = "gpu_sphere_test.vert";
-    stageFlags |= flagStages::INIT;
+    flStages |= eStages::INIT;
 }
 
 CloudManager::~CloudManager() {
@@ -36,7 +36,7 @@ CloudManager::~CloudManager() {
 }
 
 void CloudManager::createCloud() {
-    assert(stageFlags & flagStages::INIT);
+    assert(flStages & eStages::INIT);
 
     this->cloudOrbitCount = 150;
     this->cloudOrbitDivisor = 1;
@@ -82,11 +82,11 @@ void CloudManager::createCloud() {
 
     wavefuncNorms(MAX_SHELLS);
     genVertexArray();
-    stageFlags |= flagStages::VERTICES;
+    flStages |= eStages::VERTICES;
 }
 
 double CloudManager::genOrbital(int n, int l, int m_l) {
-    assert(stageFlags & flagStages::VERTICES);
+    assert(flStages & eStages::VERTICES);
     int fdn = 0;
     double max_rdp = 0;
 
@@ -142,9 +142,8 @@ void CloudManager::genOrbitalsThroughN(int n_max) {
                 cloudOrbitals[n].push_back(ivec2(l, m_l));
             }
         }
-        activeShells.insert(n);
     }
-    stageFlags |= flagStages::RECIPES;
+    flStages |= eStages::RECIPES;
 }
 
 void CloudManager::genOrbitalsOfN(int n) {
@@ -153,8 +152,7 @@ void CloudManager::genOrbitalsOfN(int n) {
             cloudOrbitals[n].push_back(ivec2(l, m_l));
         }
     }
-    activeShells.insert(n);
-    stageFlags |= flagStages::RECIPES;
+    flStages |= eStages::RECIPES;
 }
 
 void CloudManager::genOrbitalsOfL(int n, int l) {
@@ -162,25 +160,30 @@ void CloudManager::genOrbitalsOfL(int n, int l) {
     for (int m_l = l; m_l >= -l; m_l--) {
         cloudOrbitals[n].push_back(ivec2(l, m_l));
     }
-    activeShells.insert(n);
-    stageFlags |= flagStages::RECIPES;
+    flStages |= eStages::RECIPES;
 }
 
 void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
     cloudOrbitals[n].push_back(ivec2(l, m_l));
-    activeShells.insert(n);
-    stageFlags |= flagStages::RECIPES;
+    flStages |= eStages::RECIPES;
 }
 
 int CloudManager::bakeOrbitalsForRender() {
     int nr = cloudOrbitals.size();
     if (nr) {
         std::cout << nr << " recipe(s) loaded. Begin processing..." << std::endl;
+        // TODO Why extra element count if unselected from List?
+        for (auto const &[key, val] : cloudOrbitals) {
+            for (auto const &v : val) {
+                std::cout << key << ": " << glm::to_string(v) << ", ";
+            }
+        }
+        std::cout << std::endl;
     } else {
         std::cout << "No recipes loaded. Aborting." << std::endl;
         return A_ERR;
     }
-    if (!(stageFlags & flagStages::VERTICES)) {
+    if (!(flStages & eStages::VERTICES)) {
         std::cout << ">> Vertices not created. Pre-empting for cloud creation." << std::endl;
         createCloud();
         std::cout << "Resume processing..." << std::endl;
@@ -216,12 +219,13 @@ int CloudManager::bakeOrbitalsForRender() {
     // End: Reset state for next orbital calculation(s)
     std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
     this->orbitalIdx = 0;
+    this->allRDPMaximum = 0;
     cloudOrbitals.clear();
 
     genRDPs();
-    stageFlags |= flagStages::VBO;
+    flStages |= eStages::VBO;
     genIndexBuffer();
-    stageFlags |= flagStages::EBO;
+    flStages |= eStages::EBO;
     return flagExit::A_OKAY;
 }
 
@@ -253,7 +257,7 @@ void CloudManager::cloudTest(int n_max) {
 }
 
 void CloudManager::updateCloud(double time) {
-    assert(stageFlags & (flagStages::VERTICES | flagStages::VBO | flagStages::EBO));
+    assert(flStages & (eStages::VERTICES | eStages::VBO | eStages::EBO));
     this->update = true;
     //TODO implement for CPU updates over time
 }
@@ -263,8 +267,18 @@ void CloudManager::receiveCloudMap(harmap &inMap) {
 }
 
 void CloudManager::newCloud() {
-    resetManager();
-    //createCloud();
+    std::fill(shellRDPMaxima.begin(), shellRDPMaxima.end(), 0.0);
+    std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
+    std::fill(allRDPs.begin(), allRDPs.end(), 0.0);    
+    
+    allIndices.clear();
+    this->indexCount = 0;
+    this->indexSize = 0;
+    
+    this->update = false;
+    this->active = false;
+    this->atomZ = 1;
+    this->flStages = eStages::VERTICES;
 }
 
 int64_t CloudManager::fact(int n) {
@@ -415,7 +429,6 @@ void CloudManager::resetManager() {
     shellRDPMaximaCum.clear();
     norm_constR.clear();
     norm_constY.clear();
-    activeShells.clear();
     cloudOrbitals.clear();
 
     this->pixelCount = 0;
@@ -436,7 +449,7 @@ void CloudManager::resetManager() {
     this->cloudLayerCount = 0;
     this->cloudLayerDelta = 0.0;
     this->cloudResolution = 0;
-    this->stageFlags = 0;
+    this->flStages = 0;
 }
 
 /*
@@ -482,6 +495,14 @@ uint CloudManager::getRDPSize() {
 const float* CloudManager::getRDPData() {
     assert(RDPCount);
     return &allRDPs[0];
+}
+
+bool CloudManager::hasVertices() {
+    return (this->flStages & eStages::VERTICES);
+}
+
+bool CloudManager::hasBuffers() {
+    return (this->flStages & eStages::EBO);
 }
 
 /*

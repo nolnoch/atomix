@@ -34,7 +34,7 @@
 
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
-enum flagStages {INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16};
+enum eStages {INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16};
 
 
 class CloudManager : public Manager {
@@ -61,6 +61,8 @@ class CloudManager : public Manager {
         uint getRDPSize();
         const float* getRDPData();
 
+        bool hasVertices();
+        bool hasBuffers();
         void printMaxRDP(const int &n, const int &l, const int &m_l, const double &maxRDP);
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
@@ -100,7 +102,6 @@ class CloudManager : public Manager {
         
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
-        std::unordered_set<int> activeShells;
         harmap cloudOrbitals;
         
         uint colourCount = 0;
@@ -108,12 +109,11 @@ class CloudManager : public Manager {
         uint RDPCount = 0;
         uint RDPSize = 0;
         uint64_t pixelCount = 0;
-        uint stageFlags = 0;
+        uint flStages = 0;
 
         int orbitalIdx = 0;
         int atomZ = 1;
         const int MAX_SHELLS = 8;
-        double phase_base = PI_TWO;
 
         int cloudOrbitCount = 0;
         int cloudOrbitDivisor = 0;

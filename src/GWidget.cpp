@@ -120,7 +120,8 @@ void GWidget::newWaveConfig(AtomixConfig *cfg) {
 
 void GWidget::selectRenderedWaves(int id, bool checked) {
     // Send selection(s) to WaveManager for regeneration of indices
-    renderedWaves = waveManager->selectWaves(id, checked);
+    // renderedWaves = waveManager->selectWaves(id, checked);
+    waveManager->selectWaves(id, checked);
 
     // Flag for EBO update
     flGraphState.set(egs::WAVE_UPD_EBO | egs::UPDATE_REQUIRED);
@@ -186,6 +187,7 @@ void GWidget::swapBuffers() {
 
     // Cleanup
     waveProg->deleteBuffers();
+    this->printSize();
     flGraphState.clear(egs::WAVE_UPD_VBO | egs::WAVE_UPD_EBO);
 }
 
@@ -338,6 +340,7 @@ void GWidget::initWaveProgram() {
 
     currentProg = waveProg;
     currentManager = waveManager;
+    this->printSize();
 }
 
 void GWidget::initCloudProgram() {
@@ -389,6 +392,7 @@ void GWidget::initCloudProgram() {
     currentProg = cloudProg;
     currentManager = cloudManager;
     flGraphState.clear(egs::CLOUD_VERT_READY | egs::CLOUD_RDP_READY | egs::CLOUD_UPD_VBO | egs::CLOUD_UPD_EBO);
+    this->printSize();
 }
 
 void GWidget::changeModes() {
@@ -412,15 +416,9 @@ void GWidget::changeModes() {
 }
 
 void GWidget::initVecsAndMatrices() {
-    if (flGraphState.hasNone(egs::CLOUD_MODE)) {
-        gw_startDist = 16.0f;
-        gw_nearDist = 1.6f;
-        gw_farDist = 160.0f;
-    } else {
-        gw_startDist = 80.0f;
-        gw_nearDist = 8.0f;
-        gw_farDist = 800.0f;
-    }
+    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : 80.0f;
+    gw_nearDist = gw_startDist * 0.1f;
+    gw_farDist = gw_startDist * 15;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -498,6 +496,7 @@ void GWidget::paintGL() {
                 changeModes();
                 genCloudRDPs();
                 initCloudProgram();
+                cloudManager->clearForNext();
                 initVecsAndMatrices();
             }
             if (flGraphState.hasAny(egs::CLOUD_UPD_CFG)) {
@@ -506,6 +505,7 @@ void GWidget::paintGL() {
             }
             if (flGraphState.hasAny(egs::CLOUD_UPD_EBO)) {
                 updateCloudBuffers();
+                cloudManager->clearForNext();
             }
         }
         flGraphState.clear(egs::UPDATE_REQUIRED);
@@ -572,6 +572,8 @@ void GWidget::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
     float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
+    // std::cout << glm::to_string(v3_cameraPosition) << std::endl;
+    emit cameraChanged();
     update();
 }
 
@@ -653,8 +655,9 @@ void GWidget::keyPressEvent(QKeyEvent * e) {
             gw_timeStart += gw_timeEnd - gw_timePaused;
         }
         update();
-    } else
+    } else {
         QWidget::keyPressEvent(e);
+    }
 }
 
 void GWidget::checkErrors(std::string str) {
@@ -731,6 +734,8 @@ void GWidget::updateCloudBuffers() {
     cloudProg->endRender();
     cloudProg->clearBuffers();
 
+    this->printSize();
+
     flGraphState.clear(egs::CLOUD_UPD_EBO | egs::CLOUD_UPD_VBO | egs::CLOUD_RDP_READY);
 }
 
@@ -741,27 +746,53 @@ int GWidget::genCloudRDPs() {
         std::cout << "Failed to bake orbitals for render." << std::endl;
         return flagExit::A_ERR;
     }
-    this->printSize();
     
     flGraphState.set(egs::CLOUD_RDP_READY | egs::CLOUD_UPD_EBO);
     flGraphState.clear(egs::CLOUD_MAP_READY);
     return flagExit::A_OKAY;
 }
 
+float* GWidget::getCameraPosition() {
+    gw_cam[0] = v3_cameraPosition.z;
+    gw_cam[1] = gw_nearDist;
+    gw_cam[2] = gw_farDist;
+
+    return gw_cam;
+}
+
+std::string GWidget::withCommas(int64_t value) {
+    std::stringstream ssFmt;
+    ssFmt.imbue(std::locale(""));
+    ssFmt << std::fixed << value;
+
+    return ssFmt.str();
+}
+
 void GWidget::printSize() {
-    int64_t VSize, DSize, ISize;
-    VSize = cloudManager->getVertexSize();
-    DSize = cloudManager->getRDPSize() * 2;
-    ISize = cloudManager->getIndexSize();
+    int64_t VSize = 0, DSize = 0, ISize = 0;
+    bool isMBV = false, isMBI = false;
 
+    if (flGraphState.hasAny(egs::WAVE_EBO_BOUND | egs::CLOUD_EBO_BOUND)) {
+        VSize = currentManager->getVertexSize();
+        ISize = currentManager->getIndexSize();
+        
+        if (flGraphState.hasAny(egs::CLOUD_MODE)) {
+            DSize = cloudManager->getRDPSize() * 2;
+        }
+    }
+    
     int64_t divisorMB = 1024 * 1024;
-
-    if (ISize > 1048576)
+    if (isMBV = VSize > divisorMB) {
+        VSize /= divisorMB;
+    }
+    if (isMBI = ISize > divisorMB) {
         ISize /= divisorMB;
+    }
 
-    std::cout << "\nVertex Total Size: " << std::setw(6) << VSize / divisorMB << " MB\n";
-    std::cout << "RDProb Total Size: " << std::setw(6) << DSize / divisorMB << " MB\n";
-    std::cout << "Indice Total Size: " << std::setw(6) << ISize  << ((ISize > 1048576) ? " MB" : "  B") << std::endl;
+    std::cout << "\nVertex Total Size: " << std::setw(7) << withCommas(VSize) << ((isMBV) ? " MB\n" : "  B\n");
+    if (DSize)
+        std::cout <<   "RDProb Total Size: " << std::setw(7) << withCommas(DSize / divisorMB) << " MB\n";
+    std::cout <<   "Indice Total Size: " << std::setw(7) << withCommas(ISize) << ((isMBI) ? " MB" : "  B") << std::endl;
 }
 
 void GWidget::printConfig(AtomixConfig *cfg) {

@@ -45,6 +45,7 @@ class CloudManager : public Manager {
         void createCloud();
         void updateCloud(double time);
         void receiveCloudMap(harmap &inMap, int numRecipes);
+        void clearForNext() override;
 
         void genOrbitalsThroughN(int n);
         void genOrbitalsOfN(int n);
@@ -52,8 +53,6 @@ class CloudManager : public Manager {
         void genOrbitalExplicit(int n, int l, int m_l);
         int bakeOrbitalsForRender();
         void cloudTest(int n_max);
-        
-        void newCloud();
         
         void RDPtoColours();
 
@@ -109,7 +108,8 @@ class CloudManager : public Manager {
         uint RDPCount = 0;
         uint RDPSize = 0;
         uint64_t pixelCount = 0;
-        uint flStages = 0;
+        
+        BitFlag flStages;
 
         int orbitalIdx = 0;
         int numOrbitals = 0;

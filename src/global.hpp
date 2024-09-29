@@ -62,6 +62,9 @@ struct BitFlag {
     bool hasNone(uint flag) {
         return (bf & flag) == 0;
     }
+    void setTo(uint flag) {
+        bf = flag;
+    }
     void reset() {
         bf = 0;
     }

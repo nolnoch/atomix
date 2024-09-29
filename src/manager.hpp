@@ -48,6 +48,8 @@ class Manager {
         virtual ~Manager(){ resetManager(); };
         
         void newConfig(AtomixConfig *config);
+        
+        virtual void clearForNext();
 
         const uint getVertexSize();
         const uint getIndexSize();

@@ -29,8 +29,8 @@ MainWindow::MainWindow() {
 }
 
 void MainWindow::lockConfig(AtomixConfig *cfg) {
-    //cout << "Updating config." << endl;
-    emit sendConfig(cfg);
+    graph->newWaveConfig(cfg);
+    // emit sendConfig(cfg);
 }
 
 void MainWindow::onAddNew() {
@@ -47,8 +47,11 @@ void MainWindow::onAddNew() {
     refreshShaders();
     loadConfig();
     refreshOrbits(cfgParser->config);
+    setupDetails();
     
-    connect(this, &MainWindow::sendConfig, graph, &GWidget::newWaveConfig, Qt::DirectConnection);
+    // connect(this, &MainWindow::sendConfig, graph, &GWidget::newWaveConfig, Qt::DirectConnection);
+    connect(graph, SIGNAL(cameraChanged()), this, SLOT(updateDetails()));
+
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
@@ -57,6 +60,7 @@ void MainWindow::onAddNew() {
     connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
     connect(buttLockRecipes, &QPushButton::clicked, this, &MainWindow::handleButtLockRecipes);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
+    connect(buttResetRecipes, &QPushButton::clicked, this, &MainWindow::handleButtResetRecipes);
 
     setWindowTitle(tr("atomix"));
 }
@@ -127,6 +131,41 @@ void MainWindow::refreshOrbits(AtomixConfig *cfg) {
     }
 }
 
+void MainWindow::setupDetails() {
+    float *cam = this->graph->getCameraPosition();
+    QFont fontDebug("Monospace");
+    fontDebug.setStyleHint(QFont::Courier);
+    
+    float fDist = cam[0];
+    float fNear = cam[1];
+    float fFar = cam[2];
+    QString strDetails = QString("Distance: %1\n"\
+                                 "Near: %2\n"\
+                                 "Far: %3").arg(fDist).arg(fNear).arg(fFar);
+    labelDetails = new QLabel(graph);
+    labelDetails->setFont(fontDebug);
+    labelDetails->setText(strDetails);
+    labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    labelDetails->raise();
+    labelDetails->hide();
+}
+
+void MainWindow::updateDetails() {
+    if (!labelDetails->isVisible()) {
+        return;
+    }
+    float *cam = this->graph->getCameraPosition();
+    
+    float fDist = cam[0];
+    float fNear = cam[1];
+    float fFar = cam[2];
+    QString strDetails = QString("Distance: %1\n"\
+                                 "Near: %2\n"\
+                                 "Far: %3").arg(fDist).arg(fNear).arg(fFar);
+    labelDetails->setText(strDetails);
+    labelDetails->adjustSize();
+}
+
 void MainWindow::loadConfig() {
     int files = cfgParser->cfgFiles.size();
     int comboID = comboConfigFile->currentData().toInt();
@@ -176,11 +215,11 @@ void MainWindow::setupTabs() {
     // wTabs->setTabShape(QTabWidget::TabShape::Triangular);
     int intTabWidth = wTabWaves->width() / wTabs->count();
     QString strTabStyle = QString("QWidget { font-size: 17px; }"\
-                                  "QLabel { font-size: 23px; }"\
-                                  "QLabel#configLabel { font-size: 17px; }"
-                                  "QTabBar::tab { height: 40px; width: %1 px; }"\
-                                  "QTabBar::tab:selected { color: #9999FF; font-size: 18px; }"\
-                                  "QTabBar::tab:!selected { color: #999999; background: #222222; }").arg(intTabWidth);
+                                  /* "QLabel { font-size: 17px; }"\ */
+                                  "QLabel#tabTitle { font-size: 23px; }"\
+                                  "QTabBar::tab { height: 40px; width: %1 px; font-size: 15px; }"\
+                                  "QTabBar::tab::selected { color: #9999FF; font-size: 19px; }"\
+                                  "QTabBar::tab::!selected { color: #999999; background: #222222; }").arg(intTabWidth);
     wTabs->setStyleSheet(strTabStyle);
 
     dockTabs->setWidget(wTabs);
@@ -218,6 +257,7 @@ void MainWindow::setupDockWaves() {
     QGroupBox *groupOrbits = new QGroupBox("Visible Orbits");
 
     QLabel *labelWaves = new QLabel("<p>Explore stable wave patterns in circular or spherical forms in this configuration</p>");
+    labelWaves->setObjectName("tabTitle");
     labelWaves->setMaximumHeight(intTabLabelHeight);
     labelWaves->setMinimumHeight(intTabLabelHeight);
     labelWaves->setWordWrap(true);
@@ -415,6 +455,7 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeReporter = new QGroupBox("Selected Orbitals");
 
     QLabel *labelHarmonics = new QLabel("Generate accurate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)");
+    labelHarmonics->setObjectName("tabTitle");
     labelHarmonics->setMaximumHeight(intTabLabelHeight);
     labelHarmonics->setMinimumHeight(intTabLabelHeight);
     labelHarmonics->setWordWrap(true);
@@ -467,10 +508,34 @@ void MainWindow::setupDockHarmonics() {
     listOrbitalReport = new QListWidget();
     // listOrbitalReport->setFont(fontTree);
 
-    QVBoxLayout *layGenVertices = new QVBoxLayout;
-    layGenVertices->addWidget(buttGenVertices);
+    QLabel *labelCloudResolution = new QLabel("Points per layer");
+    QLabel *labelCloudLayers = new QLabel("Layers per cloud");
+    QLabel *labelMinRDP = new QLabel("Minimum RDP per vertex");
+    QLineEdit *entryCloudResolution = new QLineEdit(QString::number(cfgParser->config->cloudRes));
+    QLineEdit *entryCloudLayers = new QLineEdit(QString::number(cfgParser->config->cloudLayCount));
+    QLineEdit *entryMinRDP = new QLineEdit(QString::number(cfgParser->config->cloudTolerance));
+    
+    QGridLayout *layGenVertices = new QGridLayout;
+    layGenVertices->addWidget(labelCloudLayers, 0, 0, 1, 1);
+    layGenVertices->addWidget(labelCloudResolution, 1, 0, 1, 1);
+    layGenVertices->addWidget(labelMinRDP, 2, 0, 1, 1);
+    layGenVertices->addWidget(entryCloudLayers, 0, 1, 1, 1);
+    layGenVertices->addWidget(entryCloudResolution, 1, 1, 1, 1);
+    layGenVertices->addWidget(entryMinRDP, 2, 1, 1, 1);
+    layGenVertices->addWidget(buttGenVertices, 3, 0, 1, 2);
+    buttGenVertices->setSizePolicy(qPolicyExpand);
+
+    layGenVertices->setColumnStretch(0, 1);
+    layGenVertices->setColumnStretch(1, 1);
+    layGenVertices->setRowStretch(0, 1);
+    layGenVertices->setRowStretch(1, 1);
+    layGenVertices->setRowStretch(2, 1);
+    layGenVertices->setRowStretch(3, 2);
+
     groupGenVertices->setLayout(layGenVertices);
     groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
+
+
     QVBoxLayout *layRecipeBuilder = new QVBoxLayout;
     layRecipeBuilder->addWidget(treeOrbitalSelect);
     groupRecipeBuilder->setLayout(layRecipeBuilder);
@@ -478,39 +543,43 @@ void MainWindow::setupDockHarmonics() {
     layRecipeReporter->addWidget(listOrbitalReport);
     groupRecipeReporter->setLayout(layRecipeReporter);
 
+    buttLockRecipes = new QPushButton("Lock Recipes");
+    buttLockRecipes->setEnabled(false);
+    buttResetRecipes = new QPushButton("Reset Recipes");
+    buttResetRecipes->setEnabled(false);
+
     QHBoxLayout *layRecipeIO = new QHBoxLayout;
-    layRecipeIO->addWidget(groupRecipeBuilder);
-    layRecipeIO->addWidget(groupRecipeReporter);
+    QVBoxLayout *layVRecipeBuild = new QVBoxLayout;
+    QVBoxLayout *layVRecipeClear = new QVBoxLayout;
+    layVRecipeBuild->addWidget(groupRecipeBuilder);
+    layVRecipeBuild->addWidget(buttLockRecipes);
+    layVRecipeClear->addWidget(groupRecipeReporter);
+    layVRecipeClear->addWidget(buttResetRecipes);
+    layRecipeIO->addLayout(layVRecipeBuild);
+    layRecipeIO->addLayout(layVRecipeClear);
     groupRecipeReporter->setAlignment(Qt::AlignRight);
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeBuilder->setMaximumWidth(235);
     groupRecipeReporter->setMaximumWidth(235);
-
     groupRecipeBuilder->setEnabled(false);
     groupRecipeReporter->setEnabled(false);
-
-    buttLockRecipes = new QPushButton("Lock Recipes");
-    buttLockRecipes->setEnabled(false);
-
-    QVBoxLayout *layOrbitalSection = new QVBoxLayout;
-    layOrbitalSection->addLayout(layRecipeIO);
-    layOrbitalSection->addWidget(buttLockRecipes);
 
     QVBoxLayout *layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addWidget(groupGenVertices);
-    layDockHarmonics->addStretch(1);
-    layDockHarmonics->addLayout(layOrbitalSection);
+    layDockHarmonics->addLayout(layRecipeIO);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addWidget(buttMorbHarmonics);
 
-    layOrbitalSection->setStretchFactor(layRecipeIO, 7);
-    layOrbitalSection->setStretchFactor(buttLockRecipes, 1);
+    layVRecipeBuild->setStretchFactor(groupRecipeBuilder, 6);
+    layVRecipeBuild->setStretchFactor(buttLockRecipes, 1);
+    layVRecipeClear->setStretchFactor(groupRecipeReporter, 6);
+    layVRecipeClear->setStretchFactor(buttResetRecipes, 1);
 
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
-    layDockHarmonics->setStretchFactor(groupGenVertices, 2);
-    layDockHarmonics->setStretchFactor(layOrbitalSection, 8);
+    layDockHarmonics->setStretchFactor(groupGenVertices, 3);
+    layDockHarmonics->setStretchFactor(layRecipeIO, 7);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
     
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
@@ -531,7 +600,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     /* Parent nodes recurse to children while checking/unchecking */
     if (itemChildren) {
         for (int i = 0; i < item->childCount(); i++) {
-            item->child(i)->setCheckState(0,(checked) ? Qt::Checked : Qt::Unchecked);
+            item->child(i)->setCheckState(0,checked);
         }
 
     /* Leaf nodes */
@@ -547,10 +616,12 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             QListWidgetItem *thisItem = new QListWidgetItem(strItem, listOrbitalReport);
             listOrbitalReport->addItem(thisItem);
             thisItem->setTextAlignment(Qt::AlignRight);
+            thisItem->setForeground(Qt::red);
 
             // Enable button now that at least one item exists in list
             if (!buttLockRecipes->isEnabled()) {
                 buttLockRecipes->setEnabled(true);
+                buttResetRecipes->setEnabled(true);
             }
 
             // Add item to harmap
@@ -567,6 +638,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             // Disable button and clear harmap if list is now empty
             if (!numRecipes) {
                 buttLockRecipes->setEnabled(false);
+                buttMorbHarmonics->setEnabled(false);
                 this->cloudRecipes.clear();
             } else {
                 // Remove unchecked item from harmap
@@ -579,31 +651,47 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     }
 
     /* ALL Nodes make it here */
-    // numRecipes = listOrbitalReport->count();
-    // Change list group title colour to reflect empty/not-empty
-    QString strRecipes = (numRecipes) ? "QGroupBox { color: #77FF77; }" : "QGroupBox { color: #FF7777; }";
-    groupRecipeReporter->setStyleSheet(strRecipes);
+    // Since a change has been made here, set title to yellow to show unlocked recipes
+    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
 
-    // If has parent and all siblings are now checked/unchecked, check/uncheck parent [EARLY RETURN]
-    if (ptrParent) {
+    // If has parent and all siblings are now checked/unchecked, check/uncheck parent
+    while (ptrParent) {
         int intSiblings = ptrParent->childCount();
+        int intSiblingsSame = 0;
         bool siblingChecked;
 
         for (int i = 0; i < intSiblings; i++) {
-            if (ptrParent->child(i)->checkState(col) != checked) {
-                return;
+            if (ptrParent->child(i)->checkState(col) == checked) {
+                intSiblingsSame++;
             }
         }
         const QSignalBlocker blocker(treeOrbitalSelect);
-        ptrParent->setCheckState(col, checked);
+        ptrParent->setCheckState(col, (intSiblingsSame == intSiblings) ? checked : Qt::PartiallyChecked);
+        ptrParent = ptrParent->parent();
     }
 }
 
 void MainWindow::handleButtLockRecipes() {
     assert(cloudRecipes.size());
-    graph->lockCloudRecipes(this->cloudRecipes, this->numRecipes);
+    cloudRecipesLocked = cloudRecipes;
+    graph->lockCloudRecipes(this->cloudRecipesLocked, this->numRecipes);
     buttMorbHarmonics->setEnabled(true);
-    buttMorbHarmonics->setStyleSheet("QPushButton { background-color: #339933; }");
+    buttLockRecipes->setEnabled(false);
+
+    for (int i = 0; i < numRecipes; i++) {
+        listOrbitalReport->item(i)->setForeground(Qt::white);
+    }
+    groupRecipeReporter->setStyleSheet("QGroupBox { color: #77FF77; }");
+}
+
+void MainWindow::handleButtResetRecipes() {
+    int topLevelItems = treeOrbitalSelect->topLevelItemCount();
+    
+    // Check, then uncheck all top-level items. A bit brutal, but very effective :)
+    for (int i = 0; i < topLevelItems; i++) {
+        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
+        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
+    }
 }
 
 void MainWindow::handleButtMorb() {
@@ -666,8 +754,15 @@ void MainWindow::handleButtColors(int id) {
 
 void MainWindow::keyPressEvent(QKeyEvent *e)
 {
-    if (e->key() == Qt::Key_Escape)
+    if (e->key() == Qt::Key_Escape) {
         close();
-    else
+    } else if (e->key() == Qt::Key_D) {
+        if (labelDetails->isVisible()) {
+            labelDetails->hide();
+        } else {
+            labelDetails->show();
+        }
+    } else {
         QWidget::keyPressEvent(e);
+    }
 }

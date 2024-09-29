@@ -97,6 +97,8 @@ public:
     void updateCloudBuffers();
     int genCloudRDPs();
 
+    float* getCameraPosition();
+
 public slots:
     void cleanup();
     void newWaveConfig(AtomixConfig *cfg);
@@ -114,6 +116,9 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
 
+signals:
+    void cameraChanged();
+
 private:
     void initVecsAndMatrices();
     void initAtomixProg();
@@ -127,6 +132,7 @@ private:
     void swapVertices();
     void swapIndices();
     void checkErrors(std::string str);
+    std::string withCommas(int64_t value);
     void printSize();
 
     QOpenGLContext *gw_context = nullptr;
@@ -154,13 +160,15 @@ private:
     glm::vec3 v3_mouseBegin;
     glm::vec3 v3_mouseEnd;
     Quaternion q_TotalRot;
+    
     int64_t gw_timeStart;
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
-    ushort renderedWaves = 0;
+    // ushort renderedWaves = 0;
     float gw_startDist = 0.0f;
     float gw_farDist = 0.0f;
     float gw_nearDist = 0.0f;
+    float gw_cam[3] = {0,0,0};
     
     uint gw_faces = 0;
     uint gw_lines = 0;

@@ -51,13 +51,15 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow();
-    void lockConfig(AtomixConfig *cfg);
+
+public slots:
+    void updateDetails();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 signals:
-    void sendConfig(AtomixConfig *cfg);
+    // void sendConfig(AtomixConfig *cfg);
     void changeRenderedOrbits(uint selectedOrbits);
 
 private slots:
@@ -93,9 +95,10 @@ private:
     QButtonGroup *buttGroupColors = nullptr;
 
     QPushButton *buttMorbWaves = nullptr;
-    QPushButton *buttMorbHarmonics = nullptr;
     QPushButton *buttGenVertices = nullptr;
     QPushButton *buttLockRecipes = nullptr;
+    QPushButton *buttResetRecipes = nullptr;
+    QPushButton *buttMorbHarmonics = nullptr;
 
     QGroupBox *groupRecipeBuilder = nullptr;
     QGroupBox *groupRecipeReporter = nullptr;
@@ -103,8 +106,11 @@ private:
     QTreeWidget *treeOrbitalSelect = nullptr;
     QListWidget *listOrbitalReport = nullptr;
 
+    QLabel *labelDetails = nullptr;
+
     GWidget *graph = nullptr;
     harmap cloudRecipes;
+    harmap cloudRecipesLocked;
     int numRecipes = 0;
 
     int intTabMinWidth = 500;
@@ -113,16 +119,19 @@ private:
     bool recipeLoaded = false;
 
     void loadConfig();
+    void lockConfig(AtomixConfig *cfg);
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
     void refreshConfigs();
     void refreshShaders();
     void refreshOrbits(AtomixConfig *cfg);
+    void setupDetails();
 
     void handleComboCfg();
     void handleRecipeCheck(QTreeWidgetItem *item, int col);
     void handleButtLockRecipes();
+    void handleButtResetRecipes();
     void handleButtMorb();
     void handleButtGenVerts();
     void handleButtMorbHarmonics();

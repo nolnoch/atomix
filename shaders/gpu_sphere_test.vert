@@ -58,8 +58,8 @@ void main() {
     } else if (rdp > 0.10f) {
         vertColour = vec4(0.0f, 0.0f, rdp, alpha);
     } else {
-        float rdp_adj = clamp(rdp, 0.04f, 0.10f);
-        vertColour = vec4(rdp_adj, 0.0f, rdp_adj, alpha);
+        // float rdp_adj = clamp(rdp, 0.04f, 0.10f);
+        vertColour = vec4(rdp, 0.0f, rdp, alpha);
     }
 
     // vertColour = vec4(1.0f);

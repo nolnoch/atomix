@@ -1,0 +1,5 @@
+1. Hook GenVertices button into cloud config update
+2. Multithreading (ughhh, but very necessary)
+3. Large FarDist still clips large models (n >= 7); find solution
+4. Energy tab
+5. Atomic element presets

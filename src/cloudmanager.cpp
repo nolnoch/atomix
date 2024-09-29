@@ -103,7 +103,6 @@ void CloudManager::clearForNext() {
 
     this->atomZ = 1;
     flStages.setTo(eStages::INIT | eStages::VERTICES);
-    std::cout << "Cleared for next." << std::endl;
 }
 
 double CloudManager::genOrbital(int n, int l, int m_l) {
@@ -224,8 +223,8 @@ int CloudManager::bakeOrbitalsForRender() {
         }
     }
     // End: check actual value of accumulated allRDPs
-    this->allRDPMaximum = *std::max_element(allRDPs.begin(), allRDPs.end());
-    std::cout << "Cumulative Max RDP for allRDPs was: " << this->allRDPMaximum << std::endl;
+    // this->allRDPMaximum = *std::max_element(allRDPs.begin(), allRDPs.end());
+    // std::cout << "Cumulative Max RDP for allRDPs was: " << this->allRDPMaximum << std::endl;
 
     // End: Clamp all accumulated values in allRDPs to [0,1]
     std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });

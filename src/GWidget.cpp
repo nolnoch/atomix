@@ -632,7 +632,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         /* Left-click drag will grab and slide world */
         if (v3_mouseBegin != v3_mouseEnd) {
             glm::vec3 deltaSlide = 0.02f * (v3_mouseEnd - v3_mouseBegin);
-            glm::vec3 cameraSlide = glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
+            glm::vec3 cameraSlide = (cameraVec.z / 20.0f) * glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
             m4_translation = glm::translate(m4_translation, cameraSlide);
         }
 

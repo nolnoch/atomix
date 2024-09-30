@@ -35,19 +35,19 @@ CloudManager::~CloudManager() {
 }
 
 void CloudManager::createCloud() {
-    this->cloudOrbitCount = 0;
-    this->cloudOrbitDivisor = 1;
-    this->cloudResolution = 12;
-    // this->cloudLayerDelta = 1.0 / this->cloudOrbitDivisor;
-    // this->cloudLayerCount = this->cloudOrbitCount * this->cloudOrbitDivisor;
-    this->cloudLayerCount = 125;
+    this->cloudMaxRadius = 150;
+    this->cloudLayerDivisor = 2;
+    this->cloudResolution = 360;
+    this->cloudLayerCount = this->cloudMaxRadius * this->cloudLayerDivisor;
+
+    int steps = this->cloudResolution;
+    double deg_fac = TWO_PI / steps;
+
     vec3 pos = vec3(0.0f);
 
     for (int k = 1; k <= cloudLayerCount; k++) {
-        // double radius = k * this->cloudLayerDelta;
-        double radius = 12.0 * exp(k / 48.0) - 12.0;
-        int steps = radius * this->cloudResolution;
-        double deg_fac = TWO_PI / steps;
+        // double radius = ((5 * pow(2.0, ((40.0 + k) / 40.0))) / (log(2.0))) - (10.0 / log(2.0));  --  Scaling layer divisor equation
+        double radius = static_cast<double>(k) / this->cloudLayerDivisor;
         int lv = k - 1;
 
         for (int i = 0; i < steps; i++) {
@@ -78,6 +78,8 @@ void CloudManager::createCloud() {
         shellRDPMaxima.push_back(0.0);
         shellRDPMaximaCum.push_back(0.0);
     }
+
+    assert(pixelCount == cloudMaxRadius * cloudLayerDivisor * (cloudResolution * cloudResolution));
 
     wavefuncNorms(MAX_SHELLS);
     genVertexArray();
@@ -113,12 +115,12 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
     int fdn = 0;
     double max_rdp = 0;
 
+    int steps = this->cloudResolution;
+    double deg_fac = TWO_PI / steps;
+
     for (int k = 1; k <= cloudLayerCount; k++) {
-        double radius = 12.0 * exp(k / 48.0) - 12.0;
-        int steps = radius * this->cloudResolution;
-        double deg_fac = TWO_PI / steps;
+        double radius = static_cast<double>(k) / this->cloudLayerDivisor;
         int lv = k - 1;
-        // double fac = (cfg.resolution / this->cloudOrbitDivisor);
 
         double orbNorm = this->norm_constY[DSQ(l, m_l)];
         double R = wavefuncRadial(n, l, radius);
@@ -442,10 +444,7 @@ void CloudManager::resetManager() {
     this->RDPCount = 0;
     this->RDPSize = 0;
     this->orbitalIdx = 0;
-    this->cloudOrbitCount = 0;
-    this->cloudOrbitDivisor = 0;
     this->cloudLayerCount = 0;
-    this->cloudLayerDelta = 0.0;
     this->cloudResolution = 0;
     this->allRDPMaximum = 0;
     this->numOrbitals = 0;

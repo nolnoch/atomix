@@ -115,11 +115,10 @@ class CloudManager : public Manager {
         int atomZ = 1;
         const int MAX_SHELLS = 8;
 
-        int cloudOrbitCount = 0;
-        int cloudOrbitDivisor = 0;
         int cloudLayerCount = 0;
         int cloudResolution = 0;
-        double cloudLayerDelta = 0;
+        int cloudMaxRadius = 0;
+        int cloudLayerDivisor = 0;
         double cloudTolerance = 0.01;
 };
 

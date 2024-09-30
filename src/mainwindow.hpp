@@ -132,6 +132,7 @@ private:
     void setupDetails();
 
     void handleComboCfg();
+    void handleConfigChanged();
     void handleRecipeCheck(QTreeWidgetItem *item, int col);
     void handleButtLockRecipes();
     void handleButtResetRecipes();
@@ -139,6 +140,9 @@ private:
     void handleButtGenVerts();
     void handleButtMorbHarmonics();
     void handleButtColors(int id);
+
+    void printHarmap();
+    void printList();
 };
 
 #endif

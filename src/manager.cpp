@@ -37,10 +37,6 @@ void Manager::newConfig(AtomixConfig *config) {
     this->cfg.sphere = config->sphere;
     this->cfg.vert = config->vert;
     this->cfg.frag = config->frag;
-    this->cfg.cloudLayCount = config->cloudLayCount;
-    this->cfg.cloudLayDiv = config->cloudLayDiv;
-    this->cfg.cloudRes = config->cloudRes;
-    this->cfg.cloudTolerance = config->cloudTolerance;
 }
 
 void Manager::resetManager() {

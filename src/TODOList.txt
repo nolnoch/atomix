@@ -1,9 +1,10 @@
 - Resize VBO when/if CloudConfig changes
-- Commit to new vertex/resolution scaling or fix above
+o Commit to new vertex/resolution scaling or fix above
 - Multithreading (ughhh, but very necessary)
-- Model too dark when zoomed; adjust lighting model or option for bright bg
+- Slider for bg color
 - Energy tab
 - Atomic element presets
-- Scale pan based on zoom level
+o Scale pan based on zoom level
 - Loading animation for vertex and RDP generation
-- Less vertice resolution needed for large models, more for big. Swap state-lock to make former depend on latter?
+- Swap state-lock to make maxRadius depend on config
+o Selecting subset of previous recipes does not enable Lock Recipes button

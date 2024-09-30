@@ -566,8 +566,8 @@ void MainWindow::setupDockHarmonics() {
     QVBoxLayout *layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(1);
-    layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addLayout(layRecipeIO);
+    layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addWidget(buttMorbHarmonics);
 
@@ -577,8 +577,8 @@ void MainWindow::setupDockHarmonics() {
     layVRecipeClear->setStretchFactor(buttResetRecipes, 1);
 
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
-    layDockHarmonics->setStretchFactor(groupGenVertices, 3);
     layDockHarmonics->setStretchFactor(layRecipeIO, 7);
+    layDockHarmonics->setStretchFactor(groupGenVertices, 3);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
     
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
@@ -634,9 +634,10 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             delete (thisItem);
             numRecipes--;
 
-            // Disable button and clear harmap if list is now empty
             if (!numRecipes) {
+                // Disable buttons and clear harmap if list is now empty
                 buttLockRecipes->setEnabled(false);
+                buttResetRecipes->setEnabled(false);
                 buttMorbHarmonics->setEnabled(false);
                 this->cloudRecipes.clear();
             } else {
@@ -644,6 +645,12 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
                 std::vector<ivec2>::iterator it = std::find(vecElem->begin(), vecElem->end(), lm);
                 if (it != vecElem->end()) {
                     vecElem->erase(it);
+                }
+
+                // Enable button iff previously locked config has now changed
+                if (buttMorbHarmonics->isEnabled()) {
+                    buttLockRecipes->setEnabled(true);
+                    buttResetRecipes->setEnabled(true);
                 }
             }
         }
@@ -734,6 +741,8 @@ void MainWindow::handleButtGenVerts() {
         groupRecipeReporter->setEnabled(true);
     }
     groupGenVertices->setStyleSheet("QGroupBox { color: #77FF77; }");
+
+    buttGenVertices->setEnabled(false);
 }
 
 void MainWindow::handleButtMorbHarmonics() {
@@ -782,4 +791,24 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
     } else {
         QWidget::keyPressEvent(e);
     }
+}
+
+void MainWindow::printHarmap() {
+    for (auto k : cloudRecipes) {
+        std::cout << k.first << ": ";
+        for (auto v : k.second) {
+            std::cout << glm::to_string(v) << ", ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << std::endl;
+}
+
+void MainWindow::printList() {
+    int listSize = listOrbitalReport->count();
+    for (int i = 0; i < listSize; i++) {
+        QListWidgetItem *item = listOrbitalReport->item(i);
+        std::cout << item << ": " << item->text().toStdString() << "\n";
+    }
+    std::cout << std::endl;
 }

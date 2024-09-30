@@ -28,7 +28,6 @@
 CloudManager::CloudManager(AtomixConfig *cfg) {
     newConfig(cfg);
     this->cfg.vert = "gpu_sphere_test.vert";
-    flStages.set(eStages::INIT);
 }
 
 CloudManager::~CloudManager() {
@@ -36,8 +35,6 @@ CloudManager::~CloudManager() {
 }
 
 void CloudManager::createCloud() {
-    assert(flStages.hasAny(eStages::INIT));
-
     this->cloudOrbitCount = cfg.cloudLayCount;
     this->cloudOrbitDivisor = cfg.cloudLayDiv;
     this->cloudResolution = cfg.cloudRes;
@@ -85,24 +82,28 @@ void CloudManager::createCloud() {
     flStages.set(eStages::VERTICES);
 }
 
-void CloudManager::clearForNext() {
-    std::fill(shellRDPMaxima.begin(), shellRDPMaxima.end(), 0.0);
-    // std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
-    shellRDPMaximaCum = shellRDPMaxima;
-    std::fill(allRDPs.begin(), allRDPs.end(), 0.0);
-    std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
-    
-    allIndices.clear();
-    cloudOrbitals.clear();
+void CloudManager::clearForNext(bool cfg_change) {
+    if (cfg_change) {
+        resetManager();
+    } else {
+        std::fill(shellRDPMaxima.begin(), shellRDPMaxima.end(), 0.0);
+        // std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
+        shellRDPMaximaCum = shellRDPMaxima;
+        std::fill(allRDPs.begin(), allRDPs.end(), 0.0);
+        std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
+        
+        allIndices.clear();
+        cloudOrbitals.clear();
 
-    this->orbitalIdx = 0;
-    this->allRDPMaximum = 0;
-    
-    this->update = false;
-    this->active = false;
+        this->orbitalIdx = 0;
+        this->allRDPMaximum = 0;
+        
+        this->update = false;
+        this->active = false;
 
-    this->atomZ = 1;
-    flStages.setTo(eStages::INIT | eStages::VERTICES);
+        this->atomZ = 1;
+        flStages.setTo(eStages::VERTICES);
+    }
 }
 
 double CloudManager::genOrbital(int n, int l, int m_l) {
@@ -189,7 +190,7 @@ void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
 }
 
 int CloudManager::bakeOrbitalsForRender() {
-    assert(flStages.hasAll(eStages::INIT | eStages::RECIPES | eStages::VERTICES));
+    assert(flStages.hasAll(eStages::RECIPES | eStages::VERTICES));
 
     if (numOrbitals) {
         std::cout << numOrbitals << " recipe(s) loaded. Begin processing..." << std::endl;
@@ -413,18 +414,18 @@ void CloudManager::resetManager() {
     for (auto v : pixelColours) {
         delete (v);
     }
-    pixelColours.clear();
+    this->pixelColours.clear();
 
-    allVertices.clear();
-    allColours.clear();
-    allIndices.clear();
-    allRDPs.clear();
-    rdpStaging.clear();
-    shellRDPMaxima.clear();
-    shellRDPMaximaCum.clear();
-    norm_constR.clear();
-    norm_constY.clear();
-    cloudOrbitals.clear();
+    this->allVertices.clear();
+    this->allColours.clear();
+    this->allIndices.clear();
+    this->allRDPs.clear();
+    this->rdpStaging.clear();
+    this->shellRDPMaxima.clear();
+    this->shellRDPMaximaCum.clear();
+    this->norm_constR.clear();
+    this->norm_constY.clear();
+    this->cloudOrbitals.clear();
 
     this->pixelCount = 0;
     this->vertexCount = 0;
@@ -444,6 +445,12 @@ void CloudManager::resetManager() {
     this->cloudLayerCount = 0;
     this->cloudLayerDelta = 0.0;
     this->cloudResolution = 0;
+    this->allRDPMaximum = 0;
+    this->numOrbitals = 0;
+    this->cloudTolerance = 0.01;
+    this->max_r = 0;
+    this->max_theta = 0;
+    this->max_phi = 0;
     this->flStages.reset();
 }
 

@@ -30,7 +30,6 @@ MainWindow::MainWindow() {
 
 void MainWindow::lockConfig(AtomixConfig *cfg) {
     graph->newWaveConfig(cfg);
-    // emit sendConfig(cfg);
 }
 
 void MainWindow::onAddNew() {
@@ -511,17 +510,17 @@ void MainWindow::setupDockHarmonics() {
     QLabel *labelCloudResolution = new QLabel("Points per layer");
     QLabel *labelCloudLayers = new QLabel("Layers per cloud");
     QLabel *labelMinRDP = new QLabel("Minimum RDP per vertex");
-    QLineEdit *entryCloudResolution = new QLineEdit(QString::number(cfgParser->config->cloudRes));
-    QLineEdit *entryCloudLayers = new QLineEdit(QString::number(cfgParser->config->cloudLayCount));
-    QLineEdit *entryMinRDP = new QLineEdit(QString::number(cfgParser->config->cloudTolerance));
+    entryCloudRes = new QLineEdit(QString::number(cfgParser->config->cloudRes));
+    entryCloudLayers = new QLineEdit(QString::number(cfgParser->config->cloudLayCount));
+    entryCloudMinRDP = new QLineEdit(QString::number(cfgParser->config->cloudTolerance));
     
     QGridLayout *layGenVertices = new QGridLayout;
     layGenVertices->addWidget(labelCloudLayers, 0, 0, 1, 1);
     layGenVertices->addWidget(labelCloudResolution, 1, 0, 1, 1);
     layGenVertices->addWidget(labelMinRDP, 2, 0, 1, 1);
     layGenVertices->addWidget(entryCloudLayers, 0, 1, 1, 1);
-    layGenVertices->addWidget(entryCloudResolution, 1, 1, 1, 1);
-    layGenVertices->addWidget(entryMinRDP, 2, 1, 1, 1);
+    layGenVertices->addWidget(entryCloudRes, 1, 1, 1, 1);
+    layGenVertices->addWidget(entryCloudMinRDP, 2, 1, 1, 1);
     layGenVertices->addWidget(buttGenVertices, 3, 0, 1, 2);
     buttGenVertices->setSizePolicy(qPolicyExpand);
 
@@ -713,10 +712,28 @@ void MainWindow::handleButtMorb() {
 }
 
 void MainWindow::handleButtGenVerts() {
+    groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
+
+    cfgParser->config->cloudLayCount = entryCloudLayers->text().toInt();
+    cfgParser->config->cloudRes = entryCloudRes->text().toInt();
+    cfgParser->config->cloudTolerance = entryCloudMinRDP->text().toDouble();
+    graph->newCloudConfig(cfgParser->config);
+
     graph->genCloudVertices();
+
+    if (buttMorbHarmonics->isEnabled()) {
+        buttMorbHarmonics->setEnabled(false);
+        buttLockRecipes->setEnabled(true);
+        groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
+        int n = listOrbitalReport->count();
+        for (int i = 0; i < n; i++) {
+            listOrbitalReport->item(i)->setForeground(Qt::yellow);
+        }
+    } else {
+        groupRecipeBuilder->setEnabled(true);
+        groupRecipeReporter->setEnabled(true);
+    }
     groupGenVertices->setStyleSheet("QGroupBox { color: #77FF77; }");
-    groupRecipeBuilder->setEnabled(true);
-    groupRecipeReporter->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbHarmonics() {

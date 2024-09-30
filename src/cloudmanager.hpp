@@ -34,7 +34,7 @@
 
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
-enum eStages {INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16};
+enum eStages { INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16, NEW_CFG = 32 };
 
 
 class CloudManager : public Manager {
@@ -45,7 +45,7 @@ class CloudManager : public Manager {
         void createCloud();
         void updateCloud(double time);
         void receiveCloudMap(harmap &inMap, int numRecipes);
-        void clearForNext() override;
+        void clearForNext(bool cfg_change);
 
         void genOrbitalsThroughN(int n);
         void genOrbitalsOfN(int n);
@@ -65,7 +65,6 @@ class CloudManager : public Manager {
         void printMaxRDP(const int &n, const int &l, const int &m_l, const double &maxRDP);
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
-        bool testBool = false;
         double max_r = 0, max_theta = 0, max_phi = 0;
 
     private:

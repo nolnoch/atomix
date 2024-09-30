@@ -97,6 +97,7 @@ public:
     void updateCloudBuffers();
     int genCloudRDPs();
 
+    void newCloudConfig(AtomixConfig *cfg);
     float* getCameraPosition();
 
 public slots:

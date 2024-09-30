@@ -63,6 +63,20 @@ void GWidget::newCloudMessage() {
     }
 }
 
+void GWidget::newCloudConfig(AtomixConfig *cfg) {
+    if (flGraphState.hasNone(egs::CLOUD_MANAGER_INIT)) {
+        cloudManager = new CloudManager(cfg);
+        flGraphState.set(egs::CLOUD_MANAGER_INIT);
+    } else {
+        cloudManager->newConfig(cfg);
+    }
+
+    if (flGraphState.hasAny(egs::CLOUD_VERT_READY | egs::CLOUD_VBO_BOUND)) {
+        cloudManager->clearForNext(true);
+        flGraphState.clear(egs::CLOUD_VERT_READY);
+    }
+}
+
 void GWidget::newWaveConfig(AtomixConfig *cfg) {
     flGraphState.set(egs::UPDATE_REQUIRED | egs::WAVE_UPD_CFG | egs::WAVE_MODE);
     flGraphState.clear(egs::CLOUD_MODE);
@@ -496,7 +510,7 @@ void GWidget::paintGL() {
                 changeModes();
                 genCloudRDPs();
                 initCloudProgram();
-                cloudManager->clearForNext();
+                cloudManager->clearForNext(false);
                 initVecsAndMatrices();
             }
             if (flGraphState.hasAny(egs::CLOUD_UPD_CFG)) {
@@ -505,7 +519,7 @@ void GWidget::paintGL() {
             }
             if (flGraphState.hasAny(egs::CLOUD_UPD_EBO)) {
                 updateCloudBuffers();
-                cloudManager->clearForNext();
+                cloudManager->clearForNext(false);
             }
         }
         flGraphState.clear(egs::UPDATE_REQUIRED);

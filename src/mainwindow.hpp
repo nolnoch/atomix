@@ -105,6 +105,9 @@ private:
     QGroupBox *groupGenVertices = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
     QListWidget *listOrbitalReport = nullptr;
+    QLineEdit *entryCloudLayers = nullptr;
+    QLineEdit *entryCloudRes = nullptr;
+    QLineEdit *entryCloudMinRDP = nullptr;
 
     QLabel *labelDetails = nullptr;
 

@@ -1,5 +1,6 @@
-1. Hook GenVertices button into cloud config update
-2. Multithreading (ughhh, but very necessary)
-3. Large FarDist still clips large models (n >= 7); find solution
-4. Energy tab
-5. Atomic element presets
+1. Resize VBO when (if) CloudConfig changes
+2. Try new vertex/resolution scaling
+3. Multithreading (ughhh, but very necessary)
+4. Large FarDist still clips large models (n >= 7); find solution
+5. Energy tab
+6. Atomic element presets

@@ -1,6 +1,9 @@
-1. Resize VBO when (if) CloudConfig changes
-2. Try new vertex/resolution scaling
-3. Multithreading (ughhh, but very necessary)
-4. Large FarDist still clips large models (n >= 7); find solution
-5. Energy tab
-6. Atomic element presets
+- Resize VBO when/if CloudConfig changes
+- Commit to new vertex/resolution scaling or fix above
+- Multithreading (ughhh, but very necessary)
+- Model too dark when zoomed; adjust lighting model or option for bright bg
+- Energy tab
+- Atomic element presets
+- Scale pan based on zoom level
+- Loading animation for vertex and RDP generation
+- Less vertice resolution needed for large models, more for big. Swap state-lock to make former depend on latter?

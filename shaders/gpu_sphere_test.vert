@@ -31,7 +31,7 @@ void main() {
     // 0000FF -> 00FFFF -> FFFFFF
     //  Blue      Cyan     White
 
-    float alpha = 1.0f - (radius / 30.0f);
+    float alpha = clamp(1.0f - (radius / 150.0f), 0.0f, 1.0f);
 
     /* if (rdp > 0.8f) {
         vertColour = vec4(rdp, 0.0f, 0.0f, alpha);
@@ -45,21 +45,22 @@ void main() {
         vertColour = vec4(rdp, 0.0f, rdp, alpha);
     } */
 
-    if (rdp > 0.90f) {
+    if (rdp > 0.88f) {
         vertColour = vec4(rdp, rdp, rdp, alpha);
-    } else if (rdp > 0.75f) {
+    } else if (rdp > 0.70f) {
         vertColour = vec4(rdp, 0.0f, 0.0f, alpha);
-    } else if (rdp > 0.60f) {
+    } else if (rdp > 0.52f) {
         vertColour = vec4(rdp, rdp, 0.0f, alpha);
-    } else if (rdp > 0.45f) {
+    } else if (rdp > 0.38f) {
         vertColour = vec4(0.0f, rdp, 0.0f, alpha);
-    } else if (rdp > 0.30f) {
+    } else if (rdp > 0.22f) {
         vertColour = vec4(0.0f, rdp, rdp, alpha);
-    } else if (rdp > 0.10f) {
-        vertColour = vec4(0.0f, 0.0f, rdp, alpha);
+    } else if (rdp > 0.08f) {
+        float rdp_adj = rdp * 1.5f;
+        vertColour = vec4(0.0f, 0.0f, rdp_adj, alpha);
     } else {
-        // float rdp_adj = clamp(rdp, 0.04f, 0.10f);
-        vertColour = vec4(rdp, 0.0f, rdp, alpha);
+        float rdp_adj = rdp * 2.0f;
+        vertColour = vec4(rdp_adj, 0.0f, rdp_adj, 0.0f);
     }
 
     // vertColour = vec4(1.0f);

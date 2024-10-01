@@ -12,4 +12,4 @@ uniform mat4 projMat;
 void main() {
     vertColour = vec4(colour, 0.1f);
     gl_Position = projMat * viewMat * worldMat * vec4(pos, 1.0f);
-};
+}

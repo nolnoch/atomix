@@ -41,11 +41,13 @@ class CloudManager : public Manager {
     public:
         CloudManager(AtomixConfig *cfg);
         virtual ~CloudManager();
+        void newConfig(AtomixConfig *cfg) override;
         
         void createCloud();
         void updateCloud(double time);
         void receiveCloudMap(harmap &inMap, int numRecipes);
-        void clearForNext(bool cfg_change);
+        void receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
+        void clearForNext();
 
         void genOrbitalsThroughN(int n);
         void genOrbitalsOfN(int n);
@@ -53,6 +55,7 @@ class CloudManager : public Manager {
         void genOrbitalExplicit(int n, int l, int m_l);
         int bakeOrbitalsForRender();
         void cloudTest(int n_max);
+        void cloudTestCSV();
         
         void RDPtoColours();
 
@@ -113,6 +116,7 @@ class CloudManager : public Manager {
         int orbitalIdx = 0;
         int numOrbitals = 0;
         int atomZ = 1;
+        int max_n = 0;
         const int MAX_SHELLS = 8;
 
         int cloudLayerCount = 0;
@@ -120,6 +124,7 @@ class CloudManager : public Manager {
         int cloudMaxRadius = 0;
         int cloudLayerDivisor = 0;
         double cloudTolerance = 0.01;
+        const int cm_maxRadius[8] = { 5, 15, 30, 50, 75, 100, 130, 150 };
 };
 
 #endif

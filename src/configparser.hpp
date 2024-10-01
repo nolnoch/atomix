@@ -46,9 +46,8 @@ typedef struct {
     double amplitude = 0.4;                         // Amplitude as Float
     double period = 1.0 * M_PI;                     // Period as Multiples of PI
     double cloudTolerance = 0.05;
-    int cloudLayCount = 150;
-    int cloudLayDiv = 1;
-    int cloudRes = 12;
+    int cloudLayDivisor = 1;
+    int cloudResolution = 180;
     int waves = 6;                                  // Wave count as Integer
     int resolution = 180;                           // Resolution as Integer
     bool superposition = false;                     // Superposition as Bool

@@ -1,10 +1,12 @@
-- Resize VBO when/if CloudConfig changes
+o Resize VBO when/if CloudConfig changes
 o Commit to new vertex/resolution scaling or fix above
 - Multithreading (ughhh, but very necessary)
 - Slider for bg color
 - Energy tab
-- Atomic element presets
 o Scale pan based on zoom level
 - Loading animation for vertex and RDP generation
-- Swap state-lock to make maxRadius depend on config
+o Swap state-lock to make maxRadius depend on config
 o Selecting subset of previous recipes does not enable Lock Recipes button
+- Redo Wave Config UI with QGridLayout
+- Sate-lock WaveManager (Manager) with new BitFlag
+- Option to normalize perN, perL, or perALL

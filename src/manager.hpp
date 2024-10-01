@@ -47,7 +47,7 @@ class Manager {
         Manager(){};
         virtual ~Manager(){ resetManager(); };
         
-        void newConfig(AtomixConfig *config);
+        virtual void newConfig(AtomixConfig *config);
         
         virtual void clearForNext();
 
@@ -83,6 +83,8 @@ class Manager {
         uint vertexSize = 0;
         uint indexCount = 0;
         uint indexSize = 0;
+
+        double deg_fac = 0;
         
         bool update = false;
         bool active = false;

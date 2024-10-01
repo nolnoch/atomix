@@ -35,6 +35,7 @@ class WaveManager : public Manager {
     public:
         WaveManager(AtomixConfig *config);
         virtual ~WaveManager();
+        void newConfig(AtomixConfig *cfg) override;
 
         void createWaves();
         void updateWaves(double time);
@@ -71,7 +72,6 @@ class WaveManager : public Manager {
         ushort renderedWaves = 255;
         
         double waveResolution;
-        double deg_fac = 0;
         double phase_base = PI_TWO;
 };
 

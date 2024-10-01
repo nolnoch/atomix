@@ -71,4 +71,4 @@ void main() {
 
     vertColour = final;
     gl_Position = projMat * viewMat * worldMat * vec4(x_coord, 0.0f, z_coord, 1.0f);
-};
+}

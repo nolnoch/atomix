@@ -34,6 +34,10 @@ WaveManager::~WaveManager() {
     resetManager();
 }
 
+void WaveManager::newConfig(AtomixConfig *config) {
+    Manager::newConfig(config);
+}
+
 void WaveManager::createWaves() {
     assert(!active);
     this->waveResolution = cfg.resolution;

@@ -92,10 +92,12 @@ public:
     void printConfig(AtomixConfig *cfg);
     void setColorsWaves(int id, uint colorChoice);
     void addCloudRecipes(int n, int l, int m_l);
-    void lockCloudRecipes(harmap & cloudMap, int numRecipes);
+    void lockCloudRecipes(harmap &cloudMap, int numRecipes);
     void genCloudVertices();
     void updateCloudBuffers();
     int genCloudRDPs();
+
+    void lockCloudConfigAndOrbitals(AtomixConfig *cfg, harmap &cloudMap, int numRecipes);
 
     void newCloudConfig(AtomixConfig *cfg);
     float* getCameraPosition();
@@ -178,12 +180,12 @@ private:
     uint gw_movement = 0;
     bool gw_pause = false;
     bool gw_init = false;
+
+    int max_n = 1;
     
     BitFlag flWaveCfg;
     BitFlag flGraphState;
 
-    fvec crystalRingVertices;
-    uvec crystalRingIndices;
     uint crystalRingCount;
     uint crystalRingOffset;
 };

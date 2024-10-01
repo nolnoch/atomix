@@ -68,12 +68,11 @@ void GWidget::newCloudConfig(AtomixConfig *cfg) {
         cloudManager = new CloudManager(cfg);
         flGraphState.set(egs::CLOUD_MANAGER_INIT);
     } else {
+        if (flGraphState.hasAny(egs::CLOUD_VERT_READY | egs::CLOUD_VBO_BOUND)) {
+            cloudManager->clearForNext(); // TODO Need resetManager()?
+            flGraphState.clear(egs::CLOUD_VERT_READY);
+        }
         cloudManager->newConfig(cfg);
-    }
-
-    if (flGraphState.hasAny(egs::CLOUD_VERT_READY | egs::CLOUD_VBO_BOUND)) {
-        cloudManager->clearForNext(true);
-        flGraphState.clear(egs::CLOUD_VERT_READY);
     }
 }
 
@@ -226,6 +225,8 @@ void GWidget::swapIndices() {
 }
 
 void GWidget::initCrystalProgram() {
+    fvec crystalRingVertices;
+    uvec crystalRingIndices;
     std::string vertName = "crystal.vert";
     std::string fragName = "crystal.frag";
 
@@ -430,7 +431,7 @@ void GWidget::changeModes() {
 }
 
 void GWidget::initVecsAndMatrices() {
-    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : 80.0f;
+    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : 20.0f * this->max_n;
     gw_nearDist = gw_startDist * 0.1f;
     gw_farDist = gw_startDist * 15;
 
@@ -506,11 +507,13 @@ void GWidget::paintGL() {
                 processWaveConfigChange();
             }
         } else if (flGraphState.hasAny(egs::CLOUD_MODE)) {
-            if (flGraphState.hasNone(egs::CLOUD_EBO_BOUND)) {
+            if (flGraphState.hasNone(egs::CLOUD_VBO_BOUND | egs::CLOUD_EBO_BOUND)) {
                 changeModes();
                 genCloudRDPs();
                 initCloudProgram();
-                cloudManager->clearForNext(false);
+                // cloudManager->cloudTestCSV();
+                // assert(false);
+                cloudManager->clearForNext();
                 initVecsAndMatrices();
             }
             if (flGraphState.hasAny(egs::CLOUD_UPD_CFG)) {
@@ -519,7 +522,7 @@ void GWidget::paintGL() {
             }
             if (flGraphState.hasAny(egs::CLOUD_UPD_EBO)) {
                 updateCloudBuffers();
-                cloudManager->clearForNext(false);
+                cloudManager->clearForNext();
             }
         }
         flGraphState.clear(egs::UPDATE_REQUIRED);
@@ -632,7 +635,7 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
         /* Left-click drag will grab and slide world */
         if (v3_mouseBegin != v3_mouseEnd) {
             glm::vec3 deltaSlide = 0.02f * (v3_mouseEnd - v3_mouseBegin);
-            glm::vec3 cameraSlide = (cameraVec.z / 20.0f) * glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
+            glm::vec3 cameraSlide = (cameraVec.z / 25.0f) * glm::vec3(deltaSlide.x, deltaSlide.y, 0.0f);
             m4_translation = glm::translate(m4_translation, cameraSlide);
         }
 
@@ -720,15 +723,36 @@ void GWidget::lockCloudRecipes(harmap &cloudMap, int numRecipes) {
         cloudManager = new CloudManager(&renderConfig);
         flGraphState.set(egs::CLOUD_MANAGER_INIT);
     }
+
+    bool reset = false;
+    int mapMaxN = cloudMap.rbegin()->first;
+    if (flGraphState.hasAny(egs::CLOUD_VBO_BOUND) && (mapMaxN > this->max_n)) {
+        this->max_n = mapMaxN;
+        reset = true;
+    }
+
     cloudManager->receiveCloudMap(cloudMap, numRecipes);
     flGraphState.set(egs::CLOUD_MAP_READY);
 }
 
-void GWidget::genCloudVertices() {
-    if (!cloudManager) {
-        cloudManager = new CloudManager(&renderConfig);
+void GWidget::lockCloudConfigAndOrbitals(AtomixConfig *cfg, harmap &cloudMap, int numRecipes) {
+    if (flGraphState.hasNone(egs::CLOUD_MANAGER_INIT)) {
+        cloudManager = new CloudManager(cfg);
         flGraphState.set(egs::CLOUD_MANAGER_INIT);
     }
+
+    int mapMaxN = cloudMap.rbegin()->first;
+    if (mapMaxN > this->max_n) {
+        this->max_n = mapMaxN;
+    }
+
+    cloudManager->receiveCloudMapAndConfig(cfg, cloudMap, numRecipes);
+    flGraphState.set(egs::CLOUD_MAP_READY);
+    flGraphState.clear(egs::CLOUD_VERT_READY);
+}
+
+void GWidget::genCloudVertices() {
+    assert(flGraphState.hasAll(egs::CLOUD_MANAGER_INIT | egs::CLOUD_MAP_READY));
     cloudManager->createCloud();
     flGraphState.set(egs::CLOUD_VERT_READY);
 }

@@ -97,14 +97,17 @@ private:
     QPushButton *buttMorbWaves = nullptr;
     QPushButton *buttGenVertices = nullptr;
     QPushButton *buttLockRecipes = nullptr;
+    QPushButton *buttClearRecipes = nullptr;
     QPushButton *buttResetRecipes = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
 
     QGroupBox *groupRecipeBuilder = nullptr;
     QGroupBox *groupRecipeReporter = nullptr;
     QGroupBox *groupGenVertices = nullptr;
+    QGroupBox *groupRecipeLocked = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
     QListWidget *listOrbitalReport = nullptr;
+    QListWidget *listOrbitalLocked = nullptr;
     QLineEdit *entryCloudLayers = nullptr;
     QLineEdit *entryCloudRes = nullptr;
     QLineEdit *entryCloudMinRDP = nullptr;
@@ -112,8 +115,8 @@ private:
     QLabel *labelDetails = nullptr;
 
     GWidget *graph = nullptr;
-    harmap cloudRecipes;
-    harmap cloudRecipesLocked;
+    harmap mapCloudRecipes;
+    harmap mapCloudRecipesLocked;
     int numRecipes = 0;
 
     int intTabMinWidth = 500;
@@ -135,6 +138,7 @@ private:
     void handleConfigChanged();
     void handleRecipeCheck(QTreeWidgetItem *item, int col);
     void handleButtLockRecipes();
+    void handleButtClearRecipes();
     void handleButtResetRecipes();
     void handleButtMorb();
     void handleButtGenVerts();

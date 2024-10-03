@@ -82,6 +82,10 @@ void Manager::genIndexBuffer() {
  *  Getters -- Size
  */
 
+const uint Manager::getVertexCount() {
+    return this->vertexCount;
+}
+
 const uint Manager::getVertexSize() {
     return this->vertexSize;
 }

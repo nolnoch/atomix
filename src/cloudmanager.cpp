@@ -36,7 +36,7 @@ CloudManager::~CloudManager() {
 void CloudManager::newConfig(AtomixConfig *config) {
     Manager::newConfig(config);
 
-    this->cloudMaxRadius = 150;
+    this->cloudMaxRadius = 250;
     this->cloudLayerDivisor = cfg.cloudLayDivisor;
     this->cloudResolution = cfg.cloudResolution;
     this->cloudLayerCount = this->cloudMaxRadius * this->cloudLayerDivisor;
@@ -47,7 +47,9 @@ void CloudManager::newConfig(AtomixConfig *config) {
 
 void CloudManager::createCloud() {
     this->max_n = cloudOrbitals.rbegin()->first;
-    int opt_max_radius = cm_maxRadius[max_n] * this->cloudLayerDivisor;
+    int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
+    int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
+    // int opt_max_radius = this->cloudMaxRadius;
     int steps_local = this->cloudResolution;
     double deg_fac_local = this->deg_fac;
     vec3 pos = vec3(0.0f);
@@ -81,19 +83,35 @@ void CloudManager::createCloud() {
     }
 
     for (int i = 0; i < MAX_SHELLS; i++) {
-        shellRDPMaxima.push_back(0.0);
+        shellRDPMaximaN.push_back(0.0);
+        shellRDPMaximaL.push_back(0.0);
         shellRDPMaximaCum.push_back(0.0);
     }
 
     wavefuncNorms(MAX_SHELLS);
     genVertexArray();
+
+    if (this->vertexCount > this->oldVERSize) {
+        flUpdate.set(eUpdate::NEW_VERT);
+    }
     flStages.set(eStages::VERTICES);
 }
 
 void CloudManager::clearForNext() {
-    std::fill(shellRDPMaxima.begin(), shellRDPMaxima.end(), 0.0);
-    // std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
-    shellRDPMaximaCum = shellRDPMaxima;
+    if (flUpdate.hasAny(eUpdate::NEW_VERT)) {
+        this->oldVERSize = this->vertexCount;
+    }
+    if (flUpdate.hasAny(eUpdate::INCR_RDP)) {
+        this->oldRDPSize = this->RDPCount;
+    }
+    if (flUpdate.hasAny(eUpdate::INCR_EBO)) {
+        this->oldIDXSize = this->indexCount;
+    }
+    resetUpdates();
+
+    std::fill(shellRDPMaximaN.begin(), shellRDPMaximaN.end(), 0.0);
+    std::fill(shellRDPMaximaL.begin(), shellRDPMaximaL.end(), 0.0);
+    std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
     std::fill(allRDPs.begin(), allRDPs.end(), 0.0);
     std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
     allIndices.clear();
@@ -109,24 +127,26 @@ void CloudManager::clearForNext() {
 double CloudManager::genOrbital(int n, int l, int m_l) {
     assert(flStages.hasAny(eStages::VERTICES));
     double max_rdp = 0;
+    int pixelCount = 0;
     double deg_fac_local = this->deg_fac;
     int steps_local = this->cloudResolution;
-    int opt_max_radius = cm_maxRadius[n] * this->cloudLayerDivisor;
+    int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
+    int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
 
     for (int k = 1; k <= opt_max_radius; k++) {
         double radius = static_cast<double>(k) / this->cloudLayerDivisor;
         double orbNorm = this->norm_constY[DSQ(l, m_l)];
         double R = wavefuncRadial(n, l, radius);
         double rdp = wavefuncRDP(R, radius, l);
-        int fdn = k * steps_local * steps_local;
+        // int fdn = (k - 1) * steps_local * steps_local;
 
         for (int i = 0; i < steps_local; i++) {
-            int base = i * steps_local;
+            // int base = i * steps_local;
             double theta = i * deg_fac_local;
             std::complex<double> orbExp = wavefuncAngExp(m_l, theta);
             for (int j = 0; j < steps_local; j++) {
                 double phi = j * deg_fac_local;
-                int inCloudIdx = fdn + base + j;
+                // int inCloudIdx = fdn + base + j;
 
                 double orbLeg = wavefuncAngLeg(l, m_l, phi);
                 std::complex<double> Y = orbExp * orbNorm * orbLeg;
@@ -139,13 +159,17 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
                     // max_phi = phi;
                 }
 
-                rdpStaging[inCloudIdx] += rdp2;
+                rdpStaging[pixelCount++] += rdp2;
             }
         }
     }
 
-    if (max_rdp > shellRDPMaxima[n-1])
-        shellRDPMaxima[n-1] = max_rdp;
+    assert(pixelCount == rdpStaging.size());
+
+    if (max_rdp > shellRDPMaximaN[n-1])
+        shellRDPMaximaN[n-1] = max_rdp;
+    if (max_rdp > shellRDPMaximaL[l])
+        shellRDPMaximaL[l] = max_rdp;
 
     return max_rdp;
 }
@@ -205,31 +229,57 @@ int CloudManager::bakeOrbitalsForRender() {
             printMaxRDP(key, v.x, v.y, 0);
         }
         // For each N: Get max element from accumulated rdpStaging values
-        shellRDPMaximaCum[key - 1] = *std::max_element(rdpStaging.begin(), rdpStaging.end());
+        // double thisMax = *std::max_element(rdpStaging.begin(), rdpStaging.end());
 
         // For each N: Normalize accumulated pixelRDPs, add to allRDPs, register indices, and reset pixelRDP vector
-        for (uint p = 0; p < this->pixelCount; p++) {
-            double new_val = rdpStaging[p] / shellRDPMaximaCum[key - 1];
+        /* for (uint p = 0; p < this->pixelCount; p++) {
+            double new_val = rdpStaging[p];
+            new_val /= thisMax;
             if (new_val > this->cloudTolerance) {
                 allRDPs[p] += static_cast<float>(new_val);
                 allIndices.push_back(p);
             }
-            rdpStaging[p] = 0.0;
-        }
+            // rdpStaging[p] = 0.0;
+        } */
     }
     // End: check actual value of accumulated allRDPs
-    this->allRDPMaximum = *std::max_element(allRDPs.begin(), allRDPs.end());
-    std::cout << "Cumulative Max RDP for allRDPs was: " << this->allRDPMaximum << std::endl;
+    // this->allRDPMaximum = *std::max_element(allRDPs.begin(), allRDPs.end());
+    // std::cout << "Cumulative Max RDP for allRDPs was: " << this->allRDPMaximum << std::endl;
 
     // End: Clamp all accumulated values in allRDPs to [0,1] or normalize by peak accumulated value
     // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });
-    std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
+    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
+    cullRDPs();
+    
 
     genRDPs();
-    flStages.set(eStages::VBO);
     genIndexBuffer();
-    flStages.set(eStages::EBO);
+
+    flStages.set(eStages::VBO | eStages::EBO);
+    flUpdate.set(eUpdate::NEW_RDP | eUpdate::NEW_EBO);
+    if (this->RDPCount > this->oldRDPSize) {
+        flUpdate.set(eUpdate::INCR_RDP);
+    }
+    if (this->indexCount > this->oldIDXSize) {
+        flUpdate.set(eUpdate::INCR_EBO);
+    }
+
     return flagExit::A_OKAY;
+}
+
+void CloudManager::cullRDPs() {
+    std::fill(allRDPs.begin(), allRDPs.end(), 0.0);
+    allIndices.clear();
+
+    this->allRDPMaximum = *std::max_element(rdpStaging.begin(), rdpStaging.end());
+
+    for (uint p = 0; p < this->pixelCount; p++) {
+        double new_val = rdpStaging[p] / this->allRDPMaximum;
+        if (new_val > this->cloudTolerance) {
+            allRDPs[p] = static_cast<float>(new_val);
+            allIndices.push_back(p);
+        }
+    }
 }
 
 void CloudManager::cloudTest(int n_max) {
@@ -265,7 +315,7 @@ void CloudManager::cloudTestCSV() {
             for (int m_l = 0; m_l <= l; m_l++) {
                 std::cout << n << l << m_l;
 
-                for (int k = 1; k <= 150; k++) {
+                for (int k = 1; k <= 250; k++) {
                     double max_rdp = 0;
                     int steps_local = this->cloudResolution;
                     double deg_fac_local = this->deg_fac;
@@ -296,6 +346,7 @@ void CloudManager::cloudTestCSV() {
             
         }
     }
+    std::cout << std::endl;
 
 }
 
@@ -309,27 +360,29 @@ void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
     
 }
 
-void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
-    bool resetRequired = false;
+bool CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
+    // Check for relevant config changes OR for recipes to require larger radius
+    int inMapMaxN = inMap.rbegin()->first;
+    bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
+    bool newResolution = (this->cloudResolution != config->cloudResolution);
+    bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
+    bool higherMaxN = (flStages.hasAny(eStages::VERTICES)) && (inMapMaxN > this->max_n);
 
-    // Check for relevant config changes OR for recipe(s) to require larger radius
-    if ((this->cloudLayerDivisor != config->cloudLayDivisor) || (this->cloudResolution != config->cloudResolution) || (inMap.rbegin()->first > this->max_n)) {
-        resetRequired = true;
-    }
+    bool resetRequired = (newDivisor || newResolution || higherMaxN);
 
     // If above true, then regen vertices. If not, just clear for next render
-    if (flStages.hasAny(eStages::VERTICES | eStages::VBO)) {
-        if (resetRequired) {
-            resetManager();
-        } else {
-            clearForNext();
-        }
+    if (resetRequired) {
+        resetManager();
+    } else if (newTolerance) {
+        cullRDPs();  // TODO This is being pushed in the wrong place!
     }
 
     newConfig(config);
     cloudOrbitals = inMap;
     this->numOrbitals = numRecipes;
     flStages.set(eStages::RECIPES);
+
+    return resetRequired;
 }
 
 int64_t CloudManager::fact(int n) {
@@ -465,6 +518,10 @@ void CloudManager::RDPtoColours() {
     */
 }
 
+void CloudManager::resetUpdates() {
+    flUpdate.reset();
+}
+
 void CloudManager::resetManager() {
     Manager::resetManager();
     
@@ -476,7 +533,8 @@ void CloudManager::resetManager() {
     this->allColours.clear();
     this->allRDPs.clear();
     this->rdpStaging.clear();
-    this->shellRDPMaxima.clear();
+    this->shellRDPMaximaN.clear();
+    this->shellRDPMaximaL.clear();
     this->shellRDPMaximaCum.clear();
     this->norm_constR.clear();
     this->norm_constY.clear();
@@ -524,11 +582,15 @@ void CloudManager::genRDPs() {
  *  Getters -- Size
  */
 
-uint CloudManager::getColourSize() {
+const uint CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-uint CloudManager::getRDPSize() {
+const uint CloudManager::getRDPCount() {
+    return this->RDPCount;
+}
+
+const uint CloudManager::getRDPSize() {
     return this->RDPSize;
 }
 
@@ -551,6 +613,10 @@ bool CloudManager::hasVertices() {
 
 bool CloudManager::hasBuffers() {
     return (this->flStages.hasAny(eStages::EBO));
+}
+
+BitFlag& CloudManager::getUpdates() {
+    return this->flUpdate;
 }
 
 /*

@@ -9,4 +9,5 @@ o Swap state-lock to make maxRadius depend on config
 o Selecting subset of previous recipes does not enable Lock Recipes button
 - Redo Wave Config UI with QGridLayout
 - Sate-lock WaveManager (Manager) with new BitFlag
-- Option to normalize perN, perL, or perALL
++ Option to normalize perN, perL, or perALL
+- New Tolerance + cullRDPs needs to enter in a different place

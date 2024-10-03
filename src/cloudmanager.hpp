@@ -35,6 +35,7 @@
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
 enum eStages { INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16, NEW_CFG = 32 };
+enum eUpdate { NEW_VERT = 1, NEW_RDP = 2, INCR_RDP = 4, NEW_EBO = 8, INCR_EBO = 16 };
 
 
 class CloudManager : public Manager {
@@ -46,7 +47,8 @@ class CloudManager : public Manager {
         void createCloud();
         void updateCloud(double time);
         void receiveCloudMap(harmap &inMap, int numRecipes);
-        void receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
+        bool receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
+        void cullRDPs();
         void clearForNext();
 
         void genOrbitalsThroughN(int n);
@@ -58,10 +60,13 @@ class CloudManager : public Manager {
         void cloudTestCSV();
         
         void RDPtoColours();
+        void resetUpdates();
 
-        uint getColourSize();
-        uint getRDPSize();
+        const uint getColourSize();
+        const uint getRDPCount();
+        const uint getRDPSize();
         const float* getRDPData();
+        BitFlag& getUpdates();
 
         bool hasVertices();
         bool hasBuffers();
@@ -69,6 +74,9 @@ class CloudManager : public Manager {
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
         double max_r = 0, max_theta = 0, max_phi = 0;
+        uint64_t oldVERSize = 0;
+        uint64_t oldRDPSize = 0;
+        uint64_t oldIDXSize = 0;
 
     private:
         void resetManager() override;
@@ -95,7 +103,8 @@ class CloudManager : public Manager {
 
         std::vector<vVec3 *> pixelColours;
         dvec rdpStaging;
-        dvec shellRDPMaxima;
+        dvec shellRDPMaximaN;
+        dvec shellRDPMaximaL;
         dvec shellRDPMaximaCum;
         float allRDPMaximum;
         vVec3 allColours;
@@ -112,6 +121,7 @@ class CloudManager : public Manager {
         uint64_t pixelCount = 0;
         
         BitFlag flStages;
+        BitFlag flUpdate;
 
         int orbitalIdx = 0;
         int numOrbitals = 0;
@@ -124,7 +134,15 @@ class CloudManager : public Manager {
         int cloudMaxRadius = 0;
         int cloudLayerDivisor = 0;
         double cloudTolerance = 0.01;
-        const int cm_maxRadius[8] = { 5, 15, 30, 50, 75, 100, 130, 150 };
+
+        // N                               1   2   3   4   5    6    7    8
+        const int cm_maxRadius[4][8] = { { 4, 12, 24, 40, 60,  85, 113, 146 },\
+        // E2                              1   3   5   8  11   13   17   20
+                                         { 5, 15, 29, 48, 71,  98, 130, 166 },\
+        // E3                              2   3   5   7  10   12   15   17
+                                         { 7, 18, 34, 55, 81, 110, 145, 183 },\
+        // E4                              1   3   5   7   8   11   13   16
+                                         { 8, 21, 39, 62, 89, 121, 158, 199 } };
 };
 
 #endif

@@ -105,10 +105,12 @@ class Program {
         void disableAttributes();
         void updateVBO(uint offset, uint bufSize, const GLfloat *buf);
         void updateVBOTarget(GLuint bufId, uint offset, uint bufSize, const GLfloat *buf);
+        void resizeVBO(GLuint bufId, uint bufSize, const GLfloat *buf, uint mode);
         void clearVBO();
 
         void bindEBO(uint bufSize, const GLuint *buf, uint mode);
         void updateEBO(uint offset, uint bufSize, const GLuint *buf);
+        void resizeEBO(GLuint bufId, uint bufSize, const GLuint *buf, uint mode);
         void clearEBO();
 
         void assignFragColour();
@@ -126,10 +128,13 @@ class Program {
         void setUniform(int type, std::string name, uint n);
         void setUniformv(int count, int size, int type, std::string name, const float *n);
         void setUniformMatrix(int size, std::string name, float *m);
+        void setIndexCount(uint64_t count);
         //void setTexture(int samplerIdx, TexInfo& texInfo);
 
         GLuint getProgramId();
+        GLuint getFirstVBOId();
         GLuint getLastVBOId();
+        uint64_t getIndexCount();
 
         void displayLogProgram();
         void displayLogShader(GLenum shader);
@@ -146,6 +151,7 @@ class Program {
         GLuint vao;
         std::deque<GLuint> vbo;
         std::deque<GLuint> ebo;
+        uint64_t indexCount;
         
         bool enabled = false;
         

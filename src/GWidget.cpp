@@ -200,7 +200,7 @@ void GWidget::swapBuffers() {
 
     // Cleanup
     waveProg->deleteBuffers();
-    this->printSize();
+    // this->printSize();
     flGraphState.clear(egs::WAVE_UPD_VBO | egs::WAVE_UPD_EBO);
 }
 
@@ -355,7 +355,7 @@ void GWidget::initWaveProgram() {
 
     currentProg = waveProg;
     currentManager = waveManager;
-    this->printSize();
+    // this->printSize();
 }
 
 void GWidget::initCloudProgram() {
@@ -398,6 +398,7 @@ void GWidget::initCloudProgram() {
 
     /* EBO: Indices */
     cloudProg->bindEBO(cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
+    cloudProg->setIndexCount(cloudManager->getIndexCount());
     flGraphState.set(egs::CLOUD_EBO_BOUND);
 
     /* Release */
@@ -407,7 +408,7 @@ void GWidget::initCloudProgram() {
     currentProg = cloudProg;
     currentManager = cloudManager;
     flGraphState.clear(egs::CLOUD_VERT_READY | egs::CLOUD_RDP_READY | egs::CLOUD_UPD_VBO | egs::CLOUD_UPD_EBO);
-    this->printSize();
+    // this->printSize();
 }
 
 void GWidget::changeModes() {
@@ -431,9 +432,9 @@ void GWidget::changeModes() {
 }
 
 void GWidget::initVecsAndMatrices() {
-    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : 20.0f * this->max_n;
-    gw_nearDist = gw_startDist * 0.1f;
-    gw_farDist = gw_startDist * 15;
+    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (6.0f * this->max_n * this->max_n);
+    gw_nearDist = gw_startDist * 0.05f;
+    gw_farDist = gw_startDist * 3.0f;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -521,7 +522,8 @@ void GWidget::paintGL() {
                 flGraphState.clear(CLOUD_UPD_CFG);
             }
             if (flGraphState.hasAny(egs::CLOUD_UPD_EBO)) {
-                updateCloudBuffers();
+                updateCloudBuffers(cloudManager->getUpdates());
+                initVecsAndMatrices();
                 cloudManager->clearForNext();
             }
         }
@@ -572,7 +574,7 @@ void GWidget::paintGL() {
         currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
         currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
         currentProg->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_POINTS, currentManager->getIndexCount(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_POINTS, currentProg->getIndexCount(), GL_UNSIGNED_INT, 0);
         currentProg->endRender();
     }
     q_TotalRot.normalize();
@@ -718,37 +720,20 @@ void GWidget::addCloudRecipes(int n, int l, int m_l) {
     }
 }
 
-void GWidget::lockCloudRecipes(harmap &cloudMap, int numRecipes) {
-    if (!cloudManager) {
-        cloudManager = new CloudManager(&renderConfig);
-        flGraphState.set(egs::CLOUD_MANAGER_INIT);
-    }
-
-    bool reset = false;
-    int mapMaxN = cloudMap.rbegin()->first;
-    if (flGraphState.hasAny(egs::CLOUD_VBO_BOUND) && (mapMaxN > this->max_n)) {
-        this->max_n = mapMaxN;
-        reset = true;
-    }
-
-    cloudManager->receiveCloudMap(cloudMap, numRecipes);
-    flGraphState.set(egs::CLOUD_MAP_READY);
-}
-
-void GWidget::lockCloudConfigAndOrbitals(AtomixConfig *cfg, harmap &cloudMap, int numRecipes) {
-    if (flGraphState.hasNone(egs::CLOUD_MANAGER_INIT)) {
+bool GWidget::lockCloudConfigAndOrbitals(AtomixConfig *cfg, harmap &cloudMap, int numRecipes) {
+    bool wasReset = false, isFirstCloud = false;
+    this->max_n = cloudMap.rbegin()->first;
+    
+    if (isFirstCloud = flGraphState.hasNone(egs::CLOUD_MANAGER_INIT)) {
         cloudManager = new CloudManager(cfg);
         flGraphState.set(egs::CLOUD_MANAGER_INIT);
     }
-
-    int mapMaxN = cloudMap.rbegin()->first;
-    if (mapMaxN > this->max_n) {
-        this->max_n = mapMaxN;
+    if (wasReset = cloudManager->receiveCloudMapAndConfig(cfg, cloudMap, numRecipes)) {
+        flGraphState.clear(egs::CLOUD_VERT_READY);
     }
-
-    cloudManager->receiveCloudMapAndConfig(cfg, cloudMap, numRecipes);
     flGraphState.set(egs::CLOUD_MAP_READY);
-    flGraphState.clear(egs::CLOUD_VERT_READY);
+
+    return wasReset || isFirstCloud;
 }
 
 void GWidget::genCloudVertices() {
@@ -757,22 +742,47 @@ void GWidget::genCloudVertices() {
     flGraphState.set(egs::CLOUD_VERT_READY);
 }
 
-void GWidget::updateCloudBuffers() {
+void GWidget::updateCloudBuffers(BitFlag &updates) {
     assert(flGraphState.hasAll(egs::CLOUD_PROG_INIT | egs::CLOUD_MANAGER_INIT | egs::CLOUD_VBO_BOUND | egs::CLOUD_UPD_EBO | egs::CLOUD_RDP_READY));
+    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 
+    /* Bind */
     cloudProg->beginRender();
 
+    /* VBO 1: Vertices */
+    if (updates.hasAny(eUpdate::NEW_VERT)) {
+        std::cout << "Resizing VBO: Vertices from " << cloudManager->oldVERSize << " to " << cloudManager->getVertexCount() << std::endl;
+        cloudProg->resizeVBO(cloudProg->getFirstVBOId(), cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
+    }
+
     /* VBO 2: RDPs */
-    cloudProg->updateVBOTarget(cloudProg->getLastVBOId(), 0, cloudManager->getRDPSize(), cloudManager->getRDPData());
-
+    if (updates.hasAny(eUpdate::NEW_RDP)) {
+        if (updates.hasAny(eUpdate::INCR_RDP)) {
+            std::cout << "Resizing VBO: RDPs from " << cloudManager->oldRDPSize << " to " << cloudManager->getRDPCount() << std::endl;
+            cloudProg->resizeVBO(cloudProg->getLastVBOId(), cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
+        } else {
+            std::cout << "Updating VBO: RDPs" << std::endl;
+            cloudProg->updateVBOTarget(cloudProg->getLastVBOId(), 0, cloudManager->getRDPSize(), cloudManager->getRDPData());
+        }
+    }
+    
     /* EBO: Indices */
-    cloudProg->updateEBO(0, cloudManager->getIndexSize(), cloudManager->getIndexData());
-
+    if (updates.hasAny(eUpdate::NEW_EBO)) {
+        if (updates.hasAny(eUpdate::INCR_EBO)) {
+            std::cout << "Resizing EBO from " << cloudManager->oldIDXSize << " to " << cloudManager->getIndexCount() << std::endl;
+            cloudProg->resizeEBO(0, cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
+        } else {
+            std::cout << "Updating EBO" << std::endl;
+            cloudProg->updateEBO(0, cloudManager->getIndexSize(), cloudManager->getIndexData());
+        }
+        cloudProg->setIndexCount(cloudManager->getIndexCount());
+    }
+    
     /* Release */
     cloudProg->endRender();
     cloudProg->clearBuffers();
 
-    this->printSize();
+    // this->printSize();
 
     flGraphState.clear(egs::CLOUD_UPD_EBO | egs::CLOUD_UPD_VBO | egs::CLOUD_RDP_READY);
 }

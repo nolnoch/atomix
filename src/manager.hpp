@@ -51,6 +51,7 @@ class Manager {
         
         virtual void clearForNext();
 
+        const uint getVertexCount();
         const uint getVertexSize();
         const uint getIndexSize();
         const uint getIndexCount();

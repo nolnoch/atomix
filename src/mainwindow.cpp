@@ -4,21 +4,21 @@
  *    Created on: Oct 3, 2023
  *   Last Update: Sep 9, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
- * 
+ *
  *  Copyright 2023, 2024 Wade Burch (GPLv3)
- * 
+ *
  *  This file is part of atomix.
- * 
+ *
  *  atomix is free software: you can redistribute it and/or modify it under the
- *  terms of the GNU General Public License as published by the Free Software 
- *  Foundation, either version 3 of the License, or (at your option) any later 
+ *  terms of the GNU General Public License as published by the Free Software
+ *  Foundation, either version 3 of the License, or (at your option) any later
  *  version.
- * 
- *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ *
+ *  atomix is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- *  You should have received a copy of the GNU General Public License along with 
+ *
+ *  You should have received a copy of the GNU General Public License along with
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -47,7 +47,7 @@ void MainWindow::onAddNew() {
     loadConfig();
     refreshOrbits(cfgParser->config);
     setupDetails();
-    
+
     // connect(this, &MainWindow::sendConfig, graph, &GWidget::newWaveConfig, Qt::DirectConnection);
     connect(graph, SIGNAL(cameraChanged()), this, SLOT(updateDetails()));
 
@@ -120,7 +120,7 @@ void MainWindow::refreshShaders() {
 void MainWindow::refreshOrbits(AtomixConfig *cfg) {
     const QSignalBlocker blocker(buttGroupOrbits);
     ushort renderedOrbits = 0;
-    
+
     for (int i = 0; i < cfg->waves; i++) {
         renderedOrbits |= (1 << i);
     }
@@ -138,7 +138,7 @@ void MainWindow::setupDetails() {
     float *cam = this->graph->getCameraPosition();
     QFont fontDebug("Monospace");
     fontDebug.setStyleHint(QFont::Courier);
-    
+
     float fDist = cam[0];
     float fNear = cam[1];
     float fFar = cam[2];
@@ -158,7 +158,7 @@ void MainWindow::updateDetails() {
         return;
     }
     float *cam = this->graph->getCameraPosition();
-    
+
     float fDist = cam[0];
     float fNear = cam[1];
     float fFar = cam[2];
@@ -191,7 +191,7 @@ void MainWindow::loadConfig() {
 
     /* To my horror and disgust, neither toggle() nor setChecked() work to flip from False to True.
        It is therefore necessary to manually set every radio button individually.
-    */    
+    */
     entryPara->setChecked(cfg->parallel);
     entryOrtho->setChecked(!cfg->parallel);
     entrySuperOn->setChecked(cfg->superposition);
@@ -200,7 +200,7 @@ void MainWindow::loadConfig() {
     entryGPU->setChecked(!cfg->cpu);
     entrySphere->setChecked(cfg->sphere);
     entryCircle->setChecked(!cfg->sphere);
-    
+
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
 
@@ -231,7 +231,7 @@ void MainWindow::setupTabs() {
 void MainWindow::setupDockWaves() {
     comboConfigFile = new QComboBox(this);
     wTabWaves = new QWidget(this);
-    
+
     buttMorbWaves = new QPushButton("Morb", this);
     buttGroupColors = new QButtonGroup(this);
 
@@ -268,7 +268,7 @@ void MainWindow::setupDockWaves() {
     labelWaves->setLineWidth(3);
     labelWaves->setMargin(12);
     labelWaves->setAlignment(Qt::AlignCenter);
-    
+
     QLabel *labelOrbit = new QLabel("Number of orbits:");
     labelOrbit->setObjectName("configLabel");
     QLabel *labelAmp = new QLabel("Amplitude:");
@@ -387,7 +387,7 @@ void MainWindow::setupDockWaves() {
     layOptionRow10->addWidget(entryVertex, 2, Qt::AlignRight);
     layOptionRow11->addWidget(labelFrag, 2, Qt::AlignLeft);
     layOptionRow11->addWidget(entryFrag, 2, Qt::AlignRight);
-    
+
     layOptionBox->addLayout(layOptionRow1);
     layOptionBox->addLayout(layOptionRow2);
     layOptionBox->addLayout(layOptionRow3);
@@ -421,7 +421,7 @@ void MainWindow::setupDockWaves() {
 
     groupConfig->setAlignment(Qt::AlignRight);
     groupOptions->setAlignment(Qt::AlignRight);
-    
+
     layDock->addWidget(labelWaves);
     layDock->addStretch(2);
     layDock->addWidget(groupConfig);
@@ -429,7 +429,7 @@ void MainWindow::setupDockWaves() {
     layDock->addWidget(buttMorbWaves);
     layDock->addStretch(2);
     layDock->addWidget(groupColors);
-    layDock->addWidget(groupOrbits);    
+    layDock->addWidget(groupOrbits);
 
     layDock->setStretchFactor(labelWaves, 2);
     layDock->setStretchFactor(groupConfig, 1);
@@ -439,7 +439,7 @@ void MainWindow::setupDockWaves() {
     layDock->setStretchFactor(groupOrbits, 1);
 
     buttMorbWaves->setSizePolicy(qPolicyExpand);
-    
+
     wTabWaves->setLayout(layDock);
     wTabWaves->setMinimumSize(intTabMinWidth,0);
 }
@@ -517,7 +517,7 @@ void MainWindow::setupDockHarmonics() {
     entryCloudRes = new QLineEdit(QString::number(cfgParser->config->cloudResolution));
     entryCloudLayers = new QLineEdit(QString::number(cfgParser->config->cloudLayDivisor));
     entryCloudMinRDP = new QLineEdit(QString::number(cfgParser->config->cloudTolerance));
-    
+
     QGridLayout *layGenVertices = new QGridLayout;
     layGenVertices->addWidget(labelCloudLayers, 0, 0, 1, 1);
     layGenVertices->addWidget(labelCloudResolution, 1, 0, 1, 1);
@@ -569,14 +569,14 @@ void MainWindow::setupDockHarmonics() {
     layVRecipeChose->addWidget(groupRecipeLocked);
     layVRecipeChose->setStretchFactor(groupRecipeReporter, 1);
     layVRecipeChose->setStretchFactor(groupRecipeLocked, 1);
-    
+
     layHRecipeViews->addLayout(layVRecipeBuild);
     layHRecipeViews->addLayout(layVRecipeChose);
-    
+
     layHRecipeButts->addWidget(buttLockRecipes);
     layHRecipeButts->addWidget(buttClearRecipes);
     layHRecipeButts->addWidget(buttResetRecipes);
-    
+
     layRecipeIO->addLayout(layHRecipeViews);
     layRecipeIO->addLayout(layHRecipeButts);
 
@@ -598,18 +598,13 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->addStretch(2);
     layDockHarmonics->addWidget(buttMorbHarmonics);
 
-    layVRecipeBuild->setStretchFactor(groupRecipeBuilder, 6);
-    layVRecipeBuild->setStretchFactor(buttLockRecipes, 1);
-    layVRecipeChose->setStretchFactor(groupRecipeReporter, 6);
-    layVRecipeChose->setStretchFactor(buttResetRecipes, 1);
-
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
     layDockHarmonics->setStretchFactor(layRecipeIO, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 2);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
-    
+
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
-    
+
     wTabHarmonics->setLayout(layDockHarmonics);
     wTabHarmonics->setMinimumSize(intTabMinWidth,0);
 }
@@ -648,12 +643,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             thisItem->setTextAlignment(Qt::AlignRight);
             thisItem->setForeground(Qt::red);
 
-            // Enable button now that at least one item exists in list
-            if (!buttLockRecipes->isEnabled()) {
-                buttLockRecipes->setEnabled(true);
-                buttClearRecipes->setEnabled(true);
-            }
-
             // Add item to harmap
             vecElem->push_back(lm);
             numRecipes++;
@@ -668,7 +657,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             if (!numRecipes) {
                 // Disable buttons and clear harmap if list is now empty
                 buttLockRecipes->setEnabled(false);
-                buttClearRecipes->setEnabled(false);
                 buttMorbHarmonics->setEnabled(false);
                 this->mapCloudRecipes.clear();
             } else {
@@ -677,12 +665,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
                 if (it != vecElem->end()) {
                     vecElem->erase(it);
                 }
-
-                // Enable button iff previously locked config has now changed
-                if (buttMorbHarmonics->isEnabled()) {
-                    buttLockRecipes->setEnabled(true);
-                    buttClearRecipes->setEnabled(true);
-                }
             }
         }
     }
@@ -690,6 +672,10 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     /* ALL Nodes make it here */
     // Since a change has been made here, set title to yellow to show unlocked recipes
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
+    
+    // Enable button(s) since a change has been made
+    buttLockRecipes->setEnabled(true);
+    buttClearRecipes->setEnabled(true);
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent
     while (ptrParent) {
@@ -709,48 +695,49 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 }
 
 void MainWindow::handleButtLockRecipes() {
-    if (buttMorbHarmonics->isEnabled()) {
+    if (groupGenVertices->isEnabled()) {
         // If second or later round of LockRecipes()
+        buttGenVertices->setEnabled(true);
     } else {
         // First round of LockRecipes()
+        groupGenVertices->setEnabled(true);
+        groupRecipeLocked->setEnabled(true);
     }
-
-    mapCloudRecipesLocked = mapCloudRecipes;
-    // graph->lockCloudRecipes(this->mapCloudRecipesLocked, this->numRecipes);
-    groupGenVertices->setEnabled(true);
-    buttLockRecipes->setEnabled(false);
-    groupRecipeLocked->setEnabled(true);
 
     for (int i = 0; i < numRecipes; i++) {
         QListWidgetItem *thisItem = listOrbitalReport->item(i);
         thisItem->setForeground(Qt::white);
-        
+
         if (!listOrbitalLocked->findItems(thisItem->text(), Qt::MatchExactly).count()) {
             QListWidgetItem *newItem = new QListWidgetItem(thisItem->text(), listOrbitalLocked);
             listOrbitalLocked->addItem(newItem);
             newItem->setTextAlignment(Qt::AlignRight);
         }
     }
+    mapCloudRecipesLocked = mapCloudRecipes;
+    buttLockRecipes->setEnabled(false);
+    buttResetRecipes->setEnabled(true);
+
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #77FF77; }");
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #77FF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #77FF77; }");
-
-    buttResetRecipes->setEnabled(true);
 }
 
 void MainWindow::handleButtClearRecipes() {
     int topLevelItems = treeOrbitalSelect->topLevelItemCount();
-    
+
     // Check, then uncheck all top-level items. A bit brutal, but very effective :)
     for (int i = 0; i < topLevelItems; i++) {
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
     }
+
+    buttGenVertices->setEnabled(false);
 }
 
 void MainWindow::handleButtResetRecipes() {
     int topLevelItems = treeOrbitalSelect->topLevelItemCount();
-    
+
     // Check, then uncheck all top-level items. A bit brutal, but very effective :)
     for (int i = 0; i < topLevelItems; i++) {
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
@@ -762,7 +749,7 @@ void MainWindow::handleButtResetRecipes() {
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
 
-    groupGenVertices->setEnabled(false);
+    buttGenVertices->setEnabled(false);
 }
 
 void MainWindow::handleButtMorb() {
@@ -787,22 +774,25 @@ void MainWindow::handleButtGenVerts() {
     cfgParser->config->cloudLayDivisor = entryCloudLayers->text().toInt();
     cfgParser->config->cloudResolution = entryCloudRes->text().toInt();
     cfgParser->config->cloudTolerance = entryCloudMinRDP->text().toDouble();
-    graph->lockCloudConfigAndOrbitals(cfgParser->config, this->mapCloudRecipesLocked, this->numRecipes);
-
-    graph->genCloudVertices();
+    if (graph->lockCloudConfigAndOrbitals(cfgParser->config, this->mapCloudRecipesLocked, this->numRecipes)) {
+        graph->genCloudVertices();
+    }
 
     if (buttMorbHarmonics->isEnabled()) {
         // If second or later round of genVertices()
     } else {
         // First round of genVertices
     }
-    
+
     buttGenVertices->setEnabled(false);
     buttMorbHarmonics->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbHarmonics() {
+    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
+    groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
     graph->newCloudMessage();
+    buttMorbHarmonics->setEnabled(false);
 }
 
 void MainWindow::handleButtColors(int id) {

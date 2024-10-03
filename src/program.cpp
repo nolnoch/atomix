@@ -390,6 +390,11 @@ void Program::updateVBOTarget(GLuint bufId, uint offset, uint bufSize, const GLf
     displayLogProgram();
 }
 
+void Program::resizeVBO(GLuint bufId, uint bufSize, const GLfloat *buf, uint mode) {
+    qgf->glNamedBufferData(this->vbo[bufId], bufSize, buf, mode);
+    displayLogProgram();
+}
+
 void Program::clearVBO() {
     qgf->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -399,12 +404,15 @@ void Program::bindEBO(uint bufSize, const GLuint *buf, uint mode) {
     qgf->glGenBuffers(1, &this->ebo.back());
     qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
     qgf->glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufSize, buf, mode);
-
-    //int eboCount = ebo.size();
 }
 
 void Program::updateEBO(uint offset, uint bufSize, const GLuint *buf) {
     qgf->glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bufSize, buf);
+    displayLogProgram();
+}
+
+void Program::resizeEBO(GLuint bufId, uint bufSize, const GLuint *buf, uint mode) {
+    qgf->glNamedBufferData(this->ebo[bufId], bufSize, buf, mode);
     displayLogProgram();
 }
 
@@ -571,6 +579,10 @@ void Program::setUniformMatrix(int size, string name, float *m) {
     }
 }
 
+void Program::setIndexCount(uint64_t count) {
+    this->indexCount = count;
+}
+
 /**
  * Accessor function for the GLenum program ID.
  * @return the program ID
@@ -579,8 +591,16 @@ GLuint Program::getProgramId() {
     return this->programId;
 }
 
+GLuint Program::getFirstVBOId() {
+    return this->vbo.front();
+}
+
 GLuint Program::getLastVBOId() {
     return this->vbo.back();
+}
+
+uint64_t Program::getIndexCount() {
+    return this->indexCount;
 }
 
 /**

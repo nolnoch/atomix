@@ -11,3 +11,4 @@ o Selecting subset of previous recipes does not enable Lock Recipes button
 - Sate-lock WaveManager (Manager) with new BitFlag
 + Option to normalize perN, perL, or perALL
 - New Tolerance + cullRDPs needs to enter in a different place
+- Coefficient for orbital recipes

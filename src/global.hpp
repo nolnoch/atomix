@@ -50,20 +50,36 @@ struct BitFlag {
     void toggle(uint flag) {
         bf ^= flag;
     }
+    void setC(uint flag, bool condition) {
+        if (condition) {
+            set(flag);
+        }
+    }
+    void toggleC(uint flag, bool condition) {
+        if (condition) {
+            toggle(flag);
+        }
+    }
     bool hasAll(uint flag) {
         return (bf & flag) == flag;
     }
     bool hasAny(uint flag) {
         return (bf & flag) > 0;
     }
-    bool hasOne(uint flag) {
+    bool hasNotAll(uint flag) {
         return ((bf & flag) != flag) && ((bf & flag) > 0);
+    }
+    bool hasOneAtMost(uint flag) {
+        return (hasNotAll(flag) || hasNone(flag));
     }
     bool hasNone(uint flag) {
         return (bf & flag) == 0;
     }
     void setTo(uint flag) {
         bf = flag;
+    }
+    uint intersection(uint flag) {
+        return bf & flag;
     }
     void reset() {
         bf = 0;

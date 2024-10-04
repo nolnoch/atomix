@@ -39,36 +39,24 @@ GWidget::~GWidget() {
 }
 
 void GWidget::cleanup() {
-    //makeCurrent();
-
     //std::std::cout << "Rendered " << gw_frame << " frames." << std::endl;
-
-    delete crystalProg;
-    delete waveProg;
-    delete cloudProg;
-    delete waveManager;
-    delete cloudManager;
-    delete cfgParser;
+    changeModes(true);
     delete gw_timer;
-
-    //doneCurrent();
+    delete crystalProg;
 }
 
 void GWidget::newCloudConfig(AtomixConfig *config, harmap &cloudMap, int numRecipes) {
-    flGraphState.clear(eModes);
     flGraphState.set(egs::UPDATE_REQUIRED | egs::CLOUD_MODE);
-    // changeModes();
+    if (flGraphState.hasAny(eWaveFlags)) {
+        changeModes(false);
+    }
 
-    cfgChanges changes;
-    bool firstTime = false;
     this->max_n = cloudMap.rbegin()->first;
 
-    if (flGraphState.hasNone(egs::CLOUD_MANAGER_INIT)) {
+    if (!cloudManager) {
         // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists
         cloudManager = new CloudManager(config, cloudMap, numRecipes);
-        flGraphState.set(egs::CLOUD_MANAGER_INIT);
         cloudManager->initManager();
-        firstTime = true;
     } else {
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists
         flGraphState.set(cloudManager->receiveCloudMapAndConfig(config, cloudMap, numRecipes));
@@ -76,150 +64,21 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap &cloudMap, int numReci
 }
 
 void GWidget::newWaveConfig(AtomixConfig *cfg) {
-    flGraphState.set(egs::UPDATE_REQUIRED | egs::UPD_CFG | egs::WAVE_MODE);
-    
+    flGraphState.set(egs::UPDATE_REQUIRED | egs::WAVE_MODE);
     if (flGraphState.hasAny(eCloudFlags)) {
-        changeModes();
+        changeModes(false);
     }
 
-    if (renderConfig.waves != cfg->waves) {
-        renderConfig.waves = cfg->waves;                    // Requires new {Vertices[cpu/gpu], VBO, EBO}
-        flWaveCfg.set(ewc::ORBITS);
-    }
-    if (renderConfig.amplitude != cfg->amplitude) {
-        renderConfig.amplitude = cfg->amplitude;            // Requires new {Vertices[cpu]}
-        flWaveCfg.set(ewc::AMPLITUDE);
-    }
-    if (renderConfig.period != cfg->period) {
-        renderConfig.period = cfg->period;                  // Requires new {Vertices[cpu]}
-        flWaveCfg.set(ewc::PERIOD);
-    }
-    if (renderConfig.wavelength != cfg->wavelength) {
-        renderConfig.wavelength = cfg->wavelength;          // Requires new {Vertices[cpu]}
-        flWaveCfg.set(ewc::WAVELENGTH);
-    }
-    if (renderConfig.resolution != cfg->resolution) {
-        renderConfig.resolution = cfg->resolution;          // Requires new {Vertices[cpu/gpu], VBO, EBO}
-        flWaveCfg.set(ewc::RESOLUTION);
-    }
-    if (renderConfig.parallel != cfg->parallel) {
-        renderConfig.parallel = cfg->parallel;              // Requires new {Vertices[cpu]}
-        flWaveCfg.set(ewc::PARALLEL);
-    }
-    if (renderConfig.superposition != cfg->superposition) {
-        renderConfig.superposition = cfg->superposition;    // Requires new {Vertices[cpu]}
-        flWaveCfg.set(ewc::SUPERPOSITION);
-    }
-    if (renderConfig.cpu != cfg->cpu) {
-        renderConfig.cpu = cfg->cpu;                        // Requires new {Vertices[cpu/gpu]}
-        flWaveCfg.set(ewc::CPU);
-    }
-    if (renderConfig.sphere != cfg->sphere) {
-        renderConfig.sphere = cfg->sphere;                  // Requires new {Vertices[cpu/gpu], VBO, EBO]}
-        flWaveCfg.set(ewc::SPHERE);
-    }
-    if (renderConfig.vert != cfg->vert) {
-        renderConfig.vert = cfg->vert;                      // Requires new {Shader}
-        flWaveCfg.set(ewc::VERTSHADER);
-    }
-    if (renderConfig.frag != cfg->frag) {
-        renderConfig.frag = cfg->frag;                      // Requires new {Shader}
-        flWaveCfg.set(ewc::FRAGSHADER);
-    }
-
-    if (flGraphState.hasNone(egs::WAVE_MANAGER_INIT)) {
+    if (!waveManager) {
         waveManager = new WaveManager(&renderConfig);
-        flGraphState.set(egs::WAVE_MANAGER_INIT);
+    } else {
+        flGraphState.set(waveManager->receiveConfig(cfg));
     }
 }
 
 void GWidget::selectRenderedWaves(int id, bool checked) {
-    // Send selection(s) to WaveManager for regeneration of indices
-    // renderedWaves = waveManager->selectWaves(id, checked);
-    waveManager->selectWaves(id, checked);
-
-    // Flag for EBO update
-    flGraphState.set(egs::UPD_EBO | egs::UPDATE_REQUIRED);
-}
-
-void GWidget::processWaveConfigChange() {
-    // Re-create Waves with new params from config
-    if ((flWaveCfg.hasAny(ewc::ORBITS | ewc::RESOLUTION | ewc::SPHERE | ewc::CPU)) ||
-        (renderConfig.cpu && (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH | ewc::PARALLEL)))) {
-        waveManager->newConfig(&renderConfig);
-        waveManager->newWaves();
-        flGraphState.set(egs::UPD_VBO);
-    } else if (!renderConfig.cpu && (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH))) {
-        waveManager->newConfig(&renderConfig);
-        flGraphState.set(egs::UPD_UNI_MATHS);
-    }
-
-    if (flWaveCfg.hasAny(ewc::VERTSHADER | ewc::FRAGSHADER)) {
-        swapShaders();
-        flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR);
-    }
-
-    if (flWaveCfg.hasAny(ewc::ORBITS | ewc::RESOLUTION | ewc::SPHERE)) {
-        swapBuffers();
-    } else if (flGraphState.hasAny(egs::UPD_VBO)) {
-        swapVertices();
-    } else if (flGraphState.hasAny(egs::UPD_EBO)) {
-        swapIndices();
-    }
-
-    flWaveCfg.reset();
-    flGraphState.clear(egs::UPD_CFG);
-}
-
-void GWidget::swapShaders() {
-    assert(flGraphState.hasAny(egs::WAVE_PROG_INIT));
-
-    // Detach current shaders
-    waveProg->detachShaders();
-
-    // Attach shaders, link/validate program, and clean up
-    waveProg->attachShader(renderConfig.vert);
-    waveProg->attachShader(renderConfig.frag);
-    waveProg->linkAndValidate();
-    waveProg->detachShaders();
-}
-
-void GWidget::swapBuffers() {
-    assert(flGraphState.hasAll(egs::WAVE_VBO_BOUND | egs::WAVE_EBO_BOUND));
-
-    /* // Load and bind new vertices and attributes
-    waveProg->enable();
-    waveProg->bindVAO();
-    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    GLuint vboID = waveProg->bindVBO(waveManager->getVertexSize(), waveManager->getVertexData(), static_dynamic);
-    waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
-    waveProg->bindEBO(waveManager->getIndexSize(), waveManager->getIndexData(), static_dynamic);
-    waveProg->endRender();
-
-    // Cleanup
-    waveProg->deleteBuffers();
-    // this->printSize();
-    flGraphState.clear(egs::UPD_VBO | egs::UPD_EBO); */
-}
-
-void GWidget::swapVertices() {
-    assert(flGraphState.hasAny(egs::WAVE_VBO_BOUND));
-
-    waveProg->beginRender();
-    waveProg->updateVBONamed("vertices", waveManager->getVertexCount(), 0, waveManager->getVertexSize(), waveManager->getVertexData());
-    waveProg->endRender();
-
-    flGraphState.clear(egs::UPD_VBO);
-}
-
-void GWidget::swapIndices() {
-    assert(flGraphState.hasAny(egs::WAVE_EBO_BOUND));
-
-    waveProg->beginRender();
-    waveProg->updateEBONamed("indices", waveManager->getIndexCount(), 0, waveManager->getIndexSize(), waveManager->getIndexData());
-    waveProg->endRender();
-
-    flGraphState.clear(egs::UPD_EBO);
+    // Process and flag for EBO update
+    flGraphState.set(waveManager->selectWaves(id, checked) | egs::UPDATE_REQUIRED);
 }
 
 void GWidget::initCrystalProgram() {
@@ -304,12 +163,12 @@ void GWidget::initCrystalProgram() {
     crystalProg->clearBuffers();
 }
 
-void GWidget::initAtomixProg() {
+/* void GWidget::initAtomixProg() {
     // TODO Consolidate?!
-}
+} */
 
 void GWidget::initWaveProgram() {
-    assert(flGraphState.hasAny(egs::WAVE_MANAGER_INIT));
+    assert(waveManager);
 
     /* Program */
     // Create Program
@@ -325,7 +184,6 @@ void GWidget::initWaveProgram() {
     waveProg->attachShader(waveManager->getShaderFrag());
     waveProg->linkAndValidate();
     waveProg->detachShaders();
-    flGraphState.set(egs::WAVE_PROG_INIT);
 
     /* VAO */
     waveProg->initVAO();
@@ -340,15 +198,14 @@ void GWidget::initWaveProgram() {
     waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
     waveProg->enableAttribute(1);
     waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
-    flGraphState.set(egs::WAVE_VBO_BOUND);
     
     /* EBO: Indices */
     waveProg->bindEBO("indices", waveManager->getIndexCount(), waveManager->getIndexSize(), waveManager->getIndexData(), static_dynamic);
-    flGraphState.set(egs::WAVE_EBO_BOUND);
 
     /* Release */
     waveProg->endRender();
     waveProg->clearBuffers();
+    flGraphState.set(egs::WAVE_RENDER);
     flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR);
 
     currentProg = waveProg;
@@ -357,7 +214,7 @@ void GWidget::initWaveProgram() {
 }
 
 void GWidget::initCloudProgram() {
-    assert(flGraphState.hasAll(egs::CLOUD_MANAGER_INIT));
+    assert(cloudManager);
 
     /* Program */
     // Create Program
@@ -373,7 +230,6 @@ void GWidget::initCloudProgram() {
     cloudProg->attachShader(cloudManager->getShaderFrag());
     cloudProg->linkAndValidate();
     cloudProg->detachShaders();
-    flGraphState.set(egs::CLOUD_PROG_INIT);
 
     /* VAO */
     cloudProg->initVAO();
@@ -392,15 +248,14 @@ void GWidget::initCloudProgram() {
     cloudProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
     cloudProg->enableAttribute(1);
     cloudProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
-    flGraphState.set(egs::CLOUD_VBO_BOUND);
 
     /* EBO: Indices */
     GLuint eboId = cloudProg->bindEBO("indices", cloudManager->getIndexCount(), cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
-    flGraphState.set(egs::CLOUD_EBO_BOUND);
 
     /* Release */
     cloudProg->endRender();
     cloudProg->clearBuffers();
+    flGraphState.set(CLOUD_RENDER);
 
     currentProg = cloudProg;
     currentManager = cloudManager;
@@ -408,25 +263,20 @@ void GWidget::initCloudProgram() {
     // this->printSize();
 }
 
-void GWidget::changeModes() {
-    if (flGraphState.hasNone(egs::CLOUD_MODE)) {
+void GWidget::changeModes(bool force) {
+    if (!waveManager || force) {
         delete cloudManager;
         delete cloudProg;
         cloudManager = 0;
         cloudProg = 0;
         flGraphState.clear(eCloudFlags);
-    }
-    if (flGraphState.hasNone(egs::WAVE_MODE)) {
+    } else if (!cloudManager || force) {
         delete waveManager;
         delete waveProg;
         waveManager = 0;
         waveProg = 0;
         flGraphState.clear(eWaveFlags);
     }
-    /* if (currentManager) {
-        currentManager = 0;
-        currentProg = 0;
-    } */
 }
 
 void GWidget::initVecsAndMatrices() {
@@ -487,29 +337,25 @@ void GWidget::initializeGL() {
 }
 
 void GWidget::paintGL() {
-    assert(!flGraphState.hasAll(egs::WAVE_MODE | egs::CLOUD_MODE));
+    assert(flGraphState.hasOneAtMost(egs::WAVE_MODE | egs::CLOUD_MODE));
 
     if (!gw_pause)
         gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
 
-    /* Pre-empt painting for new or updated Wave configuration */
+    /* Pre-empt painting for new or updated model configuration */
     if (flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
         if (flGraphState.hasAny(egs::WAVE_MODE)) {
-            if (flGraphState.hasNone(egs::WAVE_EBO_BOUND)) {
-                changeModes();
+            if (flGraphState.hasNone(egs::WAVE_RENDER)) {
                 initWaveProgram();
                 initVecsAndMatrices();
-                flGraphState.clear(UPD_CFG);
             }
-            if (flGraphState.hasAny(egs::UPD_CFG)) {
-                processWaveConfigChange();
-            }
+            updateBuffersAndShaders();
         } else if (flGraphState.hasAny(egs::CLOUD_MODE)) {
-            if (flGraphState.hasNone(egs::CLOUD_EBO_BOUND)) {
+            if (flGraphState.hasNone(egs::CLOUD_RENDER)) {
                 initCloudProgram();
             } else {
-                updateCloudBuffers();
+                updateBuffersAndShaders();
             }
             initVecsAndMatrices();
         }
@@ -536,24 +382,12 @@ void GWidget::paintGL() {
     crystalProg->endRender();
 
     /* Render -- Waves */
-    if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_EBO_BOUND) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_EBO_BOUND)) {
+    if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_RENDER) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_RENDER)) {
         currentProg->beginRender();
         if (flGraphState.hasAny(egs::WAVE_MODE)) {
-            if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
-                waveProg->setUniform(GL_FLOAT, "two_pi_L", waveManager->two_pi_L);
-                waveProg->setUniform(GL_FLOAT, "two_pi_T", waveManager->two_pi_T);
-                waveProg->setUniform(GL_FLOAT, "amp", waveManager->waveAmplitude);
-                flGraphState.clear(egs::UPD_UNI_MATHS);
-            }
-            if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
-                waveProg->setUniform(GL_UNSIGNED_INT, "peak", waveManager->peak);
-                waveProg->setUniform(GL_UNSIGNED_INT, "base", waveManager->base);
-                waveProg->setUniform(GL_UNSIGNED_INT, "trough", waveManager->trough);
-                flGraphState.clear(egs::UPD_UNI_COLOUR);
-            }
-            if (renderConfig.cpu) {
-                cloudManager->updateCloud(time);
-                waveProg->updateVBO(0, cloudManager->getVertexCount(), cloudManager->getVertexSize(), cloudManager->getVertexData());
+            if (currentManager->isCPU()) {
+                currentManager->update(time);
+                currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
             }
         }
         currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
@@ -692,64 +526,11 @@ void GWidget::setColorsWaves(int id, uint colorChoice) {
     default:
         break;
     }
-    flGraphState.set(egs::UPD_UNI_COLOUR);
+    flGraphState.set(egs::UPD_UNI_COLOUR | egs::UPDATE_REQUIRED);
 }
 
-/* // This function is not used
-void GWidget::addCloudRecipes(int n, int l, int m_l) {
-    if (m_l >= 0) {
-        cloudManager->genOrbitalExplicit(n, l, m_l);
-    } else if (l >= 0) {
-        cloudManager->genOrbitalsOfL(n, l);
-    } else {
-        cloudManager->genOrbitalsOfN(n);
-    }
-} */
-
-/* bool GWidget::lockCloudConfigAndOrbitals(AtomixConfig *cfg, harmap &cloudMap, int numRecipes) {
-    bool wasReset = false, isFirstCloud = false;
-    this->max_n = cloudMap.rbegin()->first;
-    
-    if (isFirstCloud = flGraphState.hasNone(egs::CLOUD_MANAGER_INIT)) {
-        cloudManager = new CloudManager(cfg);
-        flGraphState.set(egs::CLOUD_MANAGER_INIT);
-    }
-    if (wasReset = cloudManager->receiveCloudMapAndConfig(cfg, cloudMap, numRecipes)) {
-        flGraphState.clear(egs::CLOUD_VERT_READY);
-    }
-    flGraphState.set(egs::CLOUD_MAP_READY);
-
-    return wasReset || isFirstCloud;
-} */
-
-/* void GWidget::genCloudVertices() {
-    assert(flGraphState.hasAll(egs::CLOUD_MANAGER_INIT | egs::CLOUD_MAP_READY));
-    cloudManager->createCloud();
-    flGraphState.set(egs::CLOUD_VERT_READY | egs::CLOUD_UPD_VBO);
-}
-
-int GWidget::genCloudRDPs() {
-    assert(flGraphState.hasAny(egs::CLOUD_VERT_READY | egs::CLOUD_VBO_BOUND) && flGraphState.hasAll(egs::CLOUD_MAP_READY));
-
-    if (cloudManager->bakeOrbitalsForRender()) {
-        std::cout << "Failed to bake orbitals for render." << std::endl;
-        return flagExit::A_ERR;
-    }
-    
-    flGraphState.clear(egs::CLOUD_MAP_READY);
-    flGraphState.set(egs::CLOUD_RDP_READY | egs::CLOUD_UPD_RDP);
-    return flagExit::A_OKAY;
-}
-
-void GWidget::genCloudIndices() {
-    assert(flGraphState.hasAny(egs::CLOUD_VERT_READY | egs::CLOUD_VBO_BOUND) && flGraphState.hasAll(egs::CLOUD_RDP_READY));
-    cloudManager->cullRDPs();
-    flGraphState.clear(egs::CLOUD_RDP_READY);
-    flGraphState.set(egs::CLOUD_IDX_READY | egs::CLOUD_UPD_EBO);
-} */
-
-void GWidget::updateCloudBuffers() {
-    assert(flGraphState.hasAll(egs::CLOUD_PROG_INIT | egs::CLOUD_MANAGER_INIT | egs::CLOUD_VBO_BOUND | egs::CLOUD_EBO_BOUND));
+void GWidget::updateBuffersAndShaders() {
+    assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
     uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 
     // this->printSize();
@@ -757,19 +538,36 @@ void GWidget::updateCloudBuffers() {
     /* Bind */
     currentProg->beginRender();
 
+    /* Shaders */
+    if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
+        // TODO needed? - Detach current shaders
+        currentProg->detachShaders();
+
+        // Attach shaders, link/validate program, and clean up
+        currentProg->attachShader(currentManager->getShaderVert());
+        currentProg->attachShader(currentManager->getShaderFrag());
+        currentProg->linkAndValidate();
+        currentProg->detachShaders();
+    }
+
     /* VBO 1: Vertices */
-    if (flGraphState.hasAny(egs::UPD_VBO) && currentManager->getVertexCount() > currentProg->getSize("vertices")) {
-        // std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << cloudManager->getVertexCount() << std::endl;
-        currentProg->resizeVBONamed("vertices", currentManager->getVertexCount(), currentManager->getVertexSize(), currentManager->getVertexData(), static_dynamic);
+    if (flGraphState.hasAny(egs::UPD_VBO)) {
+        if (currentManager->getVertexCount() > currentProg->getSize("vertices")) {
+            std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << currentManager->getVertexCount() << std::endl;
+            currentProg->resizeVBONamed("vertices", currentManager->getVertexCount(), currentManager->getVertexSize(), currentManager->getVertexData(), static_dynamic);
+        } else {
+            std::cout << "Updating VBO" << std::endl;
+            currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
+        }
     }
 
     /* VBO 2: RDPs */
     if (flGraphState.hasAny(egs::UPD_DATA)) {
         if (cloudManager->getRDPCount() > cloudProg->getSize("rdps")) {
-            // std::cout << "Resizing VBO: RDPs from " << cloudProg->getSize("rdps") << " to " << cloudManager->getRDPCount() << std::endl;
+            std::cout << "Resizing VBO: RDPs from " << cloudProg->getSize("rdps") << " to " << cloudManager->getRDPCount() << std::endl;
             currentProg->resizeVBONamed("rdps", cloudManager->getRDPCount(), cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
         } else {
-            // std::cout << "Updating VBO: RDPs" << std::endl;
+            std::cout << "Updating VBO: RDPs" << std::endl;
             currentProg->updateVBONamed("rdps", cloudManager->getRDPCount(), 0, cloudManager->getRDPSize(), cloudManager->getRDPData());
             this->checkErrors("updateVBONamed(): ");
         }
@@ -778,18 +576,33 @@ void GWidget::updateCloudBuffers() {
     /* EBO: Indices */
     if (flGraphState.hasAny(egs::UPD_EBO)) {
         if (currentManager->getIndexCount() > currentProg->getSize("indices")) {
-            // std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << cloudManager->getIndexCount() << std::endl;
+            std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << currentManager->getIndexCount() << std::endl;
             currentProg->resizeEBONamed("indices", currentManager->getIndexCount(), currentManager->getIndexSize(), currentManager->getIndexData(), static_dynamic);
             this->checkErrors("resizeEBONamed(): ");
         } else {
-            // std::cout << "Updating EBO" << std::endl;
+            std::cout << "Updating EBO" << std::endl;
             currentProg->updateEBONamed("indices", currentManager->getIndexCount(), 0, currentManager->getIndexSize(), currentManager->getIndexData());
         }
+    }
+
+    /* Uniforms */
+    if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
+        waveProg->setUniform(GL_FLOAT, "two_pi_L", waveManager->two_pi_L);
+        waveProg->setUniform(GL_FLOAT, "two_pi_T", waveManager->two_pi_T);
+        waveProg->setUniform(GL_FLOAT, "amp", waveManager->waveAmplitude);
+        flGraphState.clear(egs::UPD_UNI_MATHS);
+    }
+    if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
+        waveProg->setUniform(GL_UNSIGNED_INT, "peak", waveManager->peak);
+        waveProg->setUniform(GL_UNSIGNED_INT, "base", waveManager->base);
+        waveProg->setUniform(GL_UNSIGNED_INT, "trough", waveManager->trough);
+        flGraphState.clear(egs::UPD_UNI_COLOUR);
     }
     
     /* Release */
     currentProg->endRender();
     currentProg->clearBuffers();
+    flGraphState.clear(eUpdates);
 }
 
 float* GWidget::getCameraPosition() {
@@ -812,11 +625,11 @@ void GWidget::printSize() {
     int64_t VSize = 0, DSize = 0, ISize = 0;
     bool isMBV = false, isMBI = false;
 
-    if (flGraphState.hasAny(egs::WAVE_EBO_BOUND | egs::CLOUD_EBO_BOUND)) {
+    if (flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
         VSize = currentManager->getVertexSize();
         ISize = currentManager->getIndexSize();
         
-        if (flGraphState.hasAny(egs::CLOUD_MODE)) {
+        if (flGraphState.hasAny(egs::CLOUD_RENDER)) {
             DSize = cloudManager->getRDPSize() * 2;
         }
     }

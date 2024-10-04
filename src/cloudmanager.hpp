@@ -34,41 +34,19 @@
 
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
-enum eStages { INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16, NEW_CFG = 32 };
-enum eUpdate { NEW_VERT = 1, NEW_RDP = 2, INCR_RDP = 4, NEW_EBO = 8, INCR_EBO = 16 };
-
-struct cfgChanges {
-    bool verticesChanged = false;
-    bool mapChanged = false;
-    bool toleranceChanged = false;
-};
-
 
 class CloudManager : public Manager {
     public:
         CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes);
         virtual ~CloudManager();
         void newConfig(AtomixConfig *cfg) override;
-        void initManager();
+        void initManager() override final;
         
-        void createCloud();
-        void updateCloud(double time);
-        void receiveCloudMap(harmap &inMap, int numRecipes);
         uint receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
-        void cullRDPs();
-        void clearForNext();
-
-        void genOrbitalsThroughN(int n);
-        void genOrbitalsOfN(int n);
-        void genOrbitalsOfL(int n, int l);
-        void genOrbitalExplicit(int n, int l, int m_l);
-        void bakeOrbitalsForRender();
+        
         void cloudTest(int n_max);
         void cloudTestCSV();
         
-        void RDPtoColours();
-        void resetUpdates();
-
         const uint getColourSize();
         const uint getRDPCount();
         const uint getRDPSize();
@@ -79,13 +57,16 @@ class CloudManager : public Manager {
         void printMaxRDP(const int &n, const int &l, const int &m_l, const double &maxRDP);
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
-        double max_r = 0, max_theta = 0, max_phi = 0;
-        uint64_t oldVERSize = 0;
-        uint64_t oldRDPSize = 0;
-        uint64_t oldIDXSize = 0;
-
     private:
-        void resetManager() override;
+        void receiveCloudMap(harmap &inMap, int numRecipes);
+
+        void create() override final;
+        void update(double time) override final;
+        void bakeOrbitalsForRender();
+        void cullRDPs();
+
+        void clearForNext();
+        void resetManager() override final;
         
         double wavefuncRadial(int n, int l, double r);
         std::complex<double> wavefuncAngular(int l, int m_l, double theta, double phi);
@@ -99,7 +80,6 @@ class CloudManager : public Manager {
         int64_t fact(int n);
 
         void genOrbital(int n, int l, int m_l, double weight);
-        void genColourArray();
         void genRDPs();
         
         int setColourCount();
@@ -109,6 +89,13 @@ class CloudManager : public Manager {
 
         void printBuffer(fvec buf, std::string name);
         void printBuffer(uvec buf, std::string name);
+
+        // void genOrbitalsThroughN(int n);
+        // void genOrbitalsOfN(int n);
+        // void genOrbitalsOfL(int n, int l);
+        // void genOrbitalExplicit(int n, int l, int m_l);
+        // void genColourArray();
+        // void RDPtoColours();
 
         std::vector<vVec3 *> pixelColours;
         dvec rdpStaging;
@@ -135,9 +122,7 @@ class CloudManager : public Manager {
         int max_n = 0;
         const int MAX_SHELLS = 8;
 
-        int cloudLayerCount = 0;
         int cloudResolution = 0;
-        int cloudMaxRadius = 0;
         int cloudLayerDivisor = 0;
         double cloudTolerance = 0.01;
 

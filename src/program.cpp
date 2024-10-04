@@ -177,7 +177,6 @@ void Program::init() {
         // Init shader
         Shader *shad = &(this->registeredShaders[i]);
         GLuint id = qgf->glCreateShader(shad->type());
-        assert(id);
         shad->setId(id);
 
         // Load shader sources.

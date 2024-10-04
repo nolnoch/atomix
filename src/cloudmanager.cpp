@@ -43,22 +43,20 @@ CloudManager::~CloudManager() {
 void CloudManager::newConfig(AtomixConfig *config) {
     Manager::newConfig(config);
 
-    this->cloudMaxRadius = 250;
     this->cloudLayerDivisor = cfg.cloudLayDivisor;
     this->cloudResolution = cfg.cloudResolution;
-    this->cloudLayerCount = this->cloudMaxRadius * this->cloudLayerDivisor;
     this->cloudTolerance = cfg.cloudTolerance;
     this->deg_fac = TWO_PI / this->cloudResolution;
     this->cfg.vert = "gpu_harmonics.vert";
 }
 
 void CloudManager::initManager() {
-    createCloud();
+    create();
     bakeOrbitalsForRender();
     cullRDPs();
 }
 
-void CloudManager::createCloud() {
+void CloudManager::create() {
     this->max_n = cloudOrbitals.rbegin()->first;
     int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
     int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
@@ -103,9 +101,6 @@ void CloudManager::createCloud() {
     wavefuncNorms(MAX_SHELLS);
     genVertexArray();
 
-    if (this->vertexCount > this->oldVERSize) {
-        mStatus.set(em::INCR_VBO);
-    }
     mStatus.set(em::VERT_READY);
 }
 
@@ -121,8 +116,6 @@ void CloudManager::clearForNext() {
     cloudOrbitals.clear();
     this->orbitalIdx = 0;
     this->allRDPMaximum = 0;
-    this->update = false;
-    this->active = false;
     this->atomZ = 1;
     mStatus.setTo(em::INIT | em::VERT_READY);
 }
@@ -175,7 +168,6 @@ void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
             }
         }
     }
-    mStatus.set(em::NEW_CFG);
 }
 
 void CloudManager::genOrbitalsOfN(int n) {
@@ -184,7 +176,6 @@ void CloudManager::genOrbitalsOfN(int n) {
             cloudOrbitals[n].push_back(ivec2(l, m_l));
         }
     }
-    mStatus.set(em::NEW_CFG);
 }
 
 void CloudManager::genOrbitalsOfL(int n, int l) {
@@ -192,12 +183,10 @@ void CloudManager::genOrbitalsOfL(int n, int l) {
     for (int m_l = l; m_l >= -l; m_l--) {
         cloudOrbitals[n].push_back(ivec2(l, m_l));
     }
-    mStatus.set(em::NEW_CFG);
 }
 
 void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
     cloudOrbitals[n].push_back(ivec2(l, m_l));
-    mStatus.set(em::NEW_CFG);
 } */
 
 void CloudManager::bakeOrbitalsForRender() {
@@ -209,11 +198,6 @@ void CloudManager::bakeOrbitalsForRender() {
         std::cout << "No recipes loaded. Aborting." << std::endl;
         return;
     }
-    /* if (!(mStatus.hasAny(em::VERT_READY))) {
-        std::cout << ">> Vertices not created. Pre-empting for cloud creation." << std::endl;
-        createCloud();
-        std::cout << "Resume processing..." << std::endl;
-    } */
 
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
@@ -332,16 +316,14 @@ void CloudManager::cloudTestCSV() {
 
 }
 
-void CloudManager::updateCloud(double time) {
-    assert(mStatus.hasAll(em::VERT_READY | em::UPDATE_VBO | em::UPDATE_EBO));
-    this->update = true;
+void CloudManager::update(double time) {
+    assert(mStatus.hasAll(em::VERT_READY | em::UPD_VBO | em::UPD_EBO));
     //TODO implement for CPU updates over time
 }
 
 void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
     this->cloudOrbitals = inMap;
     this->numOrbitals = numRecipes;
-    mStatus.set(em::NEW_CFG);
 }
 
 uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
@@ -368,18 +350,18 @@ uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap,
 
     // Regen vertices if necessary
     if (newVerticesRequired) {
-        this->createCloud();
-        flags |= em::UPDATE_VBO;
+        this->create();
+        flags |= em::UPD_VBO;
     }
     // Regen RDPS if necessary
     if (newVerticesRequired || newMap) {
         this->bakeOrbitalsForRender();
-        flags |= em::UPDATE_DATA;
+        flags |= em::UPD_DATA;
     }
     // Regen indices if necessary
     if (newVerticesRequired || newMap || newTolerance) {
         this->cullRDPs();
-        flags |= em::UPDATE_EBO;
+        flags |= em::UPD_EBO;
     }
 
     return flags;
@@ -497,12 +479,12 @@ void CloudManager::wavefuncNorms(int max_n) {
     }
 }
 
-void CloudManager::RDPtoColours() {
+/* void CloudManager::RDPtoColours() {
     // genRDPs();
     // TODO implement RDP-to-Colour conversion for CPU
 
 
-    /*
+    
     for (auto f : max_rads) {
         std::cout << f << ", ";
     }
@@ -515,8 +497,8 @@ void CloudManager::RDPtoColours() {
     std::vector<float>::iterator fIt = std::max_element(allRDPs.begin(), allRDPs.end());
     int idx = std::distance(allRDPs.begin(), fIt);
     std::cout << "Max value " << *fIt << " at index " << idx << std::endl;
-    */
-}
+   
+} */
 
 /* void CloudManager::resetUpdates() {
     mStatus.reset();
@@ -547,14 +529,10 @@ void CloudManager::resetManager() {
     this->RDPCount = 0;
     this->RDPSize = 0;
     this->orbitalIdx = 0;
-    this->cloudLayerCount = 0;
     this->cloudResolution = 0;
     this->allRDPMaximum = 0;
     this->numOrbitals = 0;
-    this->cloudTolerance = 0.01;
-    this->max_r = 0;
-    this->max_theta = 0;
-    this->max_phi = 0;
+    this->cloudTolerance = 0.05;
     this->mStatus.reset();
 }
 
@@ -562,7 +540,7 @@ void CloudManager::resetManager() {
  *  Generators
  */
 
-void CloudManager::genColourArray() {
+/* void CloudManager::genColourArray() {
     allColours.clear();
 
     for (int i = 0; i < cloudLayerCount; i++) {
@@ -571,7 +549,7 @@ void CloudManager::genColourArray() {
 
     this->colourCount = setColourCount();
     this->colourSize = setColourSize();
-}
+} */
 
 void CloudManager::genRDPs() {
     this->RDPCount = setRDPCount();
@@ -586,10 +564,6 @@ const uint CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-const uint CloudManager::getRDPCount() {
-    return this->RDPCount;
-}
-
 const uint CloudManager::getRDPSize() {
     return this->RDPSize;
 }
@@ -597,6 +571,10 @@ const uint CloudManager::getRDPSize() {
 /*
  *  Getters -- Count
  */
+
+const uint CloudManager::getRDPCount() {
+    return this->RDPCount;
+}
 
 /*
  *  Getters -- Data
@@ -612,7 +590,7 @@ bool CloudManager::hasVertices() {
 }
 
 bool CloudManager::hasBuffers() {
-    return (this->mStatus.hasAny(em::UPDATE_EBO));
+    return (this->mStatus.hasAny(em::UPD_EBO));
 }
 
 /*

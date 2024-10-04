@@ -51,8 +51,6 @@ void Manager::resetManager() {
     this->vertexSize = 0;
     this->indexCount = 0;
     this->indexSize = 0;
-    this->update = false;
-    this->active = false;
 }
 
 void Manager::clearForNext() {
@@ -73,7 +71,6 @@ void Manager::genVertexArray() {
 void Manager::genIndexBuffer() {
     this->indexCount = setIndexCount();
     this->indexSize = setIndexSize();
-    this->active = true;
 
     // std::cout << "Index Buffer generation complete." << std::endl;
 }
@@ -122,6 +119,10 @@ std::string& Manager::getShaderVert() {
 
 std::string& Manager::getShaderFrag() {
     return this->cfg.frag;    
+}
+
+bool Manager::isCPU() {
+    return cfg.cpu;
 }
 
 /*

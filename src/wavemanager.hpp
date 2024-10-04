@@ -30,15 +30,19 @@
 #define MASK 0xFF
 #define SHIFT(a, b) (static_cast<float>((a >> b) & MASK) / MASK)
 
+enum ewc { ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024 };
+
 
 class WaveManager : public Manager {
     public:
         WaveManager(AtomixConfig *config);
         virtual ~WaveManager();
         void newConfig(AtomixConfig *cfg) override;
+        uint receiveConfig(AtomixConfig *config);
+        void initManager() override final;
 
-        void createWaves();
-        void updateWaves(double time);
+        void create() override final;
+        void update(double time) override final;
         
         void newWaves();
         uint selectWaves(int id, bool checked);
@@ -50,8 +54,6 @@ class WaveManager : public Manager {
         double waveAmplitude = 0;
         double two_pi_L = 0;
         double two_pi_T = 0;
-
-        bool testBool = false;
 
     private:
         void resetManager() override;

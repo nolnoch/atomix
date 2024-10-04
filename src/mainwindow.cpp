@@ -364,44 +364,41 @@ void MainWindow::setupDockWaves() {
 
     layConfigFile->addWidget(comboConfigFile);
 
-    layOptionRow1->addWidget(labelOrbit, 2, Qt::AlignLeft);
-    layOptionRow1->addWidget(entryOrbit, 2, Qt::AlignRight);
-    layOptionRow2->addWidget(labelAmp, 2, Qt::AlignLeft);
-    layOptionRow2->addWidget(entryAmp, 2, Qt::AlignRight);
-    layOptionRow3->addWidget(labelPeriod, 2, Qt::AlignLeft);
-    layOptionRow3->addWidget(entryPeriod, 2, Qt::AlignRight);
-    layOptionRow4->addWidget(labelWavelength, 2, Qt::AlignLeft);
-    layOptionRow4->addWidget(entryWavelength, 2, Qt::AlignRight);
-    layOptionRow5->addWidget(labelResolution, 2, Qt::AlignLeft);
-    layOptionRow5->addWidget(entryResolution, 2, Qt::AlignRight);
-    layOptionRow6->addWidget(labelOrthoPara, 2, Qt::AlignLeft);
-    layOptionRow6->addWidget(entryPara, 1, Qt::AlignRight);
-    layOptionRow6->addWidget(entryOrtho, 1, Qt::AlignRight);
-    layOptionRow7->addWidget(labelSuper, 2, Qt::AlignLeft);
-    layOptionRow7->addWidget(entrySuperOn, 1, Qt::AlignRight);
-    layOptionRow7->addWidget(entrySuperOff, 1, Qt::AlignRight);
-    layOptionRow8->addWidget(labelCPU, 2, Qt::AlignLeft);
-    layOptionRow8->addWidget(entryCPU, 1, Qt::AlignRight);
-    layOptionRow8->addWidget(entryGPU, 1, Qt::AlignRight);
-    layOptionRow9->addWidget(labelSphere, 2, Qt::AlignLeft);
-    layOptionRow9->addWidget(entrySphere, 1, Qt::AlignRight);
-    layOptionRow9->addWidget(entryCircle, 1, Qt::AlignRight);
-    layOptionRow10->addWidget(labelVertex, 2, Qt::AlignLeft);
-    layOptionRow10->addWidget(entryVertex, 2, Qt::AlignRight);
-    layOptionRow11->addWidget(labelFrag, 2, Qt::AlignLeft);
-    layOptionRow11->addWidget(entryFrag, 2, Qt::AlignRight);
+    QGridLayout *layWaveConfig = new QGridLayout;
+    layWaveConfig->addWidget(labelOrbit, 0, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelAmp, 1, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelPeriod, 2, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelWavelength, 3, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelResolution, 4, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelOrthoPara, 5, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelSuper, 6, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelCPU, 7, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelSphere, 8, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelVertex, 9, 0, 1, 2, Qt::AlignLeft);
+    layWaveConfig->addWidget(labelFrag, 10, 0, 1, 2, Qt::AlignLeft);
 
-    layOptionBox->addLayout(layOptionRow1);
-    layOptionBox->addLayout(layOptionRow2);
-    layOptionBox->addLayout(layOptionRow3);
-    layOptionBox->addLayout(layOptionRow4);
-    layOptionBox->addLayout(layOptionRow5);
-    layOptionBox->addLayout(layOptionRow6);
-    layOptionBox->addLayout(layOptionRow7);
-    layOptionBox->addLayout(layOptionRow8);
-    layOptionBox->addLayout(layOptionRow9);
-    layOptionBox->addLayout(layOptionRow10);
-    layOptionBox->addLayout(layOptionRow11);
+    layWaveConfig->addWidget(entryOrbit, 0, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(entryAmp, 1, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(entryPeriod, 2, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(entryWavelength, 3, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(entryResolution, 4, 3, 1, 2, Qt::AlignRight);
+
+    layWaveConfig->addWidget(entryPara, 5, 3, 1, 1, Qt::AlignLeft);
+    layWaveConfig->addWidget(entryOrtho, 5, 4, 1, 1, Qt::AlignLeft);
+
+    layWaveConfig->addWidget(entrySuperOn, 6, 3, 1, 1, Qt::AlignLeft);
+    layWaveConfig->addWidget(entrySuperOff, 6, 4, 1, 1, Qt::AlignLeft);
+
+    layWaveConfig->addWidget(entryCPU, 7, 3, 1, 1, Qt::AlignLeft);
+    layWaveConfig->addWidget(entryGPU, 7, 4, 1, 1, Qt::AlignLeft);
+
+    layWaveConfig->addWidget(entrySphere, 8, 3, 1, 1, Qt::AlignLeft);
+    layWaveConfig->addWidget(entryCircle, 8, 4, 1, 1, Qt::AlignLeft);
+
+    layWaveConfig->addWidget(entryVertex, 9, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(entryFrag, 10, 3, 1, 2, Qt::AlignRight);
+
+    layOptionBox->addLayout(layWaveConfig);
 
     QPushButton *buttColorPeak = new QPushButton("Peak");
     QPushButton *buttColorBase = new QPushButton("Base");

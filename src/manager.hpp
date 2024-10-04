@@ -47,10 +47,11 @@ class Manager {
     public:
         Manager(){};
         virtual ~Manager(){ resetManager(); };
-        
         virtual void newConfig(AtomixConfig *config);
+        virtual void initManager() {};
         
-        virtual void clearForNext();
+        virtual void create() {};
+        virtual void update(double time) {};
 
         const uint getVertexCount();
         const uint getVertexSize();
@@ -63,13 +64,14 @@ class Manager {
         std::string& getShaderVert();
         std::string& getShaderFrag();
 
-        BitFlag& getUpdates();
+        bool isCPU();
 
         void printIndices();
         void printVertices();
 
     protected:
         virtual void resetManager();
+        virtual void clearForNext();
 
         virtual void genVertexArray();
         virtual void genIndexBuffer();
@@ -83,6 +85,7 @@ class Manager {
         BitFlag mStatus;
         
         vVec3 allVertices;
+        fvec allData;
         uvec allIndices;
         
         uint vertexCount = 0;
@@ -92,21 +95,19 @@ class Manager {
 
         double deg_fac = 0;
         
-        bool update = false;
-        bool active = false;
-
         enum em {
-            INIT =          1,          // Manager has been initialized
-            NEW_CFG =       2,          // AtomixCfg has been changed
-            VERT_READY =    2 << 1,     // Vertices generate and ready for VBO load
-            DATA_READY =    2 << 2,     // Special data generated and ready for buffer load
-            IDX_READY =     2 << 3,     // Indices generated and ready for EBO load
-            UPDATE_VBO =    2 << 11,    // VBO needs to be updated
-            UPDATE_DATA =   2 << 12,    // Data needs to be loaded into VBO #2
-            UPDATE_EBO =    2 << 13,    // EBO needs to be updated
-            INCR_VBO =      2 << 4,     // New VBO is larger than previous
-            INCR_DATA =     2 << 5,     // New Data is larger than previous
-            INCR_EBO =      2 << 6      // New EBO is larger than previous
+            INIT =              1,          // Manager has been initialized
+            VERT_READY =        2,          // Vertices generate and ready for VBO load
+            DATA_READY =        2 << 1,     // Special data generated and ready for buffer load
+            IDX_READY =         2 << 2,     // Indices generated and ready for EBO load
+            UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
+            UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
+            UPD_VBO =           2 << 6,     // Cloud VBO needs to be updated
+            UPD_DATA =          2 << 7,     // Cloud RDPs need to be loaded into VBO #2
+            UPD_EBO =           2 << 8,     // Cloud EBO needs to be updated
+            UPD_UNI_COLOUR =    2 << 9,     // [Wave] Colour Uniforms need to be updated
+            UPD_UNI_MATHS =     2 << 10     // [Wave] Maths Uniforms need to be updated
+            
         };
 };
 

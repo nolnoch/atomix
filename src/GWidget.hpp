@@ -51,31 +51,25 @@
 } AtomixProgs;
 Q_DECLARE_METATYPE(AtomixProgs); */
 
-enum ewc { ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 16, PARALLEL = 32, SUPERPOSITION = 64, CPU = 128, SPHERE = 256, VERTSHADER = 512, FRAGSHADER = 1024 };
 enum egs {
-    WAVE_MODE =             1,          // Button from Wave tab clicked, only making Waves
-    WAVE_PROG_INIT =        2,          // Wave program has been initialized (pointer valid)
-    WAVE_MANAGER_INIT =     2 << 1,     // Wave Manager has been initialized (pointer valid)
-    WAVE_VBO_BOUND =        2 << 2,     // Wave VBO has been loaded
-    WAVE_EBO_BOUND =        2 << 3,     // Wave EBO has been loaded
-    CLOUD_MODE =            2 << 4,     // Button from Cloud tab clicked, only making Clouds
-    CLOUD_PROG_INIT =       2 << 5,     // Cloud program has been initialized (pointer valid)
-    CLOUD_MANAGER_INIT =    2 << 6,     // Cloud Manager has been initialized (pointer valid)
-    CLOUD_VBO_BOUND =       2 << 7,    // Cloud VBO has been loaded
-    CLOUD_RDP_BOUND =       2 << 8,    // Cloud RDPs loaded into VBO #2
-    CLOUD_EBO_BOUND =       2 << 9,    // Cloud EBO has been loaded
-    UPD_CFG =               2 << 10,    // Cloud AtomixCfg has been changed
-    UPD_VBO =               2 << 11,    // Cloud VBO needs to be updated
-    UPD_DATA =              2 << 12,    // Cloud RDPs need to be loaded into VBO #2
-    UPD_EBO =               2 << 13,    // Cloud EBO needs to be updated
-    UPD_UNI_COLOUR =        2 << 14,    // [Wave] Colour Uniforms need to be updated
-    UPD_UNI_MATHS =         2 << 15,    // [Wave] Maths Uniforms need to be updated
-    UPDATE_REQUIRED =       2 << 16     // An update must execute on next render
+    WAVE_MODE =         1,          // Button from Wave tab clicked, only making Waves
+    WAVE_RENDER =       2,          // Wave EBO has been loaded
+    CLOUD_MODE =        2 << 1,     // Button from Cloud tab clicked, only making Clouds
+    CLOUD_RENDER =      2 << 2,     // Cloud EBO has been loaded
+    UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
+    UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
+    UPD_VBO =           2 << 6,    // Cloud VBO needs to be updated
+    UPD_DATA =          2 << 7,    // Cloud RDPs need to be loaded into VBO #2
+    UPD_EBO =           2 << 8,    // Cloud EBO needs to be updated
+    UPD_UNI_COLOUR =    2 << 9,    // [Wave] Colour Uniforms need to be updated
+    UPD_UNI_MATHS =     2 << 10,    // [Wave] Maths Uniforms need to be updated
+    UPDATE_REQUIRED =   2 << 11     // An update must execute on next render
 };
 
-const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_PROG_INIT | egs::WAVE_MANAGER_INIT | egs::WAVE_VBO_BOUND | egs::WAVE_EBO_BOUND;
-const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_PROG_INIT | egs::CLOUD_MANAGER_INIT | egs::CLOUD_VBO_BOUND | egs::CLOUD_RDP_BOUND | egs::CLOUD_EBO_BOUND;
+const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
+const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModes = egs::WAVE_MODE | egs::CLOUD_MODE;
+const uint eUpdates = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | ::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS;
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -87,13 +81,7 @@ public:
 
     void printConfig(AtomixConfig *cfg);
     void setColorsWaves(int id, uint colorChoice);
-    void addCloudRecipes(int n, int l, int m_l);
-    void genCloudVertices();
-    int genCloudRDPs();
-    void genCloudIndices();
-    void updateCloudBuffers();
-
-    bool lockCloudConfigAndOrbitals(AtomixConfig *cfg, harmap &cloudMap, int numRecipes);
+    void updateBuffersAndShaders();
 
     float* getCameraPosition();
 
@@ -119,16 +107,12 @@ signals:
 
 private:
     void initVecsAndMatrices();
-    void initAtomixProg();
+    // void initAtomixProg();
     void initCrystalProgram();
     void initWaveProgram();
     void initCloudProgram();
-    void changeModes();
-    void processWaveConfigChange();
-    void swapShaders();
-    void swapBuffers();
-    void swapVertices();
-    void swapIndices();
+    void changeModes(bool force);
+    
     void checkErrors(std::string str);
     std::string withCommas(int64_t value);
     void printSize();

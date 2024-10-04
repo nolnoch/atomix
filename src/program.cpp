@@ -42,11 +42,8 @@ Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
 Program::~Program() {
     delete samplers;
     if (vao) {
-        for (auto &v : vbo) {
-            qgf->glDeleteBuffers(1, &v);
-        }
-        for (auto &e : ebo) {
-            qgf->glDeleteBuffers(1, &e);
+        for (auto &m : buffers) {
+            qgf->glDeleteBuffers(1, &m.second.y);
         }
         qgf->glDeleteVertexArrays(1, &vao);
     }
@@ -342,15 +339,14 @@ void Program::clearVAO() {
     qgf->glBindVertexArray(0);
 }
 
-GLuint Program::bindVBO(uint bufSize, const GLfloat *buf, uint mode) {
-    this->vbo.push_back(0);
-    qgf->glGenBuffers(1, &this->vbo.back());
-    qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
+GLuint Program::bindVBO(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
+    this->buffers[name] = glm::uvec3(bufCount, 0, GL_ARRAY_BUFFER);
+    GLuint *bufId = &buffers[name].y;
+    qgf->glGenBuffers(1, bufId);
+    qgf->glBindBuffer(GL_ARRAY_BUFFER, *bufId);
     qgf->glBufferData(GL_ARRAY_BUFFER, bufSize, buf, mode);
 
-    //int vboCount = vbo.size();
-
-    return this->vbo.back();
+    return *bufId;
 }
 
 void Program::setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step) {
@@ -380,18 +376,31 @@ void Program::disableAttributes() {
         qgf->glDisableVertexArrayAttrib(this->vao, a);
 }
 
-void Program::updateVBO(uint offset, uint bufSize, const GLfloat *buf) {
+void Program::updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat *buf) {
+    int bufId = 0;
+    qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
+
+    for (auto &m : this->buffers) {
+        if (m.second.y == bufId) {
+            m.second.x = bufCount;
+        }
+    }
+    
     qgf->glBufferSubData(GL_ARRAY_BUFFER, offset, bufSize, buf);
     displayLogProgram();
 }
 
-void Program::updateVBOTarget(GLuint bufId, uint offset, uint bufSize, const GLfloat *buf) {
+void Program::updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLfloat *buf) {
+    GLuint bufId = this->buffers[name].y;
+    this->buffers[name].x = bufCount;
     qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
     displayLogProgram();
 }
 
-void Program::resizeVBO(GLuint bufId, uint bufSize, const GLfloat *buf, uint mode) {
-    qgf->glNamedBufferData(this->vbo[bufId], bufSize, buf, mode);
+void Program::resizeVBONamed(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
+    GLuint bufId = this->buffers[name].y;
+    this->buffers[name].x = bufCount;
+    qgf->glNamedBufferData(bufId, bufSize, buf, mode);
     displayLogProgram();
 }
 
@@ -399,20 +408,41 @@ void Program::clearVBO() {
     qgf->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Program::bindEBO(uint bufSize, const GLuint *buf, uint mode) {
-    this->ebo.push_back(0);
-    qgf->glGenBuffers(1, &this->ebo.back());
-    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
+GLuint Program::bindEBO(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
+    this->buffers[name] = glm::uvec3(bufCount, 0, GL_ELEMENT_ARRAY_BUFFER);
+    GLuint *bufId = &buffers[name].y;
+    qgf->glGenBuffers(1, bufId);
+    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *bufId);
     qgf->glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufSize, buf, mode);
+
+    return *bufId;
 }
 
-void Program::updateEBO(uint offset, uint bufSize, const GLuint *buf) {
+void Program::updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *buf) {
+    int bufId = 0;
+    qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
+
+    for (auto &m : this->buffers) {
+        if (m.second.y == bufId) {
+            m.second.x = bufCount;
+        }
+    }
+
     qgf->glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bufSize, buf);
     displayLogProgram();
 }
 
-void Program::resizeEBO(GLuint bufId, uint bufSize, const GLuint *buf, uint mode) {
-    qgf->glNamedBufferData(this->ebo[bufId], bufSize, buf, mode);
+void Program::updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLuint *buf) {
+    GLuint bufId = this->buffers[name].y;
+    this->buffers[name].x = bufCount;
+    qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
+    displayLogProgram();
+}
+
+void Program::resizeEBONamed(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
+    this->buffers[name] = glm::uvec3(bufCount, 0, GL_ELEMENT_ARRAY_BUFFER);
+    GLuint bufId = buffers[name].y;
+    qgf->glNamedBufferData(bufId, bufSize, buf, mode);
     displayLogProgram();
 }
 
@@ -427,8 +457,8 @@ void Program::assignFragColour() {
 void Program::beginRender() {
     enable();
     bindVAO();
-    qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
-    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
+    // qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
+    // qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
 }
 
 void Program::endRender() {
@@ -441,19 +471,19 @@ void Program::clearBuffers() {
     clearEBO();
 }
 
-void Program::deleteBuffers() {
+void Program::deleteBuffer(std::string name) {
     assert(!enabled);
 
-    qgf->glDeleteBuffers(1, &this->ebo.front());
-    this->ebo.pop_front();
-    qgf->glDeleteBuffers(1, &this->vbo.front());
-    this->vbo.pop_front();
+    GLuint bufId = this->buffers[name].y;
+
+    qgf->glDeleteBuffers(1, &bufId);
+    this->buffers.erase(name);
 }
 
-void Program::addBuffers() {
+/* void Program::addBuffers() {
     vbo.push_back(0);
     ebo.push_back(0);
-}
+} */
 
 /**
  * A quick wrapper for single, non-referenced uniform values.
@@ -579,10 +609,6 @@ void Program::setUniformMatrix(int size, string name, float *m) {
     }
 }
 
-void Program::setIndexCount(uint64_t count) {
-    this->indexCount = count;
-}
-
 /**
  * Accessor function for the GLenum program ID.
  * @return the program ID
@@ -591,16 +617,8 @@ GLuint Program::getProgramId() {
     return this->programId;
 }
 
-GLuint Program::getFirstVBOId() {
-    return this->vbo.front();
-}
-
-GLuint Program::getLastVBOId() {
-    return this->vbo.back();
-}
-
-uint64_t Program::getIndexCount() {
-    return this->indexCount;
+uint Program::getSize(std::string name) {
+    return this->buffers[name].x;
 }
 
 /**

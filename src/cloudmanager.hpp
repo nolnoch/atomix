@@ -37,17 +37,24 @@
 enum eStages { INIT = 1, VERTICES = 2, RECIPES = 4, VBO = 8, EBO = 16, NEW_CFG = 32 };
 enum eUpdate { NEW_VERT = 1, NEW_RDP = 2, INCR_RDP = 4, NEW_EBO = 8, INCR_EBO = 16 };
 
+struct cfgChanges {
+    bool verticesChanged = false;
+    bool mapChanged = false;
+    bool toleranceChanged = false;
+};
+
 
 class CloudManager : public Manager {
     public:
-        CloudManager(AtomixConfig *cfg);
+        CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes);
         virtual ~CloudManager();
         void newConfig(AtomixConfig *cfg) override;
+        void initManager();
         
         void createCloud();
         void updateCloud(double time);
         void receiveCloudMap(harmap &inMap, int numRecipes);
-        bool receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
+        uint receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
         void cullRDPs();
         void clearForNext();
 
@@ -55,7 +62,7 @@ class CloudManager : public Manager {
         void genOrbitalsOfN(int n);
         void genOrbitalsOfL(int n, int l);
         void genOrbitalExplicit(int n, int l, int m_l);
-        int bakeOrbitalsForRender();
+        void bakeOrbitalsForRender();
         void cloudTest(int n_max);
         void cloudTestCSV();
         
@@ -66,7 +73,6 @@ class CloudManager : public Manager {
         const uint getRDPCount();
         const uint getRDPSize();
         const float* getRDPData();
-        BitFlag& getUpdates();
 
         bool hasVertices();
         bool hasBuffers();
@@ -92,7 +98,7 @@ class CloudManager : public Manager {
         void wavefuncNorms(int n);
         int64_t fact(int n);
 
-        double genOrbital(int n, int l, int m_l);
+        void genOrbital(int n, int l, int m_l, double weight);
         void genColourArray();
         void genRDPs();
         
@@ -120,9 +126,6 @@ class CloudManager : public Manager {
         uint RDPSize = 0;
         uint64_t pixelCount = 0;
         
-        BitFlag flStages;
-        BitFlag flUpdate;
-
         int orbitalIdx = 0;
         int numOrbitals = 0;
         int atomZ = 1;

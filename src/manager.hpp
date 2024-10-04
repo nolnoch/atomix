@@ -39,7 +39,8 @@ using dvec = std::vector<double>;
 using uvec = std::vector<uint>;
 using vec3 = glm::vec3;
 using ivec2 = glm::ivec2;
-using harmap = std::map<int, std::vector<glm::ivec2>>;
+using ivec3 = glm::ivec3;
+using harmap = std::map<int, std::vector<glm::ivec3>>;
 
 
 class Manager {
@@ -53,13 +54,16 @@ class Manager {
 
         const uint getVertexCount();
         const uint getVertexSize();
-        const uint getIndexSize();
         const uint getIndexCount();
+        const uint getIndexSize();
+        
         const float* getVertexData();
         const uint* getIndexData();
 
         std::string& getShaderVert();
         std::string& getShaderFrag();
+
+        BitFlag& getUpdates();
 
         void printIndices();
         void printVertices();
@@ -76,6 +80,7 @@ class Manager {
         int setIndexSize();
 
         AtomixConfig cfg;
+        BitFlag mStatus;
         
         vVec3 allVertices;
         uvec allIndices;
@@ -89,6 +94,20 @@ class Manager {
         
         bool update = false;
         bool active = false;
+
+        enum em {
+            INIT =          1,          // Manager has been initialized
+            NEW_CFG =       2,          // AtomixCfg has been changed
+            VERT_READY =    2 << 1,     // Vertices generate and ready for VBO load
+            DATA_READY =    2 << 2,     // Special data generated and ready for buffer load
+            IDX_READY =     2 << 3,     // Indices generated and ready for EBO load
+            UPDATE_VBO =    2 << 11,    // VBO needs to be updated
+            UPDATE_DATA =   2 << 12,    // Data needs to be loaded into VBO #2
+            UPDATE_EBO =    2 << 13,    // EBO needs to be updated
+            INCR_VBO =      2 << 4,     // New VBO is larger than previous
+            INCR_DATA =     2 << 5,     // New Data is larger than previous
+            INCR_EBO =      2 << 6      // New EBO is larger than previous
+        };
 };
 
 #endif

@@ -52,11 +52,11 @@ void MainWindow::onAddNew() {
     connect(graph, SIGNAL(cameraChanged()), this, SLOT(updateDetails()));
 
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
-    connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorb);
+    connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
-    connect(buttGenVertices, &QPushButton::clicked, this, &MainWindow::handleButtGenVerts);
     connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
+    connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleDoubleClick);
     connect(buttLockRecipes, &QPushButton::clicked, this, &MainWindow::handleButtLockRecipes);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
     connect(buttResetRecipes, &QPushButton::clicked, this, &MainWindow::handleButtResetRecipes);
@@ -256,8 +256,10 @@ void MainWindow::setupDockWaves() {
 
     QGroupBox *groupConfig = new QGroupBox("Config File");
     QGroupBox *groupOptions = new QGroupBox("Config Options");
-    QGroupBox *groupColors = new QGroupBox("Wave Colors");
-    QGroupBox *groupOrbits = new QGroupBox("Visible Orbits");
+    groupColors = new QGroupBox("Wave Colors");
+    groupColors->setEnabled(false);
+    groupOrbits = new QGroupBox("Visible Orbits");
+    groupOrbits->setEnabled(false);
 
     QLabel *labelWaves = new QLabel("<p>Explore stable wave patterns in circular or spherical forms in this configuration</p>");
     labelWaves->setObjectName("tabTitle");
@@ -445,16 +447,15 @@ void MainWindow::setupDockWaves() {
 }
 
 void MainWindow::setupDockHarmonics() {
-    wTabHarmonics = new QWidget(this);
-    buttMorbHarmonics = new QPushButton("Generate Cloud", this);
-    buttMorbHarmonics->setEnabled(recipeLoaded);
-    buttGenVertices = new QPushButton("Generate Vertices", this);
-
     QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    
+    wTabHarmonics = new QWidget(this);
+    buttMorbHarmonics = new QPushButton("Render Cloud", this);
+    buttMorbHarmonics->setEnabled(recipeLoaded);
+    buttMorbHarmonics->setSizePolicy(qPolicyExpand);
 
-    groupGenVertices = new QGroupBox("Vertex Generation");
+    groupGenVertices = new QGroupBox();
     groupGenVertices->setAlignment(Qt::AlignRight);
-    groupGenVertices->setEnabled(recipeLoaded);
     groupRecipeBuilder = new QGroupBox("Orbital Selector");
     groupRecipeReporter = new QGroupBox("Selected Orbitals");
     groupRecipeLocked = new QGroupBox("Locked Orbitals");
@@ -511,9 +512,9 @@ void MainWindow::setupDockHarmonics() {
         }
     }
 
-    QLabel *labelCloudResolution = new QLabel("Points per circle");
-    QLabel *labelCloudLayers = new QLabel("Layers per radial step");
-    QLabel *labelMinRDP = new QLabel("Min P per rendered point");
+    QLabel *labelCloudResolution = new QLabel("Points rendered per circle");
+    QLabel *labelCloudLayers = new QLabel("Layers per step in radius");
+    QLabel *labelMinRDP = new QLabel("Min probability per rendered point");
     entryCloudRes = new QLineEdit(QString::number(cfgParser->config->cloudResolution));
     entryCloudLayers = new QLineEdit(QString::number(cfgParser->config->cloudLayDivisor));
     entryCloudMinRDP = new QLineEdit(QString::number(cfgParser->config->cloudTolerance));
@@ -525,27 +526,33 @@ void MainWindow::setupDockHarmonics() {
     layGenVertices->addWidget(entryCloudLayers, 0, 1, 1, 1);
     layGenVertices->addWidget(entryCloudRes, 1, 1, 1, 1);
     layGenVertices->addWidget(entryCloudMinRDP, 2, 1, 1, 1);
-    layGenVertices->addWidget(buttGenVertices, 3, 0, 1, 2);
-    // buttGenVertices->setSizePolicy(qPolicyExpand);
-
-    layGenVertices->setColumnStretch(0, 1);
+    
+    layGenVertices->setColumnStretch(0, 3);
     layGenVertices->setColumnStretch(1, 1);
     layGenVertices->setRowStretch(0, 1);
     layGenVertices->setRowStretch(1, 1);
     layGenVertices->setRowStretch(2, 1);
-    layGenVertices->setRowStretch(3, 2);
 
     groupGenVertices->setLayout(layGenVertices);
     groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
 
-    listOrbitalReport = new QListWidget();
+    tableOrbitalReport = new QTableWidget();
+    tableOrbitalReport->setColumnCount(2);
+    QStringList headersReport = { "Weight", "Orbital" };
+    tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
+    tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // tableOrbitalReport->verticalHeader()->setDefaultSectionSize(20);
+    tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    tableOrbitalReport->verticalHeader()->setVisible(false);
+    tableOrbitalReport->setShowGrid(false);
+    tableOrbitalReport->setSortingEnabled(true);
     listOrbitalLocked = new QListWidget();
 
     QVBoxLayout *layRecipeBuilder = new QVBoxLayout;
     layRecipeBuilder->addWidget(treeOrbitalSelect);
     groupRecipeBuilder->setLayout(layRecipeBuilder);
     QVBoxLayout *layRecipeReporter = new QVBoxLayout;
-    layRecipeReporter->addWidget(listOrbitalReport);
+    layRecipeReporter->addWidget(tableOrbitalReport);
     groupRecipeReporter->setLayout(layRecipeReporter);
     QVBoxLayout *layRecipeLocked = new QVBoxLayout;
     layRecipeLocked->addWidget(listOrbitalLocked);
@@ -567,8 +574,8 @@ void MainWindow::setupDockHarmonics() {
 
     layVRecipeChose->addWidget(groupRecipeReporter);
     layVRecipeChose->addWidget(groupRecipeLocked);
-    layVRecipeChose->setStretchFactor(groupRecipeReporter, 1);
-    layVRecipeChose->setStretchFactor(groupRecipeLocked, 1);
+    layVRecipeChose->setStretchFactor(groupRecipeReporter, 4);
+    layVRecipeChose->setStretchFactor(groupRecipeLocked, 3);
 
     layHRecipeViews->addLayout(layVRecipeBuild);
     layHRecipeViews->addLayout(layVRecipeChose);
@@ -587,20 +594,18 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeLocked->setMaximumWidth(235);
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->setAlignment(Qt::AlignRight);
-    groupRecipeLocked->setEnabled(recipeLoaded);
 
     QVBoxLayout *layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(2);
     layDockHarmonics->addLayout(layRecipeIO);
-    layDockHarmonics->addStretch(1);
     layDockHarmonics->addWidget(groupGenVertices);
-    layDockHarmonics->addStretch(2);
     layDockHarmonics->addWidget(buttMorbHarmonics);
+    layDockHarmonics->addStretch(2);
 
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
     layDockHarmonics->setStretchFactor(layRecipeIO, 7);
-    layDockHarmonics->setStretchFactor(groupGenVertices, 2);
+    layDockHarmonics->setStretchFactor(groupGenVertices, 1);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
 
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
@@ -614,7 +619,23 @@ void MainWindow::handleComboCfg() {
 }
 
 void MainWindow::handleConfigChanged() {
-    buttGenVertices->setEnabled(true);
+    if (listOrbitalLocked->count()) {
+        buttMorbHarmonics->setEnabled(true);
+    }
+}
+
+void MainWindow::handleDoubleClick(QTreeWidgetItem *item, int col) {
+    Qt::CheckState checked = item->checkState(col);
+    int itemChildren = item->childCount();
+    
+    /* Leaf Nodes */
+    if (!itemChildren) {
+        if (checked) {
+            item->setCheckState(col, Qt::Unchecked);
+        } else {
+            item->setCheckState(col, Qt::Checked);
+        }
+    }
 }
 
 void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
@@ -630,41 +651,33 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 
     /* Leaf nodes */
     } else {
-        QString strItem = item->text(col);
-        QStringList strlistItem = strItem.split(u' ');
-        int n = strlistItem.at(0).toInt();
-        std::vector<ivec2> *vecElem = &mapCloudRecipes[n];
-        ivec2 lm = ivec2(strlistItem.at(1).toInt(), strlistItem.at(2).toInt());
-
         if (checked) {
             /* Leaf node checked */
-            QListWidgetItem *thisItem = new QListWidgetItem(strItem, listOrbitalReport);
-            listOrbitalReport->addItem(thisItem);
-            thisItem->setTextAlignment(Qt::AlignRight);
-            thisItem->setForeground(Qt::red);
-
-            // Add item to harmap
-            vecElem->push_back(lm);
+            QString strItem = item->text(col);
+            QTableWidgetItem *thisOrbital = new QTableWidgetItem(strItem);
+            QTableWidgetItem *thisWeight = new QTableWidgetItem("1");
+            int intTableRows = tableOrbitalReport->rowCount();
+            tableOrbitalReport->setRowCount(intTableRows + 1);
+            tableOrbitalReport->setItem(intTableRows, 1, thisOrbital);
+            tableOrbitalReport->setItem(intTableRows, 0, thisWeight);
+            thisOrbital->setTextAlignment(Qt::AlignCenter);
+            thisOrbital->setForeground(Qt::red);
+            thisWeight->setTextAlignment(Qt::AlignCenter);
+            thisWeight->setForeground(Qt::yellow);
+            thisOrbital->setFlags(Qt::ItemNeverHasChildren);
+            thisWeight->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
             numRecipes++;
-
         } else {
             /* Leaf node unchecked */
-            QListWidgetItem *thisItem = listOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first();
-            listOrbitalReport->takeItem(listOrbitalReport->row(thisItem));
-            delete (thisItem);
+            int intItemRow = tableOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first()->row();
+            QTableWidgetItem *thisOrbital = tableOrbitalReport->item(intItemRow, 0);
+            QTableWidgetItem *thisWeight = tableOrbitalReport->item(intItemRow, 1);
+            tableOrbitalReport->removeRow(intItemRow);
             numRecipes--;
 
             if (!numRecipes) {
                 // Disable buttons and clear harmap if list is now empty
                 buttLockRecipes->setEnabled(false);
-                buttMorbHarmonics->setEnabled(false);
-                this->mapCloudRecipes.clear();
-            } else {
-                // Remove unchecked item from harmap
-                std::vector<ivec2>::iterator it = std::find(vecElem->begin(), vecElem->end(), lm);
-                if (it != vecElem->end()) {
-                    vecElem->erase(it);
-                }
             }
         }
     }
@@ -695,32 +708,36 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 }
 
 void MainWindow::handleButtLockRecipes() {
-    if (groupGenVertices->isEnabled()) {
-        // If second or later round of LockRecipes()
-        buttGenVertices->setEnabled(true);
-    } else {
-        // First round of LockRecipes()
-        groupGenVertices->setEnabled(true);
-        groupRecipeLocked->setEnabled(true);
-    }
+    for (int i = 0; i < tableOrbitalReport->rowCount(); i++) {
+        QTableWidgetItem *thisOrbital = tableOrbitalReport->item(i, 1);
+        QTableWidgetItem *thisWeight = tableOrbitalReport->item(i, 0);
+        thisOrbital->setForeground(Qt::white);
+        thisWeight->setForeground(Qt::white);
 
-    for (int i = 0; i < numRecipes; i++) {
-        QListWidgetItem *thisItem = listOrbitalReport->item(i);
-        thisItem->setForeground(Qt::white);
+        QString strOrbital = thisOrbital->text();
+        QString strWeight = thisWeight->text();
+        QString strLocked = strWeight + "  *  (" + strOrbital + ")";
 
-        if (!listOrbitalLocked->findItems(thisItem->text(), Qt::MatchExactly).count()) {
-            QListWidgetItem *newItem = new QListWidgetItem(thisItem->text(), listOrbitalLocked);
+        if (!listOrbitalLocked->findItems(strLocked, Qt::MatchExactly).count()) {
+            QListWidgetItem *newItem = new QListWidgetItem(strLocked, listOrbitalLocked);
             listOrbitalLocked->addItem(newItem);
             newItem->setTextAlignment(Qt::AlignRight);
+
+            // Add item to harmap
+            QStringList strlistItem = strOrbital.split(u' ');
+            int n = strlistItem.at(0).toInt();
+            int w = strWeight.toInt();
+            std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
+            ivec3 lm = ivec3(strlistItem.at(1).toInt(), strlistItem.at(2).toInt(), w);
+            vecElem->push_back(lm);
         }
     }
-    mapCloudRecipesLocked = mapCloudRecipes;
     buttLockRecipes->setEnabled(false);
     buttResetRecipes->setEnabled(true);
+    buttMorbHarmonics->setEnabled(true);
 
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #77FF77; }");
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #77FF77; }");
-    groupGenVertices->setStyleSheet("QGroupBox { color: #77FF77; }");
 }
 
 void MainWindow::handleButtClearRecipes() {
@@ -731,8 +748,6 @@ void MainWindow::handleButtClearRecipes() {
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
     }
-
-    buttGenVertices->setEnabled(false);
 }
 
 void MainWindow::handleButtResetRecipes() {
@@ -744,15 +759,12 @@ void MainWindow::handleButtResetRecipes() {
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
     }
     listOrbitalLocked->clear();
-    mapCloudRecipes.clear();
     mapCloudRecipesLocked.clear();
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
-    groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
-
-    buttGenVertices->setEnabled(false);
+    buttMorbHarmonics->setEnabled(false);
 }
 
-void MainWindow::handleButtMorb() {
+void MainWindow::handleButtMorbWaves() {
     cfgParser->config->waves = entryOrbit->text().toInt();
     cfgParser->config->amplitude = entryAmp->text().toDouble();
     cfgParser->config->period = entryPeriod->text().toDouble() * M_PI;
@@ -766,32 +778,23 @@ void MainWindow::handleButtMorb() {
     cfgParser->config->frag = entryFrag->currentText().toStdString();
 
     refreshOrbits(cfgParser->config);
-
     lockConfig(cfgParser->config);
-}
 
-void MainWindow::handleButtGenVerts() {
-    cfgParser->config->cloudLayDivisor = entryCloudLayers->text().toInt();
-    cfgParser->config->cloudResolution = entryCloudRes->text().toInt();
-    cfgParser->config->cloudTolerance = entryCloudMinRDP->text().toDouble();
-    if (graph->lockCloudConfigAndOrbitals(cfgParser->config, this->mapCloudRecipesLocked, this->numRecipes)) {
-        graph->genCloudVertices();
-    }
-
-    if (buttMorbHarmonics->isEnabled()) {
-        // If second or later round of genVertices()
-    } else {
-        // First round of genVertices
-    }
-
-    buttGenVertices->setEnabled(false);
-    buttMorbHarmonics->setEnabled(true);
+    groupColors->setEnabled(true);
+    groupOrbits->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbHarmonics() {
+    cfgParser->config->cloudLayDivisor = entryCloudLayers->text().toInt();
+    cfgParser->config->cloudResolution = entryCloudRes->text().toInt();
+    cfgParser->config->cloudTolerance = entryCloudMinRDP->text().toDouble();
+    /* if (graph->lockCloudConfigAndOrbitals(cfgParser->config, this->mapCloudRecipesLocked, this->numRecipes)) {
+        graph->genCloudVertices();
+    } */
+    graph->newCloudConfig(cfgParser->config, this->mapCloudRecipesLocked, this->numRecipes);
+
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
-    graph->newCloudMessage();
     buttMorbHarmonics->setEnabled(false);
 }
 
@@ -840,7 +843,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
 }
 
 void MainWindow::printHarmap() {
-    for (auto k : mapCloudRecipes) {
+    for (auto k : mapCloudRecipesLocked) {
         std::cout << k.first << ": ";
         for (auto v : k.second) {
             std::cout << glm::to_string(v) << ", ";
@@ -851,9 +854,9 @@ void MainWindow::printHarmap() {
 }
 
 void MainWindow::printList() {
-    int listSize = listOrbitalReport->count();
+    int listSize = tableOrbitalReport->rowCount();
     for (int i = 0; i < listSize; i++) {
-        QListWidgetItem *item = listOrbitalReport->item(i);
+        QTableWidgetItem *item = tableOrbitalReport->item(i, 1);
         std::cout << item << ": " << item->text().toStdString() << "\n";
     }
     std::cout << std::endl;

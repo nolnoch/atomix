@@ -39,6 +39,7 @@
 #include <QCheckBox>
 #include <QListWidget>
 #include <QTreeWidget>
+#include <QTableWidget>
 #include <QHeaderView>
 #include <QSignalBlocker>
 #include "GWidget.hpp"
@@ -95,19 +96,21 @@ private:
     QButtonGroup *buttGroupColors = nullptr;
 
     QPushButton *buttMorbWaves = nullptr;
-    QPushButton *buttGenVertices = nullptr;
     QPushButton *buttLockRecipes = nullptr;
     QPushButton *buttClearRecipes = nullptr;
     QPushButton *buttResetRecipes = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
 
+    QGroupBox *groupColors = nullptr;
+    QGroupBox *groupOrbits = nullptr;
     QGroupBox *groupRecipeBuilder = nullptr;
     QGroupBox *groupRecipeReporter = nullptr;
     QGroupBox *groupGenVertices = nullptr;
     QGroupBox *groupRecipeLocked = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
-    QListWidget *listOrbitalReport = nullptr;
+    // QListWidget *listOrbitalReport = nullptr;
     QListWidget *listOrbitalLocked = nullptr;
+    QTableWidget *tableOrbitalReport = nullptr;
     QLineEdit *entryCloudLayers = nullptr;
     QLineEdit *entryCloudRes = nullptr;
     QLineEdit *entryCloudMinRDP = nullptr;
@@ -115,7 +118,6 @@ private:
     QLabel *labelDetails = nullptr;
 
     GWidget *graph = nullptr;
-    harmap mapCloudRecipes;
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;
 
@@ -136,14 +138,15 @@ private:
 
     void handleComboCfg();
     void handleConfigChanged();
+    void handleDoubleClick(QTreeWidgetItem *item, int col);
     void handleRecipeCheck(QTreeWidgetItem *item, int col);
     void handleButtLockRecipes();
     void handleButtClearRecipes();
     void handleButtResetRecipes();
-    void handleButtMorb();
-    void handleButtGenVerts();
+    void handleButtMorbWaves();
     void handleButtMorbHarmonics();
     void handleButtColors(int id);
+    void handleEntryTolerance(const QString &text);
 
     void printHarmap();
     void printList();

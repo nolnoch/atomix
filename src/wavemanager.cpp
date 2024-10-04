@@ -28,6 +28,7 @@
 WaveManager::WaveManager(AtomixConfig *config) {
     newConfig(config);
     createWaves();
+    mStatus.set(em::INIT);
 }
 
 WaveManager::~WaveManager() {

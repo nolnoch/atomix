@@ -25,8 +25,10 @@
 #include "cloudmanager.hpp"
 
 
-CloudManager::CloudManager(AtomixConfig *cfg) {
+CloudManager::CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes) {
     newConfig(cfg);
+    receiveCloudMap(inMap, numRecipes);
+    mStatus.set(em::INIT);
 }
 
 CloudManager::~CloudManager() {
@@ -45,11 +47,16 @@ void CloudManager::newConfig(AtomixConfig *config) {
     this->cfg.vert = "gpu_harmonics.vert";
 }
 
+void CloudManager::initManager() {
+    createCloud();
+    bakeOrbitalsForRender();
+    cullRDPs();
+}
+
 void CloudManager::createCloud() {
     this->max_n = cloudOrbitals.rbegin()->first;
     int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
     int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
-    // int opt_max_radius = this->cloudMaxRadius;
     int steps_local = this->cloudResolution;
     double deg_fac_local = this->deg_fac;
     vec3 pos = vec3(0.0f);
@@ -92,27 +99,18 @@ void CloudManager::createCloud() {
     genVertexArray();
 
     if (this->vertexCount > this->oldVERSize) {
-        flUpdate.set(eUpdate::NEW_VERT);
+        mStatus.set(em::INCR_VBO);
     }
-    flStages.set(eStages::VERTICES);
+    mStatus.set(em::VERT_READY);
 }
 
 void CloudManager::clearForNext() {
-    if (flUpdate.hasAny(eUpdate::NEW_VERT)) {
-        this->oldVERSize = this->vertexCount;
-    }
-    if (flUpdate.hasAny(eUpdate::INCR_RDP)) {
-        this->oldRDPSize = this->RDPCount;
-    }
-    if (flUpdate.hasAny(eUpdate::INCR_EBO)) {
-        this->oldIDXSize = this->indexCount;
-    }
-    resetUpdates();
+    mStatus.reset();
 
     std::fill(shellRDPMaximaN.begin(), shellRDPMaximaN.end(), 0.0);
     std::fill(shellRDPMaximaL.begin(), shellRDPMaximaL.end(), 0.0);
     std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
-    std::fill(allRDPs.begin(), allRDPs.end(), 0.0);
+    std::fill(allRDPs.begin(), allRDPs.end(), 0.0f);
     std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
     allIndices.clear();
     cloudOrbitals.clear();
@@ -121,11 +119,11 @@ void CloudManager::clearForNext() {
     this->update = false;
     this->active = false;
     this->atomZ = 1;
-    flStages.setTo(eStages::VERTICES);
+    mStatus.setTo(em::INIT | em::VERT_READY);
 }
 
-double CloudManager::genOrbital(int n, int l, int m_l) {
-    assert(flStages.hasAny(eStages::VERTICES));
+void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
+    assert(mStatus.hasAny(em::VERT_READY));
     double max_rdp = 0;
     int pixelCount = 0;
     double deg_fac_local = this->deg_fac;
@@ -138,15 +136,12 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
         double orbNorm = this->norm_constY[DSQ(l, m_l)];
         double R = wavefuncRadial(n, l, radius);
         double rdp = wavefuncRDP(R, radius, l);
-        // int fdn = (k - 1) * steps_local * steps_local;
 
         for (int i = 0; i < steps_local; i++) {
-            // int base = i * steps_local;
             double theta = i * deg_fac_local;
             std::complex<double> orbExp = wavefuncAngExp(m_l, theta);
             for (int j = 0; j < steps_local; j++) {
                 double phi = j * deg_fac_local;
-                // int inCloudIdx = fdn + base + j;
 
                 double orbLeg = wavefuncAngLeg(l, m_l, phi);
                 std::complex<double> Y = orbExp * orbNorm * orbLeg;
@@ -154,27 +149,20 @@ double CloudManager::genOrbital(int n, int l, int m_l) {
 
                 if (rdp2 > max_rdp) {
                     max_rdp = rdp2;
-                    // max_r = radius;
-                    // max_theta = theta;
-                    // max_phi = phi;
                 }
+                rdpStaging[pixelCount++] += rdp2 * weight;
 
-                rdpStaging[pixelCount++] += rdp2;
             }
         }
     }
-
-    assert(pixelCount == rdpStaging.size());
 
     if (max_rdp > shellRDPMaximaN[n-1])
         shellRDPMaximaN[n-1] = max_rdp;
     if (max_rdp > shellRDPMaximaL[l])
         shellRDPMaximaL[l] = max_rdp;
-
-    return max_rdp;
 }
 
-void CloudManager::genOrbitalsThroughN(int n_max) {
+/* void CloudManager::genOrbitalsThroughN(int n_max) {
     for (int n = n_max; n > 0; n--) {
         for (int l = n-1; l >= 0; l--) {
             for (int m_l = l; m_l >= -l; m_l--) {
@@ -182,7 +170,7 @@ void CloudManager::genOrbitalsThroughN(int n_max) {
             }
         }
     }
-    flStages.set(eStages::RECIPES);
+    mStatus.set(em::NEW_CFG);
 }
 
 void CloudManager::genOrbitalsOfN(int n) {
@@ -191,7 +179,7 @@ void CloudManager::genOrbitalsOfN(int n) {
             cloudOrbitals[n].push_back(ivec2(l, m_l));
         }
     }
-    flStages.set(eStages::RECIPES);
+    mStatus.set(em::NEW_CFG);
 }
 
 void CloudManager::genOrbitalsOfL(int n, int l) {
@@ -199,24 +187,24 @@ void CloudManager::genOrbitalsOfL(int n, int l) {
     for (int m_l = l; m_l >= -l; m_l--) {
         cloudOrbitals[n].push_back(ivec2(l, m_l));
     }
-    flStages.set(eStages::RECIPES);
+    mStatus.set(em::NEW_CFG);
 }
 
 void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
     cloudOrbitals[n].push_back(ivec2(l, m_l));
-    flStages.set(eStages::RECIPES);
-}
+    mStatus.set(em::NEW_CFG);
+} */
 
-int CloudManager::bakeOrbitalsForRender() {
-    assert(flStages.hasAll(eStages::RECIPES | eStages::VERTICES));
+void CloudManager::bakeOrbitalsForRender() {
+    assert(mStatus.hasAll(em::VERT_READY));
 
     if (numOrbitals) {
         std::cout << numOrbitals << " recipe(s) loaded. Begin processing..." << std::endl;
     } else {
         std::cout << "No recipes loaded. Aborting." << std::endl;
-        return A_ERR;
+        return;
     }
-    /* if (!(flStages.hasAny(eStages::VERTICES))) {
+    /* if (!(mStatus.hasAny(em::VERT_READY))) {
         std::cout << ">> Vertices not created. Pre-empting for cloud creation." << std::endl;
         createCloud();
         std::cout << "Resume processing..." << std::endl;
@@ -225,7 +213,7 @@ int CloudManager::bakeOrbitalsForRender() {
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
-            genOrbital(key, v.x, v.y);
+            genOrbital(key, v.x, v.y, (v.z / static_cast<double>(numOrbitals)));
             printMaxRDP(key, v.x, v.y, 0);
         }
         // For each N: Get max element from accumulated rdpStaging values
@@ -242,36 +230,20 @@ int CloudManager::bakeOrbitalsForRender() {
             // rdpStaging[p] = 0.0;
         } */
     }
-    // End: check actual value of accumulated allRDPs
-    // this->allRDPMaximum = *std::max_element(allRDPs.begin(), allRDPs.end());
-    // std::cout << "Cumulative Max RDP for allRDPs was: " << this->allRDPMaximum << std::endl;
-
-    // End: Clamp all accumulated values in allRDPs to [0,1] or normalize by peak accumulated value
-    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });
-    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
-    cullRDPs();
-    
-
-    genRDPs();
-    genIndexBuffer();
-
-    flStages.set(eStages::VBO | eStages::EBO);
-    flUpdate.set(eUpdate::NEW_RDP | eUpdate::NEW_EBO);
-    if (this->RDPCount > this->oldRDPSize) {
-        flUpdate.set(eUpdate::INCR_RDP);
-    }
-    if (this->indexCount > this->oldIDXSize) {
-        flUpdate.set(eUpdate::INCR_EBO);
-    }
-
-    return flagExit::A_OKAY;
+    mStatus.set(em::DATA_READY);    
 }
 
 void CloudManager::cullRDPs() {
     std::fill(allRDPs.begin(), allRDPs.end(), 0.0);
     allIndices.clear();
 
+    // End: check actual value of accumulated allRDPs
     this->allRDPMaximum = *std::max_element(rdpStaging.begin(), rdpStaging.end());
+    // std::cout << "Cumulative Max RDP for rdpStaging was: " << this->allRDPMaximum << std::endl;
+
+    // End: Clamp all accumulated values in allRDPs to [0,1] or normalize by peak accumulated value
+    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });
+    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
 
     for (uint p = 0; p < this->pixelCount; p++) {
         double new_val = rdpStaging[p] / this->allRDPMaximum;
@@ -280,6 +252,11 @@ void CloudManager::cullRDPs() {
             allIndices.push_back(p);
         }
     }
+
+    genRDPs();
+    genIndexBuffer();
+
+    mStatus.set(em::DATA_READY | em::IDX_READY);
 }
 
 void CloudManager::cloudTest(int n_max) {
@@ -351,38 +328,57 @@ void CloudManager::cloudTestCSV() {
 }
 
 void CloudManager::updateCloud(double time) {
-    assert(flStages.hasAll(eStages::VERTICES | eStages::VBO | eStages::EBO));
+    assert(mStatus.hasAll(em::VERT_READY | em::UPDATE_VBO | em::UPDATE_EBO));
     this->update = true;
     //TODO implement for CPU updates over time
 }
 
 void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
-    
+    this->cloudOrbitals = inMap;
+    this->numOrbitals = numRecipes;
+    mStatus.set(em::NEW_CFG);
 }
 
-bool CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
+uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
+    uint flags = 0;
+    
     // Check for relevant config changes OR for recipes to require larger radius
-    int inMapMaxN = inMap.rbegin()->first;
+    bool newMap = cloudOrbitals != inMap;
     bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
     bool newResolution = (this->cloudResolution != config->cloudResolution);
     bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
-    bool higherMaxN = (flStages.hasAny(eStages::VERTICES)) && (inMapMaxN > this->max_n);
+    bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap.rbegin()->first > this->max_n);
+    // bool newVerticesRequired = (newDivisor || newResolution || higherMaxN);
+    bool newVerticesRequired = true;
 
-    bool resetRequired = (newDivisor || newResolution || higherMaxN);
+    // Resest or clear if necessary
+    if (newVerticesRequired) {
+        this->resetManager();
+    } else if (newMap) {
+        this->clearForNext();
+    }
+    
+    // Update config and map
+    this->newConfig(config);
+    this->receiveCloudMap(inMap, numRecipes);
 
-    // If above true, then regen vertices. If not, just clear for next render
-    if (resetRequired) {
-        resetManager();
-    } else if (newTolerance) {
-        cullRDPs();  // TODO This is being pushed in the wrong place!
+    // Regen vertices if necessary
+    if (newVerticesRequired) {
+        this->createCloud();
+        flags |= em::UPDATE_VBO;
+    }
+    // Regen RDPS if necessary
+    if (newVerticesRequired || newMap) {
+        this->bakeOrbitalsForRender();
+        flags |= em::UPDATE_DATA;
+    }
+    // Regen indices if necessary
+    if (newVerticesRequired || newMap || newTolerance) {
+        this->cullRDPs();
+        flags |= em::UPDATE_EBO;
     }
 
-    newConfig(config);
-    cloudOrbitals = inMap;
-    this->numOrbitals = numRecipes;
-    flStages.set(eStages::RECIPES);
-
-    return resetRequired;
+    return flags;
 }
 
 int64_t CloudManager::fact(int n) {
@@ -518,9 +514,9 @@ void CloudManager::RDPtoColours() {
     */
 }
 
-void CloudManager::resetUpdates() {
-    flUpdate.reset();
-}
+/* void CloudManager::resetUpdates() {
+    mStatus.reset();
+} */
 
 void CloudManager::resetManager() {
     Manager::resetManager();
@@ -555,7 +551,7 @@ void CloudManager::resetManager() {
     this->max_r = 0;
     this->max_theta = 0;
     this->max_phi = 0;
-    this->flStages.reset();
+    this->mStatus.reset();
 }
 
 /*
@@ -608,15 +604,11 @@ const float* CloudManager::getRDPData() {
 }
 
 bool CloudManager::hasVertices() {
-    return (this->flStages.hasAny(eStages::VERTICES));
+    return (this->mStatus.hasAny(em::VERT_READY));
 }
 
 bool CloudManager::hasBuffers() {
-    return (this->flStages.hasAny(eStages::EBO));
-}
-
-BitFlag& CloudManager::getUpdates() {
-    return this->flUpdate;
+    return (this->mStatus.hasAny(em::UPDATE_EBO));
 }
 
 /*

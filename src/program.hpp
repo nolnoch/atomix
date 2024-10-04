@@ -56,6 +56,9 @@
 #include <iostream>
 #include <vector>
 #include <deque>
+#include <map>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include "shaderobj.hpp"
 #include "global.hpp"
 
@@ -97,20 +100,21 @@ class Program {
         void bindVAO();
         void clearVAO();
 
-        GLuint bindVBO(uint bufSize, const GLfloat *buf, uint mode);
+        GLuint bindVBO(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode);
         void setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step = 0);
         void setAttributeBuffer(GLuint binding, GLuint vboIdx, GLsizei stride);
         void enableAttribute(GLuint idx);
         void enableAttributes();
         void disableAttributes();
-        void updateVBO(uint offset, uint bufSize, const GLfloat *buf);
-        void updateVBOTarget(GLuint bufId, uint offset, uint bufSize, const GLfloat *buf);
-        void resizeVBO(GLuint bufId, uint bufSize, const GLfloat *buf, uint mode);
+        void updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat *buf);
+        void updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLfloat *buf);
+        void resizeVBONamed(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode);
         void clearVBO();
 
-        void bindEBO(uint bufSize, const GLuint *buf, uint mode);
-        void updateEBO(uint offset, uint bufSize, const GLuint *buf);
-        void resizeEBO(GLuint bufId, uint bufSize, const GLuint *buf, uint mode);
+        GLuint bindEBO(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode);
+        void updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *buf);
+        void updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLuint *buf);
+        void resizeEBONamed(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode);
         void clearEBO();
 
         void assignFragColour();
@@ -119,8 +123,8 @@ class Program {
         void endRender();
         
         void clearBuffers();
-        void deleteBuffers();
-        void addBuffers();
+        void deleteBuffer(std::string name);
+        // void addBuffers();
 
         void setUniform(int type, std::string name, double n);
         void setUniform(int type, std::string name, float n);
@@ -128,13 +132,12 @@ class Program {
         void setUniform(int type, std::string name, uint n);
         void setUniformv(int count, int size, int type, std::string name, const float *n);
         void setUniformMatrix(int size, std::string name, float *m);
-        void setIndexCount(uint64_t count);
         //void setTexture(int samplerIdx, TexInfo& texInfo);
 
         GLuint getProgramId();
         GLuint getFirstVBOId();
         GLuint getLastVBOId();
-        uint64_t getIndexCount();
+        uint getSize(std::string name);
 
         void displayLogProgram();
         void displayLogShader(GLenum shader);
@@ -149,9 +152,12 @@ class Program {
 
         GLuint programId = 0;
         GLuint vao;
-        std::deque<GLuint> vbo;
-        std::deque<GLuint> ebo;
-        uint64_t indexCount;
+        // std::deque<GLuint> vbo;
+        // std::deque<GLuint> ebo;
+        // std::deque<uint> vboSizes;
+        // std::deque<uint> eboSizes;
+
+        std::map<std::string, glm::uvec3> buffers;
         
         bool enabled = false;
         

@@ -440,8 +440,8 @@ void Program::updateEBONamed(std::string name, uint bufCount, uint offset, uint 
 }
 
 void Program::resizeEBONamed(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
-    this->buffers[name] = glm::uvec3(bufCount, 0, GL_ELEMENT_ARRAY_BUFFER);
     GLuint bufId = buffers[name].y;
+    this->buffers[name].x = bufCount;
     qgf->glNamedBufferData(bufId, bufSize, buf, mode);
     displayLogProgram();
 }

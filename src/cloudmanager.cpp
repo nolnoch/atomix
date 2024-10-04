@@ -24,6 +24,11 @@
 
 #include "cloudmanager.hpp"
 
+#include <filesystem>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 
 CloudManager::CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes) {
     newConfig(cfg);
@@ -348,8 +353,7 @@ uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap,
     bool newResolution = (this->cloudResolution != config->cloudResolution);
     bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
     bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap.rbegin()->first > this->max_n);
-    // bool newVerticesRequired = (newDivisor || newResolution || higherMaxN);
-    bool newVerticesRequired = true;
+    bool newVerticesRequired = (newDivisor || newResolution || higherMaxN);
 
     // Resest or clear if necessary
     if (newVerticesRequired) {
@@ -656,4 +660,32 @@ void CloudManager::printMaxRDP(const int &n, const int &l, const int &m_l, const
 
 void CloudManager::printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP) {
     std::cout << n << "," << l << "," << m_l << "," << maxRDP << "\n";
+}
+
+void CloudManager::printBuffer(fvec buf, std::string name) {
+    std::ofstream outfile(name);
+
+    if (outfile.is_open()) {
+        for (const auto& f : buf) {
+            outfile << f;
+        }
+        outfile << std::endl;
+        outfile.close();
+    } else {
+        std::cout << "Failed to open file." << std::endl;
+    }
+}
+
+void CloudManager::printBuffer(uvec buf, std::string name) {
+    std::ofstream outfile(name);
+
+    if (outfile.is_open()) {
+        for (const auto& u : buf) {
+            outfile << u;
+        }
+        outfile << std::endl;
+        outfile.close();
+    } else {
+        std::cout << "Failed to open file." << std::endl;
+    }
 }

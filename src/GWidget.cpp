@@ -57,20 +57,20 @@ void GWidget::cleanup() {
 void GWidget::newCloudConfig(AtomixConfig *config, harmap &cloudMap, int numRecipes) {
     flGraphState.clear(eModes);
     flGraphState.set(egs::UPDATE_REQUIRED | egs::CLOUD_MODE);
-    changeModes();
+    // changeModes();
 
     cfgChanges changes;
     bool firstTime = false;
     this->max_n = cloudMap.rbegin()->first;
 
     if (flGraphState.hasNone(egs::CLOUD_MANAGER_INIT)) {
-        // Initialize cloudManager -- will flow to initCloudManager() for initial uploads since no EBO exists
+        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists
         cloudManager = new CloudManager(config, cloudMap, numRecipes);
         flGraphState.set(egs::CLOUD_MANAGER_INIT);
         cloudManager->initManager();
         firstTime = true;
     } else {
-        // Inculdes resetManager() and clearForNext()
+        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists
         flGraphState.set(cloudManager->receiveCloudMapAndConfig(config, cloudMap, numRecipes));
     }
 }
@@ -404,6 +404,8 @@ void GWidget::initCloudProgram() {
 
     currentProg = cloudProg;
     currentManager = cloudManager;
+
+    // this->printSize();
 }
 
 void GWidget::changeModes() {
@@ -750,12 +752,14 @@ void GWidget::updateCloudBuffers() {
     assert(flGraphState.hasAll(egs::CLOUD_PROG_INIT | egs::CLOUD_MANAGER_INIT | egs::CLOUD_VBO_BOUND | egs::CLOUD_EBO_BOUND));
     uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 
+    // this->printSize();
+
     /* Bind */
     currentProg->beginRender();
 
     /* VBO 1: Vertices */
     if (flGraphState.hasAny(egs::UPD_VBO) && currentManager->getVertexCount() > currentProg->getSize("vertices")) {
-        // std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << cloudManager->getVertexCount() << std::endl;
+        std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << cloudManager->getVertexCount() << std::endl;
         currentProg->resizeVBONamed("vertices", currentManager->getVertexCount(), currentManager->getVertexSize(), currentManager->getVertexData(), static_dynamic);
     }
 
@@ -763,21 +767,23 @@ void GWidget::updateCloudBuffers() {
     if (flGraphState.hasAny(egs::UPD_DATA)) {
         // std::cout << "RDP Data address: " << cloudManager->getRDPData() << std::endl;
         if (cloudManager->getRDPCount() > cloudProg->getSize("rdps")) {
-            // std::cout << "Resizing VBO: RDPs from " << cloudProg->getSize("rdps") << " to " << cloudManager->getRDPCount() << std::endl;
+            std::cout << "Resizing VBO: RDPs from " << cloudProg->getSize("rdps") << " to " << cloudManager->getRDPCount() << std::endl;
             currentProg->resizeVBONamed("rdps", cloudManager->getRDPCount(), cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
         } else {
-            // std::cout << "Updating VBO: RDPs" << std::endl;
+            std::cout << "Updating VBO: RDPs" << std::endl;
             currentProg->updateVBONamed("rdps", cloudManager->getRDPCount(), 0, cloudManager->getRDPSize(), cloudManager->getRDPData());
+            this->checkErrors("updateVBONamed(): ");
         }
     }
     
     /* EBO: Indices */
     if (flGraphState.hasAny(egs::UPD_EBO)) {
         if (currentManager->getIndexCount() > currentProg->getSize("indices")) {
-            // std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << cloudManager->getIndexCount() << std::endl;
+            std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << cloudManager->getIndexCount() << std::endl;
             currentProg->resizeEBONamed("indices", currentManager->getIndexCount(), currentManager->getIndexSize(), currentManager->getIndexData(), static_dynamic);
+            this->checkErrors("resizeEBONamed(): ");
         } else {
-            // std::cout << "Updating EBO" << std::endl;
+            std::cout << "Updating EBO" << std::endl;
             currentProg->updateEBONamed("indices", currentManager->getIndexCount(), 0, currentManager->getIndexSize(), currentManager->getIndexData());
         }
     }

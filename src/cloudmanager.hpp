@@ -107,6 +107,9 @@ class CloudManager : public Manager {
         int setRDPCount();
         int setRDPSize();
 
+        void printBuffer(fvec buf, std::string name);
+        void printBuffer(uvec buf, std::string name);
+
         std::vector<vVec3 *> pixelColours;
         dvec rdpStaging;
         dvec shellRDPMaximaN;
@@ -137,6 +140,8 @@ class CloudManager : public Manager {
         int cloudMaxRadius = 0;
         int cloudLayerDivisor = 0;
         double cloudTolerance = 0.01;
+
+        uint printCounter = 0;
 
         // N                               1   2   3   4   5    6    7    8
         const int cm_maxRadius[4][8] = { { 4, 12, 24, 40, 60,  85, 113, 146 },\

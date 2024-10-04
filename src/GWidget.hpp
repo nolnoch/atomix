@@ -162,7 +162,6 @@ private:
     int64_t gw_timeStart;
     int64_t gw_timeEnd;
     int64_t gw_timePaused;
-    // ushort renderedWaves = 0;
     float gw_startDist = 0.0f;
     float gw_farDist = 0.0f;
     float gw_nearDist = 0.0f;

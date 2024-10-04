@@ -64,6 +64,7 @@ void MainWindow::onAddNew() {
     connect(entryCloudLayers, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(entryCloudRes, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(entryCloudMinRDP, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
+    connect(tableOrbitalReport, &QTableWidget::cellDoubleClicked, this, &MainWindow::handleWeightChange);
 
     setWindowTitle(tr("atomix"));
 }
@@ -717,8 +718,10 @@ void MainWindow::handleButtLockRecipes() {
         QString strOrbital = thisOrbital->text();
         QString strWeight = thisWeight->text();
         QString strLocked = strWeight + "  *  (" + strOrbital + ")";
+        QList<QListWidgetItem *> resultsExact = listOrbitalLocked->findItems(strLocked, Qt::MatchExactly);
+        QList<QListWidgetItem *> resultsPartial = listOrbitalLocked->findItems(strOrbital, Qt::MatchContains);
 
-        if (!listOrbitalLocked->findItems(strLocked, Qt::MatchExactly).count()) {
+        if (!resultsPartial.count()) {
             QListWidgetItem *newItem = new QListWidgetItem(strLocked, listOrbitalLocked);
             listOrbitalLocked->addItem(newItem);
             newItem->setTextAlignment(Qt::AlignRight);
@@ -730,6 +733,23 @@ void MainWindow::handleButtLockRecipes() {
             std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
             ivec3 lm = ivec3(strlistItem.at(1).toInt(), strlistItem.at(2).toInt(), w);
             vecElem->push_back(lm);
+        } else if (!resultsExact.count()) {
+            // Update match to new weight
+            resultsPartial.first()->setText(strLocked);
+
+            // Update harmap item
+            QStringList strlistItem = strOrbital.split(u' ');
+            int n = strlistItem.at(0).toInt();
+            int l = strlistItem.at(1).toInt();
+            int m = strlistItem.at(2).toInt();
+            int w = strWeight.toInt();
+            for (auto& vecElem : mapCloudRecipesLocked[n]) {
+                if (vecElem.x == l && vecElem.y == m) {
+                    vecElem.z = w;
+                    std::cout << "Updated orbital weight." << std::endl;
+                    break;
+                }
+            }
         }
     }
     buttLockRecipes->setEnabled(false);
@@ -744,20 +764,24 @@ void MainWindow::handleButtClearRecipes() {
     int topLevelItems = treeOrbitalSelect->topLevelItemCount();
 
     // Check, then uncheck all top-level items. A bit brutal, but very effective :)
-    for (int i = 0; i < topLevelItems; i++) {
+    /* for (int i = 0; i < topLevelItems; i++) {
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
         treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
+    } */
+
+    // More of a surgeon here...
+    for (int i = 0; i < topLevelItems; i++) {
+        QTreeWidgetItem *thisItem = treeOrbitalSelect->topLevelItem(i);
+        Qt::CheckState itemChecked = thisItem->checkState(0);
+        if (itemChecked == Qt::Checked || itemChecked == Qt::PartiallyChecked) {
+            thisItem->setCheckState(0, Qt::Unchecked);
+        }
     }
 }
 
 void MainWindow::handleButtResetRecipes() {
-    int topLevelItems = treeOrbitalSelect->topLevelItemCount();
+    handleButtClearRecipes();
 
-    // Check, then uncheck all top-level items. A bit brutal, but very effective :)
-    for (int i = 0; i < topLevelItems; i++) {
-        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
-        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
-    }
     listOrbitalLocked->clear();
     mapCloudRecipesLocked.clear();
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
@@ -796,6 +820,11 @@ void MainWindow::handleButtMorbHarmonics() {
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
     buttMorbHarmonics->setEnabled(false);
+}
+
+void MainWindow::handleWeightChange(int row, int col) {
+    // Getting older sucks...
+    buttLockRecipes->setEnabled(true);
 }
 
 void MainWindow::handleButtColors(int id) {

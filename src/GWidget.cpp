@@ -759,18 +759,17 @@ void GWidget::updateCloudBuffers() {
 
     /* VBO 1: Vertices */
     if (flGraphState.hasAny(egs::UPD_VBO) && currentManager->getVertexCount() > currentProg->getSize("vertices")) {
-        std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << cloudManager->getVertexCount() << std::endl;
+        // std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << cloudManager->getVertexCount() << std::endl;
         currentProg->resizeVBONamed("vertices", currentManager->getVertexCount(), currentManager->getVertexSize(), currentManager->getVertexData(), static_dynamic);
     }
 
     /* VBO 2: RDPs */
     if (flGraphState.hasAny(egs::UPD_DATA)) {
-        // std::cout << "RDP Data address: " << cloudManager->getRDPData() << std::endl;
         if (cloudManager->getRDPCount() > cloudProg->getSize("rdps")) {
-            std::cout << "Resizing VBO: RDPs from " << cloudProg->getSize("rdps") << " to " << cloudManager->getRDPCount() << std::endl;
+            // std::cout << "Resizing VBO: RDPs from " << cloudProg->getSize("rdps") << " to " << cloudManager->getRDPCount() << std::endl;
             currentProg->resizeVBONamed("rdps", cloudManager->getRDPCount(), cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
         } else {
-            std::cout << "Updating VBO: RDPs" << std::endl;
+            // std::cout << "Updating VBO: RDPs" << std::endl;
             currentProg->updateVBONamed("rdps", cloudManager->getRDPCount(), 0, cloudManager->getRDPSize(), cloudManager->getRDPData());
             this->checkErrors("updateVBONamed(): ");
         }
@@ -779,11 +778,11 @@ void GWidget::updateCloudBuffers() {
     /* EBO: Indices */
     if (flGraphState.hasAny(egs::UPD_EBO)) {
         if (currentManager->getIndexCount() > currentProg->getSize("indices")) {
-            std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << cloudManager->getIndexCount() << std::endl;
+            // std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << cloudManager->getIndexCount() << std::endl;
             currentProg->resizeEBONamed("indices", currentManager->getIndexCount(), currentManager->getIndexSize(), currentManager->getIndexData(), static_dynamic);
             this->checkErrors("resizeEBONamed(): ");
         } else {
-            std::cout << "Updating EBO" << std::endl;
+            // std::cout << "Updating EBO" << std::endl;
             currentProg->updateEBONamed("indices", currentManager->getIndexCount(), 0, currentManager->getIndexSize(), currentManager->getIndexData());
         }
     }

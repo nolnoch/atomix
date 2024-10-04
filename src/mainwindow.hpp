@@ -147,6 +147,7 @@ private:
     void handleButtMorbHarmonics();
     void handleButtColors(int id);
     void handleEntryTolerance(const QString &text);
+    void handleWeightChange(int row, int col);
 
     void printHarmap();
     void printList();

@@ -35,3 +35,15 @@ vertex: cpu_circle.vert
 # (fragment shader: filename) Fragment shader file name for this render
 # [default = "wave.frag"]
 fragment: wave.frag
+
+# (tolerance: double) Minimum probability for orbital cloud rendering
+# [default = 0.05]
+tolerance: 0.05
+
+# (layer divisor: int) Number of layers per radius in orbital cloud
+# [default = 2]
+divisor: 2
+
+# (layer resolution: int) Number of points per circle [int] in orbital cloud
+# [default = 180]
+cloudRes: 180

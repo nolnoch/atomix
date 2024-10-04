@@ -25,8 +25,8 @@
 #ifndef GWIDGET_H
 #define GWIDGET_H
 
-#include <QScreen>
-#include <QBoxLayout>
+// #include <QScreen>
+// #include <QBoxLayout>
 #include <QOpenGLWidget>
 #include <QMouseEvent>
 #include <QWheelEvent>

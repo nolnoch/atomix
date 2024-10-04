@@ -28,14 +28,10 @@ MainWindow::MainWindow() {
     onAddNew();
 }
 
-void MainWindow::lockConfig(AtomixConfig *cfg) {
-    graph->newWaveConfig(cfg);
-}
-
 void MainWindow::onAddNew() {
     cfgParser = new ConfigParser;
     graph = new GWidget(this, cfgParser);
-    customConfig = new AtomixConfig;
+    // waveConfig = new AtomixConfig;
 
     /* Setup Dock GUI */
     setupTabs();
@@ -45,12 +41,10 @@ void MainWindow::onAddNew() {
     refreshConfigs();
     refreshShaders();
     loadConfig();
-    refreshOrbits(cfgParser->config);
+    refreshOrbits();
     setupDetails();
 
-    // connect(this, &MainWindow::sendConfig, graph, &GWidget::newWaveConfig, Qt::DirectConnection);
     connect(graph, SIGNAL(cameraChanged()), this, SLOT(updateDetails()));
-
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
@@ -101,7 +95,7 @@ void MainWindow::refreshShaders() {
         if (!item.contains("crystal"))
             entryVertex->addItem(item);
     }
-    entryVertex->setCurrentText(QString::fromStdString(cfgParser->config->vert));
+    entryVertex->setCurrentText(QString::fromStdString(waveConfig.vert));
 
     /* Fragment Shaders */
     files = cfgParser->fshFiles.size();
@@ -115,14 +109,14 @@ void MainWindow::refreshShaders() {
         if (!item.contains("crystal"))
             entryFrag->addItem(item);
     }
-    entryFrag->setCurrentText(QString::fromStdString(cfgParser->config->frag));
+    entryFrag->setCurrentText(QString::fromStdString(waveConfig.frag));
 }
 
-void MainWindow::refreshOrbits(AtomixConfig *cfg) {
+void MainWindow::refreshOrbits() {
     const QSignalBlocker blocker(buttGroupOrbits);
     ushort renderedOrbits = 0;
 
-    for (int i = 0; i < cfg->waves; i++) {
+    for (int i = 0; i < waveConfig.waves; i++) {
         renderedOrbits |= (1 << i);
     }
     for (int i = 0; i < MAX_ORBITS; i++) {
@@ -176,10 +170,11 @@ void MainWindow::loadConfig() {
     AtomixConfig *cfg = nullptr;
 
     if (comboID <= files) {
-        assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1]));
-        cfg = cfgParser->config;
+        assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1], &waveConfig));
+        cfg = &waveConfig;
     } else if (comboID == files + 1) {
-        cfg = customConfig;
+        // TODO handle this
+        std::cout << "Invalid at this time." << std::endl;
     } else {
         return;
     }
@@ -205,7 +200,9 @@ void MainWindow::loadConfig() {
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
 
-    //refreshOrbits(cfg);
+    entryCloudLayers->setText(QString::number(cfg->cloudLayDivisor));
+    entryCloudRes->setText(QString::number(cfg->cloudResolution));
+    entryCloudMinRDP->setText(QString::number(cfg->cloudTolerance));
 }
 
 void MainWindow::setupTabs() {
@@ -513,9 +510,9 @@ void MainWindow::setupDockHarmonics() {
     QLabel *labelCloudResolution = new QLabel("Points rendered per circle");
     QLabel *labelCloudLayers = new QLabel("Layers per step in radius");
     QLabel *labelMinRDP = new QLabel("Min probability per rendered point");
-    entryCloudRes = new QLineEdit(QString::number(cfgParser->config->cloudResolution));
-    entryCloudLayers = new QLineEdit(QString::number(cfgParser->config->cloudLayDivisor));
-    entryCloudMinRDP = new QLineEdit(QString::number(cfgParser->config->cloudTolerance));
+    entryCloudRes = new QLineEdit(QString::number(cloudConfig.cloudResolution));
+    entryCloudLayers = new QLineEdit(QString::number(cloudConfig.cloudLayDivisor));
+    entryCloudMinRDP = new QLineEdit(QString::number(cloudConfig.cloudTolerance));
 
     QGridLayout *layGenVertices = new QGridLayout;
     layGenVertices->addWidget(labelCloudLayers, 0, 0, 1, 1);
@@ -786,33 +783,33 @@ void MainWindow::handleButtResetRecipes() {
 }
 
 void MainWindow::handleButtMorbWaves() {
-    cfgParser->config->waves = entryOrbit->text().toInt();
-    cfgParser->config->amplitude = entryAmp->text().toDouble();
-    cfgParser->config->period = entryPeriod->text().toDouble() * M_PI;
-    cfgParser->config->wavelength = entryWavelength->text().toDouble() * M_PI;
-    cfgParser->config->resolution = entryResolution->text().toInt();
-    cfgParser->config->parallel = entryPara->isChecked();
-    cfgParser->config->superposition = entrySuperOn->isChecked();
-    cfgParser->config->cpu = entryCPU->isChecked();
-    cfgParser->config->sphere = entrySphere->isChecked();
-    cfgParser->config->vert = entryVertex->currentText().toStdString();
-    cfgParser->config->frag = entryFrag->currentText().toStdString();
+    waveConfig.waves = entryOrbit->text().toInt();
+    waveConfig.amplitude = entryAmp->text().toDouble();
+    waveConfig.period = entryPeriod->text().toDouble() * M_PI;
+    waveConfig.wavelength = entryWavelength->text().toDouble() * M_PI;
+    waveConfig.resolution = entryResolution->text().toInt();
+    waveConfig.parallel = entryPara->isChecked();
+    waveConfig.superposition = entrySuperOn->isChecked();
+    waveConfig.cpu = entryCPU->isChecked();
+    waveConfig.sphere = entrySphere->isChecked();
+    waveConfig.vert = entryVertex->currentText().toStdString();
+    waveConfig.frag = entryFrag->currentText().toStdString();
 
-    refreshOrbits(cfgParser->config);
-    lockConfig(cfgParser->config);
+    refreshOrbits();
+    graph->newWaveConfig(&waveConfig);
 
     groupColors->setEnabled(true);
     groupOrbits->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbHarmonics() {
-    cfgParser->config->cloudLayDivisor = entryCloudLayers->text().toInt();
-    cfgParser->config->cloudResolution = entryCloudRes->text().toInt();
-    cfgParser->config->cloudTolerance = entryCloudMinRDP->text().toDouble();
-    /* if (graph->lockCloudConfigAndOrbitals(cfgParser->config, this->mapCloudRecipesLocked, this->numRecipes)) {
+    cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
+    cloudConfig.cloudResolution = entryCloudRes->text().toInt();
+    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
+    /* if (graph->lockCloudConfigAndOrbitals(waveConfig, this->mapCloudRecipesLocked, this->numRecipes)) {
         graph->genCloudVertices();
     } */
-    graph->newCloudConfig(cfgParser->config, this->mapCloudRecipesLocked, this->numRecipes);
+    graph->newCloudConfig(&cloudConfig, this->mapCloudRecipesLocked, this->numRecipes);
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");

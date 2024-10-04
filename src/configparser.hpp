@@ -42,12 +42,12 @@ const std::string FSHEXT = ".frag";
 
 /* Wave-circle config struct */
 typedef struct {
-    double wavelength = 2.0 * M_PI;                 // Wavelength as Multiples of PI
-    double amplitude = 0.4;                         // Amplitude as Float
-    double period = 1.0 * M_PI;                     // Period as Multiples of PI
-    double cloudTolerance = 0.05;
-    int cloudLayDivisor = 1;
-    int cloudResolution = 180;
+    double wavelength = 2.0;                        // Wavelength [double] as Multiples of PI
+    double amplitude = 0.4;                         // Amplitude [double]
+    double period = 1.0;                            // Period [double] as Multiples of PI
+    double cloudTolerance = 0.05;                   // Minimum probability [double] for orbital cloud rendering
+    int cloudLayDivisor = 1;                        // Number of layers per radius [int] in orbital cloud
+    int cloudResolution = 180;                      // Number of points per circle [int] in orbital cloud
     int waves = 6;                                  // Wave count as Integer
     int resolution = 180;                           // Resolution as Integer
     bool superposition = false;                     // Superposition as Bool
@@ -68,14 +68,14 @@ class ConfigParser {
         int findFiles(std::string loc, std::string type, std::vector<std::string>* fileList);
         int populateConfig();
         int loadConfigFileCLI(std::string filepath);
-        int loadConfigFileGUI(std::string filepath);
+        int loadConfigFileGUI(std::string filepath, AtomixConfig *inCfg);
 
         void printConfig();
 
         std::vector<std::string> cfgFiles;
         std::vector<std::string> vshFiles;
         std::vector<std::string> fshFiles;
-        AtomixConfig *config;
+        AtomixConfig config;
 
     private:
         int chooseConfigFile();

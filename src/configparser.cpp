@@ -41,8 +41,11 @@ ConfigParser::ConfigParser() {
     cfgValues["processor"] = 9;
     cfgValues["sphere"] = 10;
     cfgValues["fragment"] = 11;
+    cfgValues["tolerance"] = 12;
+    cfgValues["divisor"] = 13;
+    cfgValues["cloudRes"] = 14;
 
-    config = new AtomixConfig;
+    // config = new AtomixConfig;
 }
 
 ConfigParser::~ConfigParser() {
@@ -53,11 +56,11 @@ ConfigParser::~ConfigParser() {
 
 void ConfigParser::fillConfigFile() {
     /* This is broken and currently unnecessary anyway. */
-    config->waves = config->waves >= 0 ?: 4;
-    config->amplitude = config->amplitude > 0 ?: 0.6f;
-    config->period = config->period ?: 1.0f;
-    config->wavelength = config->wavelength > 0 ?: 2.0f * M_PI;
-    config->resolution = config->resolution > 0 ?: 360;
+    config.waves = config.waves >= 0 ?: 4;
+    config.amplitude = config.amplitude > 0 ?: 0.6f;
+    config.period = config.period ?: 1.0f;
+    config.wavelength = config.wavelength > 0 ?: 2.0f * M_PI;
+    config.resolution = config.resolution > 0 ?: 360;
 }
 
 int ConfigParser::findFiles(std::string loc, std::string type, std::vector<std::string>* fileList) {
@@ -148,83 +151,96 @@ int ConfigParser::loadConfigFileCLI(string path) {
 
         switch(iter->second) {
             case 1:
-                config->waves = stoi(value);
+                config.waves = stoi(value);
                 changes++;
                 break;
             case 2:
-                config->amplitude = stof(value);
+                config.amplitude = stof(value);
                 changes++;
                 break;
             case 3:
-                config->period = stof(value);
+                config.period = stof(value);
                 changes++;
                 break;
             case 4:
-                config->wavelength = stod(value);
+                config.wavelength = stod(value);
                 changes++;
                 break;
             case 5:
-                config->resolution = stoi(value);
+                config.resolution = stoi(value);
                 changes++;
                 break;
             case 6:
-                config->vert = value;
+                config.vert = value;
                 if (!value.empty())
                     custom_shader = true;
                 changes++;
                 break;
             case 7:
-                config->superposition = string("true") == value;
+                config.superposition = string("true") == value;
                 changes++;
                 break;
             case 8:
-                config->parallel = string("parallel") == value;
+                config.parallel = string("parallel") == value;
                 changes++;
                 break;
             case 9:
-                config->cpu = string("cpu") == value;
+                config.cpu = string("cpu") == value;
                 changes++;
                 break;
             case 10:
-                config->sphere = string("true") == value;
+                config.sphere = string("true") == value;
                 changes++;
                 break;
             case 11:
-                config->frag = value;
+                config.frag = value;
                 changes++;
+                break;
+            case 12:
+                config.cloudTolerance = stod(value);
+                changes++;
+                break;
+            case 13:
+                config.cloudLayDivisor = stoi(value);
+                changes++;
+                break;
+            case 14:
+                config.cloudResolution = stoi(value);
+                changes++;
+                break;
             default:
                 continue;
         }
     }
-    if (changes < 11)
+    if (changes < 14)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
     string ortho = "ortho_wave.vert";
     string para = "para_wave.vert";
     string super = "cpu_wave.vert";
     string sphere = "para_sphere.vert";
-    string shad = config->vert;
+    string shad = config.vert;
     if (custom_shader) {
         if (shad == ortho) {
-            if (config->parallel) {
+            if (config.parallel) {
                 cout << "ERROR: Specified parallel (coplanar) waves with orthogonal wave shader." << endl;
                 errors++;
             }
-            if (config->cpu) {
+            if (config.cpu) {
                 cout << "ERROR: \"ortho_wave.vert\" is only intended for GPU-based calculation." << endl;
                 errors++;
             }
         } else if (shad == para) {
-            if (!config->parallel) {
+            if (!config.parallel) {
                 cout << "ERROR: Specified orthogonal waves with parallel (coplanar) wave shader." << endl;
                 errors++;
             }
-            if (config->cpu) {
+            if (config.cpu) {
                 cout << "ERROR: \"para_wave.vert\" is only intended for GPU-based calculation." << endl;
                 errors++;
             }
         } else if (shad == super) {
-            if (!config->cpu) {
+            if (!config.cpu) {
                 cout << "ERROR: \"cpu_wave.vert\" is only intended for CPU-based calculation." << endl;
                 errors++;
             }
@@ -233,27 +249,27 @@ int ConfigParser::loadConfigFileCLI(string path) {
             goto label_abort;
         }
     } else {
-        if (!config->cpu) {
-            if (config->superposition) {
+        if (!config.cpu) {
+            if (config.superposition) {
                 cout << "ERROR: Cannot calculate superposition on GPU." << endl;
                 errors++;
             }
-            if (config->parallel) {
+            if (config.parallel) {
                 cout << "For parallel (coplanar) waves on GPU, auto-selecting shader \"para_wave.vert\"." << endl;
-                config->vert = para;
+                config.vert = para;
             } else {
                 cout << "For orthogonal waves on GPU, auto-selecting shader \"ortho_wave.vert\"." << endl;
-                config->vert = ortho;
+                config.vert = ortho;
             }
         } else {
             cout << "CPU calculation requested; auto-selecting shader \"cpu_wave.vert\"." << endl;
-            config->vert = super;
+            config.vert = super;
         }
     }
-    if (config->sphere) {
+    if (config.sphere) {
         cout << "Special case \"sphere\" selected. Using \"para_sphere.vert\" on GPU." << endl;
-        config->vert = sphere;
-        config->cpu = false;
+        config.vert = sphere;
+        config.cpu = false;
     }
 
 label_abort:
@@ -261,7 +277,7 @@ label_abort:
     return errors;
 }
 
-int ConfigParser::loadConfigFileGUI(string path) {
+int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
     string line, key, value, name, answer;
     size_t colon, start, end;
     int changes, errors;
@@ -300,57 +316,70 @@ int ConfigParser::loadConfigFileGUI(string path) {
 
         switch(iter->second) {
             case 1:
-                config->waves = stoi(value);
+                inCfg->waves = stoi(value);
                 changes++;
                 break;
             case 2:
-                config->amplitude = stof(value);
+                inCfg->amplitude = stof(value);
                 changes++;
                 break;
             case 3:
-                config->period = stof(value);
+                inCfg->period = stof(value);
                 changes++;
                 break;
             case 4:
-                config->wavelength = stod(value);
+                inCfg->wavelength = stod(value);
                 changes++;
                 break;
             case 5:
-                config->resolution = stoi(value);
+                inCfg->resolution = stoi(value);
                 changes++;
                 break;
             case 6:
-                config->vert = value;
+                inCfg->vert = value;
                 if (!value.empty())
                     custom_shader = true;
                 changes++;
                 break;
             case 7:
-                config->superposition = string("true") == value;
+                inCfg->superposition = string("true") == value;
                 changes++;
                 break;
             case 8:
-                config->parallel = string("parallel") == value;
+                inCfg->parallel = string("parallel") == value;
                 changes++;
                 break;
             case 9:
-                config->cpu = string("cpu") == value;
+                inCfg->cpu = string("cpu") == value;
                 changes++;
                 break;
             case 10:
-                config->sphere = string("true") == value;
+                inCfg->sphere = string("true") == value;
                 changes++;
                 break;
             case 11:
-                config->frag = value;
+                inCfg->frag = value;
                 if (!value.empty())
                     custom_shader = true;
                 changes++;
+                break;
+            case 12:
+                inCfg->cloudTolerance = stod(value);
+                changes++;
+                break;
+            case 13:
+                inCfg->cloudLayDivisor = stoi(value);
+                changes++;
+                break;
+            case 14:
+                inCfg->cloudResolution = stoi(value);
+                changes++;
+                break;
             default:
                 continue;
         }
     }
-    if (changes < 11)
+    if (changes < 14)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
     string ortho = "gpu_ortho_circle.vert";
@@ -359,8 +388,8 @@ int ConfigParser::loadConfigFileGUI(string path) {
     string gpu_sphere = "gpu_sphere.vert";
     string cpu_sphere = "cpu_sphere.vert";
     string path = std::string(ROOT_DIR) + std::string(SHADERS);
-    string vshad = path + config->vert;
-    string fshad = path + config->frag;
+    string vshad = path + inCfg->vert;
+    string fshad = path + inCfg->frag;
     if (custom_shader) {
         /* Here we check for valid shader files */
         if (std::find(vshFiles.begin(), vshFiles.end(), vshad) == vshFiles.end()) {
@@ -373,22 +402,22 @@ int ConfigParser::loadConfigFileGUI(string path) {
         }
     }
     /* Here we check for Ortho/Super conflicts */
-    if (!config->parallel) {
-        if (config->superposition) {
+    if (!inCfg->parallel) {
+        if (inCfg->superposition) {
             cout << "Invalid combo: Orthogonal waves and Superposition." << endl;
             errors++;
         }
-        if (config->sphere) {
+        if (inCfg->sphere) {
             cout << "Invalid combo: Orthogonal waves and Spherical waves." << endl;
             errors++;
         }
     }
-    if (config->superposition) {
-        if (!config->cpu) {
+    if (inCfg->superposition) {
+        if (!inCfg->cpu) {
             cout << "Invalid combo: Superposition and GPU rendering." << endl;
             errors++;
         }
-        if (config->sphere) {
+        if (inCfg->sphere) {
             cout << "Invalid combo: Superposition and Spherical waves." << endl;
             errors++;
         }
@@ -407,7 +436,7 @@ int ConfigParser::populateConfig() {
     } else {
         int choice = chooseConfigFile();
         if (choice >= 0) {
-            if (status = loadConfigFileGUI(cfgFiles[choice])) {
+            if (status = loadConfigFileGUI(cfgFiles[choice], &this->config)) {
                 cout << "ERROR: Errors in config file. Please correct." << endl;
             }
         }
@@ -416,15 +445,15 @@ int ConfigParser::populateConfig() {
 }
 
 void ConfigParser::printConfig() {
-    cout << "Orbits: " << config->waves << "\n";
-    cout << "Amplitude: " << config->amplitude << "\n";
-    cout << "Period: " << config->period << "\n";
-    cout << "Wavelength: " << config->wavelength << "\n";
-    cout << "Resolution: " << config->resolution << "\n";
-    cout << "Parallel: " << config->parallel << "\n";
-    cout << "Superposition: " << config->superposition << "\n";
-    cout << "CPU: " << config->cpu << "\n";
-    cout << "Sphere: " << config->sphere << "\n";
-    cout << "Vert Shader: " << config->vert << "\n";
-    cout << "Frag Shader: " << config->frag << endl;
+    cout << "Orbits: " << config.waves << "\n";
+    cout << "Amplitude: " << config.amplitude << "\n";
+    cout << "Period: " << config.period << "\n";
+    cout << "Wavelength: " << config.wavelength << "\n";
+    cout << "Resolution: " << config.resolution << "\n";
+    cout << "Parallel: " << config.parallel << "\n";
+    cout << "Superposition: " << config.superposition << "\n";
+    cout << "CPU: " << config.cpu << "\n";
+    cout << "Sphere: " << config.sphere << "\n";
+    cout << "Vert Shader: " << config.vert << "\n";
+    cout << "Frag Shader: " << config.frag << endl;
 }

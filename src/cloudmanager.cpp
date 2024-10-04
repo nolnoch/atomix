@@ -85,7 +85,7 @@ void CloudManager::create() {
                 }
 
                 allVertices.push_back(pos);
-                allRDPs.push_back(0.0);
+                allData.push_back(0.0);
                 rdpStaging.push_back(0.0);
                 pixelCount++;
             }
@@ -100,8 +100,6 @@ void CloudManager::create() {
 
     wavefuncNorms(MAX_SHELLS);
     genVertexArray();
-
-    mStatus.set(em::VERT_READY);
 }
 
 void CloudManager::clearForNext() {
@@ -110,9 +108,7 @@ void CloudManager::clearForNext() {
     std::fill(shellRDPMaximaN.begin(), shellRDPMaximaN.end(), 0.0);
     std::fill(shellRDPMaximaL.begin(), shellRDPMaximaL.end(), 0.0);
     std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
-    std::fill(allRDPs.begin(), allRDPs.end(), 0.0f);
     std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
-    allIndices.clear();
     cloudOrbitals.clear();
     this->orbitalIdx = 0;
     this->allRDPMaximum = 0;
@@ -192,60 +188,59 @@ void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
 void CloudManager::bakeOrbitalsForRender() {
     assert(mStatus.hasAll(em::VERT_READY));
 
-    if (numOrbitals) {
+   /*  if (numOrbitals) {
         std::cout << numOrbitals << " recipe(s) loaded. Begin processing..." << std::endl;
     } else {
         std::cout << "No recipes loaded. Aborting." << std::endl;
         return;
-    }
+    } */
 
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
             genOrbital(key, v.x, v.y, (v.z / static_cast<double>(numOrbitals)));
-            printMaxRDP(key, v.x, v.y, 0);
+            // printMaxRDP(key, v.x, v.y, 0);
         }
         // For each N: Get max element from accumulated rdpStaging values
         // double thisMax = *std::max_element(rdpStaging.begin(), rdpStaging.end());
 
-        // For each N: Normalize accumulated pixelRDPs, add to allRDPs, register indices, and reset pixelRDP vector
+        // For each N: Normalize accumulated pixelRDPs, add to allData, register indices, and reset pixelRDP vector
         /* for (uint p = 0; p < this->pixelCount; p++) {
             double new_val = rdpStaging[p];
             new_val /= thisMax;
             if (new_val > this->cloudTolerance) {
-                allRDPs[p] += static_cast<float>(new_val);
+                allData[p] += static_cast<float>(new_val);
                 allIndices.push_back(p);
             }
             // rdpStaging[p] = 0.0;
         } */
     }
-    mStatus.set(em::DATA_READY);    
 }
 
 void CloudManager::cullRDPs() {
-    std::fill(allRDPs.begin(), allRDPs.end(), 0.0);
+    assert(mStatus.hasAll(em::VERT_READY));
+
+    std::fill(allData.begin(), allData.end(), 0.0);
     allIndices.clear();
 
-    // End: check actual value of accumulated allRDPs
+    // End: check actual value of accumulated allData
     this->allRDPMaximum = *std::max_element(rdpStaging.begin(), rdpStaging.end());
     // std::cout << "Cumulative Max RDP for rdpStaging was: " << this->allRDPMaximum << std::endl;
 
-    // End: Clamp all accumulated values in allRDPs to [0,1] or normalize by peak accumulated value
-    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });
-    // std::transform(allRDPs.cbegin(), allRDPs.cend(), allRDPs.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
+    // End: Clamp all accumulated values in allData to [0,1] or normalize by peak accumulated value
+    // std::transform(allData.cbegin(), allData.cend(), allData.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });
+    // std::transform(allData.cbegin(), allData.cend(), allData.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
 
     for (uint p = 0; p < this->pixelCount; p++) {
         double new_val = rdpStaging[p] / this->allRDPMaximum;
         if (new_val > this->cloudTolerance) {
-            allRDPs[p] = static_cast<float>(new_val);
+            allData[p] = static_cast<float>(new_val);
             allIndices.push_back(p);
         }
     }
 
-    genRDPs();
+    genDataBuffer();
     genIndexBuffer();
-
-    mStatus.set(em::DATA_READY | em::IDX_READY);
 }
 
 void CloudManager::cloudTest(int n_max) {
@@ -494,8 +489,8 @@ void CloudManager::wavefuncNorms(int max_n) {
     }
     std::cout << std::endl;
 
-    std::vector<float>::iterator fIt = std::max_element(allRDPs.begin(), allRDPs.end());
-    int idx = std::distance(allRDPs.begin(), fIt);
+    std::vector<float>::iterator fIt = std::max_element(allData.begin(), allData.end());
+    int idx = std::distance(allData.begin(), fIt);
     std::cout << "Max value " << *fIt << " at index " << idx << std::endl;
    
 } */
@@ -511,9 +506,8 @@ void CloudManager::resetManager() {
         delete (v);
     }
     this->pixelColours.clear();
-
     this->allColours.clear();
-    this->allRDPs.clear();
+
     this->rdpStaging.clear();
     this->shellRDPMaximaN.clear();
     this->shellRDPMaximaL.clear();
@@ -526,14 +520,11 @@ void CloudManager::resetManager() {
     this->colourCount = 0;
     this->colourSize = 0;
     this->atomZ = 1;
-    this->RDPCount = 0;
-    this->RDPSize = 0;
     this->orbitalIdx = 0;
     this->cloudResolution = 0;
     this->allRDPMaximum = 0;
     this->numOrbitals = 0;
     this->cloudTolerance = 0.05;
-    this->mStatus.reset();
 }
 
 /*
@@ -551,11 +542,6 @@ void CloudManager::resetManager() {
     this->colourSize = setColourSize();
 } */
 
-void CloudManager::genRDPs() {
-    this->RDPCount = setRDPCount();
-    this->RDPSize = setRDPSize();
-}
-
 /*
  *  Getters -- Size
  */
@@ -564,26 +550,13 @@ const uint CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-const uint CloudManager::getRDPSize() {
-    return this->RDPSize;
-}
-
 /*
  *  Getters -- Count
  */
 
-const uint CloudManager::getRDPCount() {
-    return this->RDPCount;
-}
-
 /*
  *  Getters -- Data
  */
-
-const float* CloudManager::getRDPData() {
-    assert(RDPCount);
-    return &allRDPs[0];
-}
 
 bool CloudManager::hasVertices() {
     return (this->mStatus.hasAny(em::VERT_READY));
@@ -605,24 +578,12 @@ int CloudManager::setColourSize() {
     return chunks * chunkSize;
 }
 
-int CloudManager::setRDPSize() {
-    int chunks = RDPCount ?: setRDPCount();
-    int chunkSize = sizeof(float);
-
-    //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
-    return chunks * chunkSize;
-}
-
 /*
  *  Setters -- Count
  */
 
 int CloudManager::setColourCount() {
     return allColours.size();
-}
-
-int CloudManager::setRDPCount() {
-    return allRDPs.size();
 }
 
 /*

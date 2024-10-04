@@ -138,6 +138,7 @@ void WaveManager::create() {
                 circleWaveGPU(i);
         }
     }
+    mStatus.set(em::VERT_READY);
 
     genVertexArray();
     genIndexBuffer();
@@ -398,6 +399,8 @@ void WaveManager::resetManager() {
     this->renderedWaves = 255;
     this->deg_fac = 0.0;
     this->phase_base = PI_TWO;
+
+    this->mStatus.setTo(em::INIT);
 }
 
 void WaveManager::genVertexArray() {

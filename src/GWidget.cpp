@@ -70,7 +70,7 @@ void GWidget::newWaveConfig(AtomixConfig *cfg) {
     }
 
     if (!waveManager) {
-        waveManager = new WaveManager(&renderConfig);
+        waveManager = new WaveManager(cfg);
     } else {
         flGraphState.set(waveManager->receiveConfig(cfg));
     }
@@ -244,7 +244,7 @@ void GWidget::initCloudProgram() {
     cloudProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
 
     /* VBO 2: RDPs */
-    GLuint vboIDb = cloudProg->bindVBO("rdps", cloudManager->getRDPCount(), cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
+    GLuint vboIDb = cloudProg->bindVBO("rdps", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData(), static_dynamic);
     cloudProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
     cloudProg->enableAttribute(1);
     cloudProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
@@ -553,34 +553,34 @@ void GWidget::updateBuffersAndShaders() {
     /* VBO 1: Vertices */
     if (flGraphState.hasAny(egs::UPD_VBO)) {
         if (currentManager->getVertexCount() > currentProg->getSize("vertices")) {
-            std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << currentManager->getVertexCount() << std::endl;
+            // std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << currentManager->getVertexCount() << std::endl;
             currentProg->resizeVBONamed("vertices", currentManager->getVertexCount(), currentManager->getVertexSize(), currentManager->getVertexData(), static_dynamic);
         } else {
-            std::cout << "Updating VBO" << std::endl;
+            // std::cout << "Updating VBO" << std::endl;
             currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
         }
     }
 
-    /* VBO 2: RDPs */
+    /* VBO 2: Data */
     if (flGraphState.hasAny(egs::UPD_DATA)) {
-        if (cloudManager->getRDPCount() > cloudProg->getSize("rdps")) {
-            std::cout << "Resizing VBO: RDPs from " << cloudProg->getSize("rdps") << " to " << cloudManager->getRDPCount() << std::endl;
-            currentProg->resizeVBONamed("rdps", cloudManager->getRDPCount(), cloudManager->getRDPSize(), cloudManager->getRDPData(), static_dynamic);
+        if (currentManager->getDataCount() > currentProg->getSize("rdps")) {
+            // std::cout << "Resizing VBO: Datas from " << currentProg->getSize("rdps") << " to " << currentManager->getDataCount() << std::endl;
+            currentProg->resizeVBONamed("rdps", currentManager->getDataCount(), currentManager->getDataSize(), currentManager->getDataData(), static_dynamic);
         } else {
-            std::cout << "Updating VBO: RDPs" << std::endl;
-            currentProg->updateVBONamed("rdps", cloudManager->getRDPCount(), 0, cloudManager->getRDPSize(), cloudManager->getRDPData());
-            this->checkErrors("updateVBONamed(): ");
+            // std::cout << "Updating VBO: Datas" << std::endl;
+            currentProg->updateVBONamed("rdps", currentManager->getDataCount(), 0, currentManager->getDataSize(), currentManager->getDataData());
+            // this->checkErrors("updateVBONamed(): ");
         }
     }
     
     /* EBO: Indices */
     if (flGraphState.hasAny(egs::UPD_EBO)) {
         if (currentManager->getIndexCount() > currentProg->getSize("indices")) {
-            std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << currentManager->getIndexCount() << std::endl;
+            // std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << currentManager->getIndexCount() << std::endl;
             currentProg->resizeEBONamed("indices", currentManager->getIndexCount(), currentManager->getIndexSize(), currentManager->getIndexData(), static_dynamic);
-            this->checkErrors("resizeEBONamed(): ");
+            // this->checkErrors("resizeEBONamed(): ");
         } else {
-            std::cout << "Updating EBO" << std::endl;
+            // std::cout << "Updating EBO" << std::endl;
             currentProg->updateEBONamed("indices", currentManager->getIndexCount(), 0, currentManager->getIndexSize(), currentManager->getIndexData());
         }
     }
@@ -627,11 +627,8 @@ void GWidget::printSize() {
 
     if (flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
         VSize = currentManager->getVertexSize();
+        DSize = currentManager->getDataSize() * 2;
         ISize = currentManager->getIndexSize();
-        
-        if (flGraphState.hasAny(egs::CLOUD_RENDER)) {
-            DSize = cloudManager->getRDPSize() * 2;
-        }
     }
     
     int64_t divisorMB = 1024 * 1024;

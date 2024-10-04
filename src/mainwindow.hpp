@@ -67,13 +67,14 @@ private slots:
     void onAddNew();
 
 private:
-    //Window *container = nullptr;
+    AtomixConfig waveConfig;
+    AtomixConfig cloudConfig;
+
     QTabWidget *wTabs = nullptr;
     QWidget *wTabWaves = nullptr;
     QWidget *wTabHarmonics = nullptr;
     QDockWidget *dockTabs = nullptr;
     ConfigParser *cfgParser = nullptr;
-    AtomixConfig *customConfig = nullptr;
 
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;
@@ -108,7 +109,6 @@ private:
     QGroupBox *groupGenVertices = nullptr;
     QGroupBox *groupRecipeLocked = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
-    // QListWidget *listOrbitalReport = nullptr;
     QListWidget *listOrbitalLocked = nullptr;
     QTableWidget *tableOrbitalReport = nullptr;
     QLineEdit *entryCloudLayers = nullptr;
@@ -127,13 +127,12 @@ private:
     bool recipeLoaded = false;
 
     void loadConfig();
-    void lockConfig(AtomixConfig *cfg);
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
     void refreshConfigs();
     void refreshShaders();
-    void refreshOrbits(AtomixConfig *cfg);
+    void refreshOrbits();
     void setupDetails();
 
     void handleComboCfg();
@@ -146,7 +145,6 @@ private:
     void handleButtMorbWaves();
     void handleButtMorbHarmonics();
     void handleButtColors(int id);
-    void handleEntryTolerance(const QString &text);
     void handleWeightChange(int row, int col);
 
     void printHarmap();

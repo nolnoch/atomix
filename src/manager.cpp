@@ -45,12 +45,17 @@ void Manager::newConfig(AtomixConfig *config) {
 
 void Manager::resetManager() {
     allVertices.clear();
+    allData.clear();
     allIndices.clear();
 
     this->vertexCount = 0;
     this->vertexSize = 0;
+    this->dataCount = 0;
+    this->dataSize = 0;
     this->indexCount = 0;
     this->indexSize = 0;
+
+    mStatus.setTo(em::INIT);
 }
 
 void Manager::clearForNext() {
@@ -65,14 +70,21 @@ void Manager::genVertexArray() {
     this->vertexCount = setVertexCount();
     this->vertexSize = setVertexSize();
 
-    // std::cout << "Vertex Array generation complete." << std::endl;
+    this->mStatus.set(em::VERT_READY);
+}
+
+void Manager::genDataBuffer() {
+    this->dataCount = setDataCount();
+    this->dataSize = setDataSize();
+
+    this->mStatus.set(em::DATA_READY);
 }
 
 void Manager::genIndexBuffer() {
     this->indexCount = setIndexCount();
     this->indexSize = setIndexSize();
 
-    // std::cout << "Index Buffer generation complete." << std::endl;
+    this->mStatus.set(em::INDEX_READY);
 }
 
 /*
@@ -80,10 +92,17 @@ void Manager::genIndexBuffer() {
  */
 
 const uint Manager::getVertexSize() {
+    assert(mStatus.hasAll(em::VERT_READY));
     return this->vertexSize;
 }
 
+const uint Manager::getDataSize() {
+    assert(mStatus.hasAll(em::DATA_READY));
+    return this->dataSize;
+}
+
 const uint Manager::getIndexSize() {
+    assert(mStatus.hasAll(em::INDEX_READY));
     return this->indexSize;
 }
 
@@ -92,10 +111,17 @@ const uint Manager::getIndexSize() {
  */
 
 const uint Manager::getVertexCount() {
+    assert(mStatus.hasAll(em::VERT_READY));
     return this->vertexCount;
 }
 
+const uint Manager::getDataCount() {
+    assert(mStatus.hasAll(em::DATA_READY));
+    return this->dataCount;
+}
+
 const uint Manager::getIndexCount() {
+    assert(mStatus.hasAll(em::INDEX_READY));
     return this->indexCount;
 }
 
@@ -104,12 +130,17 @@ const uint Manager::getIndexCount() {
  */
 
 const float* Manager::getVertexData() {
-    assert(vertexCount);
+    assert(mStatus.hasAll(em::VERT_READY));
     return glm::value_ptr(allVertices.front());
 }
 
+const float* Manager::getDataData() {
+    assert(mStatus.hasAll(em::DATA_READY));
+    return &allData[0];
+}
+
 const uint* Manager::getIndexData() {
-    assert(indexCount);
+    assert(mStatus.hasAll(em::INDEX_READY));
     return &allIndices[0];
 }
 
@@ -137,6 +168,14 @@ int Manager::setVertexSize() {
     return chunks * chunkSize;
 }
 
+int Manager::setDataSize() {
+    int chunks = dataCount ?: setDataCount();
+    int chunkSize = sizeof(float);
+
+    //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
+    return chunks * chunkSize;
+}
+
 int Manager::setIndexSize() {
     int chunks = indexCount ?: setIndexCount();
     int chunkSize = sizeof(uint);
@@ -151,6 +190,10 @@ int Manager::setIndexSize() {
 
 int Manager::setVertexCount() {
     return allVertices.size();
+}
+
+int Manager::setDataCount() {
+    return allData.size();
 }
 
 int Manager::setIndexCount() {

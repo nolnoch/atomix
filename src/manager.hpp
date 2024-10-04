@@ -49,16 +49,19 @@ class Manager {
         virtual ~Manager(){ resetManager(); };
         virtual void newConfig(AtomixConfig *config);
         virtual void initManager() {};
-        
+
         virtual void create() {};
         virtual void update(double time) {};
 
         const uint getVertexCount();
         const uint getVertexSize();
+        const uint getDataCount();
+        const uint getDataSize();
         const uint getIndexCount();
         const uint getIndexSize();
         
         const float* getVertexData();
+        const float* getDataData();
         const uint* getIndexData();
 
         std::string& getShaderVert();
@@ -74,10 +77,13 @@ class Manager {
         virtual void clearForNext();
 
         virtual void genVertexArray();
+        virtual void genDataBuffer();
         virtual void genIndexBuffer();
         
         int setVertexCount();
         int setVertexSize();
+        int setDataCount();
+        int setDataSize();
         int setIndexCount();
         int setIndexSize();
 
@@ -90,6 +96,8 @@ class Manager {
         
         uint vertexCount = 0;
         uint vertexSize = 0;
+        uint dataCount = 0;
+        uint dataSize = 0;
         uint indexCount = 0;
         uint indexSize = 0;
 
@@ -99,7 +107,7 @@ class Manager {
             INIT =              1,          // Manager has been initialized
             VERT_READY =        2,          // Vertices generate and ready for VBO load
             DATA_READY =        2 << 1,     // Special data generated and ready for buffer load
-            IDX_READY =         2 << 2,     // Indices generated and ready for EBO load
+            INDEX_READY =         2 << 2,     // Indices generated and ready for EBO load
             UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
             UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
             UPD_VBO =           2 << 6,     // Cloud VBO needs to be updated

@@ -48,9 +48,6 @@ class CloudManager : public Manager {
         void cloudTestCSV();
         
         const uint getColourSize();
-        const uint getRDPCount();
-        const uint getRDPSize();
-        const float* getRDPData();
 
         bool hasVertices();
         bool hasBuffers();
@@ -65,7 +62,7 @@ class CloudManager : public Manager {
         void bakeOrbitalsForRender();
         void cullRDPs();
 
-        void clearForNext();
+        void clearForNext() override final;
         void resetManager() override final;
         
         double wavefuncRadial(int n, int l, double r);
@@ -80,12 +77,9 @@ class CloudManager : public Manager {
         int64_t fact(int n);
 
         void genOrbital(int n, int l, int m_l, double weight);
-        void genRDPs();
         
         int setColourCount();
         int setColourSize();
-        int setRDPCount();
-        int setRDPSize();
 
         void printBuffer(fvec buf, std::string name);
         void printBuffer(uvec buf, std::string name);
@@ -98,13 +92,12 @@ class CloudManager : public Manager {
         // void RDPtoColours();
 
         std::vector<vVec3 *> pixelColours;
+        vVec3 allColours;
         dvec rdpStaging;
         dvec shellRDPMaximaN;
         dvec shellRDPMaximaL;
         dvec shellRDPMaximaCum;
         float allRDPMaximum;
-        vVec3 allColours;
-        fvec allRDPs;
         
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
@@ -112,8 +105,6 @@ class CloudManager : public Manager {
         
         uint colourCount = 0;
         uint colourSize = 0;
-        uint RDPCount = 0;
-        uint RDPSize = 0;
         uint64_t pixelCount = 0;
         
         int orbitalIdx = 0;

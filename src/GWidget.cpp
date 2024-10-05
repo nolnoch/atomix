@@ -210,7 +210,8 @@ void GWidget::initWaveProgram() {
 
     currentProg = waveProg;
     currentManager = waveManager;
-    // this->printSize();
+    
+    this->updateSize();
 }
 
 void GWidget::initCloudProgram() {
@@ -260,7 +261,7 @@ void GWidget::initCloudProgram() {
     currentProg = cloudProg;
     currentManager = cloudManager;
 
-    // this->printSize();
+    this->updateSize();
 }
 
 void GWidget::changeModes(bool force) {
@@ -298,6 +299,11 @@ void GWidget::initVecsAndMatrices() {
 
     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_farDist);
+
+    gw_info.pos = gw_startDist;
+    gw_info.near = gw_nearDist;
+    gw_info.far = gw_farDist;
+    emit detailsChanged(&gw_info);
 }
 
 void GWidget::initializeGL() {
@@ -414,7 +420,8 @@ void GWidget::wheelEvent(QWheelEvent *e) {
     float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
     // std::cout << glm::to_string(v3_cameraPosition) << std::endl;
-    emit cameraChanged();
+    gw_info.pos = v3_cameraPosition.z;
+    emit detailsChanged(&gw_info);
     update();
 }
 
@@ -606,7 +613,10 @@ int GWidget::updateBuffersAndShaders() {
     /* Release */
     currentProg->endRender();
     currentProg->clearBuffers();
+    
     flGraphState.clear(eUpdateFlags);
+    this->updateSize();
+    
     return status;
 }
 
@@ -635,28 +645,38 @@ std::string GWidget::withCommas(int64_t value) {
     return ssFmt.str();
 }
 
-void GWidget::printSize() {
+void GWidget::updateSize() {
     int64_t VSize = 0, DSize = 0, ISize = 0;
     bool isMBV = false, isMBI = false;
 
     if (flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
         VSize = currentManager->getVertexSize();
-        DSize = currentManager->getDataSize() * 2;
-        ISize = currentManager->getIndexSize();
+        DSize = currentManager->getDataSize() << 1;
+        ISize = currentManager->getIndexSize() << 1;
     }
     
+    gw_info.vertex = VSize;
+    gw_info.data = DSize;
+    gw_info.index = ISize;
+
+    emit detailsChanged(&gw_info);
+}
+
+void GWidget::printSize() {
+    bool isMBV = false, isMBI = false;
+
     int64_t divisorMB = 1024 * 1024;
-    if (isMBV = VSize > divisorMB) {
-        VSize /= divisorMB;
+    if (isMBV = gw_info.vertex > divisorMB) {
+        gw_info.vertex /= divisorMB;
     }
-    if (isMBI = ISize > divisorMB) {
-        ISize /= divisorMB;
+    if (isMBI = gw_info.index > divisorMB) {
+        gw_info.index /= divisorMB;
     }
 
-    std::cout << "\nVertex Total Size: " << std::setw(7) << withCommas(VSize) << ((isMBV) ? " MB\n" : "  B\n");
-    if (DSize)
-        std::cout <<   "RDProb Total Size: " << std::setw(7) << withCommas(DSize / divisorMB) << " MB\n";
-    std::cout <<   "Indice Total Size: " << std::setw(7) << withCommas(ISize) << ((isMBI) ? " MB" : "  B") << std::endl;
+    std::cout << "\nVertex Total Size: " << std::setw(7) << withCommas(gw_info.vertex) << ((isMBV) ? " MB\n" : "  B\n");
+    if (gw_info.data)
+        std::cout <<   "RDProb Total Size: " << std::setw(7) << withCommas(gw_info.data / divisorMB) << " MB\n";
+    std::cout <<   "Indice Total Size: " << std::setw(7) << withCommas(gw_info.index) << ((isMBI) ? " MB" : "  B") << std::endl;
 }
 
 void GWidget::printConfig(AtomixConfig *cfg) {

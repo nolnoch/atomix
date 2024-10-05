@@ -41,15 +41,16 @@
 #include "cloudmanager.hpp"
 
 
-/* Program/Wave pointer struct */
-/* typedef struct {
-    std::vector<std::vector<Program *> *> apProgs;      // Vector of pointers to Programs
-    std::vector<std::vector<WaveManager *> *> apWaves;       // Vector of pointers to Waves
-    std::vector<WaveConfig *> apConfigs;                // Vector of configs
-    int apIdxRender = 0;                                // Current pointer index
-    int apIdxCreate = 0;                                // Future pointer index
-} AtomixProgs;
-Q_DECLARE_METATYPE(AtomixProgs); */
+/* Debug info struct */
+typedef struct AtomixInfo {
+    float pos = 0.0f;       // Camera position
+    float near = 0.0f;      // Near culling distance
+    float far = 0.0f;       // Far culling distance
+    uint vertex = 0;        // Vertex buffer size
+    uint data = 0;          // Data buffer size
+    uint index = 0;         // Index buffer size
+} AtomixInfo;
+Q_DECLARE_METATYPE(AtomixInfo);
 
 enum egs {
     WAVE_MODE =         1,          // Button from Wave tab clicked, only making Waves
@@ -106,7 +107,7 @@ protected:
     void keyPressEvent(QKeyEvent *event);
 
 signals:
-    void cameraChanged();
+    void detailsChanged(AtomixInfo *info);
 
 private:
     void initVecsAndMatrices();
@@ -118,6 +119,7 @@ private:
     
     void checkErrors(std::string str);
     std::string withCommas(int64_t value);
+    void updateSize();
     void printSize();
 
     QOpenGLContext *gw_context = nullptr;
@@ -134,6 +136,7 @@ private:
     Manager *currentManager = nullptr;
 
     AtomixConfig renderConfig;
+    AtomixInfo gw_info;
     glm::mat4 m4_proj;
     glm::mat4 m4_view;
     glm::mat4 m4_world;

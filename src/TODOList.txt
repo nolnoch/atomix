@@ -2,7 +2,7 @@ o Resize VBO when/if CloudConfig changes
 o Commit to new vertex/resolution scaling or fix above
 - Multithreading (ughhh, but very necessary)
 o Slider for bg color
-+ Slider for cutting through model (nearDist or EBO change)
+o Slider for cutting through model (EBO change)
 - Energy tab
 o Scale pan based on zoom level
 - Loading animation for vertex and RDP generation
@@ -16,3 +16,4 @@ o Coefficient for orbital recipes
 - Deployable packages on Ubuntu, Windows, and MacOS
 - Programmatically limit input on GUI fields
 - Implement CPU orbital rendering
++ Debug overlay

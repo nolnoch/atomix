@@ -55,7 +55,7 @@ public:
     MainWindow();
 
 public slots:
-    void updateDetails();
+    void updateDetails(AtomixInfo *info);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -131,6 +131,8 @@ private:
     int intSliderLen = 100;
 
     bool recipeLoaded = false;
+
+    AtomixInfo dInfo;
 
     void loadConfig();
     void setupTabs();

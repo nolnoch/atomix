@@ -44,7 +44,7 @@ void MainWindow::onAddNew() {
     refreshOrbits();
     setupDetails();
 
-    connect(graph, SIGNAL(cameraChanged()), this, SLOT(updateDetails()));
+    connect(graph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
@@ -132,36 +132,54 @@ void MainWindow::refreshOrbits() {
 }
 
 void MainWindow::setupDetails() {
-    float *cam = this->graph->getCameraPosition();
     QFont fontDebug("Monospace");
     fontDebug.setStyleHint(QFont::Courier);
-
-    float fDist = cam[0];
-    float fNear = cam[1];
-    float fFar = cam[2];
-    QString strDetails = QString("Distance: %1\n"\
-                                 "Near: %2\n"\
-                                 "Far: %3").arg(fDist).arg(fNear).arg(fFar);
+    QString strDetails = QString("Position:      %1\n"\
+                                 "View|Near:     %2\n"\
+                                 "View|Far:      %3\n\n"\
+                                 "Buffer|Vertex: %4\n"\
+                                 "Buffer|Data:   %5\n"\
+                                 "Buffer|Index:  %6\n\n"\
+                                 ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
     labelDetails = new QLabel(graph);
     labelDetails->setFont(fontDebug);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     labelDetails->raise();
+    labelDetails->adjustSize();
     labelDetails->hide();
 }
 
-void MainWindow::updateDetails() {
-    if (!labelDetails->isVisible()) {
-        return;
-    }
-    float *cam = this->graph->getCameraPosition();
+void MainWindow::updateDetails(AtomixInfo *info) {
+    this->dInfo.pos = info->pos;
+    this->dInfo.near = info->near;
+    this->dInfo.far = info->far;
+    this->dInfo.vertex = info->vertex;
+    this->dInfo.data = info->data;
+    this->dInfo.index = info->index;
+    
+    std::array<float, 3> bufs = { static_cast<float>(dInfo.vertex), static_cast<float>(dInfo.data), static_cast<float>(dInfo.index) };
+    QList<QString> units = { "B", "KB", "MB", "GB" };
+    std::array<int, 3> u = { 0, 0, 0 };
+    int div = 1024;
 
-    float fDist = cam[0];
-    float fNear = cam[1];
-    float fFar = cam[2];
-    QString strDetails = QString("Distance: %1\n"\
-                                 "Near: %2\n"\
-                                 "Far: %3").arg(fDist).arg(fNear).arg(fFar);
+    for (int idx = 0; auto& f : bufs) {
+        while (f > div) {
+            f /= div;
+            u[idx]++;
+        }
+        idx++;
+    }
+    
+    QString strDetails = QString("Position:      %1\n"\
+                                 "View|Near:     %2\n"\
+                                 "View|Far:      %3\n\n"\
+                                 "Buffer|Vertex: %4 %7\n"\
+                                 "Buffer|Data:   %5 %8\n"\
+                                 "Buffer|Index:  %6 %9\n\n"\
+                                 ).arg(dInfo.pos).arg(dInfo.near).arg(dInfo.far)\
+                                 .arg(bufs[0], 5, 'g', 4, ' ').arg(bufs[1], 5, 'g', 4, ' ').arg(bufs[2], 5, 'g', 4, ' ')\
+                                 .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]]);
     labelDetails->setText(strDetails);
     labelDetails->adjustSize();
 }

@@ -53,6 +53,8 @@ class Manager {
         virtual void create() {};
         virtual void update(double time) {};
 
+        void clearUpdates();
+
         const uint getVertexCount();
         const uint getVertexSize();
         const uint getDataCount();

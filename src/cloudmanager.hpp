@@ -43,7 +43,7 @@ class CloudManager : public Manager {
         void initManager() override final;
         
         uint receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
-        void receiveCulling(float pct);
+        uint receiveCulling(float pct);
         
         void cloudTest(int n_max);
         void cloudTestCSV();

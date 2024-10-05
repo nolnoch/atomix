@@ -62,6 +62,10 @@ void Manager::clearForNext() {
     this->resetManager();
 }
 
+void Manager::clearUpdates() {
+    mStatus.clear(eUpdateFlags);
+}
+
 /*
  *  Generators
  */

@@ -107,24 +107,10 @@ void CloudManager::create() {
     genVertexArray();
 }
 
-void CloudManager::clearForNext() {
-    mStatus.reset();
-
-    std::fill(shellRDPMaximaN.begin(), shellRDPMaximaN.end(), 0.0);
-    std::fill(shellRDPMaximaL.begin(), shellRDPMaximaL.end(), 0.0);
-    std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
-    std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
-    cloudOrbitals.clear();
-    this->orbitalIdx = 0;
-    this->allRDPMaximum = 0;
-    this->atomZ = 1;
-    mStatus.setTo(em::INIT | em::VERT_READY);
-}
-
 void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
     assert(mStatus.hasAny(em::VERT_READY));
     double max_rdp = 0;
-    int pixelCount = 0;
+    int localCount = 0;
     double deg_fac_local = this->deg_fac;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
@@ -147,79 +133,20 @@ void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
                 std::complex<double> Y = orbExp * orbNorm * orbLeg;
                 double rdp2 = wavefuncRDP2(R * Y, radius, l);
 
-                if (rdp2 > max_rdp) {
-                    max_rdp = rdp2;
-                }
-                rdpStaging[pixelCount++] += rdp2 * weight;
-
-            }
-        }
-    }
-
-    if (max_rdp > shellRDPMaximaN[n-1])
-        shellRDPMaximaN[n-1] = max_rdp;
-    if (max_rdp > shellRDPMaximaL[l])
-        shellRDPMaximaL[l] = max_rdp;
-}
-
-/* void CloudManager::genOrbitalsThroughN(int n_max) {
-    for (int n = n_max; n > 0; n--) {
-        for (int l = n-1; l >= 0; l--) {
-            for (int m_l = l; m_l >= -l; m_l--) {
-                cloudOrbitals[n].push_back(ivec2(l, m_l));
+                rdpStaging[localCount++] += rdp2 * weight;
             }
         }
     }
 }
-
-void CloudManager::genOrbitalsOfN(int n) {
-    for (int l = n-1; l >= 0; l--) {
-        for (int m_l = l; m_l >= -l; m_l--) {
-            cloudOrbitals[n].push_back(ivec2(l, m_l));
-        }
-    }
-}
-
-void CloudManager::genOrbitalsOfL(int n, int l) {
-
-    for (int m_l = l; m_l >= -l; m_l--) {
-        cloudOrbitals[n].push_back(ivec2(l, m_l));
-    }
-}
-
-void CloudManager::genOrbitalExplicit(int n, int l, int m_l) {
-    cloudOrbitals[n].push_back(ivec2(l, m_l));
-} */
 
 void CloudManager::bakeOrbitalsForRender() {
     assert(mStatus.hasAll(em::VERT_READY));
-
-   /*  if (numOrbitals) {
-        std::cout << numOrbitals << " recipe(s) loaded. Begin processing..." << std::endl;
-    } else {
-        std::cout << "No recipes loaded. Aborting." << std::endl;
-        return;
-    } */
 
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
             genOrbital(key, v.x, v.y, (v.z / static_cast<double>(numOrbitals)));
-            // printMaxRDP(key, v.x, v.y, 0);
         }
-        // For each N: Get max element from accumulated rdpStaging values
-        // double thisMax = *std::max_element(rdpStaging.begin(), rdpStaging.end());
-
-        // For each N: Normalize accumulated pixelRDPs, add to allData, register indices, and reset pixelRDP vector
-        /* for (uint p = 0; p < this->pixelCount; p++) {
-            double new_val = rdpStaging[p];
-            new_val /= thisMax;
-            if (new_val > this->cloudTolerance) {
-                allData[p] += static_cast<float>(new_val);
-                allIndices.push_back(p);
-            }
-            // rdpStaging[p] = 0.0;
-        } */
     }
 }
 
@@ -229,13 +156,8 @@ void CloudManager::cullRDPs() {
     std::fill(allData.begin(), allData.end(), 0.0);
     indicesStaging.clear();
 
-    // End: check actual value of accumulated allData
+    // End: check actual max value of accumulated vector
     this->allRDPMaximum = *std::max_element(rdpStaging.begin(), rdpStaging.end());
-    // std::cout << "Cumulative Max RDP for rdpStaging was: " << this->allRDPMaximum << std::endl;
-
-    // End: Clamp all accumulated values in allData to [0,1] or normalize by peak accumulated value
-    // std::transform(allData.cbegin(), allData.cend(), allData.begin(), [=](auto f){ return std::clamp(f, 0.0f, 1.0f); });
-    // std::transform(allData.cbegin(), allData.cend(), allData.begin(), [=, this](auto f){ return f / this->allRDPMaximum; });
 
     for (uint p = 0; p < this->pixelCount; p++) {
         double new_val = rdpStaging[p] / this->allRDPMaximum;
@@ -257,16 +179,13 @@ void CloudManager::cullIndices() {
     if (!cm_culled) {
         std::copy(indicesStaging.cbegin(), indicesStaging.cend(), std::back_inserter(allIndices));
     } else {
-        int theta_max_local = cloudResolution;
-        int phi_max_local = cloudResolution >> 1;
-        int theta_culled_local = theta_max_local * cm_culled;
-        int culled_size = theta_culled_local * phi_max_local;
-        int layer_size = theta_max_local * phi_max_local;
+        int theta_culled_local = cloudResolution * cm_culled;
+        int culled_size = theta_culled_local * (cloudResolution >> 1);
+        int layer_size = cloudResolution * (cloudResolution >> 1);
         int idxEnd = indicesStaging.size();
 
         for (uint i = 0; i < idxEnd; i++) {
-            int pixelInLayer = indicesStaging[i] % layer_size;
-            if (pixelInLayer < culled_size) {
+            if ((indicesStaging[i] % layer_size) < culled_size) {
                 continue;
             } else {
                 allIndices.push_back(indicesStaging[i]);
@@ -392,16 +311,25 @@ uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap,
         this->cullIndices();
     }
 
-    return mStatus.intersection(eUpdateFlags);
+    flags = mStatus.intersection(eUpdateFlags);
+    this->clearUpdates();
+
+    return flags;
 }
 
-void CloudManager::receiveCulling(float pct) {
-    mStatus.clear(em::INDEX_READY);
+uint CloudManager::receiveCulling(float pct) {
+    uint flags = 0;
+
+    this->mStatus.clear(em::INDEX_READY);
     this->indexCount = 0;
     this->indexSize = 0;
     this->cm_culled = pct;
 
-    cullIndices();
+    this->cullIndices();
+    flags = mStatus.intersection(eUpdateFlags);
+    this->clearUpdates();
+
+    return flags;
 }
 
 int64_t CloudManager::fact(int n) {
@@ -540,6 +468,20 @@ void CloudManager::wavefuncNorms(int max_n) {
 /* void CloudManager::resetUpdates() {
     mStatus.reset();
 } */
+
+void CloudManager::clearForNext() {
+    mStatus.reset();
+
+    std::fill(shellRDPMaximaN.begin(), shellRDPMaximaN.end(), 0.0);
+    std::fill(shellRDPMaximaL.begin(), shellRDPMaximaL.end(), 0.0);
+    std::fill(shellRDPMaximaCum.begin(), shellRDPMaximaCum.end(), 0.0);
+    std::fill(rdpStaging.begin(), rdpStaging.end(), 0.0);
+    cloudOrbitals.clear();
+    this->orbitalIdx = 0;
+    this->allRDPMaximum = 0;
+    this->atomZ = 1;
+    mStatus.setTo(em::INIT | em::VERT_READY);
+}
 
 void CloudManager::resetManager() {
     Manager::resetManager();

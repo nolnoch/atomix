@@ -16,4 +16,4 @@ o Coefficient for orbital recipes
 - Deployable packages on Ubuntu, Windows, and MacOS
 - Programmatically limit input on GUI fields
 - Implement CPU orbital rendering
-+ Debug overlay
+o Debug overlay

@@ -88,12 +88,13 @@ void CloudManager::create() {
                 }
 
                 allVertices.push_back(pos);
-                allData.push_back(0.0);
-                rdpStaging.push_back(0.0);
                 pixelCount++;
             }
         }
     }
+
+    rdpStaging.insert(rdpStaging.end(), pixelCount, 0.0);
+    allData.insert(allData.end(), pixelCount, 0.0f);
 
     for (int i = 0; i < MAX_SHELLS; i++) {
         shellRDPMaximaN.push_back(0.0);

@@ -1,8 +1,8 @@
 o Resize VBO when/if CloudConfig changes
 o Commit to new vertex/resolution scaling or fix above
 - Multithreading (ughhh, but very necessary)
-- Slider for bg color
-- Slider for cutting through model (nearDist or EBO change)
+o Slider for bg color
++ Slider for cutting through model (nearDist or EBO change)
 - Energy tab
 o Scale pan based on zoom level
 - Loading animation for vertex and RDP generation

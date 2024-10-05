@@ -281,8 +281,8 @@ void GWidget::changeModes(bool force) {
 
 void GWidget::initVecsAndMatrices() {
     gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (6.0f * this->max_n * this->max_n);
-    gw_nearDist = gw_startDist * 0.05f;
-    gw_farDist = gw_startDist * 3.0f;
+    gw_nearDist = gw_startDist * gw_nearScale;
+    gw_farDist = gw_startDist * gw_farScale;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -318,13 +318,12 @@ void GWidget::initializeGL() {
     }
 
     /* Init -- Camera and OpenGL State */
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
     /* Init -- Matrices */
     initVecsAndMatrices();
-
 
     /* Init -- Programs and Shaders */
     initCrystalProgram();
@@ -365,6 +364,7 @@ void GWidget::paintGL() {
     /* Per-frame Setup */
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     /* Re-calculate world state matrices */
@@ -611,6 +611,15 @@ float* GWidget::getCameraPosition() {
     gw_cam[2] = gw_farDist;
 
     return gw_cam;
+}
+
+void GWidget::setBGColour(float colour) {
+    gw_bg = colour;
+}
+
+void GWidget::cullModel(float pct) {
+    gw_farDist = gw_nearDist * gw_farScale * pct;
+    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_farDist);
 }
 
 std::string GWidget::withCommas(int64_t value) {

@@ -83,6 +83,9 @@ public:
     void setColorsWaves(int id, uint colorChoice);
     void updateBuffersAndShaders();
 
+    void setBGColour(float colour);
+    void cullModel(float pct);
+
     float* getCameraPosition();
 
 public slots:
@@ -150,6 +153,9 @@ private:
     float gw_farDist = 0.0f;
     float gw_nearDist = 0.0f;
     float gw_cam[3] = {0,0,0};
+    float gw_bg = 0.0f;
+    float gw_nearScale = 0.5f;
+    float gw_farScale = 2.5f;
     
     uint gw_faces = 0;
     uint gw_lines = 0;

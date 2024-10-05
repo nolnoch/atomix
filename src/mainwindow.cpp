@@ -59,6 +59,8 @@ void MainWindow::onAddNew() {
     connect(entryCloudRes, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(entryCloudMinRDP, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(tableOrbitalReport, &QTableWidget::cellDoubleClicked, this, &MainWindow::handleWeightChange);
+    connect(slideCulling, &QSlider::sliderMoved, this, &MainWindow::handleSlideCulling);
+    connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
     setWindowTitle(tr("atomix"));
 }
@@ -239,17 +241,6 @@ void MainWindow::setupDockWaves() {
     QVBoxLayout *layConfigFile = new QVBoxLayout;
     QVBoxLayout *layOptionBox = new QVBoxLayout;
     QHBoxLayout *layOrbitSelect = new QHBoxLayout;
-    QHBoxLayout *layOptionRow1 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow2 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow3 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow4 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow5 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow6 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow7 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow8 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow9 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow10 = new QHBoxLayout;
-    QHBoxLayout *layOptionRow11 = new QHBoxLayout;
     QHBoxLayout *layColorPicker = new QHBoxLayout;
 
     QGroupBox *groupConfig = new QGroupBox("Config File");
@@ -536,7 +527,6 @@ void MainWindow::setupDockHarmonics() {
     QStringList headersReport = { "Weight", "Orbital" };
     tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
     tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    // tableOrbitalReport->verticalHeader()->setDefaultSectionSize(20);
     tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableOrbitalReport->verticalHeader()->setVisible(false);
     tableOrbitalReport->setShowGrid(false);
@@ -590,18 +580,39 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->setAlignment(Qt::AlignRight);
 
+    slideCulling = new QSlider(Qt::Horizontal);
+    slideCulling->setMinimum(0);
+    slideCulling->setMaximum(10);
+    slideBackground = new QSlider(Qt::Horizontal);
+    slideBackground->setMinimum(0);
+    slideBackground->setMaximum(10);
+
+    QHBoxLayout *laySlideCulling = new QHBoxLayout;
+    laySlideCulling->addWidget(slideCulling);
+    QHBoxLayout *laySlideBackground = new QHBoxLayout;
+    laySlideBackground->addWidget(slideBackground);
+
+    groupSlideCulling = new QGroupBox("Model Culling");
+    groupSlideCulling->setLayout(laySlideCulling);
+    groupSlideBackground = new QGroupBox("Background Brightness");
+    groupSlideBackground->setLayout(laySlideBackground);
+
     QVBoxLayout *layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
-    layDockHarmonics->addStretch(2);
+    layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(layRecipeIO);
     layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addWidget(buttMorbHarmonics);
-    layDockHarmonics->addStretch(2);
+    layDockHarmonics->addStretch(1);
+    layDockHarmonics->addWidget(groupSlideCulling);
+    layDockHarmonics->addWidget(groupSlideBackground);
 
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
     layDockHarmonics->setStretchFactor(layRecipeIO, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
+    layDockHarmonics->setStretchFactor(groupSlideCulling, 1);
+    layDockHarmonics->setStretchFactor(groupSlideBackground, 1);
 
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
 
@@ -848,6 +859,14 @@ void MainWindow::handleButtColors(int id) {
     QString qss = QString::fromStdString(ss);
     buttGroupColors->button(id)->setStyleSheet(qss);
     graph->setColorsWaves(id, color);
+}
+
+void MainWindow::handleSlideCulling(int val) {
+    graph->cullModel(1.0f - (static_cast<float>(val) / 10.0f));
+}
+
+void MainWindow::handleSlideBackground(int val) {
+    graph->setBGColour((static_cast<float>(val) / 10.0f));
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

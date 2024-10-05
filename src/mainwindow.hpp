@@ -41,6 +41,7 @@
 #include <QTreeWidget>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QSlider>
 #include <QSignalBlocker>
 #include "GWidget.hpp"
 
@@ -108,12 +109,16 @@ private:
     QGroupBox *groupRecipeReporter = nullptr;
     QGroupBox *groupGenVertices = nullptr;
     QGroupBox *groupRecipeLocked = nullptr;
+    QGroupBox *groupSlideCulling = nullptr;
+    QGroupBox *groupSlideBackground = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
     QListWidget *listOrbitalLocked = nullptr;
     QTableWidget *tableOrbitalReport = nullptr;
     QLineEdit *entryCloudLayers = nullptr;
     QLineEdit *entryCloudRes = nullptr;
     QLineEdit *entryCloudMinRDP = nullptr;
+    QSlider *slideBackground = nullptr;
+    QSlider *slideCulling = nullptr;
 
     QLabel *labelDetails = nullptr;
 
@@ -146,6 +151,8 @@ private:
     void handleButtMorbHarmonics();
     void handleButtColors(int id);
     void handleWeightChange(int row, int col);
+    void handleSlideCulling(int val);
+    void handleSlideBackground(int val);
 
     void printHarmap();
     void printList();

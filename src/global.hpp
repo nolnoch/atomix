@@ -60,6 +60,10 @@ struct BitFlag {
             toggle(flag);
         }
     }
+    void advance(uint flagA, uint flagB) {
+        toggle(flagA);
+        toggle(flagB);
+    }
     bool hasAll(uint flag) {
         return (bf & flag) == flag;
     }

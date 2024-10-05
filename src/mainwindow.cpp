@@ -582,10 +582,10 @@ void MainWindow::setupDockHarmonics() {
 
     slideCulling = new QSlider(Qt::Horizontal);
     slideCulling->setMinimum(0);
-    slideCulling->setMaximum(10);
+    slideCulling->setMaximum(intSliderLen);
     slideBackground = new QSlider(Qt::Horizontal);
     slideBackground->setMinimum(0);
-    slideBackground->setMaximum(10);
+    slideBackground->setMaximum(intSliderLen);
 
     QHBoxLayout *laySlideCulling = new QHBoxLayout;
     laySlideCulling->addWidget(slideCulling);
@@ -862,11 +862,11 @@ void MainWindow::handleButtColors(int id) {
 }
 
 void MainWindow::handleSlideCulling(int val) {
-    graph->cullModel(1.0f - (static_cast<float>(val) / 10.0f));
+    graph->cullModel((static_cast<float>(val) / intSliderLen));
 }
 
 void MainWindow::handleSlideBackground(int val) {
-    graph->setBGColour((static_cast<float>(val) / 10.0f));
+    graph->setBGColour((static_cast<float>(val) / intSliderLen));
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

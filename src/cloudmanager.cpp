@@ -54,6 +54,7 @@ void CloudManager::initManager() {
     create();
     bakeOrbitalsForRender();
     cullRDPs();
+    cullIndices();
 }
 
 void CloudManager::create() {
@@ -61,6 +62,8 @@ void CloudManager::create() {
     int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
     int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
     int steps_local = this->cloudResolution;
+    int phi_max_local = this->cloudResolution >> 1;
+    int theta_max_local = this->cloudResolution;
     double deg_fac_local = this->deg_fac;
     vec3 pos = vec3(0.0f);
 
@@ -69,9 +72,9 @@ void CloudManager::create() {
         double radius = static_cast<double>(k) / this->cloudLayerDivisor;
         int lv = k - 1;
 
-        for (int i = 0; i < steps_local; i++) {
+        for (int i = 0; i < theta_max_local; i++) {
             double theta = i * deg_fac_local;
-            for (int j = 0; j < steps_local; j++) {
+            for (int j = 0; j < phi_max_local; j++) {
                 double phi = j * deg_fac_local;
 
                 if (cfg.cpu) {
@@ -97,8 +100,9 @@ void CloudManager::create() {
         shellRDPMaximaL.push_back(0.0);
         shellRDPMaximaCum.push_back(0.0);
     }
-
     wavefuncNorms(MAX_SHELLS);
+
+    mStatus.set(em::VERT_READY);
     genVertexArray();
 }
 
@@ -121,7 +125,8 @@ void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
     double max_rdp = 0;
     int pixelCount = 0;
     double deg_fac_local = this->deg_fac;
-    int steps_local = this->cloudResolution;
+    int phi_max_local = this->cloudResolution >> 1;
+    int theta_max_local = this->cloudResolution;
     int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
     int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
 
@@ -131,10 +136,10 @@ void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
         double R = wavefuncRadial(n, l, radius);
         double rdp = wavefuncRDP(R, radius, l);
 
-        for (int i = 0; i < steps_local; i++) {
+        for (int i = 0; i < theta_max_local; i++) {
             double theta = i * deg_fac_local;
             std::complex<double> orbExp = wavefuncAngExp(m_l, theta);
-            for (int j = 0; j < steps_local; j++) {
+            for (int j = 0; j < phi_max_local; j++) {
                 double phi = j * deg_fac_local;
 
                 double orbLeg = wavefuncAngLeg(l, m_l, phi);
@@ -221,7 +226,7 @@ void CloudManager::cullRDPs() {
     assert(mStatus.hasAll(em::VERT_READY));
 
     std::fill(allData.begin(), allData.end(), 0.0);
-    allIndices.clear();
+    indicesStaging.clear();
 
     // End: check actual value of accumulated allData
     this->allRDPMaximum = *std::max_element(rdpStaging.begin(), rdpStaging.end());
@@ -235,11 +240,40 @@ void CloudManager::cullRDPs() {
         double new_val = rdpStaging[p] / this->allRDPMaximum;
         if (new_val > this->cloudTolerance) {
             allData[p] = static_cast<float>(new_val);
-            allIndices.push_back(p);
+            indicesStaging.push_back(p);
         }
     }
 
+    allIndices.reserve(indicesStaging.size());
+
+    mStatus.set(em::DATA_READY);
     genDataBuffer();
+}
+
+void CloudManager::cullIndices() {
+    allIndices.clear();
+
+    if (!cm_culled) {
+        std::copy(indicesStaging.cbegin(), indicesStaging.cend(), std::back_inserter(allIndices));
+    } else {
+        int theta_max_local = cloudResolution;
+        int phi_max_local = cloudResolution >> 1;
+        int theta_culled_local = theta_max_local * cm_culled;
+        int culled_size = theta_culled_local * phi_max_local;
+        int layer_size = theta_max_local * phi_max_local;
+        int idxEnd = indicesStaging.size();
+
+        for (uint i = 0; i < idxEnd; i++) {
+            int pixelInLayer = indicesStaging[i] % layer_size;
+            if (pixelInLayer < culled_size) {
+                continue;
+            } else {
+                allIndices.push_back(indicesStaging[i]);
+            }
+        }
+    }
+
+    mStatus.set(em::INDEX_READY);
     genIndexBuffer();
 }
 
@@ -304,7 +338,7 @@ void CloudManager::cloudTestCSV() {
                 }
                 std::cout << "\n";
             }
-            
+
         }
     }
     std::cout << std::endl;
@@ -323,7 +357,7 @@ void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
 
 uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
     uint flags = 0;
-    
+
     // Check for relevant config changes OR for recipes to require larger radius
     bool newMap = cloudOrbitals != inMap;
     bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
@@ -338,7 +372,7 @@ uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap,
     } else if (newMap) {
         this->clearForNext();
     }
-    
+
     // Update config and map
     this->newConfig(config);
     this->receiveCloudMap(inMap, numRecipes);
@@ -346,20 +380,27 @@ uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap,
     // Regen vertices if necessary
     if (newVerticesRequired) {
         this->create();
-        flags |= em::UPD_VBO;
     }
     // Regen RDPS if necessary
     if (newVerticesRequired || newMap) {
         this->bakeOrbitalsForRender();
-        flags |= em::UPD_DATA;
     }
     // Regen indices if necessary
     if (newVerticesRequired || newMap || newTolerance) {
         this->cullRDPs();
-        flags |= em::UPD_EBO;
+        this->cullIndices();
     }
 
-    return flags;
+    return mStatus.intersection(eUpdateFlags);
+}
+
+void CloudManager::receiveCulling(float pct) {
+    mStatus.clear(em::INDEX_READY);
+    this->indexCount = 0;
+    this->indexSize = 0;
+    this->cm_culled = pct;
+
+    cullIndices();
 }
 
 int64_t CloudManager::fact(int n) {
@@ -479,7 +520,7 @@ void CloudManager::wavefuncNorms(int max_n) {
     // TODO implement RDP-to-Colour conversion for CPU
 
 
-    
+
     for (auto f : max_rads) {
         std::cout << f << ", ";
     }
@@ -492,7 +533,7 @@ void CloudManager::wavefuncNorms(int max_n) {
     std::vector<float>::iterator fIt = std::max_element(allData.begin(), allData.end());
     int idx = std::distance(allData.begin(), fIt);
     std::cout << "Max value " << *fIt << " at index " << idx << std::endl;
-   
+
 } */
 
 /* void CloudManager::resetUpdates() {
@@ -501,7 +542,7 @@ void CloudManager::wavefuncNorms(int max_n) {
 
 void CloudManager::resetManager() {
     Manager::resetManager();
-    
+
     for (auto v : pixelColours) {
         delete (v);
     }

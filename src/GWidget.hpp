@@ -68,8 +68,8 @@ enum egs {
 
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
 const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
-const uint eModes = egs::WAVE_MODE | egs::CLOUD_MODE;
-const uint eUpdates = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | ::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS;
+const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
+const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS;
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -81,7 +81,7 @@ public:
 
     void printConfig(AtomixConfig *cfg);
     void setColorsWaves(int id, uint colorChoice);
-    void updateBuffersAndShaders();
+    int updateBuffersAndShaders();
 
     void setBGColour(float colour);
     void cullModel(float pct);
@@ -154,7 +154,7 @@ private:
     float gw_nearDist = 0.0f;
     float gw_cam[3] = {0,0,0};
     float gw_bg = 0.0f;
-    float gw_nearScale = 0.5f;
+    float gw_nearScale = 0.05f;
     float gw_farScale = 2.5f;
     
     uint gw_faces = 0;
@@ -171,8 +171,9 @@ private:
     BitFlag flWaveCfg;
     BitFlag flGraphState;
 
-    uint crystalRingCount;
-    uint crystalRingOffset;
+    uint crystalRingCount = 0;
+    uint crystalRingOffset = 0;
+    uint cloudOffset = 0;
 };
 
 #endif

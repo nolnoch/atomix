@@ -43,6 +43,7 @@ class CloudManager : public Manager {
         void initManager() override final;
         
         uint receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
+        void receiveCulling(float pct);
         
         void cloudTest(int n_max);
         void cloudTestCSV();
@@ -61,6 +62,7 @@ class CloudManager : public Manager {
         void update(double time) override final;
         void bakeOrbitalsForRender();
         void cullRDPs();
+        void cullIndices();
 
         void clearForNext() override final;
         void resetManager() override final;
@@ -111,6 +113,7 @@ class CloudManager : public Manager {
         int numOrbitals = 0;
         int atomZ = 1;
         int max_n = 0;
+        float cm_culled = 0;
         const int MAX_SHELLS = 8;
 
         int cloudResolution = 0;

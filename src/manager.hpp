@@ -91,7 +91,9 @@ class Manager {
         BitFlag mStatus;
         
         vVec3 allVertices;
+        fvec dataStaging;
         fvec allData;
+        uvec indicesStaging;
         uvec allIndices;
         
         uint vertexCount = 0;
@@ -107,7 +109,7 @@ class Manager {
             INIT =              1,          // Manager has been initialized
             VERT_READY =        2,          // Vertices generate and ready for VBO load
             DATA_READY =        2 << 1,     // Special data generated and ready for buffer load
-            INDEX_READY =         2 << 2,     // Indices generated and ready for EBO load
+            INDEX_READY =       2 << 2,     // Indices generated and ready for EBO load
             UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
             UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
             UPD_VBO =           2 << 6,     // Cloud VBO needs to be updated
@@ -117,6 +119,8 @@ class Manager {
             UPD_UNI_MATHS =     2 << 10     // [Wave] Maths Uniforms need to be updated
             
         };
+
+        const uint eUpdateFlags = em::UPD_SHAD_V | em::UPD_SHAD_F | em::UPD_VBO | em::UPD_DATA | em::UPD_EBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS;
 };
 
 #endif

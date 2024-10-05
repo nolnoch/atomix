@@ -353,10 +353,12 @@ void GWidget::paintGL() {
         } else if (flGraphState.hasAny(egs::CLOUD_MODE)) {
             if (flGraphState.hasNone(egs::CLOUD_RENDER)) {
                 initCloudProgram();
+                initVecsAndMatrices();
             } else {
-                updateBuffersAndShaders();
+                if (updateBuffersAndShaders()) {
+                    initVecsAndMatrices();
+                }
             }
-            initVecsAndMatrices();
         }
         flGraphState.clear(egs::UPDATE_REQUIRED);
     }
@@ -394,7 +396,7 @@ void GWidget::paintGL() {
         currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
         currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
         currentProg->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_POINTS, currentProg->getSize("indices"), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_POINTS, currentProg->getSize("indices"), GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(cloudOffset));
         currentProg->endRender();
     }
     q_TotalRot.normalize();
@@ -529,9 +531,10 @@ void GWidget::setColorsWaves(int id, uint colorChoice) {
     flGraphState.set(egs::UPD_UNI_COLOUR | egs::UPDATE_REQUIRED);
 }
 
-void GWidget::updateBuffersAndShaders() {
+int GWidget::updateBuffersAndShaders() {
     assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
     uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    int status = 0;
 
     // this->printSize();
 
@@ -559,6 +562,7 @@ void GWidget::updateBuffersAndShaders() {
             // std::cout << "Updating VBO" << std::endl;
             currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
         }
+        status++;
     }
 
     /* VBO 2: Data */
@@ -602,7 +606,8 @@ void GWidget::updateBuffersAndShaders() {
     /* Release */
     currentProg->endRender();
     currentProg->clearBuffers();
-    flGraphState.clear(eUpdates);
+    flGraphState.clear(eUpdateFlags);
+    return status;
 }
 
 float* GWidget::getCameraPosition() {
@@ -618,8 +623,8 @@ void GWidget::setBGColour(float colour) {
 }
 
 void GWidget::cullModel(float pct) {
-    gw_farDist = gw_nearDist * gw_farScale * pct;
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_farDist);
+    cloudManager->receiveCulling(pct);
+    flGraphState.set(egs::UPDATE_REQUIRED | egs::UPD_EBO);
 }
 
 std::string GWidget::withCommas(int64_t value) {

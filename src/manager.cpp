@@ -67,24 +67,30 @@ void Manager::clearForNext() {
  */
 
 void Manager::genVertexArray() {
+    assert(mStatus.hasAll(em::VERT_READY));
+    
     this->vertexCount = setVertexCount();
     this->vertexSize = setVertexSize();
 
-    this->mStatus.set(em::VERT_READY);
+    this->mStatus.set(em::UPD_VBO);
 }
 
 void Manager::genDataBuffer() {
+    assert(mStatus.hasAll(em::DATA_READY));
+
     this->dataCount = setDataCount();
     this->dataSize = setDataSize();
 
-    this->mStatus.set(em::DATA_READY);
+    this->mStatus.set(em::UPD_DATA);
 }
 
 void Manager::genIndexBuffer() {
+    assert(mStatus.hasAll(em::INDEX_READY));
+
     this->indexCount = setIndexCount();
     this->indexSize = setIndexSize();
 
-    this->mStatus.set(em::INDEX_READY);
+    this->mStatus.set(em::UPD_EBO);
 }
 
 /*

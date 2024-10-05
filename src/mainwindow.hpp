@@ -128,6 +128,7 @@ private:
 
     int intTabMinWidth = 500;
     int intTabLabelHeight = 200;
+    int intSliderLen = 100;
 
     bool recipeLoaded = false;
 

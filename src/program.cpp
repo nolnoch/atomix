@@ -479,10 +479,9 @@ void Program::deleteBuffer(std::string name) {
     this->buffers.erase(name);
 }
 
-/* void Program::addBuffers() {
-    vbo.push_back(0);
-    ebo.push_back(0);
-} */
+bool Program::hasBuffer(std::string name) {
+    return (buffers.find(name) != buffers.end());
+}
 
 /**
  * A quick wrapper for single, non-referenced uniform values.

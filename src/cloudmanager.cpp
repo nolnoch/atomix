@@ -58,13 +58,18 @@ void CloudManager::initManager() {
 }
 
 void CloudManager::create() {
+    QMutexLocker lock(&mutex);
+    assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
+
     this->max_n = cloudOrbitals.rbegin()->first;
     int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
     int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
-    int steps_local = this->cloudResolution;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
     double deg_fac_local = this->deg_fac;
+
+    this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
+    allVertices.reserve(pixelCount);
     vec3 pos = vec3(0.0f);
 
     for (int k = 1; k <= opt_max_radius; k++) {
@@ -88,7 +93,6 @@ void CloudManager::create() {
                 }
 
                 allVertices.push_back(pos);
-                pixelCount++;
             }
         }
     }
@@ -103,44 +107,40 @@ void CloudManager::create() {
     }
     wavefuncNorms(MAX_SHELLS);
 
-    mStatus.set(em::VERT_READY);
+    mStatus.advance(em::INIT, em::VERT_READY);
     genVertexArray();
 }
 
 void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
-    assert(mStatus.hasAny(em::VERT_READY));
-    double max_rdp = 0;
-    int localCount = 0;
     double deg_fac_local = this->deg_fac;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
     int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
     int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
+    double orbNorm = this->norm_constY[DSQ(l, m_l)];
 
     for (int k = 1; k <= opt_max_radius; k++) {
         double radius = static_cast<double>(k) / this->cloudLayerDivisor;
-        double orbNorm = this->norm_constY[DSQ(l, m_l)];
         double R = wavefuncRadial(n, l, radius);
-        double rdp = wavefuncRDP(R, radius, l);
-
         for (int i = 0; i < theta_max_local; i++) {
             double theta = i * deg_fac_local;
             std::complex<double> orbExp = wavefuncAngExp(m_l, theta);
             for (int j = 0; j < phi_max_local; j++) {
                 double phi = j * deg_fac_local;
+                int localCount = ((k-1) * theta_max_local * phi_max_local) + (i * phi_max_local) + j;
 
                 double orbLeg = wavefuncAngLeg(l, m_l, phi);
                 std::complex<double> Y = orbExp * orbNorm * orbLeg;
                 double rdp2 = wavefuncRDP2(R * Y, radius, l);
 
-                rdpStaging[localCount++] += rdp2 * weight;
+                rdpStaging[localCount] += (rdp2 * weight);
             }
         }
     }
 }
 
 void CloudManager::bakeOrbitalsForRender() {
-    assert(mStatus.hasAll(em::VERT_READY));
+    assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_GEN));
 
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
@@ -148,16 +148,17 @@ void CloudManager::bakeOrbitalsForRender() {
             genOrbital(key, v.x, v.y, (v.z / static_cast<double>(numOrbitals)));
         }
     }
-}
-
-void CloudManager::cullRDPs() {
-    assert(mStatus.hasAll(em::VERT_READY));
-
-    std::fill(allData.begin(), allData.end(), 0.0);
-    indicesStaging.clear();
 
     // End: check actual max value of accumulated vector
     this->allRDPMaximum = *std::max_element(rdpStaging.begin(), rdpStaging.end());
+    mStatus.set(em::DATA_GEN);
+}
+
+void CloudManager::cullRDPs() {
+    assert(mStatus.hasFirstNotLast(em::DATA_GEN, em::DATA_READY));
+
+    std::fill(allData.begin(), allData.end(), 0.0);
+    indicesStaging.clear();
 
     for (uint p = 0; p < this->pixelCount; p++) {
         double new_val = rdpStaging[p] / this->allRDPMaximum;
@@ -174,6 +175,7 @@ void CloudManager::cullRDPs() {
 }
 
 void CloudManager::cullIndices() {
+    assert(mStatus.hasNone(em::INDEX_READY));
     allIndices.clear();
 
     if (!cm_culled) {
@@ -195,6 +197,71 @@ void CloudManager::cullIndices() {
 
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
+}
+
+void CloudManager::update(double time) {
+    assert(mStatus.hasAll(em::VERT_READY | em::UPD_VBO | em::UPD_EBO));
+    //TODO implement for CPU updates over time
+}
+
+void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
+    this->cloudOrbitals = inMap;
+    this->numOrbitals = numRecipes;
+}
+
+uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
+    // Check for relevant config changes OR for recipes to require larger radius
+    bool newMap = cloudOrbitals != inMap;
+    bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
+    bool newResolution = (this->cloudResolution != config->cloudResolution);
+    bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
+    bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap.rbegin()->first > this->max_n);
+    bool newVerticesRequired = (newDivisor || newResolution || higherMaxN);
+
+    // Resest or clear if necessary
+    if (newVerticesRequired) {
+        this->resetManager();
+    } else if (newMap) {
+        this->clearForNext();
+    }
+
+    // Update config and map
+    this->newConfig(config);
+    this->receiveCloudMap(inMap, numRecipes);
+
+    // Regen vertices if necessary
+    if (newVerticesRequired) {
+        mStatus.clear(em::VERT_READY);
+        this->create();
+    }
+    // Regen RDPS if necessary
+    if (newVerticesRequired || newMap) {
+        mStatus.clear(em::DATA_GEN | em::DATA_READY);
+        this->bakeOrbitalsForRender();
+    }
+    // Regen indices if necessary
+    if (newVerticesRequired || newMap || newTolerance) {
+        mStatus.clear(em::INDEX_READY);
+        this->cullRDPs();
+        this->cullIndices();
+    }
+
+    return this->clearUpdates();
+}
+
+uint CloudManager::receiveCulling(float pct) {
+    uint flags = 0;
+
+    this->mStatus.clear(em::INDEX_READY);
+    this->indexCount = 0;
+    this->indexSize = 0;
+    this->cm_culled = pct;
+
+    this->cullIndices();
+    flags = mStatus.intersection(eUpdateFlags);
+    this->clearUpdates();
+
+    return flags;
 }
 
 void CloudManager::cloudTest(int n_max) {
@@ -263,73 +330,6 @@ void CloudManager::cloudTestCSV() {
     }
     std::cout << std::endl;
 
-}
-
-void CloudManager::update(double time) {
-    assert(mStatus.hasAll(em::VERT_READY | em::UPD_VBO | em::UPD_EBO));
-    //TODO implement for CPU updates over time
-}
-
-void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
-    this->cloudOrbitals = inMap;
-    this->numOrbitals = numRecipes;
-}
-
-uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
-    uint flags = 0;
-
-    // Check for relevant config changes OR for recipes to require larger radius
-    bool newMap = cloudOrbitals != inMap;
-    bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
-    bool newResolution = (this->cloudResolution != config->cloudResolution);
-    bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
-    bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap.rbegin()->first > this->max_n);
-    bool newVerticesRequired = (newDivisor || newResolution || higherMaxN);
-
-    // Resest or clear if necessary
-    if (newVerticesRequired) {
-        this->resetManager();
-    } else if (newMap) {
-        this->clearForNext();
-    }
-
-    // Update config and map
-    this->newConfig(config);
-    this->receiveCloudMap(inMap, numRecipes);
-
-    // Regen vertices if necessary
-    if (newVerticesRequired) {
-        this->create();
-    }
-    // Regen RDPS if necessary
-    if (newVerticesRequired || newMap) {
-        this->bakeOrbitalsForRender();
-    }
-    // Regen indices if necessary
-    if (newVerticesRequired || newMap || newTolerance) {
-        this->cullRDPs();
-        this->cullIndices();
-    }
-
-    flags = mStatus.intersection(eUpdateFlags);
-    this->clearUpdates();
-
-    return flags;
-}
-
-uint CloudManager::receiveCulling(float pct) {
-    uint flags = 0;
-
-    this->mStatus.clear(em::INDEX_READY);
-    this->indexCount = 0;
-    this->indexSize = 0;
-    this->cm_culled = pct;
-
-    this->cullIndices();
-    flags = mStatus.intersection(eUpdateFlags);
-    this->clearUpdates();
-
-    return flags;
 }
 
 int64_t CloudManager::fact(int n) {
@@ -480,7 +480,7 @@ void CloudManager::clearForNext() {
     this->orbitalIdx = 0;
     this->allRDPMaximum = 0;
     this->atomZ = 1;
-    mStatus.setTo(em::INIT | em::VERT_READY);
+    mStatus.setTo(em::VERT_READY);
 }
 
 void CloudManager::resetManager() {

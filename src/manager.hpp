@@ -25,6 +25,8 @@
 #ifndef MANAGER_H
 #define MANAGER_H
 
+#include <QMutex>
+#include <QMutexLocker>
 #include <vector>
 #include <algorithm>
 #include <glm/glm.hpp>
@@ -53,7 +55,7 @@ class Manager {
         virtual void create() {};
         virtual void update(double time) {};
 
-        void clearUpdates();
+        uint clearUpdates();
 
         const uint getVertexCount();
         const uint getVertexSize();
@@ -91,6 +93,7 @@ class Manager {
 
         AtomixConfig cfg;
         BitFlag mStatus;
+        QMutex mutex;
         
         vVec3 allVertices;
         fvec dataStaging;
@@ -112,6 +115,7 @@ class Manager {
             VERT_READY =        2,          // Vertices generate and ready for VBO load
             DATA_READY =        2 << 1,     // Special data generated and ready for buffer load
             INDEX_READY =       2 << 2,     // Indices generated and ready for EBO load
+            DATA_GEN =          2 << 3,     // Data generated but not processed
             UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
             UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
             UPD_VBO =           2 << 6,     // Cloud VBO needs to be updated

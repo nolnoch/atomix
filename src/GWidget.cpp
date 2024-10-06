@@ -56,6 +56,12 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap &cloudMap, int numReci
     if (!cloudManager) {
         // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists
         cloudManager = new CloudManager(config, cloudMap, numRecipes);
+
+        /* QFutureWatcher<void> *fwInit = new QFutureWatcher<void>;
+        connect(fwInit, &QFutureWatcher<void>::finished, this, &GWidget::threadFinished);
+        QFuture<void> futureInit = QtConcurrent::run(&CloudManager::initManager, cloudManager);
+        fwInit->setFuture(futureInit); */
+        
         cloudManager->initManager();
     } else {
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists
@@ -206,7 +212,7 @@ void GWidget::initWaveProgram() {
     waveProg->endRender();
     waveProg->clearBuffers();
     flGraphState.set(egs::WAVE_RENDER);
-    flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR);
+    flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR | egs::UPDATE_REQUIRED);
 
     currentProg = waveProg;
     currentManager = waveManager;
@@ -342,7 +348,7 @@ void GWidget::initializeGL() {
 }
 
 void GWidget::paintGL() {
-    assert(flGraphState.hasOneAtMost(egs::WAVE_MODE | egs::CLOUD_MODE));
+    assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
 
     if (!gw_pause)
         gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
@@ -350,23 +356,7 @@ void GWidget::paintGL() {
 
     /* Pre-empt painting for new or updated model configuration */
     if (flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
-        if (flGraphState.hasAny(egs::WAVE_MODE)) {
-            if (flGraphState.hasNone(egs::WAVE_RENDER)) {
-                initWaveProgram();
-                initVecsAndMatrices();
-            }
-            updateBuffersAndShaders();
-        } else if (flGraphState.hasAny(egs::CLOUD_MODE)) {
-            if (flGraphState.hasNone(egs::CLOUD_RENDER)) {
-                initCloudProgram();
-                initVecsAndMatrices();
-            } else {
-                if (updateBuffersAndShaders()) {
-                    initVecsAndMatrices();
-                }
-            }
-        }
-        flGraphState.clear(egs::UPDATE_REQUIRED);
+        updateBuffersAndShaders();
     }
 
     /* Per-frame Setup */
@@ -539,11 +529,18 @@ void GWidget::setColorsWaves(int id, uint colorChoice) {
 }
 
 int GWidget::updateBuffersAndShaders() {
-    assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
-    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     int status = 0;
 
-    // this->printSize();
+    /* Set up Program with buffers for the first time */
+    if (!currentProg || !currentProg->hasBuffer("vertices")) {
+        (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
+        initVecsAndMatrices();
+        return status;
+    }
+
+    /* Continue with Program update */
+    assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
+    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 
     /* Bind */
     currentProg->beginRender();
@@ -616,16 +613,12 @@ int GWidget::updateBuffersAndShaders() {
     
     flGraphState.clear(eUpdateFlags);
     this->updateSize();
+
+    if (status) {
+        initVecsAndMatrices();
+    }
     
     return status;
-}
-
-float* GWidget::getCameraPosition() {
-    gw_cam[0] = v3_cameraPosition.z;
-    gw_cam[1] = gw_nearDist;
-    gw_cam[2] = gw_farDist;
-
-    return gw_cam;
 }
 
 void GWidget::setBGColour(float colour) {
@@ -635,6 +628,11 @@ void GWidget::setBGColour(float colour) {
 void GWidget::cullModel(float pct) {
     cloudManager->receiveCulling(pct);
     flGraphState.set(egs::UPDATE_REQUIRED | egs::UPD_EBO);
+}
+
+void GWidget::threadFinished() {
+    // TODO threadFinished() complete this
+    std::cout << "Thread finished!" << std::endl;
 }
 
 std::string GWidget::withCommas(int64_t value) {

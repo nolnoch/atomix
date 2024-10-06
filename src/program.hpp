@@ -124,7 +124,8 @@ class Program {
         
         void clearBuffers();
         void deleteBuffer(std::string name);
-        // void addBuffers();
+        
+        bool hasBuffer(std::string name);
 
         void setUniform(int type, std::string name, double n);
         void setUniform(int type, std::string name, float n);

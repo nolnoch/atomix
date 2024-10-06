@@ -67,6 +67,7 @@ int main(int argc, char* argv[]) {
     int dispX = dispXY.width() * ratio ?: SWIDTH;
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);
+    mainWindow.move(dispXY.center() - mainWindow.frameGeometry().center());
 
     QFont myFont;
     myFont.setPointSize(13);

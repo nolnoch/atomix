@@ -62,8 +62,10 @@ void Manager::clearForNext() {
     this->resetManager();
 }
 
-void Manager::clearUpdates() {
+uint Manager::clearUpdates() {
+    uint flags = mStatus.intersection(eUpdateFlags);
     mStatus.clear(eUpdateFlags);
+    return flags;
 }
 
 /*

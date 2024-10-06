@@ -769,7 +769,6 @@ void MainWindow::handleButtLockRecipes() {
             for (auto& vecElem : mapCloudRecipesLocked[n]) {
                 if (vecElem.x == l && vecElem.y == m) {
                     vecElem.z = w;
-                    std::cout << "Updated orbital weight." << std::endl;
                     break;
                 }
             }

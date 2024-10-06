@@ -32,6 +32,10 @@
 #include <QWheelEvent>
 #include <QKeyEvent>
 #include <QDateTime>
+#include <QFutureWatcher>
+#include <QFuture>
+#include <QPromise>
+#include <QtConcurrent/QtConcurrent>
 #include <QOpenGLFunctions_4_5_Core>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -57,12 +61,13 @@ enum egs {
     WAVE_RENDER =       2,          // Wave EBO has been loaded
     CLOUD_MODE =        2 << 1,     // Button from Cloud tab clicked, only making Clouds
     CLOUD_RENDER =      2 << 2,     // Cloud EBO has been loaded
+    THREAD_FINISHED =   2 << 3,     // init_X_Manager() has finished
     UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
     UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
-    UPD_VBO =           2 << 6,    // Cloud VBO needs to be updated
-    UPD_DATA =          2 << 7,    // Cloud RDPs need to be loaded into VBO #2
-    UPD_EBO =           2 << 8,    // Cloud EBO needs to be updated
-    UPD_UNI_COLOUR =    2 << 9,    // [Wave] Colour Uniforms need to be updated
+    UPD_VBO =           2 << 6,     // Cloud VBO needs to be updated
+    UPD_DATA =          2 << 7,     // Cloud RDPs need to be loaded into VBO #2
+    UPD_EBO =           2 << 8,     // Cloud EBO needs to be updated
+    UPD_UNI_COLOUR =    2 << 9,     // [Wave] Colour Uniforms need to be updated
     UPD_UNI_MATHS =     2 << 10,    // [Wave] Maths Uniforms need to be updated
     UPDATE_REQUIRED =   2 << 11     // An update must execute on next render
 };
@@ -70,7 +75,7 @@ enum egs {
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
 const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
-const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS;
+const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPDATE_REQUIRED;
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -86,8 +91,6 @@ public:
 
     void setBGColour(float colour);
     void cullModel(float pct);
-
-    float* getCameraPosition();
 
 public slots:
     void cleanup();
@@ -110,8 +113,9 @@ signals:
     void detailsChanged(AtomixInfo *info);
 
 private:
+    void threadFinished();
+
     void initVecsAndMatrices();
-    // void initAtomixProg();
     void initCrystalProgram();
     void initWaveProgram();
     void initCloudProgram();

@@ -50,8 +50,8 @@ struct BitFlag {
         }
     }
     void advance(uint flagA, uint flagB) {
-        toggle(flagA);
-        toggle(flagB);
+        assert(hasAll(flagA) && hasNone(flagB));
+        toggle(flagA | flagB);
     }
     bool hasAll(uint flag) {
         return (bf & flag) == flag;
@@ -59,11 +59,14 @@ struct BitFlag {
     bool hasAny(uint flag) {
         return (bf & flag) > 0;
     }
-    bool hasNotAll(uint flag) {
-        return ((bf & flag) != flag) && ((bf & flag) > 0);
+    bool hasSomeNotAll(uint flag) {
+        return (hasAny(flag)) && (!hasAll(flag));
     }
-    bool hasOneAtMost(uint flag) {
-        return (hasNotAll(flag) || hasNone(flag));
+    bool hasSomeOrNone(uint flag) {
+        return (hasSomeNotAll(flag) || hasNone(flag));
+    }
+    bool hasFirstNotLast(uint flagA, uint flagB) {
+        return (hasAll(flagA)) && (hasNone(flagB));
     }
     bool hasNone(uint flag) {
         return (bf & flag) == 0;

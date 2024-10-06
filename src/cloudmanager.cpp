@@ -62,8 +62,7 @@ void CloudManager::create() {
     assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
 
     this->max_n = cloudOrbitals.rbegin()->first;
-    int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
-    int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
+    int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
     double deg_fac_local = this->deg_fac;
@@ -207,6 +206,7 @@ void CloudManager::update(double time) {
 void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
     this->cloudOrbitals = inMap;
     this->numOrbitals = numRecipes;
+    this->max_n = cloudOrbitals.rbegin()->first;
 }
 
 uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
@@ -508,6 +508,7 @@ void CloudManager::resetManager() {
     this->cloudResolution = 0;
     this->allRDPMaximum = 0;
     this->numOrbitals = 0;
+    this->max_n = 0;
     this->cloudTolerance = 0.05;
 }
 
@@ -532,6 +533,11 @@ void CloudManager::resetManager() {
 
 const uint CloudManager::getColourSize() {
     return this->colourSize;
+}
+
+const uint CloudManager::getMaxRadius(double tolerance, int n_max, int divisor) {
+    int divSciExp = std::abs(floor(log10(tolerance)));
+    return cm_maxRadius[divSciExp - 1][n_max - 1] * divisor;
 }
 
 /*

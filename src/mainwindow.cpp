@@ -132,7 +132,7 @@ void MainWindow::refreshOrbits() {
 }
 
 void MainWindow::setupDetails() {
-    QFont fontDebug("Monospace");
+    fontDebug.setFamily("Monospace");
     fontDebug.setStyleHint(QFont::Courier);
     QString strDetails = QString("Position:      %1\n"\
                                  "View|Near:     %2\n"\
@@ -834,9 +834,39 @@ void MainWindow::handleButtMorbHarmonics() {
     cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
     cloudConfig.cloudResolution = entryCloudRes->text().toInt();
     cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
-    /* if (graph->lockCloudConfigAndOrbitals(waveConfig, this->mapCloudRecipesLocked, this->numRecipes)) {
-        graph->genCloudVertices();
-    } */
+
+    uint vertex, data, index, total;
+    graph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
+    total = vertex + data + index;
+
+    std::array<float, 4> bufs = { static_cast<float>(vertex), static_cast<float>(data), static_cast<float>(index), static_cast<float>(total) };
+    QList<QString> units = { " B", "KB", "MB", "GB" };
+    std::array<int, 4> u = { 0, 0, 0, 0 };
+    int div = 1024;
+
+    for (int idx = 0; auto& f : bufs) {
+        while (f > div) {
+            f /= div;
+            u[idx]++;
+        }
+        idx++;
+    }
+
+    QMessageBox dialogConfim(this);
+    QString strDialogConfirm = QString("Estimated buffer sizes: \n"\
+                                       "Vertex:        %1 %4\n"\
+                                       "Data:          %2 %5\n"\
+                                       "Index:         %3 %6\n\n"\
+                                       "Total:         %7 %8"\
+                                      ).arg(bufs[0], 5, 'g', 4, ' ').arg(bufs[1], 5, 'g', 4, ' ').arg(bufs[2], 5, 'g', 4, ' ')\
+                                       .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
+                                       .arg(bufs[3], 5, 'g', 4, ' ').arg(units[u[3]]);
+    dialogConfim.setText(strDialogConfirm);
+    dialogConfim.setFont(fontDebug);
+    dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    dialogConfim.setDefaultButton(QMessageBox::Ok);
+    if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
+
     graph->newCloudConfig(&cloudConfig, this->mapCloudRecipesLocked, this->numRecipes);
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");

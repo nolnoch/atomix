@@ -46,7 +46,7 @@ void GWidget::cleanup() {
 }
 
 void GWidget::newCloudConfig(AtomixConfig *config, harmap &cloudMap, int numRecipes) {
-    flGraphState.set(egs::UPDATE_REQUIRED | egs::CLOUD_MODE);
+    flGraphState.set(egs::CLOUD_MODE);
     if (flGraphState.hasAny(eWaveFlags)) {
         changeModes(false);
     }
@@ -54,15 +54,13 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap &cloudMap, int numReci
     this->max_n = cloudMap.rbegin()->first;
 
     if (!cloudManager) {
-        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists
+        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
         cloudManager = new CloudManager(config, cloudMap, numRecipes);
 
-        /* QFutureWatcher<void> *fwInit = new QFutureWatcher<void>;
+        QFutureWatcher<void> *fwInit = new QFutureWatcher<void>;
         connect(fwInit, &QFutureWatcher<void>::finished, this, &GWidget::threadFinished);
         QFuture<void> futureInit = QtConcurrent::run(&CloudManager::initManager, cloudManager);
-        fwInit->setFuture(futureInit); */
-        
-        cloudManager->initManager();
+        fwInit->setFuture(futureInit);
     } else {
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists
         flGraphState.set(cloudManager->receiveCloudMapAndConfig(config, cloudMap, numRecipes));
@@ -70,7 +68,7 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap &cloudMap, int numReci
 }
 
 void GWidget::newWaveConfig(AtomixConfig *cfg) {
-    flGraphState.set(egs::UPDATE_REQUIRED | egs::WAVE_MODE);
+    flGraphState.set(egs::WAVE_MODE);
     if (flGraphState.hasAny(eCloudFlags)) {
         changeModes(false);
     }
@@ -197,7 +195,7 @@ void GWidget::initWaveProgram() {
 
     /* VBO: Vertices & Colours */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
-    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    uint static_dynamic = waveManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     GLuint vboID = waveProg->bindVBO("vertices", waveManager->getVertexCount(), waveManager->getVertexSize(), waveManager->getVertexData(), static_dynamic);
     waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
     waveProg->enableAttribute(0);
@@ -216,8 +214,6 @@ void GWidget::initWaveProgram() {
 
     currentProg = waveProg;
     currentManager = waveManager;
-    
-    this->updateSize();
 }
 
 void GWidget::initCloudProgram() {
@@ -244,7 +240,7 @@ void GWidget::initCloudProgram() {
 
     /* VBO 1: Vertices */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
-    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    uint static_dynamic = cloudManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     GLuint vboIDa = cloudProg->bindVBO("vertices", cloudManager->getVertexCount(), cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
     cloudProg->setAttributeBuffer(0, vboIDa, 3 * sizeof(GLfloat));
     cloudProg->enableAttribute(0);
@@ -266,8 +262,6 @@ void GWidget::initCloudProgram() {
 
     currentProg = cloudProg;
     currentManager = cloudManager;
-
-    this->updateSize();
 }
 
 void GWidget::changeModes(bool force) {
@@ -534,13 +528,15 @@ int GWidget::updateBuffersAndShaders() {
     /* Set up Program with buffers for the first time */
     if (!currentProg || !currentProg->hasBuffer("vertices")) {
         (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
+        this->updateSize();
         initVecsAndMatrices();
         return status;
     }
 
     /* Continue with Program update */
     assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
-    uint static_dynamic = renderConfig.cpu ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    uint static_dynamic = currentManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+    this->updateSize();
 
     /* Bind */
     currentProg->beginRender();
@@ -612,7 +608,6 @@ int GWidget::updateBuffersAndShaders() {
     currentProg->clearBuffers();
     
     flGraphState.clear(eUpdateFlags);
-    this->updateSize();
 
     if (status) {
         initVecsAndMatrices();
@@ -630,9 +625,17 @@ void GWidget::cullModel(float pct) {
     flGraphState.set(egs::UPDATE_REQUIRED | egs::UPD_EBO);
 }
 
+void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
+    uint layer_max = cloudManager->getMaxRadius(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
+    uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
+
+    (*vertex) = (pixel_count << 2) * 3;
+    (*data) = pixel_count << 3;
+    (*index) = pixel_count << 2;
+}
+
 void GWidget::threadFinished() {
-    // TODO threadFinished() complete this
-    std::cout << "Thread finished!" << std::endl;
+    flGraphState.set(egs::UPDATE_REQUIRED);
 }
 
 std::string GWidget::withCommas(int64_t value) {

@@ -34,6 +34,15 @@
 
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
+// N                                1   2   3   4   5    6    7    8
+const uint cm_maxRadius[4][8] = { { 4, 12, 24, 40, 60,  85, 113, 146 },\
+// E2                               1   3   5   8  11   13   17   20
+                                  { 5, 15, 29, 48, 71,  98, 130, 166 },\
+// E3                               2   3   5   7  10   12   15   17
+                                  { 7, 18, 34, 55, 81, 110, 145, 183 },\
+// E4                               1   3   5   7   8   11   13   16
+                                  { 8, 21, 39, 62, 89, 121, 158, 199 } };
+
 
 class CloudManager : public Manager {
     public:
@@ -49,6 +58,7 @@ class CloudManager : public Manager {
         void cloudTestCSV();
         
         const uint getColourSize();
+        const uint getMaxRadius(double tolerance, int n_max, int divisor);
 
         bool hasVertices();
         bool hasBuffers();
@@ -121,15 +131,6 @@ class CloudManager : public Manager {
         double cloudTolerance = 0.01;
 
         uint printCounter = 0;
-
-        // N                               1   2   3   4   5    6    7    8
-        const int cm_maxRadius[4][8] = { { 4, 12, 24, 40, 60,  85, 113, 146 },\
-        // E2                              1   3   5   8  11   13   17   20
-                                         { 5, 15, 29, 48, 71,  98, 130, 166 },\
-        // E3                              2   3   5   7  10   12   15   17
-                                         { 7, 18, 34, 55, 81, 110, 145, 183 },\
-        // E4                              1   3   5   7   8   11   13   16
-                                         { 8, 21, 39, 62, 89, 121, 158, 199 } };
 };
 
 #endif

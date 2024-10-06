@@ -91,6 +91,7 @@ public:
 
     void setBGColour(float colour);
     void cullModel(float pct);
+    void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
 public slots:
     void cleanup();
@@ -139,7 +140,6 @@ private:
     Program *currentProg = nullptr;
     Manager *currentManager = nullptr;
 
-    AtomixConfig renderConfig;
     AtomixInfo gw_info;
     glm::mat4 m4_proj;
     glm::mat4 m4_view;
@@ -159,7 +159,6 @@ private:
     float gw_startDist = 0.0f;
     float gw_farDist = 0.0f;
     float gw_nearDist = 0.0f;
-    float gw_cam[3] = {0,0,0};
     float gw_bg = 0.0f;
     float gw_nearScale = 0.05f;
     float gw_farScale = 2.5f;

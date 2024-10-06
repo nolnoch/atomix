@@ -27,6 +27,7 @@
 
 #include <QMainWindow>
 #include <QDockWidget>
+#include <QMessageBox>
 #include <QColorDialog>
 #include <QLabel>
 #include <QLineEdit>
@@ -76,6 +77,8 @@ private:
     QWidget *wTabHarmonics = nullptr;
     QDockWidget *dockTabs = nullptr;
     ConfigParser *cfgParser = nullptr;
+
+    QFont fontDebug;
 
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;

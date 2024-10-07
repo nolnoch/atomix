@@ -32,7 +32,7 @@
 
 CloudManager::CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes) {
     newConfig(cfg);
-    receiveCloudMap(inMap, numRecipes);
+    receiveCloudMap(&inMap, numRecipes);
     mStatus.set(em::INIT);
 }
 
@@ -203,19 +203,20 @@ void CloudManager::update(double time) {
     //TODO implement for CPU updates over time
 }
 
-void CloudManager::receiveCloudMap(harmap &inMap, int numRecipes) {
-    this->cloudOrbitals = inMap;
+void CloudManager::receiveCloudMap(harmap *inMap, int numRecipes) {
+    this->cloudOrbitals = *inMap;
     this->numOrbitals = numRecipes;
     this->max_n = cloudOrbitals.rbegin()->first;
 }
 
-uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap, int numRecipes) {
+void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes) {
     // Check for relevant config changes OR for recipes to require larger radius
-    bool newMap = cloudOrbitals != inMap;
+    bool newMap = cloudOrbitals != (*inMap);
     bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
     bool newResolution = (this->cloudResolution != config->cloudResolution);
     bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
-    bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap.rbegin()->first > this->max_n);
+    bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap->rbegin()->first > this->max_n);
+    bool configChanged = (newDivisor || newResolution || newTolerance);
     bool newVerticesRequired = (newDivisor || newResolution || higherMaxN);
 
     // Resest or clear if necessary
@@ -226,8 +227,14 @@ uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap,
     }
 
     // Update config and map
-    this->newConfig(config);
-    this->receiveCloudMap(inMap, numRecipes);
+    if (configChanged) {
+        this->newConfig(config);
+    }
+    // Mark for vecsAndMatrices update if map (orbital) has changed
+    if (newMap) {
+        this->receiveCloudMap(inMap, numRecipes);
+        mStatus.set(em::UPD_MATRICES);
+    }
 
     // Regen vertices if necessary
     if (newVerticesRequired) {
@@ -245,11 +252,9 @@ uint CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap &inMap,
         this->cullRDPs();
         this->cullIndices();
     }
-
-    return this->clearUpdates();
 }
 
-uint CloudManager::receiveCulling(float pct) {
+void CloudManager::receiveCulling(float pct) {
     uint flags = 0;
 
     this->mStatus.clear(em::INDEX_READY);
@@ -258,10 +263,6 @@ uint CloudManager::receiveCulling(float pct) {
     this->cm_culled = pct;
 
     this->cullIndices();
-    flags = mStatus.intersection(eUpdateFlags);
-    this->clearUpdates();
-
-    return flags;
 }
 
 void CloudManager::cloudTest(int n_max) {
@@ -486,16 +487,13 @@ void CloudManager::clearForNext() {
 void CloudManager::resetManager() {
     Manager::resetManager();
 
-    for (auto v : pixelColours) {
+    /* for (auto v : pixelColours) {
         delete (v);
     }
     this->pixelColours.clear();
-    this->allColours.clear();
+    this->allColours.clear(); */
 
     this->rdpStaging.clear();
-    this->shellRDPMaximaN.clear();
-    this->shellRDPMaximaL.clear();
-    this->shellRDPMaximaCum.clear();
     this->norm_constR.clear();
     this->norm_constY.clear();
     this->cloudOrbitals.clear();
@@ -503,13 +501,10 @@ void CloudManager::resetManager() {
     this->pixelCount = 0;
     this->colourCount = 0;
     this->colourSize = 0;
-    this->atomZ = 1;
     this->orbitalIdx = 0;
-    this->cloudResolution = 0;
     this->allRDPMaximum = 0;
     this->numOrbitals = 0;
     this->max_n = 0;
-    this->cloudTolerance = 0.05;
 }
 
 /*

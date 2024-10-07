@@ -69,13 +69,14 @@ enum egs {
     UPD_EBO =           2 << 8,     // Cloud EBO needs to be updated
     UPD_UNI_COLOUR =    2 << 9,     // [Wave] Colour Uniforms need to be updated
     UPD_UNI_MATHS =     2 << 10,    // [Wave] Maths Uniforms need to be updated
-    UPDATE_REQUIRED =   2 << 11     // An update must execute on next render
+    UPD_MATRICES =      2 << 11,    // Needs initVecsAndMatrices() to reset position and view
+    UPDATE_REQUIRED =   2 << 12,    // An update must execute on next render
 };
 
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
 const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
-const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPDATE_REQUIRED;
+const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
@@ -87,7 +88,7 @@ public:
 
     void printConfig(AtomixConfig *cfg);
     void setColorsWaves(int id, uint colorChoice);
-    int updateBuffersAndShaders();
+    void updateBuffersAndShaders();
 
     void setBGColour(float colour);
     void cullModel(float pct);
@@ -97,7 +98,7 @@ public slots:
     void cleanup();
     void newWaveConfig(AtomixConfig *cfg);
     void selectRenderedWaves(int id, bool checked);
-    void newCloudConfig(AtomixConfig *cfg, harmap &cloudMap, int numRecipes);
+    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes);
 
 protected:
     void initializeGL() override;
@@ -115,6 +116,7 @@ signals:
 
 private:
     void threadFinished();
+    void threadFinishedWithResult(uint result);
 
     void initVecsAndMatrices();
     void initCrystalProgram();

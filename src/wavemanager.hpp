@@ -38,7 +38,7 @@ class WaveManager : public Manager {
         WaveManager(AtomixConfig *config);
         virtual ~WaveManager();
         void newConfig(AtomixConfig *cfg) override;
-        uint receiveConfig(AtomixConfig *config);
+        void receiveConfig(AtomixConfig *config);
         void initManager() override final;
 
         void create() override final;

@@ -51,8 +51,8 @@ class CloudManager : public Manager {
         void newConfig(AtomixConfig *cfg) override;
         void initManager() override final;
         
-        uint receiveCloudMapAndConfig(AtomixConfig *cloudMap, harmap &inMap, int numRecipes);
-        uint receiveCulling(float pct);
+        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes);
+        void receiveCulling(float pct);
         
         void cloudTest(int n_max);
         void cloudTestCSV();
@@ -66,7 +66,7 @@ class CloudManager : public Manager {
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
     private:
-        void receiveCloudMap(harmap &inMap, int numRecipes);
+        void receiveCloudMap(harmap *inMap, int numRecipes);
 
         void create() override final;
         void update(double time) override final;

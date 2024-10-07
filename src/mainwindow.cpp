@@ -867,7 +867,7 @@ void MainWindow::handleButtMorbHarmonics() {
     dialogConfim.setDefaultButton(QMessageBox::Ok);
     if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
 
-    graph->newCloudConfig(&cloudConfig, this->mapCloudRecipesLocked, this->numRecipes);
+    graph->newCloudConfig(&cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes);
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");

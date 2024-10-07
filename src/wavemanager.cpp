@@ -27,7 +27,6 @@
 
 WaveManager::WaveManager(AtomixConfig *config) {
     newConfig(config);
-    create();
     mStatus.set(em::INIT);
 }
 
@@ -49,9 +48,8 @@ void WaveManager::initManager() {
     create();
 }
 
-uint WaveManager::receiveConfig(AtomixConfig *config) {
+void WaveManager::receiveConfig(AtomixConfig *config) {
     BitFlag flWaveCfg;
-    BitFlag flGraphState;
     
     // Check for relevant config changes OR for recipes to require larger radius
     if (cfg.waves != config->waves) {                    // Requires new {Vertices[cpu/gpu], VBO, EBO}
@@ -75,10 +73,10 @@ uint WaveManager::receiveConfig(AtomixConfig *config) {
     if (cfg.superposition != config->superposition) {    // Requires new {Vertices[cpu]}
         flWaveCfg.set(ewc::SUPERPOSITION);
     }
-    if (cfg.cpu != config->cpu) {                        // Requires new {Vertices[cpu/gpu]}
+    if (cfg.cpu != config->cpu) {                        // Requires new {Vertices[cpu/gpu], VBO, EBO}
         flWaveCfg.set(ewc::CPU);
     }
-    if (cfg.sphere != config->sphere) {                  // Requires new {Vertices[cpu/gpu], VBO, EBO]}
+    if (cfg.sphere != config->sphere) {                  // Requires new {Vertices[cpu/gpu], VBO, EBO}
         flWaveCfg.set(ewc::SPHERE);
     }
     if (cfg.vert != config->vert) {                      // Requires new {Shader}
@@ -89,35 +87,25 @@ uint WaveManager::receiveConfig(AtomixConfig *config) {
     }
 
     if ((flWaveCfg.hasAny(ewc::ORBITS | ewc::RESOLUTION | ewc::SPHERE | ewc::CPU)) ||
-        (cfg.cpu && (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH | ewc::PARALLEL)))) {
+        (this->cfg.cpu && (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH | ewc::PARALLEL)))) {
         resetManager();
-    }
-    this->newConfig(config);
-    
-    // Re-create Waves with new params from config
-    if ((flWaveCfg.hasAny(ewc::ORBITS | ewc::RESOLUTION | ewc::SPHERE | ewc::CPU)) ||
-        (cfg.cpu && (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH | ewc::PARALLEL)))) {
+        this->newConfig(config);
         this->create();
-        flGraphState.set(em::UPD_VBO | em::UPD_EBO);
-        flGraphState.set(em::UPD_UNI_MATHS | em::UPD_UNI_COLOUR);
-    } else if (!cfg.cpu && (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH))) {
-        flGraphState.set(em::UPD_UNI_MATHS);
+        mStatus.set(em::UPD_VBO | em::UPD_EBO);
+    } else {
+        this->newConfig(config);
+    }
+    
+    if (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH)) {
+        mStatus.set(em::UPD_UNI_MATHS);
     }
 
-    if (flWaveCfg.hasAny(ewc::VERTSHADER | ewc::FRAGSHADER)) {
-        flGraphState.set(em::UPD_SHAD_V | em::UPD_SHAD_F);
-        flGraphState.set(em::UPD_UNI_MATHS | em::UPD_UNI_COLOUR);
+    if (flWaveCfg.hasAny(ewc::VERTSHADER)) {
+        mStatus.set(em::UPD_SHAD_V);
     }
-
-    if (flWaveCfg.hasAny(ewc::ORBITS | ewc::RESOLUTION | ewc::SPHERE)) {
-        flGraphState.set(em::UPD_VBO | em::UPD_EBO);
-    } else if (flGraphState.hasAny(em::UPD_VBO)) {
-        flGraphState.set(em::UPD_VBO);
-    } else if (flGraphState.hasAny(em::UPD_EBO)) {
-        flGraphState.set(em::UPD_EBO);
+    if (flWaveCfg.hasAny(ewc::FRAGSHADER)) {
+        mStatus.set(em::UPD_SHAD_F);
     }
-
-    return flGraphState.bf;
 }
 
 void WaveManager::create() {
@@ -138,7 +126,7 @@ void WaveManager::create() {
                 circleWaveGPU(i);
         }
     }
-    mStatus.set(em::VERT_READY);
+    mStatus.set(em::VERT_READY | em::INDEX_READY);
 
     genVertexArray();
     genIndexBuffer();
@@ -157,6 +145,7 @@ void WaveManager::update(double time) {
                 updateWaveCPUCircle(i, time);
         }
     }
+    mStatus.set(em::VERT_READY);
 
     genVertexArray();
 }
@@ -174,7 +163,7 @@ uint WaveManager::selectWaves(int id, bool checked) {
     else
         renderedWaves &= ~(flag);
 
-    allIndices.clear();
+    mStatus.set(em::INDEX_READY);
     genIndexBuffer();
 
     return em::UPD_EBO;
@@ -404,6 +393,8 @@ void WaveManager::resetManager() {
 }
 
 void WaveManager::genVertexArray() {
+    allVertices.clear();
+
     for (int i = 0; i < cfg.waves; i++) {
         std::copy(waveVertices[i]->begin(), waveVertices[i]->end(), std::back_inserter(this->allVertices));
     }
@@ -412,7 +403,7 @@ void WaveManager::genVertexArray() {
 }
 
 void WaveManager::genIndexBuffer() {
-    assert(!allIndices.size());
+    allIndices.clear();
 
     for (int i = 0; i < cfg.waves; i++) {
         if (renderedWaves & (1 << i)) {

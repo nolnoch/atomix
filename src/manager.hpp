@@ -111,23 +111,23 @@ class Manager {
         double deg_fac = 0;
 
         enum em {
-            INIT =              1,          // Manager has been initialized
-            VERT_READY =        2,          // Vertices generated and ready for VBO load
-            DATA_READY =        2 << 1,     // Special data generated and ready for VBO load
-            INDEX_READY =       2 << 2,     // Indices generated and ready for EBO load
-            DATA_GEN =          2 << 3,     // Data generated but not processed
-            UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
-            UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
-            UPD_VBO =           2 << 6,     // Vertices need to be updated
-            UPD_DATA =          2 << 7,     // Data needs to be loaded into VBO #2
-            UPD_EBO =           2 << 8,     // Indices need to be updated
-            UPD_UNI_COLOUR =    2 << 9,     // [Wave] Colour Uniforms need to be updated
-            UPD_UNI_MATHS =     2 << 10,    // [Wave] Maths Uniforms need to be updated
-            UPD_MATRICES =      2 << 11,    // Needs initVecsAndMatrices() to reset position and view
-            UPDATE_REQUIRED =   2 << 12,    // An update is required.
+            INIT =              1 << 0,     // Manager has been initialized
+            VERT_READY =        1 << 1,     // Vertices generated and ready for VBO load
+            DATA_READY =        1 << 2,     // Special data generated and ready for VBO load
+            INDEX_READY =       1 << 3,     // Indices generated and ready for EBO load
+            DATA_GEN =          1 << 4,     // Data generated but not processed
+            UPD_SHAD_V =        1 << 5,     // Update Vertex Shader
+            UPD_SHAD_F =        1 << 6,     // Update Fragment Shader
+            UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated
+            UPD_DATA =          1 << 8,     // Cloud RDPs need to be loaded into VBO #2
+            UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
+            UPD_UNI_COLOUR =    1 << 10,    // [Wave] Colour Uniforms need to be updated
+            UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
+            UPD_MATRICES =      1 << 12,    // Needs initVecsAndMatrices() to reset position and view
+            UPDATE_REQUIRED =   1 << 13,    // An update must execute on next render
         };
 
-        const uint eUpdateFlags = em::UPD_SHAD_V | em::UPD_SHAD_F | em::UPD_VBO | em::UPD_DATA | em::UPD_EBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS;
+        const uint eUpdateFlags = em::UPD_SHAD_V | em::UPD_SHAD_F | em::UPD_VBO | em::UPD_DATA | em::UPD_EBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS | em::UPD_MATRICES;
 };
 
 #endif

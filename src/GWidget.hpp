@@ -57,20 +57,20 @@ typedef struct AtomixInfo {
 Q_DECLARE_METATYPE(AtomixInfo);
 
 enum egs {
-    WAVE_MODE =         1,          // Button from Wave tab clicked, only making Waves
-    WAVE_RENDER =       2,          // Wave EBO has been loaded
-    CLOUD_MODE =        2 << 1,     // Button from Cloud tab clicked, only making Clouds
-    CLOUD_RENDER =      2 << 2,     // Cloud EBO has been loaded
-    THREAD_FINISHED =   2 << 3,     // init_X_Manager() has finished
-    UPD_SHAD_V =        2 << 4,     // Update Vertex Shader
-    UPD_SHAD_F =        2 << 5,     // Update Fragment Shader
-    UPD_VBO =           2 << 6,     // Cloud VBO needs to be updated
-    UPD_DATA =          2 << 7,     // Cloud RDPs need to be loaded into VBO #2
-    UPD_EBO =           2 << 8,     // Cloud EBO needs to be updated
-    UPD_UNI_COLOUR =    2 << 9,     // [Wave] Colour Uniforms need to be updated
-    UPD_UNI_MATHS =     2 << 10,    // [Wave] Maths Uniforms need to be updated
-    UPD_MATRICES =      2 << 11,    // Needs initVecsAndMatrices() to reset position and view
-    UPDATE_REQUIRED =   2 << 12,    // An update must execute on next render
+    WAVE_MODE =         1 << 0,     // Button from Wave tab clicked, only making Waves
+    WAVE_RENDER =       1 << 1,     // Wave EBO has been loaded
+    CLOUD_MODE =        1 << 2,     // Button from Cloud tab clicked, only making Clouds
+    CLOUD_RENDER =      1 << 3,     // Cloud EBO has been loaded
+    THREAD_FINISHED =   1 << 4,     // init_X_Manager() has finished
+    UPD_SHAD_V =        1 << 5,     // Update Vertex Shader
+    UPD_SHAD_F =        1 << 6,     // Update Fragment Shader
+    UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated
+    UPD_DATA =          1 << 8,     // Cloud RDPs need to be loaded into VBO #2
+    UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
+    UPD_UNI_COLOUR =    1 << 10,     // [Wave] Colour Uniforms need to be updated
+    UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
+    UPD_MATRICES =      1 << 12,    // Needs initVecsAndMatrices() to reset position and view
+    UPDATE_REQUIRED =   1 << 13,    // An update must execute on next render
 };
 
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
@@ -86,7 +86,6 @@ public:
     GWidget(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~GWidget();
 
-    void printConfig(AtomixConfig *cfg);
     void setColorsWaves(int id, uint colorChoice);
     void updateBuffersAndShaders();
 
@@ -128,6 +127,8 @@ private:
     std::string withCommas(int64_t value);
     void updateSize();
     void printSize();
+    void printFlags(std::string);
+    void printConfig(AtomixConfig *cfg);
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;

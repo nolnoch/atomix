@@ -496,15 +496,12 @@ void CloudManager::resetManager() {
     this->rdpStaging.clear();
     this->norm_constR.clear();
     this->norm_constY.clear();
-    this->cloudOrbitals.clear();
 
     this->pixelCount = 0;
     this->colourCount = 0;
     this->colourSize = 0;
     this->orbitalIdx = 0;
     this->allRDPMaximum = 0;
-    this->numOrbitals = 0;
-    this->max_n = 0;
 }
 
 /*

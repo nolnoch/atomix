@@ -139,8 +139,9 @@ void MainWindow::setupDetails() {
                                  "View|Far:      %3\n\n"\
                                  "Buffer|Vertex: %4\n"\
                                  "Buffer|Data:   %5\n"\
-                                 "Buffer|Index:  %6\n\n"\
-                                 ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
+                                 "Buffer|Index:  %6\n"\
+                                 "Buffer|Total:  %7\n"\
+                                 ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
     labelDetails = new QLabel(graph);
     labelDetails->setFont(fontDebug);
     labelDetails->setText(strDetails);
@@ -158,10 +159,13 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     this->dInfo.data = info->data;
     this->dInfo.index = info->index;
     
-    std::array<float, 3> bufs = { static_cast<float>(dInfo.vertex), static_cast<float>(dInfo.data), static_cast<float>(dInfo.index) };
+    uint64_t total = dInfo.vertex + dInfo.data + dInfo.index;
+    std::array<float, 4> bufs = { static_cast<float>(dInfo.vertex), static_cast<float>(dInfo.data), static_cast<float>(dInfo.index), static_cast<float>(total) };
     QList<QString> units = { "B", "KB", "MB", "GB" };
-    std::array<int, 3> u = { 0, 0, 0 };
+    std::array<int, 4> u = { 0, 0, 0, 0 };
     int div = 1024;
+    
+    uint64_t oneGiB = 1024 * 1024 * 1024;
 
     for (int idx = 0; auto& f : bufs) {
         while (f > div) {
@@ -176,10 +180,12 @@ void MainWindow::updateDetails(AtomixInfo *info) {
                                  "View|Far:      %3\n\n"\
                                  "Buffer|Vertex: %4 %7\n"\
                                  "Buffer|Data:   %5 %8\n"\
-                                 "Buffer|Index:  %6 %9\n\n"\
+                                 "Buffer|Index:  %6 %9\n"\
+                                 "Buffer|Total:  %10 %11\n"\
                                  ).arg(dInfo.pos).arg(dInfo.near).arg(dInfo.far)\
                                  .arg(bufs[0], 5, 'g', 4, ' ').arg(bufs[1], 5, 'g', 4, ' ').arg(bufs[2], 5, 'g', 4, ' ')\
-                                 .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]]);
+                                 .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
+                                 .arg(bufs[3], 5, 'g', 4, ' ').arg(units[u[3]]);
     labelDetails->setText(strDetails);
     labelDetails->adjustSize();
 }
@@ -561,11 +567,11 @@ void MainWindow::setupDockHarmonics() {
     layRecipeLocked->addWidget(listOrbitalLocked);
     groupRecipeLocked->setLayout(layRecipeLocked);
 
-    buttLockRecipes = new QPushButton("Lock Orbitals");
+    buttLockRecipes = new QPushButton("Lock Selection");
     buttLockRecipes->setEnabled(false);
     buttClearRecipes = new QPushButton("Clear Selection");
     buttClearRecipes->setEnabled(false);
-    buttResetRecipes = new QPushButton("Reset Orbitals");
+    buttResetRecipes = new QPushButton("Clear Locked");
     buttResetRecipes->setEnabled(false);
 
     QVBoxLayout *layRecipeIO = new QVBoxLayout;
@@ -667,6 +673,10 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     Qt::CheckState checked = item->checkState(col);
     int itemChildren = item->childCount();
 
+    // Enable button(s) since a change has been made
+    buttLockRecipes->setEnabled(true);
+    buttClearRecipes->setEnabled(true);
+
     /* Parent nodes recurse to children while checking/unchecking */
     if (itemChildren) {
         for (int i = 0; i < item->childCount(); i++) {
@@ -690,18 +700,17 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             thisWeight->setForeground(Qt::yellow);
             thisOrbital->setFlags(Qt::ItemNeverHasChildren);
             thisWeight->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
-            numRecipes++;
         } else {
             /* Leaf node unchecked */
             int intItemRow = tableOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first()->row();
             QTableWidgetItem *thisOrbital = tableOrbitalReport->item(intItemRow, 0);
             QTableWidgetItem *thisWeight = tableOrbitalReport->item(intItemRow, 1);
             tableOrbitalReport->removeRow(intItemRow);
-            numRecipes--;
 
-            if (!numRecipes) {
-                // Disable buttons and clear harmap if list is now empty
+            if (!tableOrbitalReport->rowCount()) {
+                // Disable buttons if list is now empty
                 buttLockRecipes->setEnabled(false);
+                buttClearRecipes->setEnabled(true);
             }
         }
     }
@@ -709,10 +718,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     /* ALL Nodes make it here */
     // Since a change has been made here, set title to yellow to show unlocked recipes
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
-    
-    // Enable button(s) since a change has been made
-    buttLockRecipes->setEnabled(true);
-    buttClearRecipes->setEnabled(true);
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent
     while (ptrParent) {
@@ -741,10 +746,11 @@ void MainWindow::handleButtLockRecipes() {
         QString strOrbital = thisOrbital->text();
         QString strWeight = thisWeight->text();
         QString strLocked = strWeight + "  *  (" + strOrbital + ")";
-        QList<QListWidgetItem *> resultsExact = listOrbitalLocked->findItems(strLocked, Qt::MatchExactly);
+        // QList<QListWidgetItem *> resultsExact = listOrbitalLocked->findItems(strLocked, Qt::MatchExactly);
         QList<QListWidgetItem *> resultsPartial = listOrbitalLocked->findItems(strOrbital, Qt::MatchContains);
 
         if (!resultsPartial.count()) {
+            /* Not even a partial match found -- add new item to harmap */
             QListWidgetItem *newItem = new QListWidgetItem(strLocked, listOrbitalLocked);
             listOrbitalLocked->addItem(newItem);
             newItem->setTextAlignment(Qt::AlignRight);
@@ -756,7 +762,9 @@ void MainWindow::handleButtLockRecipes() {
             std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
             ivec3 lm = ivec3(strlistItem.at(1).toInt(), strlistItem.at(2).toInt(), w);
             vecElem->push_back(lm);
-        } else if (!resultsExact.count()) {
+            this->numRecipes++;
+        } else {
+            /* Partial match found -- update item in harmap */
             // Update match to new weight
             resultsPartial.first()->setText(strLocked);
 
@@ -802,10 +810,10 @@ void MainWindow::handleButtClearRecipes() {
 }
 
 void MainWindow::handleButtResetRecipes() {
-    handleButtClearRecipes();
-
     listOrbitalLocked->clear();
     mapCloudRecipesLocked.clear();
+    this->numRecipes = 0;
+
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     buttMorbHarmonics->setEnabled(false);
 }
@@ -835,37 +843,41 @@ void MainWindow::handleButtMorbHarmonics() {
     cloudConfig.cloudResolution = entryCloudRes->text().toInt();
     cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
 
-    uint vertex, data, index, total;
+    uint vertex, data, index;
+    uint64_t total;
     graph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
     total = vertex + data + index;
+    uint64_t oneGiB = 1024 * 1024 * 1024;
 
-    std::array<float, 4> bufs = { static_cast<float>(vertex), static_cast<float>(data), static_cast<float>(index), static_cast<float>(total) };
-    QList<QString> units = { " B", "KB", "MB", "GB" };
-    std::array<int, 4> u = { 0, 0, 0, 0 };
-    int div = 1024;
+    if (total > oneGiB) {
+        std::array<float, 4> bufs = { static_cast<float>(vertex), static_cast<float>(data), static_cast<float>(index), static_cast<float>(total) };
+        QList<QString> units = { " B", "KB", "MB", "GB" };
+        std::array<int, 4> u = { 0, 0, 0, 0 };
+        int div = 1024;
 
-    for (int idx = 0; auto& f : bufs) {
-        while (f > div) {
-            f /= div;
-            u[idx]++;
+        for (int idx = 0; auto& f : bufs) {
+            while (f > div) {
+                f /= div;
+                u[idx]++;
+            }
+            idx++;
         }
-        idx++;
-    }
 
-    QMessageBox dialogConfim(this);
-    QString strDialogConfirm = QString("Estimated buffer sizes: \n"\
-                                       "Vertex:        %1 %4\n"\
-                                       "Data:          %2 %5\n"\
-                                       "Index:         %3 %6\n\n"\
-                                       "Total:         %7 %8"\
-                                      ).arg(bufs[0], 5, 'g', 4, ' ').arg(bufs[1], 5, 'g', 4, ' ').arg(bufs[2], 5, 'g', 4, ' ')\
-                                       .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
-                                       .arg(bufs[3], 5, 'g', 4, ' ').arg(units[u[3]]);
-    dialogConfim.setText(strDialogConfirm);
-    dialogConfim.setFont(fontDebug);
-    dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    dialogConfim.setDefaultButton(QMessageBox::Ok);
-    if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
+        QMessageBox dialogConfim(this);
+        QString strDialogConfirm = QString("Estimated buffer sizes: \n"\
+                                           "Vertex:        %1 %4\n"\
+                                           "Data:          %2 %5\n"\
+                                           "Index:         %3 %6\n\n"\
+                                           "Total:         %7 %8"\
+                                          ).arg(bufs[0], 5, 'g', 4, ' ').arg(bufs[1], 5, 'g', 4, ' ').arg(bufs[2], 5, 'g', 4, ' ')\
+                                           .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
+                                           .arg(bufs[3], 5, 'g', 4, ' ').arg(units[u[3]]);
+        dialogConfim.setText(strDialogConfirm);
+        dialogConfim.setFont(fontDebug);
+        dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        dialogConfim.setDefaultButton(QMessageBox::Ok);
+        if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
+    }
 
     graph->newCloudConfig(&cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes);
 

@@ -59,13 +59,13 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
     if (!cloudManager) {
         // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
         cloudManager = new CloudManager(config, *cloudMap, numRecipes);
+        currentManager = cloudManager;
         futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
     } else {
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists
         futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
     }
     fwModel->setFuture(futureModel);
-    flGraphState.set(cloudManager->clearUpdates());
 }
 
 void GWidget::newWaveConfig(AtomixConfig *config) {
@@ -79,12 +79,12 @@ void GWidget::newWaveConfig(AtomixConfig *config) {
     QFuture<void> futureModel;
     if (!waveManager) {
         waveManager = new WaveManager(config);
+        currentManager = waveManager;
         futureModel = QtConcurrent::run(&WaveManager::initManager, waveManager);
     } else {
         futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     }
     fwModel->setFuture(futureModel);
-    flGraphState.set(waveManager->clearUpdates());
 }
 
 void GWidget::selectRenderedWaves(int id, bool checked) {
@@ -632,17 +632,17 @@ void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, ui
     uint layer_max = cloudManager->getMaxRadius(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
     uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
 
-    (*vertex) = (pixel_count << 2) * 3;
-    (*data) = pixel_count << 3;
-    (*index) = pixel_count << 2;
+    (*vertex) = (pixel_count << 2) * 3;     // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices
+    (*data) = pixel_count << 3;             // (count)   * (1 float)  * (4 B/float) * (2 vectors) -- PDVstaging + allData
+    (*index) = pixel_count << 2;            // (count/2) * (1 uint)   * (4 B/uint)  * (2 vectors) -- indicesStaging + allIndices [very rough estimate]
 }
 
 void GWidget::threadFinished() {
-    flGraphState.set(egs::UPDATE_REQUIRED);
+    flGraphState.set(currentManager->clearUpdates() | egs::UPDATE_REQUIRED);
 }
 
 void GWidget::threadFinishedWithResult(uint result) {
-    flGraphState.set(egs::UPDATE_REQUIRED | result);
+    flGraphState.set(currentManager->clearUpdates() | egs::UPDATE_REQUIRED | result);
 }
 
 std::string GWidget::withCommas(int64_t value) {
@@ -688,6 +688,18 @@ void GWidget::printSize() {
     if (gw_info.data)
         std::cout <<   "RDProb Total Size: " << std::setw(7) << withCommas(gw_info.data / divisorMB) << " MB\n";
     std::cout <<   "Indice Total Size: " << std::setw(7) << withCommas(gw_info.index) << ((isMBI) ? " MB" : "  B") << std::endl;
+}
+
+void GWidget::printFlags(std::string str) {
+    std::vector<std::string> labels = { "Wave Mode", "Wave Render", "Cloud Mode", "Cloud Render", "Thread Finished", "Update Vert Shader", "Update Frag Shader",\
+                                        "Update VBO", "Update Data", "Update EBO", "Update Uniform Colour", "Update Uniform Maths", "Update Matrices", "Update Required"  };
+    std::cout << str << std::endl;
+    for (int i = 13; i >= 0; i--) {
+        if (flGraphState.hasAny(1 << i)) {
+            std::cout << labels[i] << "\n";
+        }
+    }
+    std::cout << std::endl;
 }
 
 void GWidget::printConfig(AtomixConfig *cfg) {

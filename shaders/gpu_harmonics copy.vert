@@ -1,7 +1,7 @@
 #version 450 core
 
 layout(location = 0) in vec3 factorsA;
-layout(location = 1) in float rdp;
+layout(location = 1) in float pdv;
 
 out vec4 vertColour;
 

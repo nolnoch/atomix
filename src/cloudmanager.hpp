@@ -30,6 +30,7 @@
 #include <format>
 #include <map>
 #include <unordered_set>
+#include <QtConcurrent/QtConcurrent>
 #include "manager.hpp"
 
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
@@ -71,8 +72,14 @@ class CloudManager : public Manager {
         void create() override final;
         void update(double time) override final;
         void bakeOrbitalsForRender();
-        void cullRDPs();
+        void bakeOrbitalsForRenderAlt();
+        void cullPDVs();
+        void cullPDVsAlt();
         void cullIndices();
+        void cullIndicesAlt();
+
+        bool filterIndices(const uint &item);
+        bool filterPDVs(double item);
 
         void clearForNext() override final;
         void resetManager() override final;
@@ -83,12 +90,14 @@ class CloudManager : public Manager {
         double wavefuncAngLeg(int l, int m_l, double phi);
         std::complex<double> wavefuncPsi(double radial, std::complex<double> angular);
         double wavefuncRDP(double R, double r, int l);
-        double wavefuncRDP2(std::complex<double> Psi, double r, int l);
+        double wavefuncPDV(std::complex<double> Psi, double r, int l);
         double wavefuncPsi2(int n, int l, int m_l, double r, double theta, double phi);
         void wavefuncNorms(int n);
         int64_t fact(int n);
 
         void genOrbital(int n, int l, int m_l, double weight);
+        void genOrbitalAlt(int n, int l, int m_l, double weight);
+        double genOrbitalAlt2(double &item);
         
         int setColourCount();
         int setColourSize();
@@ -105,11 +114,11 @@ class CloudManager : public Manager {
 
         std::vector<vVec3 *> pixelColours;
         vVec3 allColours;
-        dvec rdpStaging;
-        dvec shellRDPMaximaN;
-        dvec shellRDPMaximaL;
-        dvec shellRDPMaximaCum;
-        float allRDPMaximum;
+        dvec pdvStaging;
+        dvec pdvMaximaN;
+        dvec pdvMaximaL;
+        dvec pdvMaximaCum;
+        float allPDVMaximum;
         
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;

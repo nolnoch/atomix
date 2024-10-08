@@ -1,7 +1,7 @@
 #version 450 core
 
 layout(location = 0) in vec3 factorsA;
-layout(location = 1) in float rdp;
+layout(location = 1) in float pdv;
 
 out vec4 vertColour;
 
@@ -33,34 +33,34 @@ void main() {
 
     float alpha = clamp(1.0f - (radius / 150.0f), 0.0f, 1.0f);
 
-    /* if (rdp > 0.8f) {
-        vertColour = vec4(rdp, 0.0f, 0.0f, alpha);
-    } else if (rdp > 0.6f) {
-        vertColour = vec4(rdp, rdp, 0.0f, alpha);
-    } else if (rdp > 0.4f) {
-        vertColour = vec4(0.0f, rdp, 0.0f, alpha);
-    } else if (rdp > 0.2f) {
-        vertColour = vec4(0.0f, 0.0f, rdp, alpha);
+    /* if (pdv > 0.8f) {
+        vertColour = vec4(pdv, 0.0f, 0.0f, alpha);
+    } else if (pdv > 0.6f) {
+        vertColour = vec4(pdv, pdv, 0.0f, alpha);
+    } else if (pdv > 0.4f) {
+        vertColour = vec4(0.0f, pdv, 0.0f, alpha);
+    } else if (pdv > 0.2f) {
+        vertColour = vec4(0.0f, 0.0f, pdv, alpha);
     } else {
-        vertColour = vec4(rdp, 0.0f, rdp, alpha);
+        vertColour = vec4(pdv, 0.0f, pdv, alpha);
     } */
 
-    if (rdp > 0.88f) {
-        vertColour = vec4(rdp, rdp, rdp, alpha);
-    } else if (rdp > 0.70f) {
-        vertColour = vec4(rdp, 0.0f, 0.0f, alpha);
-    } else if (rdp > 0.52f) {
-        vertColour = vec4(rdp, rdp, 0.0f, alpha);
-    } else if (rdp > 0.38f) {
-        vertColour = vec4(0.0f, rdp, 0.0f, alpha);
-    } else if (rdp > 0.22f) {
-        vertColour = vec4(0.0f, rdp, rdp, alpha);
-    } else if (rdp > 0.08f) {
-        float rdp_adj = rdp * 1.5f;
-        vertColour = vec4(0.0f, 0.0f, rdp_adj, alpha);
+    if (pdv > 0.88f) {
+        vertColour = vec4(pdv, pdv, pdv, alpha);
+    } else if (pdv > 0.70f) {
+        vertColour = vec4(pdv, 0.0f, 0.0f, alpha);
+    } else if (pdv > 0.52f) {
+        vertColour = vec4(pdv, pdv, 0.0f, alpha);
+    } else if (pdv > 0.38f) {
+        vertColour = vec4(0.0f, pdv, 0.0f, alpha);
+    } else if (pdv > 0.22f) {
+        vertColour = vec4(0.0f, pdv, pdv, alpha);
+    } else if (pdv > 0.08f) {
+        float pdv_adj = pdv * 1.5f;
+        vertColour = vec4(0.0f, 0.0f, pdv_adj, alpha);
     } else {
-        float rdp_adj = rdp * 2.0f;
-        vertColour = vec4(rdp_adj, 0.0f, rdp_adj, 0.0f);
+        float pdv_adj = pdv * 2.0f;
+        vertColour = vec4(pdv_adj, 0.0f, pdv_adj, 0.0f);
     }
 
     // vertColour = vec4(1.0f);

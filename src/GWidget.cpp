@@ -254,7 +254,7 @@ void GWidget::initCloudProgram() {
     cloudProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
 
     /* VBO 2: RDPs */
-    GLuint vboIDb = cloudProg->bindVBO("rdps", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData(), static_dynamic);
+    GLuint vboIDb = cloudProg->bindVBO("pdvs", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData(), static_dynamic);
     cloudProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
     cloudProg->enableAttribute(1);
     cloudProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
@@ -574,12 +574,12 @@ void GWidget::updateBuffersAndShaders() {
 
     /* VBO 2: Data */
     if (flGraphState.hasAny(egs::UPD_DATA)) {
-        if (currentManager->getDataCount() > currentProg->getSize("rdps")) {
-            // std::cout << "Resizing VBO: Datas from " << currentProg->getSize("rdps") << " to " << currentManager->getDataCount() << std::endl;
-            currentProg->resizeVBONamed("rdps", currentManager->getDataCount(), currentManager->getDataSize(), currentManager->getDataData(), static_dynamic);
+        if (currentManager->getDataCount() > currentProg->getSize("pdvs")) {
+            // std::cout << "Resizing VBO: Datas from " << currentProg->getSize("pdvs") << " to " << currentManager->getDataCount() << std::endl;
+            currentProg->resizeVBONamed("pdvs", currentManager->getDataCount(), currentManager->getDataSize(), currentManager->getDataData(), static_dynamic);
         } else {
             // std::cout << "Updating VBO: Datas" << std::endl;
-            currentProg->updateVBONamed("rdps", currentManager->getDataCount(), 0, currentManager->getDataSize(), currentManager->getDataData());
+            currentProg->updateVBONamed("pdvs", currentManager->getDataCount(), 0, currentManager->getDataSize(), currentManager->getDataData());
         }
     }
 

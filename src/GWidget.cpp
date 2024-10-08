@@ -53,16 +53,13 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
 
     this->max_n = cloudMap->rbegin()->first;
 
-    QFutureWatcher<void> *fwModel = new QFutureWatcher<void>;
-    connect(fwModel, &QFutureWatcher<uint>::finished, this, &GWidget::threadFinished);
-    QFuture<void> futureModel;
     if (!cloudManager) {
         // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
         cloudManager = new CloudManager(config, *cloudMap, numRecipes);
         currentManager = cloudManager;
         futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
     } else {
-        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists
+        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
         futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
     }
     fwModel->setFuture(futureModel);
@@ -74,14 +71,13 @@ void GWidget::newWaveConfig(AtomixConfig *config) {
         changeModes(false);
     }
 
-    QFutureWatcher<void> *fwModel = new QFutureWatcher<void>;
-    connect(fwModel, &QFutureWatcher<uint>::finished, this, &GWidget::threadFinished);
-    QFuture<void> futureModel;
     if (!waveManager) {
+        // Initialize waveManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
         waveManager = new WaveManager(config);
         currentManager = waveManager;
         futureModel = QtConcurrent::run(&WaveManager::initManager, waveManager);
     } else {
+        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
         futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     }
     fwModel->setFuture(futureModel);
@@ -290,7 +286,7 @@ void GWidget::changeModes(bool force) {
 }
 
 void GWidget::initVecsAndMatrices() {
-    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (6.0f * this->max_n * this->max_n);
+    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
     gw_nearDist = gw_startDist * gw_nearScale;
     gw_farDist = gw_startDist * gw_farScale;
 
@@ -348,6 +344,10 @@ void GWidget::initializeGL() {
     gw_timer = new QTimer(this);
     connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&GWidget::update));
     gw_timer->start(33);
+
+    /* Init -- Threading */
+    fwModel = new QFutureWatcher<void>;
+    connect(fwModel, &QFutureWatcher<void>::finished, this, &GWidget::threadFinished);
 }
 
 void GWidget::paintGL() {
@@ -623,9 +623,17 @@ void GWidget::setBGColour(float colour) {
     gw_bg = colour;
 }
 
-void GWidget::cullModel(float pct) {
-    cloudManager->receiveCulling(pct);
-    flGraphState.set(egs::UPDATE_REQUIRED | egs::UPD_EBO);
+int GWidget::cullModel(float pct) {
+    int result = 0;
+    
+    if (cloudManager) {
+        futureModel = QtConcurrent::run(&CloudManager::receiveCulling, cloudManager, pct);
+        fwModel->setFuture(futureModel);
+    } else {
+        result = 1;
+    }
+
+    return result;
 }
 
 void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {

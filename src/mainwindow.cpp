@@ -63,6 +63,8 @@ void MainWindow::onAddNew() {
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
     setWindowTitle(tr("atomix"));
+
+    // std::cout << "PC Default Thread Count is: " << QThread::idealThreadCount() << std::endl;
 }
 
 void MainWindow::refreshConfigs() {
@@ -607,9 +609,13 @@ void MainWindow::setupDockHarmonics() {
     slideCulling = new QSlider(Qt::Horizontal);
     slideCulling->setMinimum(0);
     slideCulling->setMaximum(intSliderLen);
+    slideCulling->setTickInterval(25);
+    slideCulling->setTickPosition(QSlider::TicksBelow);
     slideBackground = new QSlider(Qt::Horizontal);
     slideBackground->setMinimum(0);
     slideBackground->setMaximum(intSliderLen);
+    slideBackground->setTickInterval(25);
+    slideBackground->setTickPosition(QSlider::TicksBelow);
 
     QHBoxLayout *laySlideCulling = new QHBoxLayout;
     laySlideCulling->addWidget(slideCulling);
@@ -921,7 +927,10 @@ void MainWindow::handleButtColors(int id) {
 }
 
 void MainWindow::handleSlideCulling(int val) {
-    graph->cullModel((static_cast<float>(val) / intSliderLen));
+    float pct = (static_cast<float>(val) / intSliderLen);
+    if(graph->cullModel(pct)) {
+        this->cloudConfig.CloudCull_x = pct;
+    }
 }
 
 void MainWindow::handleSlideBackground(int val) {

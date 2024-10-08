@@ -90,7 +90,7 @@ public:
     void updateBuffersAndShaders();
 
     void setBGColour(float colour);
-    void cullModel(float pct);
+    int cullModel(float pct);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
 public slots:
@@ -139,6 +139,9 @@ private:
     WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;
     QTimer *gw_timer = nullptr;
+
+    QFutureWatcher<void> *fwModel;
+    QFuture<void> futureModel;
 
     Program *currentProg = nullptr;
     Manager *currentManager = nullptr;

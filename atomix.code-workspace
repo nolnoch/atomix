@@ -81,7 +81,8 @@
 			"semaphore": "cpp",
 			"span": "cpp",
 			"stdfloat": "cpp",
-			"stop_token": "cpp"
+			"stop_token": "cpp",
+			"execution": "cpp"
 		}
 	}
 }

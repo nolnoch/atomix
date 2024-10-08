@@ -41,6 +41,8 @@ void Manager::newConfig(AtomixConfig *config) {
     this->cfg.cloudLayDivisor = config->cloudLayDivisor;
     this->cfg.cloudResolution = config->cloudResolution;
     this->cfg.cloudTolerance = config->cloudTolerance;
+    this->cfg.CloudCull_x = config->CloudCull_x;
+    this->cfg.CloudCull_y = config->CloudCull_y;
 }
 
 void Manager::resetManager() {

@@ -46,6 +46,8 @@ typedef struct {
     double amplitude = 0.4;                         // Amplitude [double]
     double period = 1.0;                            // Period [double] as Multiples of PI
     double cloudTolerance = 0.05;                   // Minimum probability [double] for orbital cloud rendering
+    float CloudCull_x = 0.0f;
+    float CloudCull_y = 0.0f;
     int cloudLayDivisor = 1;                        // Number of layers per radius [int] in orbital cloud
     int cloudResolution = 180;                      // Number of points per circle [int] in orbital cloud
     int waves = 6;                                  // Wave count as Integer

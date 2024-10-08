@@ -70,6 +70,7 @@ class CloudManager : public Manager {
         void receiveCloudMap(harmap *inMap, int numRecipes);
 
         void create() override final;
+        void createAlt();
         void update(double time) override final;
         void bakeOrbitalsForRender();
         void bakeOrbitalsForRenderAlt();
@@ -127,6 +128,7 @@ class CloudManager : public Manager {
         uint colourCount = 0;
         uint colourSize = 0;
         uint64_t pixelCount = 0;
+        uint cm_pixels;
         
         int orbitalIdx = 0;
         int numOrbitals = 0;

@@ -44,6 +44,7 @@
 #include <QHeaderView>
 #include <QSlider>
 #include <QSignalBlocker>
+#include <QThread>
 #include "GWidget.hpp"
 
 const QString DEFAULT = "default-config.wave";
@@ -69,6 +70,32 @@ private slots:
     void onAddNew();
 
 private:
+    void loadConfig();
+    void setupTabs();
+    void setupDockWaves();
+    void setupDockHarmonics();
+    void refreshConfigs();
+    void refreshShaders();
+    void refreshOrbits();
+    void setupDetails();
+
+    void handleComboCfg();
+    void handleConfigChanged();
+    void handleDoubleClick(QTreeWidgetItem *item, int col);
+    void handleRecipeCheck(QTreeWidgetItem *item, int col);
+    void handleButtLockRecipes();
+    void handleButtClearRecipes();
+    void handleButtResetRecipes();
+    void handleButtMorbWaves();
+    void handleButtMorbHarmonics();
+    void handleButtColors(int id);
+    void handleWeightChange(int row, int col);
+    void handleSlideCulling(int val);
+    void handleSlideBackground(int val);
+
+    void printHarmap();
+    void printList();
+
     AtomixConfig waveConfig;
     AtomixConfig cloudConfig;
 
@@ -136,32 +163,6 @@ private:
     bool recipeLoaded = false;
 
     AtomixInfo dInfo;
-
-    void loadConfig();
-    void setupTabs();
-    void setupDockWaves();
-    void setupDockHarmonics();
-    void refreshConfigs();
-    void refreshShaders();
-    void refreshOrbits();
-    void setupDetails();
-
-    void handleComboCfg();
-    void handleConfigChanged();
-    void handleDoubleClick(QTreeWidgetItem *item, int col);
-    void handleRecipeCheck(QTreeWidgetItem *item, int col);
-    void handleButtLockRecipes();
-    void handleButtClearRecipes();
-    void handleButtResetRecipes();
-    void handleButtMorbWaves();
-    void handleButtMorbHarmonics();
-    void handleButtColors(int id);
-    void handleWeightChange(int row, int col);
-    void handleSlideCulling(int val);
-    void handleSlideBackground(int val);
-
-    void printHarmap();
-    void printList();
 };
 
 #endif

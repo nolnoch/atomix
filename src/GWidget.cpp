@@ -53,16 +53,20 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
 
     this->max_n = cloudMap->rbegin()->first;
 
-    if (!cloudManager) {
-        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
-        cloudManager = new CloudManager(config, *cloudMap, numRecipes);
-        currentManager = cloudManager;
-        futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
+    if (modifyingModel.tryLock(0)) {
+        if (!cloudManager) {
+            // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
+            cloudManager = new CloudManager(config, *cloudMap, numRecipes);
+            currentManager = cloudManager;
+            futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
+        } else {
+            // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
+            futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
+        }
+        fwModel->setFuture(futureModel);
     } else {
-        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-        futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
+        std::cout << "Lock failed in newCloudConfig()" << std::endl;
     }
-    fwModel->setFuture(futureModel);
 }
 
 void GWidget::newWaveConfig(AtomixConfig *config) {
@@ -71,16 +75,20 @@ void GWidget::newWaveConfig(AtomixConfig *config) {
         changeModes(false);
     }
 
-    if (!waveManager) {
-        // Initialize waveManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
-        waveManager = new WaveManager(config);
-        currentManager = waveManager;
-        futureModel = QtConcurrent::run(&WaveManager::initManager, waveManager);
+    if (modifyingModel.tryLock(0)) {
+        if (!waveManager) {
+            // Initialize waveManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
+            waveManager = new WaveManager(config);
+            currentManager = waveManager;
+            futureModel = QtConcurrent::run(&WaveManager::initManager, waveManager);
+        } else {
+            // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
+            futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
+        }
+        fwModel->setFuture(futureModel);
     } else {
-        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-        futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
+        std::cout << "Lock failed in newWaveConfig()" << std::endl;
     }
-    fwModel->setFuture(futureModel);
 }
 
 void GWidget::selectRenderedWaves(int id, bool checked) {
@@ -616,7 +624,7 @@ void GWidget::updateBuffersAndShaders() {
         initVecsAndMatrices();
     }
 
-    culling = false;
+    modifyingModel.unlock();
     flGraphState.clear(eUpdateFlags);
 }
 
@@ -624,15 +632,16 @@ void GWidget::setBGColour(float colour) {
     gw_bg = colour;
 }
 
-int GWidget::cullModel(float pct, bool isX) {
+int GWidget::cullModel(float pct, bool isX, bool isFinal) {
     int result = 0;
+    int timeout = isFinal ? 500 : 0;
     
-    if (cloudManager && !culling) {
-        culling = true;
-        futureModel = QtConcurrent::run(&CloudManager::receiveCulling, cloudManager, pct, isX);
-        fwModel->setFuture(futureModel);
-    } else {
-        result = 1;
+    if (cloudManager) {
+        if (modifyingModel.tryLock(timeout)) {
+            futureModel = QtConcurrent::run(&CloudManager::receiveCulling, cloudManager, pct, isX);
+            fwModel->setFuture(futureModel);
+            result = 1;
+        }
     }
 
     return result;

@@ -52,15 +52,17 @@ void CloudManager::newConfig(AtomixConfig *config) {
 void CloudManager::initManager() {
     bool cm_threading = true;
     double times[4] = { 0.0, 0.0, 0.0, 0.0 };
+    std::string labels[4] = { "Create():    ", "Bake():      ", "CullTol():   ", "CullSlide(): " };
 
     times[0] = (cm_threading) ? createAlt() : create();
     times[1] = (cm_threading) ? bakeOrbitalsForRenderAlt() : bakeOrbitalsForRender();
     times[2] = (cm_threading) ? cullPDVsAlt() : cullPDVs();
     times[3] = (cm_threading) ? cullIndicesAlt() : cullIndices();
 
+    int i = 0;
     std::cout << "Functions took:\n";
     for (auto t : times) {
-        std::cout << t << " ms\n";
+        std::cout << labels[i++] << t << " ms\n";
     }
     std::cout << std::endl;
 }
@@ -125,8 +127,8 @@ double CloudManager::createAlt() {
     this->max_n = cloudOrbitals.rbegin()->first;
     int div_local = this->cloudLayerDivisor;
     int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, div_local);
-    int theta_max_local = this->cloudResolution >> 1;
-    int phi_max_local = this->cloudResolution;
+    int theta_max_local = this->cloudResolution;
+    int phi_max_local = this->cloudResolution >> 1;
     int layer_size = theta_max_local * phi_max_local;
     double deg_fac_local = this->deg_fac;
     this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
@@ -312,8 +314,7 @@ double CloudManager::cullPDVsAlt() {
     allIndices.reserve(idxCount);
     idxCulledView.reserve(idxCount);
 
-    idxCulledView.assign(idxCount, 0);
-    allIndices.assign(idxCount, 0);
+    
 
     mStatus.set(em::DATA_READY);
     genDataBuffer();
@@ -351,18 +352,22 @@ double CloudManager::cullIndices() {
 double CloudManager::cullIndicesAlt() {
     assert(mStatus.hasNone(em::INDEX_READY));
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    idxCulledView.assign(idxCulledTolerance.size(), 0);
+    allIndices.assign(idxCulledTolerance.size(), 0);
 
     if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
         std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
     } else {
-        uint layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
-        uint culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
-        uint phi_size = this->cloudResolution;
-        uint phi_half = this->cloudResolution >> 1;
+        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, phi_half = 0, culled_phi_b = 0, culled_phi_f = 0;
+        layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
+        culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
+        phi_size = this->cloudResolution >> 1;
+        phi_half = this->cloudResolution >> 1;
         // uint culled_phi_half = phi_half * this->cfg.CloudCull_y;
-        uint culled_phi_b = static_cast<uint>(ceil(phi_half * (1.0f - this->cfg.CloudCull_y))) + phi_half;
+        culled_phi_b = static_cast<uint>(ceil(phi_half * (1.0f - this->cfg.CloudCull_y))) + phi_half;
         // uint culled_phi_f = phi_half - static_cast<uint>(phi_half * (1.0f - this->cfg.CloudCull_y));
-        uint culled_phi_f = static_cast<uint>(ceil(phi_half * this->cfg.CloudCull_y));
+        culled_phi_f = static_cast<uint>(ceil(phi_half * this->cfg.CloudCull_y));
+        // uint *bufAddr = &this->idxCulledTolerance[0];
         /* QtConcurrent::blockingFilter(allIndices, [layer_size_local, culled_size_local](const uint &item){
             return ((item % layer_size_local) > culled_size_local);
         }); */
@@ -389,16 +394,23 @@ double CloudManager::cullIndicesAlt() {
             }
             it++;
         } */
-        std::copy_if(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), idxCulledView.begin(),
+    //    std::cout << "Not culled: ";
+        std::copy_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), idxCulledView.begin(),
             [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
                 uint phi_half = phi_size >> 1;
                 uint phi_pos = item % phi_size;
-                bool not_culled_theta = ((item % layer_size) < culled_theta_all) && (phi_pos > phi_half);
-                bool not_culled_phi = (phi_pos > culled_phi_f) && (phi_pos < culled_phi_b);
-                return not_culled_theta && not_culled_phi;
+                bool cull_theta = ((item % layer_size) <= culled_theta_all);
+                bool cull_theta_phi = (phi_pos <= phi_size);
+                bool cull_phi_front = (phi_pos <= culled_phi_f);
+                bool cull_phi_back = (phi_pos >= culled_phi_b);
+
+                return !((cull_theta && cull_theta_phi) || (cull_phi_front || cull_phi_back));
             });
-        std::copy(std::execution::par, idxCulledView.cbegin(), idxCulledView.cend(), allIndices.begin());
+        std::copy(std::execution::par_unseq, idxCulledView.cbegin(), idxCulledView.cend(), allIndices.begin());
     }
+
+    // uint visible = std::count_if(std::execution::par, allIndices.cbegin(), allIndices.cend(), [](const uint &item){ return item > 0; });
+    // std::cout << visible << std::endl;
 
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();

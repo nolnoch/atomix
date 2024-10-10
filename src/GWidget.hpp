@@ -90,7 +90,7 @@ public:
     void updateBuffersAndShaders();
 
     void setBGColour(float colour);
-    int cullModel(float pct, bool isX);
+    int cullModel(float pct, bool isX, bool isFinal);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
 public slots:
@@ -177,7 +177,9 @@ private:
     uint gw_vertexCount = 0;
     bool gw_pause = false;
     bool gw_init = false;
-    bool culling = false;
+    
+    QMutex modifyingModel;
+    bool isFinal = false;
 
     int max_n = 1;
     

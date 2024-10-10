@@ -93,6 +93,7 @@ private:
     void handleSlideCullingX(int val);
     void handleSlideCullingY(int val);
     void handleSlideBackground(int val);
+    void handleSlideReleased();
 
     void printHarmap();
     void printList();
@@ -161,6 +162,8 @@ private:
     int intTabMinWidth = 500;
     int intTabLabelHeight = 200;
     int intSliderLen = 100;
+    float lastSliderSentX = 0.0f;
+    float lastSliderSentY = 0.0f;
 
     bool recipeLoaded = false;
 

@@ -61,6 +61,8 @@ void MainWindow::onAddNew() {
     connect(tableOrbitalReport, &QTableWidget::cellDoubleClicked, this, &MainWindow::handleWeightChange);
     connect(slideCullingX, &QSlider::sliderMoved, this, &MainWindow::handleSlideCullingX);
     connect(slideCullingY, &QSlider::sliderMoved, this, &MainWindow::handleSlideCullingY);
+    connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
     setWindowTitle(tr("atomix"));
@@ -934,17 +936,38 @@ void MainWindow::handleButtColors(int id) {
 }
 
 void MainWindow::handleSlideCullingX(int val) {
-    float pct = (static_cast<float>(val) / intSliderLen);
+    float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
     this->cloudConfig.CloudCull_x = pct;
 
-    graph->cullModel(pct, true);
+    if (graph->cullModel(pct, true, false)) {
+        lastSliderSentX = pct;
+    }
 }
 
 void MainWindow::handleSlideCullingY(int val) {
-    float pct = (static_cast<float>(val) / intSliderLen);
+    float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
     this->cloudConfig.CloudCull_y = pct;
     
-    graph->cullModel(pct, false);
+    if (graph->cullModel(pct, false, false)) {
+        lastSliderSentY = pct;
+    }
+}
+
+void MainWindow::handleSlideReleased() {
+    float pct = 0.0f;
+    bool upToDateX = (slideCullingX->value() == lastSliderSentX);
+    bool upToDateY = (slideCullingY->value() == lastSliderSentY);
+
+    if (!upToDateX) {
+        pct = this->cloudConfig.CloudCull_x;
+        graph->cullModel(pct, true, true);
+        lastSliderSentX = pct;
+    }
+    if (!upToDateY) {
+        pct = this->cloudConfig.CloudCull_y;
+        graph->cullModel(pct, false, true);
+        lastSliderSentY = pct;
+    }
 }
 
 void MainWindow::handleSlideBackground(int val) {

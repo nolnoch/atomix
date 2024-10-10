@@ -82,7 +82,9 @@
 			"span": "cpp",
 			"stdfloat": "cpp",
 			"stop_token": "cpp",
-			"execution": "cpp"
+			"execution": "cpp",
+			"ranges": "cpp",
+			"cfenv": "cpp"
 		}
 	}
 }

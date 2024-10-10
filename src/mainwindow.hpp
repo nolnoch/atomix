@@ -93,7 +93,8 @@ private:
     void handleSlideCullingX(int val);
     void handleSlideCullingY(int val);
     void handleSlideBackground(int val);
-    void handleSlideReleased();
+    void handleSlideReleasedX();
+    void handleSlideReleasedY();
 
     void printHarmap();
     void printList();

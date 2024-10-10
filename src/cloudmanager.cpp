@@ -383,7 +383,21 @@ double CloudManager::cullSliderThreaded() {
         culled_phi_b = static_cast<uint>(ceil(phi_size * (1.0f - this->cfg.CloudCull_y))) + phi_size;
         culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.CloudCull_y));
 
-        std::copy_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), std::back_inserter(idxCulledSlider),
+        uint pix_final = std::count_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(),
+            [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
+                uint phi_pos = item % phi_size;
+                bool cull_theta = ((item % layer_size) <= culled_theta_all);
+                bool cull_theta_phi = (phi_pos <= phi_size);
+                bool cull_phi_front = (phi_pos <= culled_phi_f);
+                bool cull_phi_back = (phi_pos >= culled_phi_b);
+
+                return !((cull_theta && cull_theta_phi) || (cull_phi_front || cull_phi_back));
+            });
+
+        allIndices.resize(pix_final);
+        allIndices.assign(pix_final, 0);
+
+        std::copy_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin(),
             [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
                 uint phi_pos = item % phi_size;
                 bool cull_theta = ((item % layer_size) <= culled_theta_all);
@@ -395,8 +409,8 @@ double CloudManager::cullSliderThreaded() {
             });
                 
         // std::sort(std::execution::par, idxCulledSlider.begin(), idxCulledSlider.end());
-        allIndices.assign(idxCulledSlider.size(), 0);
-        std::copy(std::execution::par, idxCulledSlider.cbegin(), idxCulledSlider.cend(), allIndices.begin());
+        // allIndices.assign(idxCulledSlider.size(), 0);
+        // std::copy(std::execution::par, idxCulledSlider.cbegin(), idxCulledSlider.cend(), allIndices.begin());
     }
 
     mStatus.set(em::INDEX_READY);

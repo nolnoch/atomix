@@ -634,7 +634,7 @@ void GWidget::setBGColour(float colour) {
 
 int GWidget::cullModel(float pct, bool isX, bool isFinal) {
     int result = 0;
-    int timeout = isFinal ? 500 : 0;
+    int timeout = isFinal ? 2000 : 0;
     
     if (cloudManager) {
         if (modifyingModel.tryLock(timeout)) {

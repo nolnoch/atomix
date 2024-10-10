@@ -59,10 +59,8 @@ void MainWindow::onAddNew() {
     connect(entryCloudRes, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(entryCloudMinRDP, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(tableOrbitalReport, &QTableWidget::cellDoubleClicked, this, &MainWindow::handleWeightChange);
-    connect(slideCullingX, &QSlider::sliderMoved, this, &MainWindow::handleSlideCullingX);
-    connect(slideCullingY, &QSlider::sliderMoved, this, &MainWindow::handleSlideCullingY);
-    connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
-    connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleasedX);
+    connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleasedY);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
     setWindowTitle(tr("atomix"));
@@ -613,12 +611,12 @@ void MainWindow::setupDockHarmonics() {
     slideCullingX->setMinimum(0);
     slideCullingX->setMaximum(intSliderLen);
     slideCullingX->setTickInterval(25);
-    slideCullingX->setTickPosition(QSlider::TicksBelow);
+    slideCullingX->setTickPosition(QSlider::TicksAbove);
     slideCullingY = new QSlider(Qt::Horizontal);
     slideCullingY->setMinimum(0);
     slideCullingY->setMaximum(intSliderLen);
     slideCullingY->setTickInterval(25);
-    slideCullingY->setTickPosition(QSlider::TicksBelow);
+    slideCullingY->setTickPosition(QSlider::TicksAbove);
     slideBackground = new QSlider(Qt::Horizontal);
     slideBackground->setMinimum(0);
     slideBackground->setMaximum(intSliderLen);
@@ -953,21 +951,20 @@ void MainWindow::handleSlideCullingY(int val) {
     }
 }
 
-void MainWindow::handleSlideReleased() {
-    float pct = 0.0f;
-    bool upToDateX = (slideCullingX->value() == lastSliderSentX);
-    bool upToDateY = (slideCullingY->value() == lastSliderSentY);
+void MainWindow::handleSlideReleasedX() {
+    float pct = (static_cast<float>(slideCullingX->sliderPosition()) / static_cast<float>(intSliderLen));
 
-    if (!upToDateX) {
-        pct = this->cloudConfig.CloudCull_x;
-        graph->cullModel(pct, true, true);
-        lastSliderSentX = pct;
-    }
-    if (!upToDateY) {
-        pct = this->cloudConfig.CloudCull_y;
-        graph->cullModel(pct, false, true);
-        lastSliderSentY = pct;
-    }
+    this->cloudConfig.CloudCull_x = pct;
+    graph->cullModel(pct, true, true);
+    lastSliderSentX = pct;
+}
+
+void MainWindow::handleSlideReleasedY() {
+    float pct = (static_cast<float>(slideCullingY->sliderPosition()) / static_cast<float>(intSliderLen));
+
+    this->cloudConfig.CloudCull_y = pct;
+    graph->cullModel(pct, false, true);
+    lastSliderSentY = pct;
 }
 
 void MainWindow::handleSlideBackground(int val) {

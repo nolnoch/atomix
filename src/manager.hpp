@@ -96,7 +96,7 @@ class Manager {
         QMutex mutex;
         
         vVec3 allVertices;
-        fvec dataStaging;
+        dvec dataStaging;
         fvec allData;
         uvec indicesStaging;
         uvec allIndices;

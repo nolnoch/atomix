@@ -652,8 +652,8 @@ void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, ui
     uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
 
     (*vertex) = (pixel_count << 2) * 3;     // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices
-    (*data) = pixel_count << 3;             // (count)   * (1 float)  * (4 B/float) * (2 vectors) -- PDVstaging + allData
-    (*index) = pixel_count << 2;            // (count/2) * (1 uint)   * (4 B/uint)  * (2 vectors) -- indicesStaging + allIndices [very rough estimate]
+    (*data) = pixel_count << 3;             // (count)   * (1 float)  * (4 B/float) * (2 vectors) -- pdvStaging + allData
+    (*index) = pixel_count << 2;            // (count/2) * (1 uint)   * (4 B/uint)  * (2 vectors) -- idxTolerance + idxSilder + allIndices [very rough estimate]
 }
 
 void GWidget::threadFinished() {

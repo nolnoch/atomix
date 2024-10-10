@@ -73,17 +73,15 @@ class CloudManager : public Manager {
         void receiveCloudMap(harmap *inMap, int numRecipes);
 
         double create() override final;
-        double createAlt();
-        void update(double time) override final;
-        double bakeOrbitalsForRender();
-        double bakeOrbitalsForRenderAlt();
-        double cullPDVs();
-        double cullPDVsAlt();
-        double cullIndices();
-        double cullIndicesAlt();
+        double createThreaded();
+        double bakeOrbitals();
+        double bakeOrbitalsThreaded();
+        double cullTolerance();
+        double cullToleranceThreaded();
+        double cullSlider();
+        double cullSliderThreaded();
 
-        bool filterIndices(const uint &item);
-        bool filterPDVs(double item);
+        void update(double time) override final;
 
         void clearForNext() override final;
         void resetManager() override final;
@@ -100,8 +98,6 @@ class CloudManager : public Manager {
         int64_t fact(int n);
 
         void genOrbital(int n, int l, int m_l, double weight);
-        void genOrbitalAlt(int n, int l, int m_l, double weight);
-        double genOrbitalAlt2(double &item);
         
         int setColourCount();
         int setColourSize();
@@ -120,9 +116,8 @@ class CloudManager : public Manager {
         vVec3 allColours;
         dvec pdvStaging;
         uvec idxCulledTolerance;
-        uvec idxCulledView;
-        uvec indicesPreCulling;
-        float allPDVMaximum;
+        uvec idxCulledSlider;
+        double allPDVMaximum;
         
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
@@ -132,6 +127,8 @@ class CloudManager : public Manager {
         uint colourSize = 0;
         uint64_t pixelCount = 0;
         uint cm_pixels;
+
+        std::mutex cm_processing;
         
         int orbitalIdx = 0;
         int numOrbitals = 0;

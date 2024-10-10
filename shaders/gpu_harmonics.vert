@@ -45,17 +45,17 @@ void main() {
         vertColour = vec4(pdv, 0.0f, pdv, alpha);
     } */
 
-    if (pdv > 0.88f) {
+    if (pdv > 0.92f) {
         vertColour = vec4(pdv, pdv, pdv, alpha);
-    } else if (pdv > 0.70f) {
+    } else if (pdv > 0.68f) {
         vertColour = vec4(pdv, 0.0f, 0.0f, alpha);
-    } else if (pdv > 0.52f) {
+    } else if (pdv > 0.48f) {
         vertColour = vec4(pdv, pdv, 0.0f, alpha);
-    } else if (pdv > 0.38f) {
+    } else if (pdv > 0.34f) {
         vertColour = vec4(0.0f, pdv, 0.0f, alpha);
-    } else if (pdv > 0.22f) {
+    } else if (pdv > 0.20f) {
         vertColour = vec4(0.0f, pdv, pdv, alpha);
-    } else if (pdv > 0.08f) {
+    } else if (pdv > 0.09f) {
         float pdv_adj = pdv * 1.5f;
         vertColour = vec4(0.0f, 0.0f, pdv_adj, alpha);
     } else {

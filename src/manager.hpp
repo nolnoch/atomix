@@ -52,7 +52,7 @@ class Manager {
         virtual void newConfig(AtomixConfig *config);
         virtual void initManager() {};
 
-        virtual void create() {};
+        virtual double create() { return 0.0; };
         virtual void update(double time) {};
 
         uint clearUpdates();

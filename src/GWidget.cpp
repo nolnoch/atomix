@@ -616,6 +616,7 @@ void GWidget::updateBuffersAndShaders() {
         initVecsAndMatrices();
     }
 
+    culling = false;
     flGraphState.clear(eUpdateFlags);
 }
 
@@ -623,11 +624,12 @@ void GWidget::setBGColour(float colour) {
     gw_bg = colour;
 }
 
-int GWidget::cullModel(float pct) {
+int GWidget::cullModel(float pct, bool isX) {
     int result = 0;
     
-    if (cloudManager) {
-        futureModel = QtConcurrent::run(&CloudManager::receiveCulling, cloudManager, pct);
+    if (cloudManager && !culling) {
+        culling = true;
+        futureModel = QtConcurrent::run(&CloudManager::receiveCulling, cloudManager, pct, isX);
         fwModel->setFuture(futureModel);
     } else {
         result = 1;

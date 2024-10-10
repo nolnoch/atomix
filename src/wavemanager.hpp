@@ -41,7 +41,7 @@ class WaveManager : public Manager {
         void receiveConfig(AtomixConfig *config);
         void initManager() override final;
 
-        void create() override final;
+        double create() override final;
         void update(double time) override final;
         
         void newWaves();

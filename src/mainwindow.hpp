@@ -90,7 +90,8 @@ private:
     void handleButtMorbHarmonics();
     void handleButtColors(int id);
     void handleWeightChange(int row, int col);
-    void handleSlideCulling(int val);
+    void handleSlideCullingX(int val);
+    void handleSlideCullingY(int val);
     void handleSlideBackground(int val);
 
     void printHarmap();
@@ -148,7 +149,8 @@ private:
     QLineEdit *entryCloudRes = nullptr;
     QLineEdit *entryCloudMinRDP = nullptr;
     QSlider *slideBackground = nullptr;
-    QSlider *slideCulling = nullptr;
+    QSlider *slideCullingX = nullptr;
+    QSlider *slideCullingY = nullptr;
 
     QLabel *labelDetails = nullptr;
 

@@ -59,7 +59,8 @@ void MainWindow::onAddNew() {
     connect(entryCloudRes, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(entryCloudMinRDP, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(tableOrbitalReport, &QTableWidget::cellDoubleClicked, this, &MainWindow::handleWeightChange);
-    connect(slideCulling, &QSlider::sliderMoved, this, &MainWindow::handleSlideCulling);
+    connect(slideCullingX, &QSlider::sliderMoved, this, &MainWindow::handleSlideCullingX);
+    connect(slideCullingY, &QSlider::sliderMoved, this, &MainWindow::handleSlideCullingY);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
     setWindowTitle(tr("atomix"));
@@ -606,11 +607,16 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->setAlignment(Qt::AlignRight);
 
-    slideCulling = new QSlider(Qt::Horizontal);
-    slideCulling->setMinimum(0);
-    slideCulling->setMaximum(intSliderLen);
-    slideCulling->setTickInterval(25);
-    slideCulling->setTickPosition(QSlider::TicksBelow);
+    slideCullingX = new QSlider(Qt::Horizontal);
+    slideCullingX->setMinimum(0);
+    slideCullingX->setMaximum(intSliderLen);
+    slideCullingX->setTickInterval(25);
+    slideCullingX->setTickPosition(QSlider::TicksBelow);
+    slideCullingY = new QSlider(Qt::Horizontal);
+    slideCullingY->setMinimum(0);
+    slideCullingY->setMaximum(intSliderLen);
+    slideCullingY->setTickInterval(25);
+    slideCullingY->setTickPosition(QSlider::TicksBelow);
     slideBackground = new QSlider(Qt::Horizontal);
     slideBackground->setMinimum(0);
     slideBackground->setMaximum(intSliderLen);
@@ -618,7 +624,8 @@ void MainWindow::setupDockHarmonics() {
     slideBackground->setTickPosition(QSlider::TicksBelow);
 
     QHBoxLayout *laySlideCulling = new QHBoxLayout;
-    laySlideCulling->addWidget(slideCulling);
+    laySlideCulling->addWidget(slideCullingX);
+    laySlideCulling->addWidget(slideCullingY);
     QHBoxLayout *laySlideBackground = new QHBoxLayout;
     laySlideBackground->addWidget(slideBackground);
 
@@ -926,11 +933,18 @@ void MainWindow::handleButtColors(int id) {
     graph->setColorsWaves(id, color);
 }
 
-void MainWindow::handleSlideCulling(int val) {
+void MainWindow::handleSlideCullingX(int val) {
     float pct = (static_cast<float>(val) / intSliderLen);
-    if(graph->cullModel(pct)) {
-        this->cloudConfig.CloudCull_x = pct;
-    }
+    this->cloudConfig.CloudCull_x = pct;
+
+    graph->cullModel(pct, true);
+}
+
+void MainWindow::handleSlideCullingY(int val) {
+    float pct = (static_cast<float>(val) / intSliderLen);
+    this->cloudConfig.CloudCull_y = pct;
+    
+    graph->cullModel(pct, false);
 }
 
 void MainWindow::handleSlideBackground(int val) {

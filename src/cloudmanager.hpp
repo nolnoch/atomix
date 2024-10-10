@@ -30,8 +30,11 @@
 #include <format>
 #include <map>
 #include <unordered_set>
-#include <QtConcurrent/QtConcurrent>
+// #include <QtConcurrent/QtConcurrent>
+#include <chrono>
 #include "manager.hpp"
+
+using std::chrono::_V2::system_clock;
 
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
@@ -53,7 +56,7 @@ class CloudManager : public Manager {
         void initManager() override final;
         
         void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes);
-        void receiveCulling(float pct);
+        void receiveCulling(float pct, bool isX);
         
         void cloudTest(int n_max);
         void cloudTestCSV();
@@ -69,15 +72,15 @@ class CloudManager : public Manager {
     private:
         void receiveCloudMap(harmap *inMap, int numRecipes);
 
-        void create() override final;
-        void createAlt();
+        double create() override final;
+        double createAlt();
         void update(double time) override final;
-        void bakeOrbitalsForRender();
-        void bakeOrbitalsForRenderAlt();
-        void cullPDVs();
-        void cullPDVsAlt();
-        void cullIndices();
-        void cullIndicesAlt();
+        double bakeOrbitalsForRender();
+        double bakeOrbitalsForRenderAlt();
+        double cullPDVs();
+        double cullPDVsAlt();
+        double cullIndices();
+        double cullIndicesAlt();
 
         bool filterIndices(const uint &item);
         bool filterPDVs(double item);
@@ -116,9 +119,9 @@ class CloudManager : public Manager {
         std::vector<vVec3 *> pixelColours;
         vVec3 allColours;
         dvec pdvStaging;
-        dvec pdvMaximaN;
-        dvec pdvMaximaL;
-        dvec pdvMaximaCum;
+        uvec idxCulledTolerance;
+        uvec idxCulledView;
+        uvec indicesPreCulling;
         float allPDVMaximum;
         
         std::unordered_map<int, double> norm_constR;

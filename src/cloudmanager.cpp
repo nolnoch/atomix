@@ -23,7 +23,6 @@
  */
 
 #include "cloudmanager.hpp"
-#include <chrono>
 #include <ranges>
 #undef emit
 #include <execution>
@@ -51,29 +50,13 @@ void CloudManager::newConfig(AtomixConfig *config) {
 }
 
 void CloudManager::initManager() {
-    auto begin = std::chrono::high_resolution_clock::now(), end = std::chrono::high_resolution_clock::now();
+    bool cm_threading = true;
     double times[4] = { 0.0, 0.0, 0.0, 0.0 };
 
-    begin = std::chrono::high_resolution_clock::now();
-    // create();
-    createAlt();
-    end = std::chrono::high_resolution_clock::now();
-    times[0] = std::chrono::duration<double, std::milli>(end - begin).count();
-    begin = std::chrono::high_resolution_clock::now();
-    // bakeOrbitalsForRender();
-    bakeOrbitalsForRenderAlt();
-    end = std::chrono::high_resolution_clock::now();
-    times[1] = std::chrono::duration<double, std::milli>(end - begin).count();
-    begin = std::chrono::high_resolution_clock::now();
-    // cullPDVs();
-    cullPDVsAlt();
-    end = std::chrono::high_resolution_clock::now();
-    times[2] = std::chrono::duration<double, std::milli>(end - begin).count();
-    begin = std::chrono::high_resolution_clock::now();
-    // cullIndices();
-    cullIndicesAlt();
-    end = std::chrono::high_resolution_clock::now();
-    times[3] = std::chrono::duration<double, std::milli>(end - begin).count();
+    times[0] = (cm_threading) ? createAlt() : create();
+    times[1] = (cm_threading) ? bakeOrbitalsForRenderAlt() : bakeOrbitalsForRender();
+    times[2] = (cm_threading) ? cullPDVsAlt() : cullPDVs();
+    times[3] = (cm_threading) ? cullIndicesAlt() : cullIndices();
 
     std::cout << "Functions took:\n";
     for (auto t : times) {
@@ -82,8 +65,9 @@ void CloudManager::initManager() {
     std::cout << std::endl;
 }
 
-void CloudManager::create() {
+double CloudManager::create() {
     assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     this->max_n = cloudOrbitals.rbegin()->first;
     int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
@@ -94,7 +78,7 @@ void CloudManager::create() {
     this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
     vec3 pos = vec3(0.0f);
 
-    auto beginInner = std::chrono::high_resolution_clock::now();
+    // auto beginInner = std::chrono::high_resolution_clock::now();
     allVertices.reserve(pixelCount);
     for (int k = 1; k <= opt_max_radius; k++) {
         double radius = static_cast<double>(k) / this->cloudLayerDivisor;
@@ -118,32 +102,31 @@ void CloudManager::create() {
             }
         }
     }
-    auto endInner = std::chrono::high_resolution_clock::now();
-    auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
-    std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
+    // auto endInner = std::chrono::high_resolution_clock::now();
+    // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
+    // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
     pdvStaging.insert(pdvStaging.end(), pixelCount, 0.0);
     allData.insert(allData.end(), pixelCount, 0.0f);
     indicesStaging.reserve(pixelCount);
 
-    for (int i = 0; i < MAX_SHELLS; i++) {
-        pdvMaximaN.push_back(0.0);
-        pdvMaximaL.push_back(0.0);
-        pdvMaximaCum.push_back(0.0);
-    }
     wavefuncNorms(MAX_SHELLS);
 
     mStatus.advance(em::INIT, em::VERT_READY);
     genVertexArray();
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
-void CloudManager::createAlt() {
+double CloudManager::createAlt() {
     assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     this->max_n = cloudOrbitals.rbegin()->first;
-    int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
-    int phi_max_local = this->cloudResolution >> 1;
-    int theta_max_local = this->cloudResolution;
+    int div_local = this->cloudLayerDivisor;
+    int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, div_local);
+    int theta_max_local = this->cloudResolution >> 1;
+    int phi_max_local = this->cloudResolution;
     int layer_size = theta_max_local * phi_max_local;
     double deg_fac_local = this->deg_fac;
     this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
@@ -160,31 +143,29 @@ void CloudManager::createAlt() {
     wavefuncNorms(MAX_SHELLS);
 
     // auto beginInner = std::chrono::high_resolution_clock::now();
-    std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(), [=, this](glm::vec3 &gVector){
+    vec3 *start = &this->allVertices.at(0);
     // QtConcurrent::blockingMap(allVertices, [=, this](glm::vec3 &gVector){
-        int i = &gVector - &this->allVertices.at(0);
-        int layer = (i / layer_size) + 1;
-        int layer_pos = i % layer_size;
-        float theta = (layer_pos / phi_max_local) * deg_fac_local;
-        float phi = (layer_pos % phi_max_local) * deg_fac_local;
-        float radius = static_cast<float>(layer) / this->cloudLayerDivisor;
+    std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
+        [layer_size, phi_max_local, deg_fac_local, div_local, start](glm::vec3 &gVector){
+            int i = &gVector - start;
+            int layer = (i / layer_size) + 1;
+            int layer_pos = i % layer_size;
+            float theta = (layer_pos / phi_max_local) * deg_fac_local;
+            float phi = (layer_pos % phi_max_local) * deg_fac_local;
+            float radius = static_cast<float>(layer) / div_local;
 
-        if (cfg.cpu) {
-            gVector.x = radius * sin(phi) * sin(theta);
-            gVector.y = radius * cos(phi);
-            gVector.z = radius * sin(phi) * cos(theta);
-        } else {
             gVector.x = theta;
             gVector.y = phi;
             gVector.z = radius;
-        }
-    });
+        });
     // auto endInner = std::chrono::high_resolution_clock::now();
     // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
     // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
     mStatus.advance(em::INIT, em::VERT_READY);
     genVertexArray();
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
@@ -226,8 +207,9 @@ void CloudManager::genOrbitalAlt(int n, int l, int m_l, double weight) {
     }
 }
 
-void CloudManager::bakeOrbitalsForRender() {
+double CloudManager::bakeOrbitalsForRender() {
     assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_GEN));
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
@@ -239,42 +221,50 @@ void CloudManager::bakeOrbitalsForRender() {
     // End: check actual max value of accumulated vector
     this->allPDVMaximum = *std::max_element(pdvStaging.begin(), pdvStaging.end());
     mStatus.set(em::DATA_GEN);
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
-void CloudManager::bakeOrbitalsForRenderAlt() {
+double CloudManager::bakeOrbitalsForRenderAlt() {
     assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_GEN));
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
     // double totalRecipes = static_cast<double>(this->numOrbitals);
 
     // QtConcurrent::blockingMap(pdvStaging, [this](double &item){
-    std::for_each(std::execution::par_unseq, pdvStaging.begin(), pdvStaging.end(), [this](double &item){
-        std::ptrdiff_t i = &item - &this->pdvStaging.at(0);
-        double final_pdv = 0;
-        double theta = allVertices[i].x;
-        double phi = allVertices[i].y;
-        double radius = allVertices[i].z;
-        double totalRecipes = static_cast<double>(this->numOrbitals);
+    /*  This section contains 72%-98% of the total execution time of cloud generation! */
+    std::for_each(std::execution::par_unseq, pdvStaging.begin(), pdvStaging.end(),
+        [this](double &item){
+            std::ptrdiff_t i = &item - &this->pdvStaging.at(0);
+            double final_pdv = 0;
+            double theta = allVertices[i].x;
+            double phi = allVertices[i].y;
+            double radius = allVertices[i].z;
+            double totalRecipes = static_cast<double>(this->numOrbitals);
 
-        for (auto const &[key, val] : cloudOrbitals) {
-            int n = key;
-            for (auto const &v : val) {
-                int l = v.x;
-                int m_l = v.y;
-                double weight = v.z / totalRecipes;
+            for (auto const &[key, val] : cloudOrbitals) {
+                int n = key;
+                for (auto const &v : val) {
+                    int l = v.x;
+                    int m_l = v.y;
+                    double weight = v.z / totalRecipes;
 
-                double pdv = wavefuncPsi2(n, l, m_l, radius, theta, phi);
-                final_pdv += pdv * weight;
+                    double pdv = wavefuncPsi2(n, l, m_l, radius, theta, phi);
+                    final_pdv += pdv * weight;
+                }
             }
-        }
-        item = final_pdv;
-    });
+            item = final_pdv;
+        });
 
     // End: check actual max value of accumulated vector
-    this->allPDVMaximum = *std::max_element(pdvStaging.begin(), pdvStaging.end());
+    this->allPDVMaximum = *std::max_element(std::execution::par, pdvStaging.begin(), pdvStaging.end());
     mStatus.set(em::DATA_GEN);
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
-void CloudManager::cullPDVs() {
+double CloudManager::cullPDVs() {
     assert(mStatus.hasFirstNotLast(em::DATA_GEN, em::DATA_READY));
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     std::fill(allData.begin(), allData.end(), 0.0);
     indicesStaging.clear();
@@ -291,10 +281,13 @@ void CloudManager::cullPDVs() {
 
     mStatus.set(em::DATA_READY);
     genDataBuffer();
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
-void CloudManager::cullPDVsAlt() {
+double CloudManager::cullPDVsAlt() {
     assert(mStatus.hasFirstNotLast(em::DATA_GEN, em::DATA_READY));
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
     float pdvMax = this->allPDVMaximum;
     double tolerance_local = this->cloudTolerance;
 
@@ -305,23 +298,32 @@ void CloudManager::cullPDVsAlt() {
 
     // QtConcurrent::blockingMap(pdvStaging, [this](const double &item){
     // std::for_each(std::execution::par, pdvStaging.begin(), pdvStaging.end(), [this](const double &item){
-    std::transform(std::execution::par_unseq, pdvStaging.begin(), pdvStaging.end(), allData.begin(), [pdvMax](const double &item){ return static_cast<float>(item) / pdvMax; });
+    std::transform(std::execution::par_unseq, pdvStaging.begin(), pdvStaging.end(), allData.begin(),
+        [pdvMax](const double &item){
+            return static_cast<float>(item) / pdvMax;
+        });
 
     for (uint p = 0; p < this->pixelCount; p++) {
         if (allData[p] > tolerance_local) {
-            indicesStaging.push_back(p);
+            idxCulledTolerance.push_back(p);
         }
     }
-    // allIndices.resize(cm_pixels);
-    // memset(&allIndices[0], 0, sizeof(uint) * cm_pixels);
-    allIndices.assign(indicesStaging.size(), 0);
+    uint idxCount = idxCulledTolerance.size();
+    allIndices.reserve(idxCount);
+    idxCulledView.reserve(idxCount);
+
+    idxCulledView.assign(idxCount, 0);
+    allIndices.assign(idxCount, 0);
 
     mStatus.set(em::DATA_READY);
     genDataBuffer();
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
-void CloudManager::cullIndices() {
+double CloudManager::cullIndices() {
     assert(mStatus.hasNone(em::INDEX_READY));
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
     if (allIndices.size()) {
         allIndices.clear();
     }
@@ -342,15 +344,25 @@ void CloudManager::cullIndices() {
 
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
-void CloudManager::cullIndicesAlt() {
+double CloudManager::cullIndicesAlt() {
     assert(mStatus.hasNone(em::INDEX_READY));
-    std::copy(std::execution::par_unseq, indicesStaging.cbegin(), indicesStaging.cend(), allIndices.begin());
-    
-    if (cm_culled) {
-        uint layer_size_local = this->cloudResolution * (this->cloudResolution >> 1);
-        uint culled_size_local = layer_size_local * this->cm_culled;
+    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+
+    if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
+        std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
+    } else {
+        uint layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
+        uint culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
+        uint phi_size = this->cloudResolution;
+        uint phi_half = this->cloudResolution >> 1;
+        // uint culled_phi_half = phi_half * this->cfg.CloudCull_y;
+        uint culled_phi_b = static_cast<uint>(ceil(phi_half * (1.0f - this->cfg.CloudCull_y))) + phi_half;
+        // uint culled_phi_f = phi_half - static_cast<uint>(phi_half * (1.0f - this->cfg.CloudCull_y));
+        uint culled_phi_f = static_cast<uint>(ceil(phi_half * this->cfg.CloudCull_y));
         /* QtConcurrent::blockingFilter(allIndices, [layer_size_local, culled_size_local](const uint &item){
             return ((item % layer_size_local) > culled_size_local);
         }); */
@@ -366,20 +378,32 @@ void CloudManager::cullIndicesAlt() {
                 allIndices[idx] = item;
             }
         }); */
-
-        uint layer_size = cloudResolution * (cloudResolution >> 1);
-        uint culled_size = layer_size * this->cm_culled;
-
-        for (auto it = allIndices.begin(); auto &item : allIndices) {
+        /* auto itBegin = allIndices.begin();
+        while (itBegin < (allIndices.end() - culled_size_local)) {
+            allIndices.erase(itBegin, itBegin + culled_size_local);
+            itBegin += layer_size_local;
+        } */
+        /* for (auto it = allIndices.begin(); auto &item : allIndices) {
             if ((item % layer_size_local) < culled_size_local) {
-                allIndices.erase(it);
+                // Maybe?
             }
             it++;
-        }
+        } */
+        std::copy_if(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), idxCulledView.begin(),
+            [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
+                uint phi_half = phi_size >> 1;
+                uint phi_pos = item % phi_size;
+                bool not_culled_theta = ((item % layer_size) < culled_theta_all) && (phi_pos > phi_half);
+                bool not_culled_phi = (phi_pos > culled_phi_f) && (phi_pos < culled_phi_b);
+                return not_culled_theta && not_culled_phi;
+            });
+        std::copy(std::execution::par, idxCulledView.cbegin(), idxCulledView.cend(), allIndices.begin());
     }
 
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
+    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 bool CloudManager::filterPDVs(double item) {
@@ -459,14 +483,16 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     }
 }
 
-void CloudManager::receiveCulling(float pct) {
-    uint flags = 0;
-
+void CloudManager::receiveCulling(float pct, bool isX) {
     this->mStatus.clear(em::INDEX_READY);
     this->indexCount = 0;
     this->indexSize = 0;
-    this->cfg.CloudCull_x = pct;
-    this->cm_culled = pct;
+
+    if (isX) {
+        this->cfg.CloudCull_x = pct;
+    } else {
+        this->cfg.CloudCull_y = pct;
+    }
 
     this->cullIndicesAlt();
 }
@@ -678,9 +704,6 @@ void CloudManager::wavefuncNorms(int max_n) {
 void CloudManager::clearForNext() {
     mStatus.reset();
 
-    std::fill(pdvMaximaN.begin(), pdvMaximaN.end(), 0.0);
-    std::fill(pdvMaximaL.begin(), pdvMaximaL.end(), 0.0);
-    std::fill(pdvMaximaCum.begin(), pdvMaximaCum.end(), 0.0);
     std::fill(pdvStaging.begin(), pdvStaging.end(), 0.0);
     cloudOrbitals.clear();
     this->orbitalIdx = 0;

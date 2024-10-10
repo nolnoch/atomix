@@ -108,7 +108,7 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     }
 }
 
-void WaveManager::create() {
+double WaveManager::create() {
     for (int i = 0; i < cfg.waves; i++) {
         waveVertices.push_back(new vVec3);
         waveIndices.push_back(new uvec);
@@ -130,6 +130,7 @@ void WaveManager::create() {
 
     genVertexArray();
     genIndexBuffer();
+    return 0.0;
 }
 
 void WaveManager::update(double time) {

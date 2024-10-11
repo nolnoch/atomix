@@ -101,12 +101,12 @@ class Manager {
         uvec indicesStaging;
         uvec allIndices;
         
-        uint vertexCount = 0;
-        uint vertexSize = 0;
-        uint dataCount = 0;
-        uint dataSize = 0;
-        uint indexCount = 0;
-        uint indexSize = 0;
+        uint64_t vertexCount = 0;
+        uint64_t vertexSize = 0;
+        uint64_t dataCount = 0;
+        uint64_t dataSize = 0;
+        uint64_t indexCount = 0;
+        uint64_t indexSize = 0;
 
         double deg_fac = 0;
 
@@ -115,7 +115,7 @@ class Manager {
             VERT_READY =        1 << 1,     // Vertices generated and ready for VBO load
             DATA_READY =        1 << 2,     // Special data generated and ready for VBO load
             INDEX_READY =       1 << 3,     // Indices generated and ready for EBO load
-            DATA_GEN =          1 << 4,     // Data generated but not processed
+            INDEX_GEN =          1 << 4,     // Data generated but not processed
             UPD_SHAD_V =        1 << 5,     // Update Vertex Shader
             UPD_SHAD_F =        1 << 6,     // Update Fragment Shader
             UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated

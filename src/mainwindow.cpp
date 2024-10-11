@@ -59,8 +59,10 @@ void MainWindow::onAddNew() {
     connect(entryCloudRes, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(entryCloudMinRDP, &QLineEdit::textEdited, this, &MainWindow::handleConfigChanged);
     connect(tableOrbitalReport, &QTableWidget::cellDoubleClicked, this, &MainWindow::handleWeightChange);
-    connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleasedX);
-    connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleasedY);
+    connect(slideCullingX, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingX);
+    connect(slideCullingY, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingY);
+    connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
     setWindowTitle(tr("atomix"));
@@ -186,9 +188,9 @@ void MainWindow::updateDetails(AtomixInfo *info) {
                                  "Buffer|Index:  %6 %9\n"\
                                  "Buffer|Total:  %10 %11\n"\
                                  ).arg(dInfo.pos).arg(dInfo.near).arg(dInfo.far)\
-                                 .arg(bufs[0], 5, 'g', 4, ' ').arg(bufs[1], 5, 'g', 4, ' ').arg(bufs[2], 5, 'g', 4, ' ')\
+                                 .arg(bufs[0], 9, 'f', 2, ' ').arg(bufs[1], 9, 'f', 2, ' ').arg(bufs[2], 9, 'f', 2, ' ')\
                                  .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
-                                 .arg(bufs[3], 5, 'g', 4, ' ').arg(units[u[3]]);
+                                 .arg(bufs[3], 9, 'f', 2, ' ').arg(units[u[3]]);
     labelDetails->setText(strDetails);
     labelDetails->adjustSize();
 }
@@ -854,7 +856,7 @@ void MainWindow::handleButtMorbWaves() {
 void MainWindow::handleButtMorbHarmonics() {
     cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
     cloudConfig.cloudResolution = entryCloudRes->text().toInt();
-    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
+    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toFloat();
 
     uint vertex, data, index;
     uint64_t total;
@@ -882,9 +884,9 @@ void MainWindow::handleButtMorbHarmonics() {
                                            "Data:          %2 %5\n"\
                                            "Index:         %3 %6\n\n"\
                                            "Total:         %7 %8"\
-                                          ).arg(bufs[0], 5, 'g', 4, ' ').arg(bufs[1], 5, 'g', 4, ' ').arg(bufs[2], 5, 'g', 4, ' ')\
+                                          ).arg(bufs[0], 9, 'f', 2, ' ').arg(bufs[1], 9, 'f', 2, ' ').arg(bufs[2], 9, 'f', 2, ' ')\
                                            .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
-                                           .arg(bufs[3], 5, 'g', 4, ' ').arg(units[u[3]]);
+                                           .arg(bufs[3], 9, 'f', 2, ' ').arg(units[u[3]]);
         dialogConfim.setText(strDialogConfirm);
         dialogConfim.setFont(fontDebug);
         dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
@@ -892,7 +894,7 @@ void MainWindow::handleButtMorbHarmonics() {
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
     }
 
-    graph->newCloudConfig(&cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes);
+    graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes);
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
@@ -936,35 +938,19 @@ void MainWindow::handleButtColors(int id) {
 void MainWindow::handleSlideCullingX(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
     this->cloudConfig.CloudCull_x = pct;
-
-    if (graph->cullModel(pct, true, false)) {
-        lastSliderSentX = pct;
-    }
 }
 
 void MainWindow::handleSlideCullingY(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
     this->cloudConfig.CloudCull_y = pct;
-    
-    if (graph->cullModel(pct, false, false)) {
-        lastSliderSentY = pct;
+}
+
+void MainWindow::handleSlideReleased() {
+    if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY)) {
+        graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes);
+        lastSliderSentX = this->cloudConfig.CloudCull_x;
+        lastSliderSentY = this->cloudConfig.CloudCull_y;
     }
-}
-
-void MainWindow::handleSlideReleasedX() {
-    float pct = (static_cast<float>(slideCullingX->sliderPosition()) / static_cast<float>(intSliderLen));
-
-    this->cloudConfig.CloudCull_x = pct;
-    graph->cullModel(pct, true, true);
-    lastSliderSentX = pct;
-}
-
-void MainWindow::handleSlideReleasedY() {
-    float pct = (static_cast<float>(slideCullingY->sliderPosition()) / static_cast<float>(intSliderLen));
-
-    this->cloudConfig.CloudCull_y = pct;
-    graph->cullModel(pct, false, true);
-    lastSliderSentY = pct;
 }
 
 void MainWindow::handleSlideBackground(int val) {

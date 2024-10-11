@@ -50,9 +50,9 @@ typedef struct AtomixInfo {
     float pos = 0.0f;       // Camera position
     float near = 0.0f;      // Near culling distance
     float far = 0.0f;       // Far culling distance
-    uint vertex = 0;        // Vertex buffer size
-    uint data = 0;          // Data buffer size
-    uint index = 0;         // Index buffer size
+    uint64_t vertex = 0;    // Vertex buffer size
+    uint64_t data = 0;      // Data buffer size
+    uint64_t index = 0;     // Index buffer size
 } AtomixInfo;
 Q_DECLARE_METATYPE(AtomixInfo);
 
@@ -90,7 +90,6 @@ public:
     void updateBuffersAndShaders();
 
     void setBGColour(float colour);
-    int cullModel(float pct, bool isX, bool isFinal);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
 public slots:

@@ -23,6 +23,7 @@
  */
 
 #include <iostream>
+#include <ranges>
 #include <QTimer>
 #include "GWidget.hpp"
 
@@ -53,20 +54,16 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
 
     this->max_n = cloudMap->rbegin()->first;
 
-    if (modifyingModel.tryLock(0)) {
-        if (!cloudManager) {
-            // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
-            cloudManager = new CloudManager(config, *cloudMap, numRecipes);
-            currentManager = cloudManager;
-            futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
-        } else {
-            // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-            futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
-        }
-        fwModel->setFuture(futureModel);
+    if (!cloudManager) {
+        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
+        cloudManager = new CloudManager(config, *cloudMap, numRecipes);
+        currentManager = cloudManager;
+        futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
     } else {
-        std::cout << "Lock failed in newCloudConfig()" << std::endl;
+        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
+        futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
     }
+    fwModel->setFuture(futureModel);
 }
 
 void GWidget::newWaveConfig(AtomixConfig *config) {
@@ -75,20 +72,16 @@ void GWidget::newWaveConfig(AtomixConfig *config) {
         changeModes(false);
     }
 
-    if (modifyingModel.tryLock(0)) {
-        if (!waveManager) {
-            // Initialize waveManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
-            waveManager = new WaveManager(config);
-            currentManager = waveManager;
-            futureModel = QtConcurrent::run(&WaveManager::initManager, waveManager);
-        } else {
-            // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-            futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
-        }
-        fwModel->setFuture(futureModel);
+    if (!waveManager) {
+        // Initialize waveManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
+        waveManager = new WaveManager(config);
+        currentManager = waveManager;
+        futureModel = QtConcurrent::run(&WaveManager::initManager, waveManager);
     } else {
-        std::cout << "Lock failed in newWaveConfig()" << std::endl;
+        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
+        futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     }
+    fwModel->setFuture(futureModel);
 }
 
 void GWidget::selectRenderedWaves(int id, bool checked) {
@@ -295,7 +288,7 @@ void GWidget::changeModes(bool force) {
 
 void GWidget::initVecsAndMatrices() {
     gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
-    gw_nearDist = gw_startDist * gw_nearScale;
+    gw_nearDist = 0.1f;
     gw_farDist = gw_startDist * gw_farScale;
 
     q_TotalRot.zero();
@@ -624,7 +617,6 @@ void GWidget::updateBuffersAndShaders() {
         initVecsAndMatrices();
     }
 
-    modifyingModel.unlock();
     flGraphState.clear(eUpdateFlags);
 }
 
@@ -632,28 +624,13 @@ void GWidget::setBGColour(float colour) {
     gw_bg = colour;
 }
 
-int GWidget::cullModel(float pct, bool isX, bool isFinal) {
-    int result = 0;
-    int timeout = isFinal ? 2000 : 0;
-    
-    if (cloudManager) {
-        if (modifyingModel.tryLock(timeout)) {
-            futureModel = QtConcurrent::run(&CloudManager::receiveCulling, cloudManager, pct, isX);
-            fwModel->setFuture(futureModel);
-            result = 1;
-        }
-    }
-
-    return result;
-}
-
 void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
     uint layer_max = cloudManager->getMaxRadius(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
     uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
 
     (*vertex) = (pixel_count << 2) * 3;     // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices
-    (*data) = pixel_count << 3;             // (count)   * (1 float)  * (4 B/float) * (2 vectors) -- pdvStaging + allData
-    (*index) = pixel_count << 2;            // (count/2) * (1 uint)   * (4 B/uint)  * (2 vectors) -- idxTolerance + idxSilder + allIndices [very rough estimate]
+    (*data) = pixel_count << 2;             // (count)   * (1 float)  * (4 B/float) * (1 vectors) -- only allData [already clear()ing dataStaging; might delete it]
+    (*index) = (pixel_count << 1) * 3;      // (count/2) * (1 uint)   * (4 B/uint)  * (3 vectors) -- idxTolerance + idxSlider + allIndices [very rough estimate]
 }
 
 void GWidget::threadFinished() {
@@ -673,15 +650,16 @@ std::string GWidget::withCommas(int64_t value) {
 }
 
 void GWidget::updateSize() {
-    int64_t VSize = 0, DSize = 0, ISize = 0;
-    bool isMBV = false, isMBI = false;
+    uint64_t VSize = 0, DSize = 0, ISize = 0;
+    gw_info.vertex = 0;
+    gw_info.data = 0;
+    gw_info.index = 0;
 
     if (flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
-        VSize = currentManager->getVertexSize();
-        ISize = currentManager->getIndexSize() << 1;
-
+        VSize = currentManager->getVertexSize();            // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices
+        ISize = currentManager->getIndexSize() * 3;         // (count/2) * (1 uint)   * (4 B/uint)  * (3 vectors) -- idxTolerance + idxSlider + allIndices [very rough estimate]}
         if (flGraphState.hasAny(egs::CLOUD_RENDER)) {
-            DSize = currentManager->getDataSize() << 1;
+            DSize = currentManager->getDataSize();          // (count)   * (1 float)  * (4 B/float) * (1 vectors) -- only allData [already clear()ing dataStaging; might delete it]
         }
     }
 
@@ -693,20 +671,30 @@ void GWidget::updateSize() {
 }
 
 void GWidget::printSize() {
-    bool isMBV = false, isMBI = false;
+    updateSize();
+    
+    std::array<double, 4> bufs = { static_cast<double>(gw_info.vertex), static_cast<double>(gw_info.data), static_cast<double>(gw_info.index), 0 };
+    std::array<std::string, 4> labels = { "Vertex:  ", "Data:    ", "Index:   ", "TOTAL:   " };
+    std::array<std::string, 4> units = { " B", "KB", "MB", "GB" };
+    std::array<int, 4> uIdx = { 0, 0, 0, 0 };
+    double div = 1024;
+    
+    bufs[3] = std::accumulate(bufs.cbegin(), bufs.cend(), 0.0);
 
-    int64_t divisorMB = 1024 * 1024;
-    if (isMBV = gw_info.vertex > divisorMB) {
-        gw_info.vertex /= divisorMB;
-    }
-    if (isMBI = gw_info.index > divisorMB) {
-        gw_info.index /= divisorMB;
+    for (auto [b, u] : std::views::zip(bufs, uIdx)) {
+        while (b > div) {
+            b /= div;
+            u++;
+        }
     }
 
-    std::cout << "\nVertex Total Size: " << std::setw(7) << withCommas(gw_info.vertex) << ((isMBV) ? " MB\n" : "  B\n");
-    if (gw_info.data)
-        std::cout <<   "RDProb Total Size: " << std::setw(7) << withCommas(gw_info.data / divisorMB) << " MB\n";
-    std::cout <<   "Indice Total Size: " << std::setw(7) << withCommas(gw_info.index) << ((isMBI) ? " MB" : "  B") << std::endl;
+    std::cout << "[ Total Buffer Sizes ]\n";
+    for (auto [lab, b, u] : std::views::zip(labels, bufs, uIdx)) {
+        if (b) {
+            std::cout << lab << std::setprecision(2) << std::fixed << std::setw(6) << b << " " << units[u] << "\n";
+        }
+    }
+    std::cout << std::endl;
 }
 
 void GWidget::printFlags(std::string str) {

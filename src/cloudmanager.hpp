@@ -53,20 +53,19 @@ class CloudManager : public Manager {
         CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes);
         virtual ~CloudManager();
         void newConfig(AtomixConfig *cfg) override;
+
         void initManager() override final;
-        
         void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes);
-        void receiveCulling(float pct, bool isX);
         
         void cloudTest(int n_max);
         void cloudTestCSV();
         
         const uint getColourSize();
         const uint getMaxRadius(double tolerance, int n_max, int divisor);
-
         bool hasVertices();
         bool hasBuffers();
-        void printMaxRDP(const int &n, const int &l, const int &m_l, const double &maxRDP);
+
+        void printRecipes();
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
     private:
@@ -76,6 +75,7 @@ class CloudManager : public Manager {
         double createThreaded();
         double bakeOrbitals();
         double bakeOrbitalsThreaded();
+        double bakeOrbitalsThreadedAlt();
         double cullTolerance();
         double cullToleranceThreaded();
         double cullSlider();
@@ -104,6 +104,7 @@ class CloudManager : public Manager {
 
         void printBuffer(fvec buf, std::string name);
         void printBuffer(uvec buf, std::string name);
+        void printTimes();
 
         // void genOrbitalsThroughN(int n);
         // void genOrbitalsOfN(int n);
@@ -116,7 +117,7 @@ class CloudManager : public Manager {
         vVec3 allColours;
         dvec pdvStaging;
         uvec idxCulledTolerance;
-        uvec idxCulledSlider;
+        uvec idxCulledSlider; // Not needed with threading
         double allPDVMaximum;
         
         std::unordered_map<int, double> norm_constR;
@@ -127,8 +128,12 @@ class CloudManager : public Manager {
         uint colourSize = 0;
         uint64_t pixelCount = 0;
         uint cm_pixels;
+        bool cm_threading = true;
 
-        std::mutex cm_processing;
+        std::mutex cm_proc_coarse;
+        std::mutex cm_proc_fine;
+        std::array<double, 4> times = { 0.0, 0.0, 0.0, 0.0 };
+        std::array<std::string, 4> labels = { "Create():        ", "BakeOrbitals():  ", "CullTolerance(): ", "CullSlider():    " };
         
         int orbitalIdx = 0;
         int numOrbitals = 0;
@@ -139,7 +144,7 @@ class CloudManager : public Manager {
 
         int cloudResolution = 0;
         int cloudLayerDivisor = 0;
-        double cloudTolerance = 0.01;
+        float cloudTolerance = 0.05f;
 
         uint printCounter = 0;
 };

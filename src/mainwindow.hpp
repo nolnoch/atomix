@@ -92,9 +92,8 @@ private:
     void handleWeightChange(int row, int col);
     void handleSlideCullingX(int val);
     void handleSlideCullingY(int val);
+    void handleSlideReleased();
     void handleSlideBackground(int val);
-    void handleSlideReleasedX();
-    void handleSlideReleasedY();
 
     void printHarmap();
     void printList();

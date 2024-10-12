@@ -63,7 +63,9 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
         futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
     }
-    fwModel->setFuture(futureModel);
+    if (cloudManager) {
+        fwModel->setFuture(futureModel);
+    }
 }
 
 void GWidget::newWaveConfig(AtomixConfig *config) {

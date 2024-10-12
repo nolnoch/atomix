@@ -123,7 +123,7 @@ class CloudManager : public Manager {
         std::unordered_map<int, double> norm_constR;
         std::unordered_map<int, double> norm_constY;
         harmap cloudOrbitals;
-        
+
         uint colourCount = 0;
         uint colourSize = 0;
         uint64_t pixelCount = 0;

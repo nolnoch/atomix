@@ -25,6 +25,7 @@
 #include "cloudmanager.hpp"
 #include <ranges>
 #include <future>
+#include "BS_thread_pool.hpp"
 #undef emit
 #include <execution>
 
@@ -117,7 +118,7 @@ void CloudManager::initManager() {
     cm_proc_coarse.lock();
 
     times[0] = (cm_threading) ? createThreaded() : create();
-    times[1] = (cm_threading) ? bakeOrbitalsThreaded() : bakeOrbitals();
+    times[1] = (cm_threading) ? bakeOrbitalsThreadedAlt() : bakeOrbitals();
     times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
     times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
 
@@ -355,23 +356,32 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     cm_proc_fine.lock();
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
+    BS::thread_pool cloudPool;
+    uint thread_loop_limit = 10;
+
     double deg_fac_local = this->deg_fac;
     int div_local = this->cloudLayerDivisor;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
-    int opt_max_radius = cm_maxRadius[(static_cast<int>(std::abs(floor(log10(this->cloudTolerance)))) - 1)][this->max_n - 1] * div_local;
+    int max_n_local = this->max_n;
+    int opt_max_radius = cm_maxRadius[(static_cast<int>(std::abs(floor(log10(this->cloudTolerance)))) - 1)][max_n_local - 1] * div_local + 1;
 
-    std::vector<std::vector<double> *> vec_top_threads;
-    std::vector<uint> idx_top_threads;
+    std::vector<std::vector<double> *> *vec_top_threads = new std::vector<std::vector<double> *>;
+    std::vector<std::future<void>> vec_top_futures;
+    std::vector<uint> *idx_top_threads = new std::vector<uint>;
     int num_top_threads = this->numOrbitals;
     for (uint top = 0; top < num_top_threads; top++) {
-        vec_top_threads.push_back(new std::vector<double>);
-        idx_top_threads.push_back(top);
+        (*vec_top_threads).push_back(new std::vector<double>);
+        (*(*vec_top_threads)[top]).assign(this->pixelCount, 0.0);
+        (*idx_top_threads).push_back(top);
     }
+    uint top_count = 0;
+    uint r_compl;
 
     /*  This section contains 62%-98% of the total execution time of cloud generation!
         For that reason, I'm unrolling all the pretty functions that go into this calc. */
-    // Iterate through stored recipes, grouped by N
+    // system_clock::time_point inner_begin = std::chrono::high_resolution_clock::now();
+    // Recipe Loop
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
             int n = key;
@@ -380,57 +390,75 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             float weight = static_cast<float>(v.z) / static_cast<float>(this->numOrbitals);
             double angNorm = this->norm_constY[DSQ(l, m_l)];
             double radNorm = this->norm_constR[DSQ(n, l)];
+            uint top_idx = top_count++;
+            uint top_start = 1, top_end = 1;
 
-            // Spawn thread for each recipe (top_thread)
-            // Thread needs 
-
-            // Layer
-            for (int k = 1; k <= opt_max_radius; k++) {
-                double radius = static_cast<double>(k) / div_local;
-                
-                // Radial Wavefunc
-                double rho = 2.0 * radius / static_cast<double>(key);
-                double laguerre = std::assoc_laguerre((n - l - 1), ((l << 1) + 1), rho);
-                double expFunc = exp(-rho/2.0);
-                double rhol = 1.0;
-                int l_times = l;
-                while (l_times-- > 0) {
-                    rhol *= rho;
+            // Divide up the Layers loop into chunks and spawn threads to handle those chunks, from the thread pool
+            while (top_end < opt_max_radius) {
+                if (opt_max_radius - top_end >= thread_loop_limit) {
+                    top_end = top_start + thread_loop_limit;
+                } else {
+                    top_end = opt_max_radius;
                 }
-                double R = laguerre * rhol * expFunc * radNorm;
+
+                // Spawn thread
+                cloudPool.detach_task(
+                [n, l, m_l, weight, radNorm, angNorm, div_local, theta_max_local, phi_max_local, deg_fac_local, vec_top_threads, idx_top_threads, top_idx, top_start, top_end](){
+
+                    // Layer Loop
+                    for (int k = top_start; k < top_end; k++) {
+                        double radius = static_cast<double>(k) / div_local;
+                        int layer_idx = (k-1) * theta_max_local * phi_max_local;
+                        
+                        // Radial wavefunc
+                        double rho = 2.0 * radius / static_cast<double>(n);
+                        double rhol = 1.0;
+                        for (int l_times = l; l_times > 0; l_times--) {
+                            rhol *= rho;
+                        }
+                        double R = std::assoc_laguerre((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * radNorm;
+                        
+                        // Theta Loop
+                        for (int i = 0; i < theta_max_local; i++) {
+                            double theta = i * deg_fac_local;
+                            int theta_idx = i * phi_max_local;
+                            std::complex<double> angExp = exp(std::complex<double>{0,1} * (m_l * theta));
+                            
+                            // Phi Loop
+                            for (int j = 0; j < phi_max_local; j++) {
+                                double phi = j * deg_fac_local;
+
+                                // Angular wavefunc
+                                double orbLeg = std::assoc_legendre(l, abs(m_l), cos(phi));
+                                std::complex<double> Psi = R * angExp * angNorm * orbLeg;
+                                double pdv = (std::conj(Psi) * Psi).real() * radius * radius;
+
+                                int localCount = layer_idx + theta_idx + j;
+                                (*(*vec_top_threads)[(*idx_top_threads)[top_idx]])[localCount] += (pdv * weight);
+                            } // End of Phi Loop
+                        } // End of Theta Loop
+                    } // End of Layer Loop
+                }); // End of lambda (thread loop)
                 
-                // Theta
-                for (int i = 0; i < theta_max_local; i++) {
-                    
-                    double theta = i * deg_fac_local;
-                    std::complex<double> angExp = exp(std::complex<double>{0,1} * (m_l * theta));
-                    
-                    // Phi
-                    for (int j = 0; j < phi_max_local; j++) {
-                        
-                        double phi = j * deg_fac_local;
-                        
+                top_start = top_end;
+            } // End of layer loop division
 
-                        double orbLeg = std::assoc_legendre(l, abs(m_l), cos(phi));
-                        std::complex<double> Psi = R * angExp * angNorm * orbLeg;
-                        double pdv = (std::conj(Psi) * Psi).real() * radius * radius;
+        } // End of (l, m_l) loop
+    } // End of (n) loop
 
-                        int localCount = ((k-1) * theta_max_local * phi_max_local) + (i * phi_max_local) + j;
-                        (*vec_top_threads[idx_top_threads[0]])[localCount] += (pdv * weight);                   // TODO Change [0] to a variable!
-                    }
-                }
-            }
-        }
-    }
+    // Mid: Wait for threads to finish -- As of 10/12, this inner threaded loop takes 634 ms out of 1217 for entire function
+    cloudPool.wait();
+    // system_clock::time_point inner_end = std::chrono::high_resolution_clock::now();
+    // std::cout << "Inner took: " << std::chrono::duration<double, std::milli>(inner_end - inner_begin).count() << std::endl;
 
     // Mid: Collapse staging vectors into allData
     dvec *dataStart = &this->dataStaging;
     for (int i = 0; i < numOrbitals; i++) {
-        dvec *top_start = vec_top_threads[i];
-        std::for_each(std::execution::par_unseq, (*vec_top_threads[i]).cbegin(), (*vec_top_threads[i]).cend(),
+        dvec *top_start = (*vec_top_threads)[i];
+        std::for_each(std::execution::par_unseq, (*(*vec_top_threads)[i]).cbegin(), (*(*vec_top_threads)[i]).cend(),
             [top_start, dataStart](const double &item){
                 uint idx = &item - &(*top_start)[0];
-                (*dataStart)[idx] = item;
+                (*dataStart)[idx] += item;
             });
     }
 
@@ -439,13 +467,18 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     double pdvMax = this->allPDVMaximum;
 
     // End: Populate allData with normalized PDVs [** as FLOATS **], leaving dataStaging untouched
-    std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),
+    std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),       // TODO allData is ending up with [1, 0...)
         [pdvMax](const double &item){
             return static_cast<float>(item / pdvMax);
         });
     
     // End: dataStaging is not needed after this
     dataStaging.clear();
+    for (auto &v : *vec_top_threads) {
+        delete v;
+    }
+    delete vec_top_threads;
+    delete idx_top_threads;
     
     mStatus.set(em::DATA_READY);
     genDataBuffer();

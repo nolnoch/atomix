@@ -54,18 +54,16 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
 
     this->max_n = cloudMap->rbegin()->first;
 
-    if (canCreate) {
-        if (!cloudManager) {
-            // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
-            cloudManager = new CloudManager(config, *cloudMap, numRecipes);
-            currentManager = cloudManager;
-            futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
-        } else {
-            // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-            futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
-        }
-        fwModel->setFuture(futureModel);
+    if (!cloudManager && canCreate) {
+        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
+        cloudManager = new CloudManager(config, *cloudMap, numRecipes);
+        currentManager = cloudManager;
+        futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
+    } else if (cloudManager) {
+        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
+        futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
     }
+    fwModel->setFuture(futureModel);
 }
 
 void GWidget::newWaveConfig(AtomixConfig *config) {

@@ -45,20 +45,20 @@ void main() {
         vertColour = vec4(pdv, 0.0f, pdv, alpha);
     } */
 
-    if (pdv > 0.92f) {
+    if (pdv > 0.90f) {          // 90% - 100% -- White
         vertColour = vec4(pdv, pdv, pdv, alpha);
-    } else if (pdv > 0.68f) {
+    } else if (pdv > 0.70f) {   // 70% - 90%  -- Red
         vertColour = vec4(pdv, 0.0f, 0.0f, alpha);
-    } else if (pdv > 0.48f) {
+    } else if (pdv > 0.50f) {   // 50% - 70%  -- Yellow
         vertColour = vec4(pdv, pdv, 0.0f, alpha);
-    } else if (pdv > 0.34f) {
+    } else if (pdv > 0.35f) {   // 35% - 50%  -- Green
         vertColour = vec4(0.0f, pdv, 0.0f, alpha);
-    } else if (pdv > 0.20f) {
+    } else if (pdv > 0.20f) {   // 20% - 35%  -- Cyan
         vertColour = vec4(0.0f, pdv, pdv, alpha);
-    } else if (pdv > 0.09f) {
+    } else if (pdv > 0.10f) {   // 10% - 20%  -- Blue
         float pdv_adj = pdv * 1.5f;
         vertColour = vec4(0.0f, 0.0f, pdv_adj, alpha);
-    } else {
+    } else {                    //  0% - 10%  -- Purple
         float pdv_adj = pdv * 2.0f;
         vertColour = vec4(pdv_adj, 0.0f, pdv_adj, 0.0f);
     }

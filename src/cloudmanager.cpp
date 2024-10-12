@@ -24,6 +24,7 @@
 
 #include "cloudmanager.hpp"
 #include <ranges>
+#include <future>
 #undef emit
 #include <execution>
 
@@ -286,26 +287,42 @@ double CloudManager::bakeOrbitalsThreaded() {
     cm_proc_fine.lock();
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
-    this->printRecipes();
+    // this->printRecipes();
 
     /*  This section contains 62%-98% of the total execution time of cloud generation! */
+    const double totalRecipes = static_cast<double>(this->numOrbitals);
+    const double *vecStaging = &this->dataStaging[0];
+    const vVec3 *vecVertices = &this->allVertices;
+    const harmap *mapRecipes = &this->cloudOrbitals;
+    std::unordered_map<int, double> *ncR = &this->norm_constR;
+    std::unordered_map<int, double> *ncY = &this->norm_constY;
     std::for_each(std::execution::par_unseq, dataStaging.begin(), dataStaging.end(),
-        [this](double &item){
-            std::ptrdiff_t i = &item - &this->dataStaging.at(0);
+        [totalRecipes, vecStaging, vecVertices, mapRecipes, ncR, ncY](double &item){
+            std::ptrdiff_t i = &item - vecStaging;
             double final_pdv = 0;
-            double theta = allVertices[i].x;
-            double phi = allVertices[i].y;
-            double radius = allVertices[i].z;
-            double totalRecipes = static_cast<double>(this->numOrbitals);
+            double theta = (*vecVertices)[i].x;
+            double phi = (*vecVertices)[i].y;
+            double radius = (*vecVertices)[i].z;
+            
 
-            for (auto const &[key, val] : cloudOrbitals) {
+            for (auto const &[key, val] : (*mapRecipes)) {
                 int n = key;
                 for (auto const &v : val) {
                     int l = v.x;
                     int m_l = v.y;
                     double weight = v.z / totalRecipes;
 
-                    double pdv = wavefuncPsi2(n, l, m_l, radius, theta, phi);
+                    double rho = 2.0 * radius / static_cast<double>(n);
+                    double rhol = 1.0;
+                    int l_times = l;
+                    while (l_times-- > 0) {
+                        rhol *= rho;
+                    }
+                    double R = std::assoc_laguerre((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * (*ncR)[DSQ(n, l)];
+                    std::complex<double> Y = exp(std::complex<double>{0,1} * static_cast<double>(m_l) * theta) * std::assoc_legendre(l, abs(m_l), cos(phi)) * (*ncY)[DSQ(l, m_l)];;
+                    std::complex<double> Psi = R * Y;
+
+                    double pdv = (std::conj(Psi) * Psi).real() * radius * radius;;
                     final_pdv += pdv * weight;
                 }
             }
@@ -339,10 +356,18 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     double deg_fac_local = this->deg_fac;
+    int div_local = this->cloudLayerDivisor;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
-    int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
-    int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
+    int opt_max_radius = cm_maxRadius[(static_cast<int>(std::abs(floor(log10(this->cloudTolerance)))) - 1)][this->max_n - 1] * div_local;
+
+    std::vector<std::vector<double> *> vec_top_threads;
+    std::vector<uint> idx_top_threads;
+    int num_top_threads = this->numOrbitals;
+    for (uint top = 0; top < num_top_threads; top++) {
+        vec_top_threads.push_back(new std::vector<double>);
+        idx_top_threads.push_back(top);
+    }
 
     /*  This section contains 62%-98% of the total execution time of cloud generation!
         For that reason, I'm unrolling all the pretty functions that go into this calc. */
@@ -355,22 +380,22 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             float weight = static_cast<float>(v.z) / static_cast<float>(this->numOrbitals);
             double angNorm = this->norm_constY[DSQ(l, m_l)];
             double radNorm = this->norm_constR[DSQ(n, l)];
-            
+
+            // Spawn thread for each recipe (top_thread)
+            // Thread needs 
 
             // Layer
             for (int k = 1; k <= opt_max_radius; k++) {
-                
-                double radius = static_cast<double>(k) / this->cloudLayerDivisor;
+                double radius = static_cast<double>(k) / div_local;
                 
                 // Radial Wavefunc
                 double rho = 2.0 * radius / static_cast<double>(key);
                 double laguerre = std::assoc_laguerre((n - l - 1), ((l << 1) + 1), rho);
                 double expFunc = exp(-rho/2.0);
-                double rhol = rho;
-                int l_pow = l;
-                while (l_pow > 1) {
+                double rhol = 1.0;
+                int l_times = l;
+                while (l_times-- > 0) {
                     rhol *= rho;
-                    l_pow--;
                 }
                 double R = laguerre * rhol * expFunc * radNorm;
                 
@@ -391,11 +416,22 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                         double pdv = (std::conj(Psi) * Psi).real() * radius * radius;
 
                         int localCount = ((k-1) * theta_max_local * phi_max_local) + (i * phi_max_local) + j;
-                        dataStaging[localCount] += (pdv * weight);
+                        (*vec_top_threads[idx_top_threads[0]])[localCount] += (pdv * weight);                   // TODO Change [0] to a variable!
                     }
                 }
             }
         }
+    }
+
+    // Mid: Collapse staging vectors into allData
+    dvec *dataStart = &this->dataStaging;
+    for (int i = 0; i < numOrbitals; i++) {
+        dvec *top_start = vec_top_threads[i];
+        std::for_each(std::execution::par_unseq, (*vec_top_threads[i]).cbegin(), (*vec_top_threads[i]).cend(),
+            [top_start, dataStart](const double &item){
+                uint idx = &item - &(*top_start)[0];
+                (*dataStart)[idx] = item;
+            });
     }
 
     // End: check actual max value of accumulated vector

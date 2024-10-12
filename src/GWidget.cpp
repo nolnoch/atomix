@@ -46,7 +46,7 @@ void GWidget::cleanup() {
     delete crystalProg;
 }
 
-void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes) {
+void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
     flGraphState.set(egs::CLOUD_MODE);
     if (flGraphState.hasAny(eWaveFlags)) {
         changeModes(false);
@@ -54,16 +54,18 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
 
     this->max_n = cloudMap->rbegin()->first;
 
-    if (!cloudManager) {
-        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
-        cloudManager = new CloudManager(config, *cloudMap, numRecipes);
-        currentManager = cloudManager;
-        futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
-    } else {
-        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-        futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
+    if (canCreate) {
+        if (!cloudManager) {
+            // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
+            cloudManager = new CloudManager(config, *cloudMap, numRecipes);
+            currentManager = cloudManager;
+            futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
+        } else {
+            // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
+            futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
+        }
+        fwModel->setFuture(futureModel);
     }
-    fwModel->setFuture(futureModel);
 }
 
 void GWidget::newWaveConfig(AtomixConfig *config) {

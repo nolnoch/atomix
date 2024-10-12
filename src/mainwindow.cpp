@@ -894,7 +894,7 @@ void MainWindow::handleButtMorbHarmonics() {
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
     }
 
-    graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes);
+    graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
@@ -947,7 +947,7 @@ void MainWindow::handleSlideCullingY(int val) {
 
 void MainWindow::handleSlideReleased() {
     if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY)) {
-        graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes);
+        graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
         lastSliderSentX = this->cloudConfig.CloudCull_x;
         lastSliderSentY = this->cloudConfig.CloudCull_y;
     }

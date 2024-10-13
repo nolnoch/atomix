@@ -68,6 +68,8 @@ class CloudManager : public Manager {
         void printRecipes();
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
+        void testThreadingInit();
+
     private:
         void receiveCloudMap(harmap *inMap, int numRecipes);
 
@@ -127,13 +129,6 @@ class CloudManager : public Manager {
         uint colourCount = 0;
         uint colourSize = 0;
         uint64_t pixelCount = 0;
-        uint cm_pixels;
-        bool cm_threading = true;
-
-        std::mutex cm_proc_coarse;
-        std::mutex cm_proc_fine;
-        std::array<double, 4> times = { 0.0, 0.0, 0.0, 0.0 };
-        std::array<std::string, 4> labels = { "Create():        ", "BakeOrbitals():  ", "CullTolerance(): ", "CullSlider():    " };
         
         int orbitalIdx = 0;
         int numOrbitals = 0;
@@ -141,6 +136,16 @@ class CloudManager : public Manager {
         int max_n = 0;
         float cm_culled = 0;
         const int MAX_SHELLS = 8;
+
+        uint cm_pixels;
+        bool cm_threading = true;
+        uint cm_pool = 0;
+        uint cm_loop = 0;
+        uint cm_vecs = 0;
+        std::mutex cm_proc_coarse;
+        std::mutex cm_proc_fine;
+        std::array<double, 4> cm_times = { 0.0, 0.0, 0.0, 0.0 };
+        std::array<std::string, 4> cm_labels = { "Create():        ", "BakeOrbitals():  ", "CullTolerance(): ", "CullSlider():    " };
 
         int cloudResolution = 0;
         int cloudLayerDivisor = 0;

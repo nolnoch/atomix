@@ -24,8 +24,8 @@
 
 #include "cloudmanager.hpp"
 #include <ranges>
-#include <future>
-#include "BS_thread_pool.hpp"
+// #include <future>
+
 #undef emit
 #include <execution>
 
@@ -34,7 +34,7 @@ CloudManager::CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes) {
     newConfig(cfg);
     receiveCloudMap(&inMap, numRecipes);
     
-    this->cm_pool = std::thread::hardware_concurrency();
+    this->cm_pool = cloudPool.get_thread_count();
     this->cm_loop = 10;
     this->cm_vecs = 2;
     
@@ -203,21 +203,25 @@ double CloudManager::createThreaded() {
     double deg_fac_local = this->deg_fac;
     this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
 
+    /*  Memory -- Begin --- This memory-carving portion takes 94% of create() total time  */
+    // auto beginInner = std::chrono::high_resolution_clock::now();
     allVertices.reserve(pixelCount);
     dataStaging.reserve(pixelCount);
     allData.reserve(pixelCount);
     idxCulledTolerance.reserve(pixelCount);
 
-    // vec3 pos = vec3(0.0f);
-    allVertices.assign(pixelCount, vec3(0));
+    allVertices.assign(pixelCount, vec3(0.0f));
     dataStaging.assign(pixelCount, 0.0);
     allData.assign(pixelCount, 0.0f);
 
     wavefuncNorms(MAX_SHELLS);
+    // auto endInner = std::chrono::high_resolution_clock::now();
+    // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
+    // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
+    /*  Compute -- Begin --- This compute portion takes only 6% of create() total time  */
     // auto beginInner = std::chrono::high_resolution_clock::now();
     vec3 *start = &this->allVertices.at(0);
-    // QtConcurrent::blockingMap(allVertices, [=, this](glm::vec3 &gVector){
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
         [layer_size, phi_max_local, deg_fac_local, div_local, start](glm::vec3 &gVector){
             int i = &gVector - start;
@@ -235,6 +239,7 @@ double CloudManager::createThreaded() {
     // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
     // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
+    /*  Exit  */
     mStatus.advance(em::INIT, em::VERT_READY);
     genVertexArray();
     system_clock::time_point end = std::chrono::high_resolution_clock::now();
@@ -360,35 +365,33 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     cm_proc_fine.lock();
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
-    BS::thread_pool cloudPool(this->cm_pool);
+    /*  Prep -- Threading  */
     std::vector<BS::multi_future<void> *> allRecipeFutures;
-    uint thread_loop_limit = this->cm_loop;
-
     std::vector<std::vector<double> *> vec_top_threads;
     dvec *thread_vec = nullptr;
+    uint thread_loop_limit = this->cm_loop;
     int thread_vec_limit = this->cm_vecs;
-    int num_top_vectors = 0;
     int vecs_to_fill = numOrbitals - 1;
-
-    num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
+    int num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
     for (uint top = 0; top < num_top_vectors; top++) {
         vec_top_threads.push_back(new std::vector<double>);
         (*vec_top_threads[top]).assign(this->pixelCount, 0.0);
-        // (*idx_top_threads).push_back(top);
     }
-    
     uint recipe_idx = 0;
     uint clearing_vec = 0;
     uint clearing_fut = 0;
     dvec *dataStagingPtr = &this->dataStaging;
+    // uint col_max = this->pixelCount;
 
+    /*  Prep -- Compute  */
     double deg_fac_local = this->deg_fac;
     int div_local = this->cloudLayerDivisor;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
     int opt_max_radius = cm_maxRadius[(static_cast<int>(std::abs(floor(log10(this->cloudTolerance)))) - 1)][this->max_n - 1] * div_local + 1;
 
-    /*  This section contains 62%-98% of the total execution time of cloud generation!
+    /*  Compute -- Begin
+        This section contains 62%-98% of the total execution time of cloud generation!
         For that reason, I'm unrolling all the pretty functions that go into this calc. */
     // system_clock::time_point inner_begin = std::chrono::high_resolution_clock::now();
     // Recipe Loop
@@ -421,7 +424,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                     top_end = opt_max_radius;
                 }
 
-                // Spawn thread
+                // Spawn thread for each chunk
                 recipeFutures->push_back(cloudPool.submit_task(
                 [n, l, m_l, weight, radNorm, angNorm, div_local, theta_max_local, phi_max_local, deg_fac_local, thread_vec, top_start, top_end](){
 
@@ -463,9 +466,13 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                 top_start = top_end;
             } // End of Layer Loop (whole)
 
+            // If this is the last recipe, it was assigned the dataStaging vector, so wait for that and then collapse all other spawned vectors
             if (recipe_idx == numOrbitals) {
-                allRecipeFutures.back()->wait();                                                                                                        // Wait for threads using dataStaging to finish.
+                allRecipeFutures.back()->wait();
                 while (clearing_fut < vecs_to_fill) {
+                    /* BS::multi_future<void> futureCollapse;
+                    uint col_start = 0, col_end = 0;
+                    dvec *col_vec = vec_top_threads[clearing_vec]; */
                     (*allRecipeFutures[clearing_fut++]).wait();
                     double *d_start = &(*vec_top_threads[clearing_vec])[0];
                     std::for_each(std::execution::par_unseq, (*vec_top_threads[clearing_vec]).cbegin(), (*vec_top_threads[clearing_vec]).cend(),
@@ -473,18 +480,52 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                             uint idx = &item - d_start;
                             (*dataStagingPtr)[idx] += item;
                         });
+                    /* while (col_end < col_max) {
+                        if (col_max - col_end >= thread_loop_limit) {
+                            col_end = col_start + thread_loop_limit;
+                        } else {
+                            col_end = col_max;
+                        }
+                        futureCollapse.push_back(cloudPool.submit_task(
+                            [dataStagingPtr, col_vec, col_start, col_end](){
+                                for (int c = col_start; c < col_end; c++) {
+                                    (*dataStagingPtr)[c] += (*col_vec)[c];
+                                }
+                            }, BS::pr::highest));
+                        col_start = col_end;
+                    }
+                    futureCollapse.wait(); */
                     if (++clearing_vec >= num_top_vectors) {
                         clearing_vec = 0;
                     }
-                }                                                                                                                                       // [3] [0] [1] [2] [3] [0] [1]
-            } else if (recipe_idx >= num_top_vectors) {                                                                                               //  4   5   6   7   8   9   10  11
-                allRecipeFutures[clearing_fut++]->wait();                                                                                               //  0   1   2   3   4   5   6   (7)
-                double *d_start = &(*vec_top_threads[clearing_vec])[0];                                                                                 //  0   1   2   3   0   1   2   (3)
+                }
+            // If this is not the last recipe, but we have filled all spawned vectors, collapse and reset first-filled for next round of threads
+            } else if (recipe_idx >= num_top_vectors) {
+                /* BS::multi_future<void> futureCollapse;
+                uint col_start = 0, col_end = 0;
+                dvec *col_vec = vec_top_threads[clearing_vec]; */
+                allRecipeFutures[clearing_fut++]->wait();
+                double *d_start = &(*vec_top_threads[clearing_vec])[0];
                 std::for_each(std::execution::par_unseq, (*vec_top_threads[clearing_vec]).cbegin(), (*vec_top_threads[clearing_vec]).cend(),
                     [d_start, dataStagingPtr](const double &item){
                         uint idx = &item - d_start;
                         (*dataStagingPtr)[idx] += item;
                     });
+                /* while (col_end < col_max) {
+                    if (col_max - col_end >= thread_loop_limit) {
+                        col_end = col_start + thread_loop_limit;
+                    } else {
+                        col_end = col_max;
+                    }
+                    futureCollapse.push_back(cloudPool.submit_task(
+                        [dataStagingPtr, col_vec, col_start, col_end](){
+                            for (int c = col_start; c < col_end; c++) {
+                                (*dataStagingPtr)[c] += (*col_vec)[c];
+                            }
+                        }, BS::pr::highest));
+                    col_start = col_end;
+                }
+                futureCollapse.wait(); */
                 (*vec_top_threads[clearing_vec]).assign(this->pixelCount, 0.0);
                 if (++clearing_vec >= num_top_vectors) {
                     clearing_vec = 0;
@@ -493,64 +534,29 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
         } // End of (l, m_l) loop
     } // End of (n) loop
 
-    // Mid: Wait for threads to finish -- As of 10/12, inner threaded loop takes [without -O2]: 634 ms out of 1217 for entire function for 108M vertices
-    //                                                                              [with -O2]: 124 ms out of  504 for entire function for 108M vertices
-    // cloudPool.wait();
-    // system_clock::time_point inner_end = std::chrono::high_resolution_clock::now();
-    // std::cout << "Inner took: " << std::chrono::duration<double, std::milli>(inner_end - inner_begin).count() << std::endl;
+    /*  Compute -- Post-processing  */
+    // Check actual max value of accumulated vector
+    this->allPDVMaximum = *std::max_element(std::execution::par, dataStaging.begin(), dataStaging.end());
 
-    // Cleanup after each thread (future) group immediately as they become available
-    // dvec *dataStart = &this->dataStaging;
-
+    // Populate allData with normalized PDVs [** as FLOATS **], leaving dataStaging untouched
+    double pdvMax = this->allPDVMaximum;
+    std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),
+        [pdvMax](const double &item){
+            return static_cast<float>(item / pdvMax);
+        });
+    
+    /*  Cleanup  */
     for (auto &v : vec_top_threads) {
         delete v;
     }
     for (auto &f : allRecipeFutures) {
         delete f;
     }
-
-    /* for (int i = 0; i < numOrbitals; i++) {
-        BS::multi_future<void> *f = allRecipeFutures[i];
-        dvec *d = vec_top_threads[i];
-        (*f).wait();
-        delete f;
-        std::for_each(std::execution::par_unseq, (*vec_top_threads[i]).cbegin(), (*vec_top_threads[i]).cend(),
-            [d, dataStart](const double &item){
-                uint idx = &item - &(*d)[0];
-                (*dataStart)[idx] += item;
-            });
-        delete d;
-    }
-    delete vec_top_threads;
-    delete idx_top_threads; */
-
-    /* // Mid: Collapse staging vectors into allData
-    dvec *dataStart = &this->dataStaging;
-    for (int i = 0; i < numOrbitals; i++) {
-        dvec *top_start = vec_top_threads[i];
-        std::for_each(std::execution::par_unseq, (*vec_top_threads[i]).cbegin(), (*vec_top_threads[i]).cend(),
-            [top_start, dataStart](const double &item){
-                uint idx = &item - &(*top_start)[0];
-                (*dataStart)[idx] += item;
-            });
-    } */
-
-    // End: check actual max value of accumulated vector
-    this->allPDVMaximum = *std::max_element(std::execution::par, dataStaging.begin(), dataStaging.end());
-
-    // End: Populate allData with normalized PDVs [** as FLOATS **], leaving dataStaging untouched
-    double pdvMax = this->allPDVMaximum;
-    std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),       // TODO allData is ending up with [1, 0...)
-        [pdvMax](const double &item){
-            return static_cast<float>(item / pdvMax);
-        });
-    
-    // End: dataStaging is not needed after this
     dataStaging.clear();
     
+    /*  Exit  */
     mStatus.set(em::DATA_READY);
     genDataBuffer();
-
     system_clock::time_point end = std::chrono::high_resolution_clock::now();
     cm_proc_fine.unlock();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
@@ -606,8 +612,8 @@ double CloudManager::cullToleranceThreaded() {
     this->cm_pixels = idxCulledTolerance.size();
     allIndices.reserve(this->cm_pixels);
 
+    /*  Exit  */
     mStatus.set(em::INDEX_GEN);
-
     system_clock::time_point end = std::chrono::high_resolution_clock::now();
     cm_proc_fine.unlock();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
@@ -658,10 +664,12 @@ double CloudManager::cullSliderThreaded() {
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
+        /*  Default -- sliders are not culling, so copy idxCulledTolerance directly to allIndices!  */
         allIndices.resize(this->cm_pixels);
         allIndices.assign(this->cm_pixels, 0);
         std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
     } else {
+        /*  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  */
         uint layer_size = 0, culled_theta_all = 0, phi_size = 0, phi_half = 0, culled_phi_b = 0, culled_phi_f = 0;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
         culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
@@ -669,8 +677,8 @@ double CloudManager::cullSliderThreaded() {
         culled_phi_b = static_cast<uint>(ceil(phi_size * (1.0f - this->cfg.CloudCull_y))) + phi_size;
         culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.CloudCull_y));
 
-        uint pix_final = std::count_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(),
-            [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
+        // Define lambda for multi-use
+        auto lambda_cull = [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
                 uint phi_pos = item % phi_size;
                 bool culled_theta = ((item % layer_size) <= culled_theta_all);
                 bool culled_theta_phis = (phi_pos <= phi_size);
@@ -678,23 +686,20 @@ double CloudManager::cullSliderThreaded() {
                 bool culled_phi_back = (phi_pos >= culled_phi_b);
 
                 return !((culled_theta && culled_theta_phis) || (culled_phi_front || culled_phi_back));
-            });
+            };
 
+        // Count unculled vertices
+        uint pix_final = std::count_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), lambda_cull);
+
+        // Resize allIndices. ***Note: resize does NOT change capacity, so full size is still reserved!
         allIndices.resize(pix_final);
         allIndices.assign(pix_final, 0);
 
-        std::copy_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin(),
-            [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
-                uint phi_pos = item % phi_size;
-                bool culled_theta = ((item % layer_size) <= culled_theta_all);
-                bool culled_theta_phis = (phi_pos <= phi_size);
-                bool culled_phi_front = (phi_pos <= culled_phi_f);
-                bool culled_phi_back = (phi_pos >= culled_phi_b);
-
-                return !((culled_theta && culled_theta_phis) || (culled_phi_front || culled_phi_back));
-            });
+        // Copy only unculled vertices to allIndices
+        std::copy_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin(), lambda_cull);
     }
 
+    /*  Exit  */
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
     system_clock::time_point end = std::chrono::high_resolution_clock::now();
@@ -1090,8 +1095,9 @@ void CloudManager::testThreadingInit() {
     
     for (int v = vecs_min; v <= vecs_max; v++) {
         for (int p = pool_min; p <= pool_max; p++) {
+            cloudPool.reset(p);
+            sleep(500);
             for (int l = loop_min; l <= loop_max; l++) {
-                this->cm_pool = p;
                 this->cm_loop = l;
                 this->cm_vecs = v;
                 std::vector<double> times(test_max, 0.0);

@@ -612,27 +612,33 @@ void MainWindow::setupDockHarmonics() {
     slideCullingX = new QSlider(Qt::Horizontal);
     slideCullingX->setMinimum(0);
     slideCullingX->setMaximum(intSliderLen);
-    slideCullingX->setTickInterval(25);
+    slideCullingX->setTickInterval(intSliderLen / 4);
     slideCullingX->setTickPosition(QSlider::TicksAbove);
     slideCullingY = new QSlider(Qt::Horizontal);
     slideCullingY->setMinimum(0);
     slideCullingY->setMaximum(intSliderLen);
-    slideCullingY->setTickInterval(25);
+    slideCullingY->setTickInterval(intSliderLen / 4);
     slideCullingY->setTickPosition(QSlider::TicksAbove);
     slideBackground = new QSlider(Qt::Horizontal);
     slideBackground->setMinimum(0);
     slideBackground->setMaximum(intSliderLen);
-    slideBackground->setTickInterval(25);
+    slideBackground->setTickInterval(intSliderLen / 4);
     slideBackground->setTickPosition(QSlider::TicksBelow);
-
-    QHBoxLayout *laySlideCulling = new QHBoxLayout;
-    laySlideCulling->addWidget(slideCullingX);
-    laySlideCulling->addWidget(slideCullingY);
+    
+    QHBoxLayout *layHCulling = new QHBoxLayout;
+    layHCulling->addWidget(slideCullingX);
+    QHBoxLayout *layVCulling = new QHBoxLayout;
+    layVCulling->addWidget(slideCullingY);
     QHBoxLayout *laySlideBackground = new QHBoxLayout;
     laySlideBackground->addWidget(slideBackground);
 
-    groupSlideCulling = new QGroupBox("Model Culling");
-    groupSlideCulling->setLayout(laySlideCulling);
+    groupHSlideCulling = new QGroupBox("Horizontal Culling");
+    groupHSlideCulling->setLayout(layHCulling);
+    groupVSlideCulling = new QGroupBox("Vertical Culling");
+    groupVSlideCulling->setLayout(layVCulling);
+    QHBoxLayout *laySlideCulling = new QHBoxLayout;
+    laySlideCulling->addWidget(groupHSlideCulling);
+    laySlideCulling->addWidget(groupVSlideCulling);
     groupSlideBackground = new QGroupBox("Background Brightness");
     groupSlideBackground->setLayout(laySlideBackground);
 
@@ -643,14 +649,14 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addWidget(buttMorbHarmonics);
     layDockHarmonics->addStretch(1);
-    layDockHarmonics->addWidget(groupSlideCulling);
+    layDockHarmonics->addLayout(laySlideCulling);
     layDockHarmonics->addWidget(groupSlideBackground);
 
     layDockHarmonics->setStretchFactor(labelHarmonics, 2);
     layDockHarmonics->setStretchFactor(layRecipeIO, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
-    layDockHarmonics->setStretchFactor(groupSlideCulling, 1);
+    layDockHarmonics->setStretchFactor(laySlideCulling, 1);
     layDockHarmonics->setStretchFactor(groupSlideBackground, 1);
 
     buttMorbHarmonics->setSizePolicy(qPolicyExpand);
@@ -938,11 +944,13 @@ void MainWindow::handleButtColors(int id) {
 void MainWindow::handleSlideCullingX(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
     this->cloudConfig.CloudCull_x = pct;
+    // slideCullingX->setFocus();
 }
 
 void MainWindow::handleSlideCullingY(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
     this->cloudConfig.CloudCull_y = pct;
+    // slideCullingY->setFocus();
 }
 
 void MainWindow::handleSlideReleased() {
@@ -951,6 +959,8 @@ void MainWindow::handleSlideReleased() {
         lastSliderSentX = this->cloudConfig.CloudCull_x;
         lastSliderSentY = this->cloudConfig.CloudCull_y;
     }
+    // slideCullingX->clearFocus();
+    // slideCullingY->clearFocus();
 }
 
 void MainWindow::handleSlideBackground(int val) {

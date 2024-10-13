@@ -30,9 +30,10 @@
 #include <format>
 #include <map>
 #include <unordered_set>
-// #include <QtConcurrent/QtConcurrent>
 #include <chrono>
 #include "manager.hpp"
+// #define BS_THREAD_POOL_ENABLE_PRIORITY
+#include "BS_thread_pool.hpp"
 
 using std::chrono::_V2::system_clock;
 
@@ -114,6 +115,8 @@ class CloudManager : public Manager {
         // void genOrbitalExplicit(int n, int l, int m_l);
         // void genColourArray();
         // void RDPtoColours();
+
+        BS::thread_pool cloudPool;
 
         std::vector<vVec3 *> pixelColours;
         vVec3 allColours;

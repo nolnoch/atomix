@@ -52,8 +52,6 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
         changeModes(false);
     }
 
-    this->max_n = cloudMap->rbegin()->first;
-
     if (!cloudManager && canCreate) {
         // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
         cloudManager = new CloudManager(config, *cloudMap, numRecipes);
@@ -65,6 +63,7 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
     }
     if (cloudManager) {
         fwModel->setFuture(futureModel);
+        this->max_n = cloudMap->rbegin()->first;
     }
 }
 

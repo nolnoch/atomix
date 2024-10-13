@@ -96,7 +96,7 @@ public slots:
     void cleanup();
     void newWaveConfig(AtomixConfig *cfg);
     void selectRenderedWaves(int id, bool checked);
-    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes, bool canCreate);
+    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes, bool canCreate = true);
 
 protected:
     void initializeGL() override;

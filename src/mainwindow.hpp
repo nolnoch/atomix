@@ -141,7 +141,8 @@ private:
     QGroupBox *groupRecipeReporter = nullptr;
     QGroupBox *groupGenVertices = nullptr;
     QGroupBox *groupRecipeLocked = nullptr;
-    QGroupBox *groupSlideCulling = nullptr;
+    QGroupBox *groupHSlideCulling = nullptr;
+    QGroupBox *groupVSlideCulling = nullptr;
     QGroupBox *groupSlideBackground = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
     QListWidget *listOrbitalLocked = nullptr;
@@ -161,7 +162,7 @@ private:
 
     int intTabMinWidth = 500;
     int intTabLabelHeight = 200;
-    int intSliderLen = 100;
+    int intSliderLen = 20;
     float lastSliderSentX = 0.0f;
     float lastSliderSentY = 0.0f;
 

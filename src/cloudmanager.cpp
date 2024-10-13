@@ -117,10 +117,10 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
 void CloudManager::initManager() {
     cm_proc_coarse.lock();
 
-    times[0] = (cm_threading) ? createThreaded() : create();
-    times[1] = (cm_threading) ? bakeOrbitalsThreadedAlt() : bakeOrbitals();
-    times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
-    times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
+    times[0] = createThreaded();
+    times[1] = bakeOrbitalsThreadedAlt();
+    times[2] = cullToleranceThreaded();
+    times[3] = cullSliderThreaded();
 
     std::cout << "Init() -- Functions took:\n";
     this->printTimes();
@@ -304,7 +304,6 @@ double CloudManager::bakeOrbitalsThreaded() {
             double theta = (*vecVertices)[i].x;
             double phi = (*vecVertices)[i].y;
             double radius = (*vecVertices)[i].z;
-            
 
             for (auto const &[key, val] : (*mapRecipes)) {
                 int n = key;
@@ -357,6 +356,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     BS::thread_pool cloudPool;
+    std::vector<BS::multi_future<void> *> allRecipeFutures;
     uint thread_loop_limit = 10;
 
     double deg_fac_local = this->deg_fac;
@@ -369,14 +369,14 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     std::vector<std::vector<double> *> *vec_top_threads = new std::vector<std::vector<double> *>;
     std::vector<std::future<void>> vec_top_futures;
     std::vector<uint> *idx_top_threads = new std::vector<uint>;
-    int num_top_threads = this->numOrbitals;
-    for (uint top = 0; top < num_top_threads; top++) {
+    int num_top_vectors = 2;
+    for (uint top = 0; top < num_top_vectors; top++) {
         (*vec_top_threads).push_back(new std::vector<double>);
         (*(*vec_top_threads)[top]).assign(this->pixelCount, 0.0);
         (*idx_top_threads).push_back(top);
     }
     uint top_count = 0;
-    uint r_compl;
+    dvec *dataStagingPtr = &this->dataStaging;
 
     /*  This section contains 62%-98% of the total execution time of cloud generation!
         For that reason, I'm unrolling all the pretty functions that go into this calc. */
@@ -391,9 +391,15 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             double angNorm = this->norm_constY[DSQ(l, m_l)];
             double radNorm = this->norm_constR[DSQ(n, l)];
             uint top_idx = top_count++;
-            uint top_start = 1, top_end = 1;
+            uint clearing = 0;
+            // uint top_idx = 0;
+
+            // Store all futures from this recipe
+            BS::multi_future<void> *recipeFutures = new BS::multi_future<void>;
+            allRecipeFutures.push_back(recipeFutures);
 
             // Divide up the Layers loop into chunks and spawn threads to handle those chunks, from the thread pool
+            uint top_start = 1, top_end = 1;
             while (top_end < opt_max_radius) {
                 if (opt_max_radius - top_end >= thread_loop_limit) {
                     top_end = top_start + thread_loop_limit;
@@ -402,7 +408,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                 }
 
                 // Spawn thread
-                cloudPool.detach_task(
+                recipeFutures->push_back(cloudPool.submit_task(
                 [n, l, m_l, weight, radNorm, angNorm, div_local, theta_max_local, phi_max_local, deg_fac_local, vec_top_threads, idx_top_threads, top_idx, top_start, top_end](){
 
                     // Layer Loop
@@ -437,21 +443,50 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                                 (*(*vec_top_threads)[(*idx_top_threads)[top_idx]])[localCount] += (pdv * weight);
                             } // End of Phi Loop
                         } // End of Theta Loop
-                    } // End of Layer Loop
-                }); // End of lambda (thread loop)
+                    } // End of Layer Loop (divided)
+                })); // End of lambda (thread loop)
                 
                 top_start = top_end;
-            } // End of layer loop division
+            } // End of Layer Loop (whole)
 
+            if (top_idx >= num_top_vectors) {
+                allRecipeFutures[clearing]->wait();
+                double *d_start = &(*(*vec_top_threads)[clearing])[0];
+                std::for_each(std::execution::par_unseq, (*(*vec_top_threads)[clearing]).cbegin(), (*(*vec_top_threads)[clearing]).cend(),
+                [d_start, dataStagingPtr](const double &item){
+                    uint idx = &item - d_start;
+                    (*dataStagingPtr)[idx] += item;
+                });
+                top_idx = 0;
+                clearing++;
+            }
         } // End of (l, m_l) loop
     } // End of (n) loop
 
-    // Mid: Wait for threads to finish -- As of 10/12, this inner threaded loop takes 634 ms out of 1217 for entire function
-    cloudPool.wait();
+    // Mid: Wait for threads to finish -- As of 10/12, inner threaded loop takes [without -O2]: 634 ms out of 1217 for entire function for 108M vertices
+    //                                                                              [with -O2]: 124 ms out of  504 for entire function for 108M vertices
+    // cloudPool.wait();
     // system_clock::time_point inner_end = std::chrono::high_resolution_clock::now();
     // std::cout << "Inner took: " << std::chrono::duration<double, std::milli>(inner_end - inner_begin).count() << std::endl;
 
-    // Mid: Collapse staging vectors into allData
+    // Cleanup after each thread (future) group immediately as they become available
+    // dvec *dataStart = &this->dataStaging;
+    /* for (int i = 0; i < numOrbitals; i++) {
+        BS::multi_future<void> *f = allRecipeFutures[i];
+        dvec *d = (*vec_top_threads)[i];
+        (*f).wait();
+        delete f;
+        std::for_each(std::execution::par_unseq, (*(*vec_top_threads)[i]).cbegin(), (*(*vec_top_threads)[i]).cend(),
+            [d, dataStart](const double &item){
+                uint idx = &item - &(*d)[0];
+                (*dataStart)[idx] += item;
+            });
+        delete d;
+    }
+    delete vec_top_threads;
+    delete idx_top_threads; */
+
+    /* // Mid: Collapse staging vectors into allData
     dvec *dataStart = &this->dataStaging;
     for (int i = 0; i < numOrbitals; i++) {
         dvec *top_start = (*vec_top_threads)[i];
@@ -460,13 +495,13 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                 uint idx = &item - &(*top_start)[0];
                 (*dataStart)[idx] += item;
             });
-    }
+    } */
 
     // End: check actual max value of accumulated vector
     this->allPDVMaximum = *std::max_element(std::execution::par, dataStaging.begin(), dataStaging.end());
-    double pdvMax = this->allPDVMaximum;
 
     // End: Populate allData with normalized PDVs [** as FLOATS **], leaving dataStaging untouched
+    double pdvMax = this->allPDVMaximum;
     std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),       // TODO allData is ending up with [1, 0...)
         [pdvMax](const double &item){
             return static_cast<float>(item / pdvMax);
@@ -474,11 +509,6 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     
     // End: dataStaging is not needed after this
     dataStaging.clear();
-    for (auto &v : *vec_top_threads) {
-        delete v;
-    }
-    delete vec_top_threads;
-    delete idx_top_threads;
     
     mStatus.set(em::DATA_READY);
     genDataBuffer();

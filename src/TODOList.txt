@@ -1,6 +1,6 @@
 o Resize VBO when/if CloudConfig changes
 o Commit to new vertex/resolution scaling or fix above
-+ Multithreading (ughhh, but very necessary)...[holy crap, I figured it out -- 50x reduction in time!]
++ Multithreading (ughhh, but very necessary)...[holy crap, I figured it out -- 98% reduction in time!]
 o Slider for bg color
 o Slider for cutting through model (EBO change)
 - Energy tab
@@ -17,4 +17,4 @@ o Coefficient for orbital recipes
 - Programmatically limit input on GUI fields
 - Implement CPU vs GPU orbital rendering
 o Debug overlay
-- Add application icon
++ Add application icon [done for linux (for me only) and maybe Windows]

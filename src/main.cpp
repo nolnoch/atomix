@@ -28,7 +28,7 @@
 #include <QScreen>
 #include <QCommandLineParser>
 #include <QFont>
-#include "GWidget.hpp"
+#include "gwidget.hpp"
 #include "mainwindow.hpp"
 
 #define SWIDTH 1280
@@ -68,6 +68,8 @@ int main(int argc, char* argv[]) {
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);
     mainWindow.move(dispXY.center() - mainWindow.frameGeometry().center());
+    QIcon icoAtomix("/home/braer/dev/atomix/res/icons/favicon.ico");
+    mainWindow.setWindowIcon(icoAtomix);
 
     QFont myFont;
     myFont.setPointSize(13);

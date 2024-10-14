@@ -1,5 +1,5 @@
 /**
- * GWidget.hpp
+ * gwidget.hpp
  *
  *    Created on: Oct 3, 2023
  *   Last Update: Sep 9, 2024

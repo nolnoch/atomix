@@ -1,5 +1,5 @@
 /**
- * GWidget.cpp
+ * gwidget.cpp
  *
  *    Created on: Oct 3, 2023
  *   Last Update: Sep 9, 2024
@@ -25,7 +25,7 @@
 #include <iostream>
 #include <ranges>
 #include <QTimer>
-#include "GWidget.hpp"
+#include "gwidget.hpp"
 
 #define RADN(t) (glm::radians((t)))
 
@@ -40,7 +40,7 @@ GWidget::~GWidget() {
 }
 
 void GWidget::cleanup() {
-    //std::std::cout << "Rendered " << gw_frame << " frames." << std::endl;
+    fwModel->waitForFinished();
     changeModes(true);
     delete gw_timer;
     delete crystalProg;
@@ -56,7 +56,8 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
         // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
         cloudManager = new CloudManager(config, *cloudMap, numRecipes);
         currentManager = cloudManager;
-        futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
+        // futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
+        futureModel = QtConcurrent::run(&CloudManager::testThreadingInit, cloudManager);
     } else if (cloudManager) {
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
         futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);

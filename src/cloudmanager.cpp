@@ -34,14 +34,16 @@ CloudManager::CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes) {
     newConfig(cfg);
     receiveCloudMap(&inMap, numRecipes);
     
-    this->cm_pool = cloudPool.get_thread_count();
-    this->cm_loop = 10;
-    this->cm_vecs = 2;
+    this->cm_pool = std::thread::hardware_concurrency();
+    this->cm_loop = 1;
+    this->cm_vecs = 0;
     
     mStatus.set(em::INIT);
 }
 
 CloudManager::~CloudManager() {
+    cloudPool.purge();
+    cloudPool.wait();
     resetManager();
 }
 
@@ -373,6 +375,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     int thread_vec_limit = this->cm_vecs;
     int vecs_to_fill = numOrbitals - 1;
     int num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
+    bool no_vecs = !num_top_vectors;
     for (uint top = 0; top < num_top_vectors; top++) {
         vec_top_threads.push_back(new std::vector<double>);
         (*vec_top_threads[top]).assign(this->pixelCount, 0.0);
@@ -405,7 +408,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             double radNorm = this->norm_constR[DSQ(n, l)];
             uint top_idx = (num_top_vectors) ? (recipe_idx % num_top_vectors) : 0;
 
-            if (++recipe_idx == numOrbitals) {
+            if ((++recipe_idx == numOrbitals) || no_vecs) {
                 thread_vec = dataStagingPtr;                // 6/6
             } else {
                 thread_vec = vec_top_threads[top_idx];   // 1/6= 0, 2/6= 1, 3/6= 2, 4/6= 3, 5/6= 0
@@ -467,7 +470,9 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             } // End of Layer Loop (whole)
 
             // If this is the last recipe, it was assigned the dataStaging vector, so wait for that and then collapse all other spawned vectors
-            if (recipe_idx == numOrbitals) {
+            if (no_vecs) {
+                allRecipeFutures.back()->wait();
+            } else if (recipe_idx == numOrbitals) {
                 allRecipeFutures.back()->wait();
                 while (clearing_fut < vecs_to_fill) {
                     /* BS::multi_future<void> futureCollapse;
@@ -1071,52 +1076,70 @@ void CloudManager::testThreadingInit() {
 
     /* With current settings, this will take at least an hour! */
 
-    uint pool_min = 8;
-    uint loop_min = 4;
-    uint vecs_min = 2;
+    uint pool_min = 16;
+    uint loop_min = 1;
+    uint vecs_min = 0;
     uint test_min = 0;
 
     uint pool_max = std::thread::hardware_concurrency();
-    uint loop_max = 20;
-    uint vecs_max = 6;
-    uint test_max = 5;
+    uint loop_max = 29;
+    uint vecs_max = 4;
+    uint test_max = 3;
+
+    uint pstep = 4;
+    uint lstep = 4;
+    uint vstep = 1;
+
+    uint sleep_time = 1;
+
+    uint vruns = ((vecs_max - vecs_min) / vstep) + 1;
+    uint pruns = ((pool_max - pool_min) / pstep) + 1;
+    uint lruns = ((loop_max - loop_min) / lstep) + 1;
+    uint truns = (test_max - test_min);
 
     this->cm_pool = pool_max;
-    this->cm_loop = 10;
+    this->cm_loop = 21;
     this->cm_vecs = 2;
 
-    createThreaded();
-    bakeOrbitalsThreadedAlt();
+    double testtime = createThreaded();
+    testtime += (bakeOrbitalsThreadedAlt() * 1.5);
     cullToleranceThreaded();
     cullSliderThreaded();
 
+    // double totaltime = (truns * lruns * pruns * vruns * testtime) + (vruns * pruns * (sleep_time * 1000));
+    double totaltime = (truns * lruns * pruns * vruns * testtime);
+    std::cout << "Total time expected for test: " << std::setprecision(3) << (totaltime / (1000.0 * 60.0)) << " min" << std::endl;
+
     std::vector<double> test_times;
-    test_times.reserve(vecs_max * pool_max * loop_max);
+    test_times.reserve(vruns * pruns * lruns);
     
-    for (int v = vecs_min; v <= vecs_max; v++) {
-        for (int p = pool_min; p <= pool_max; p++) {
+    for (int v = vecs_min; v <= vecs_max; v += vstep) {
+        this->cm_vecs = v;
+        for (int p = pool_min; p <= pool_max; p += pstep) {
             cloudPool.reset(p);
-            sleep(500);
-            for (int l = loop_min; l <= loop_max; l++) {
+            // sleep(sleep_time);
+            for (int l = loop_min; l <= loop_max; l += lstep) {
                 this->cm_loop = l;
-                this->cm_vecs = v;
                 std::vector<double> times(test_max, 0.0);
                 for (int i = test_min; i < test_max; i++) {
-                    clearForNext();
+                    resetManager();
+                    createThreaded();
                     double t = bakeOrbitalsThreadedAlt();
                     times.push_back(t);
                 }
-                double avg_t = std::accumulate(times.cbegin(), times.cend(), 0.0) / test_max;
+                double avg_t = std::accumulate(times.cbegin(), times.cend(), 0.0) / truns;
                 test_times.push_back(avg_t);
             }
         }
     }
 
-    for (int v = 0; v <= vecs_max; v++) {
-        for (int p = 1; p <= pool_max; p++) {
-            std::cout << "[" << v << "," << p << "],";
-            for (int l = 1; l <= loop_max; l++) {
-                uint idx = (v * pool_max * loop_max) + ((p-1) * loop_max) + (l-1);
+    
+
+    for (int v = 0; v < vruns; v++) {
+        for (int p = 0; p < pruns; p++) {
+            std::cout << "" << ((v * vstep) + vecs_min) << "," << ((p * pstep) + pool_min) << ",";
+            for (int l = 0; l < lruns; l++) {
+                uint idx = (v * pruns * lruns) + (p * lruns) + l;
                 std::cout << test_times[idx] << ",";
             }
             std::cout << "\n";

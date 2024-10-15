@@ -32,7 +32,7 @@
 #include <unordered_set>
 #include <chrono>
 #include "manager.hpp"
-// #define BS_THREAD_POOL_ENABLE_PRIORITY
+#define BS_THREAD_POOL_ENABLE_PRIORITY
 #include "BS_thread_pool.hpp"
 
 using std::chrono::_V2::system_clock;

@@ -407,6 +407,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             double angNorm = this->norm_constY[DSQ(l, m_l)];
             double radNorm = this->norm_constR[DSQ(n, l)];
             uint top_idx = (num_top_vectors) ? (recipe_idx % num_top_vectors) : 0;
+            // std::cout << "Recipe: (" << n << l << m_l << ")" << std::endl;
 
             if ((++recipe_idx == numOrbitals) || no_vecs) {
                 thread_vec = dataStagingPtr;                // 6/6
@@ -485,19 +486,16 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                             uint idx = &item - d_start;
                             (*dataStagingPtr)[idx] += item;
                         });
-                    /* while (col_end < col_max) {
-                        if (col_max - col_end >= thread_loop_limit) {
-                            col_end = col_start + thread_loop_limit;
-                        } else {
-                            col_end = col_max;
-                        }
+                    /* for (uint64_t c = 0; c < col_max; c += thread_loop_limit) {
+                        col_start = c;
+                        col_end = (c + thread_loop_limit > col_max) ? thread_loop_limit : c + thread_loop_limit;
+                        
                         futureCollapse.push_back(cloudPool.submit_task(
                             [dataStagingPtr, col_vec, col_start, col_end](){
                                 for (int c = col_start; c < col_end; c++) {
                                     (*dataStagingPtr)[c] += (*col_vec)[c];
                                 }
                             }, BS::pr::highest));
-                        col_start = col_end;
                     }
                     futureCollapse.wait(); */
                     if (++clearing_vec >= num_top_vectors) {
@@ -516,19 +514,16 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                         uint idx = &item - d_start;
                         (*dataStagingPtr)[idx] += item;
                     });
-                /* while (col_end < col_max) {
-                    if (col_max - col_end >= thread_loop_limit) {
-                        col_end = col_start + thread_loop_limit;
-                    } else {
-                        col_end = col_max;
-                    }
+                /* for (uint64_t c = 0; c < col_max; c += thread_loop_limit) {
+                    col_start = c;
+                    col_end = (c + thread_loop_limit > col_max) ? thread_loop_limit : c + thread_loop_limit;
+                
                     futureCollapse.push_back(cloudPool.submit_task(
                         [dataStagingPtr, col_vec, col_start, col_end](){
                             for (int c = col_start; c < col_end; c++) {
                                 (*dataStagingPtr)[c] += (*col_vec)[c];
                             }
                         }, BS::pr::highest));
-                    col_start = col_end;
                 }
                 futureCollapse.wait(); */
                 (*vec_top_threads[clearing_vec]).assign(this->pixelCount, 0.0);
@@ -1077,18 +1072,19 @@ void CloudManager::testThreadingInit() {
     /* With current settings, this will take at least an hour! */
 
     uint pool_min = 16;
-    uint loop_min = 1;
-    uint vecs_min = 0;
-    uint test_min = 0;
-
     uint pool_max = std::thread::hardware_concurrency();
-    uint loop_max = 29;
-    uint vecs_max = 4;
-    uint test_max = 3;
+    uint pstep = 1;
 
-    uint pstep = 4;
-    uint lstep = 4;
-    uint vstep = 1;
+    uint loop_min = 1;
+    uint loop_max = 31;
+    uint lstep = 10;
+
+    uint vecs_min = 0;
+    uint vecs_max = 6;
+    uint vstep = 3;
+
+    uint test_min = 0;
+    uint test_max = 8;
 
     uint sleep_time = 1;
 
@@ -1113,7 +1109,9 @@ void CloudManager::testThreadingInit() {
     std::vector<double> test_times;
     test_times.reserve(vruns * pruns * lruns);
     
+    uint progress = 0;
     for (int v = vecs_min; v <= vecs_max; v += vstep) {
+        std::cout << "Progress: " << ++progress << "/" << vruns << "..." << std::endl;
         this->cm_vecs = v;
         for (int p = pool_min; p <= pool_max; p += pstep) {
             cloudPool.reset(p);
@@ -1132,8 +1130,6 @@ void CloudManager::testThreadingInit() {
             }
         }
     }
-
-    
 
     for (int v = 0; v < vruns; v++) {
         for (int p = 0; p < pruns; p++) {

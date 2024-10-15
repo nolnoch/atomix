@@ -24,8 +24,8 @@
 
 #include "cloudmanager.hpp"
 #include <ranges>
-// #include <future>
 
+/*  std::execution (via TBB) and Qt both use the emit keyword, so undef for this file to avoid conflicts  */
 #undef emit
 #include <execution>
 
@@ -330,8 +330,8 @@ double CloudManager::bakeOrbitalsThreaded() {
                     while (l_times-- > 0) {
                         rhol *= rho;
                     }
-                    double R = std::assoc_laguerre((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * (*ncR)[DSQ(n, l)];
-                    std::complex<double> Y = exp(std::complex<double>{0,1} * static_cast<double>(m_l) * theta) * std::assoc_legendre(l, abs(m_l), cos(phi)) * (*ncY)[DSQ(l, m_l)];;
+                    double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * (*ncR)[DSQ(n, l)];
+                    std::complex<double> Y = exp(std::complex<double>{0,1} * static_cast<double>(m_l) * theta) * legp(l, abs(m_l), cos(phi)) * (*ncY)[DSQ(l, m_l)];
                     std::complex<double> Psi = R * Y;
 
                     double pdv = (std::conj(Psi) * Psi).real() * radius * radius;;
@@ -443,7 +443,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                         for (int l_times = l; l_times > 0; l_times--) {
                             rhol *= rho;
                         }
-                        double R = std::assoc_laguerre((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * radNorm;
+                        double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * radNorm;
                         
                         // Theta Loop
                         for (int i = 0; i < theta_max_local; i++) {
@@ -456,7 +456,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                                 double phi = j * deg_fac_local;
 
                                 // Angular wavefunc
-                                double orbLeg = std::assoc_legendre(l, abs(m_l), cos(phi));
+                                double orbLeg = legp(l, abs(m_l), cos(phi));
                                 std::complex<double> Psi = R * angExp * angNorm * orbLeg;
                                 double pdv = (std::conj(Psi) * Psi).real() * radius * radius;
 
@@ -606,7 +606,8 @@ double CloudManager::cullToleranceThreaded() {
         [](uint &item){
             return !item;
         });
-    idxCulledTolerance.resize(std::distance(idxCulledTolerance.begin(), itEnd));
+    // idxCulledTolerance.resize(std::distance(idxCulledTolerance.begin(), itEnd));
+    idxCulledTolerance.resize((itEnd - idxCulledTolerance.begin()));
     
     // Our model now displays cm_pixels count of indices/vertices unless culled by slider
     this->cm_pixels = idxCulledTolerance.size();
@@ -798,7 +799,7 @@ int64_t CloudManager::fact(int n) {
 double CloudManager::wavefuncRadial(int n, int l, double r) {
     double rho = 2.0 * r / static_cast<double>(n);
 
-    double laguerre = std::assoc_laguerre((n - l - 1), ((l << 1) + 1), rho);
+    double laguerre = lagp((n - l - 1), ((l << 1) + 1), rho);
     double expFunc = exp(-rho/2.0);
     double rhol = pow(rho, l);
 
@@ -809,7 +810,7 @@ std::complex<double> CloudManager::wavefuncAngular(int l, int m_l, double theta,
     using namespace std::complex_literals;
     std::complex<double> ibase = 1i;
 
-    double legendre = std::assoc_legendre(l, abs(m_l), cos(phi));
+    double legendre = legp(l, abs(m_l), cos(phi));
     ibase *= m_l * theta;
     std::complex<double> expFunc = exp(ibase);
 
@@ -823,7 +824,7 @@ std::complex<double> CloudManager::wavefuncAngExp(int m_l, double theta) {
 }
 
 double CloudManager::wavefuncAngLeg(int l, int m_l, double phi) {
-    return std::assoc_legendre(l, abs(m_l), cos(phi));
+    return legp(l, abs(m_l), cos(phi));
 }
 
 std::complex<double> CloudManager::wavefuncPsi(double radial, std::complex<double> angular) {

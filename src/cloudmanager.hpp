@@ -25,18 +25,31 @@
 #ifndef CLOUDMANAGER_H
 #define CLOUDMANAGER_H
 
-#include <cmath>
-#include <complex>
 #include <format>
 #include <map>
-#include <unordered_set>
+#include <unordered_map>
 #include <chrono>
+#include <cmath>
+#include <complex>
 #include "manager.hpp"
-#define BS_THREAD_POOL_ENABLE_PRIORITY
+
+/*  Mac's Clang does not support Special Math functions from STL. Must use Boost, which is 4x slower  */
+#ifdef MAC_OS
+    #include <boost/math/special_functions/laguerre.hpp>
+    #include <boost/math/special_functions/legendre.hpp>
+    const inline auto& legp = static_cast<double(*)(int, int, double)>(boost::math::legendre_p);
+    const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(boost::math::laguerre);
+#else
+    const inline auto& legp = static_cast<double(*)(uint, uint, double)>(std::assoc_legendre);
+    const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(std::assoc_laguerre);
+#endif
+
+/*  BS::thread_pool Priority slows the program down for optional benefit of low/high prio  */
+// #define BS_THREAD_POOL_ENABLE_PRIORITY
 #include "BS_thread_pool.hpp"
 
-using std::chrono::_V2::system_clock;
 
+using std::chrono::_V2::system_clock;
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
 // N                                1   2   3   4   5    6    7    8

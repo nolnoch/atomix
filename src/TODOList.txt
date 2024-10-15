@@ -13,7 +13,7 @@ o Sate-lock WaveManager (Manager) with new BitFlag
 o Option to normalize perN, perL, or perALL...[Added coefficient weighting instead]
 o New Tolerance + cullRDPs needs to enter in a different place
 o Coefficient for orbital recipes
-- Deployable packages on Ubuntu, Windows, and MacOS
++ Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Programmatically limit input on GUI fields
 - Implement CPU vs GPU orbital rendering
 o Debug overlay

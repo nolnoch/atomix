@@ -28,7 +28,7 @@ if(NOT QT_DEPLOY_IGNORED_LIB_DIRS)
 endif()
 
 # These are internal implementation details. They may be removed at any time.
-set(__QT_DEPLOY_SYSTEM_NAME "Linux")
+set(__QT_DEPLOY_SYSTEM_NAME "MacOS")
 set(__QT_DEPLOY_IS_SHARED_LIBS_BUILD "ON")
 set(__QT_DEPLOY_TOOL "GRD")
 set(__QT_DEPLOY_IMPL_DIR "/home/braer/dev/atomix/.qt")

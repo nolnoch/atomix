@@ -1,5 +1,5 @@
 {
-    "cmake.sourceDirectory": "/home/braer/dev/atomix",
+    "cmake.sourceDirectory": "/Users/braer/dev/atomix",
     "cmake.configureArgs": [
         "-DCMAKE_PREFIX_PATH=/home/braer/Qt/6.5.3/gcc_64/",
         "-DXKB_INCLUDE_DIR=/usr/local/include/xcb/",

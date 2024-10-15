@@ -1,5 +1,7 @@
 set(CMAKE_AUTOMOC ON)
-set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
+set(CMAKE_PREFIX_PATH "~/Qt/6.5.3/macos")
+set(Qt6_DIR "~/Qt/6.5.3/macos/lib/cmake/Qt6")
+set(GLM_INCLUDE_DIR "/usr/local/include/glm")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets Concurrent)
 find_package(TBB REQUIRED COMPONENTS tbb)

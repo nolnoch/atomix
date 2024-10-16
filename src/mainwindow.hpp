@@ -45,6 +45,7 @@
 #include <QSlider>
 #include <QSignalBlocker>
 #include <QThread>
+#include "slideswitch.hpp"
 #include "gwidget.hpp"
 
 const QString DEFAULT = "default-config.wave";
@@ -114,14 +115,18 @@ private:
     QLineEdit *entryPeriod = nullptr;
     QLineEdit *entryWavelength = nullptr;
     QLineEdit *entryResolution = nullptr;
-    QRadioButton *entryOrtho = nullptr;
+    /* QRadioButton *entryOrtho = nullptr;
     QRadioButton *entryPara = nullptr;
     QRadioButton *entrySuperOn = nullptr;
     QRadioButton *entrySuperOff = nullptr;
     QRadioButton *entryCPU = nullptr;
     QRadioButton *entryGPU = nullptr;
     QRadioButton *entryCircle = nullptr;
-    QRadioButton *entrySphere = nullptr;
+    QRadioButton *entrySphere = nullptr; */
+    SlideSwitch *slswPara = nullptr;
+    SlideSwitch *slswSuper = nullptr;
+    SlideSwitch *slswCPU = nullptr;
+    SlideSwitch *slswSphere = nullptr;
     QComboBox *entryVertex = nullptr;
     QComboBox *entryFrag = nullptr;
     QComboBox *comboConfigFile = nullptr;

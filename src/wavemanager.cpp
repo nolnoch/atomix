@@ -102,6 +102,7 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
 
     if (flWaveCfg.hasAny(ewc::VERTSHADER)) {
         mStatus.set(em::UPD_SHAD_V);
+        mStatus.set(em::UPD_UNI_MATHS | em::UPD_UNI_COLOUR);
     }
     if (flWaveCfg.hasAny(ewc::FRAGSHADER)) {
         mStatus.set(em::UPD_SHAD_F);

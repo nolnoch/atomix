@@ -65,6 +65,10 @@ void MainWindow::onAddNew() {
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
+    slswPara->redraw();
+    slswSuper->redraw();
+    slswCPU->redraw();
+    slswSphere->redraw();
     setWindowTitle(tr("atomix"));
 
     // std::cout << "PC Default Thread Count is: " << QThread::idealThreadCount() << std::endl;
@@ -219,14 +223,14 @@ void MainWindow::loadConfig() {
     /* To my horror and disgust, neither toggle() nor setChecked() work to flip from False to True.
        It is therefore necessary to manually set every radio button individually.
     */
-    entryPara->setChecked(cfg->parallel);
+    /* entryPara->setChecked(cfg->parallel);
     entryOrtho->setChecked(!cfg->parallel);
     entrySuperOn->setChecked(cfg->superposition);
     entrySuperOff->setChecked(!cfg->superposition);
     entryCPU->setChecked(cfg->cpu);
     entryGPU->setChecked(!cfg->cpu);
     entrySphere->setChecked(cfg->sphere);
-    entryCircle->setChecked(!cfg->sphere);
+    entryCircle->setChecked(!cfg->sphere); */
 
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
@@ -251,7 +255,8 @@ void MainWindow::setupTabs() {
                                   "QLabel#tabTitle { font-size: 23px; }"\
                                   "QTabBar::tab { height: 40px; width: %1 px; font-size: 15px; }"\
                                   "QTabBar::tab::selected { color: #9999FF; font-size: 19px; }"\
-                                  "QTabBar::tab::!selected { color: #999999; background: #222222; }").arg(intTabWidth);
+                                  "QTabBar::tab::!selected { color: #999999; background: #222222; }")\
+                                  .arg(intTabWidth);
     wTabs->setStyleSheet(strTabStyle);
 
     dockTabs->setWidget(wTabs);
@@ -317,14 +322,14 @@ void MainWindow::setupDockWaves() {
     entryPeriod = new QLineEdit("1.0");
     entryWavelength = new QLineEdit("2.0");
     entryResolution = new QLineEdit("180");
-    entryOrtho = new QRadioButton("Ortho");
+    /* entryOrtho = new QRadioButton("Ortho");
     entryPara = new QRadioButton("Para");
     entrySuperOn = new QRadioButton("On");
     entrySuperOff = new QRadioButton("Off");
     entryCPU = new QRadioButton("CPU");
     entryGPU = new QRadioButton("GPU");
     entryCircle = new QRadioButton("Circle");
-    entrySphere = new QRadioButton("Sphere");
+    entrySphere = new QRadioButton("Sphere"); */
     entryVertex = new QComboBox(this);
     entryFrag = new QComboBox(this);
 
@@ -334,7 +339,12 @@ void MainWindow::setupDockWaves() {
     entryWavelength->setAlignment(Qt::AlignRight);
     entryResolution->setAlignment(Qt::AlignRight);
 
-    QButtonGroup *buttGroupOrtho = new QButtonGroup();
+    slswPara = new SlideSwitch("Para", "Ortho");
+    slswSuper = new SlideSwitch("On", "Off");
+    slswCPU = new SlideSwitch("CPU", "GPU");
+    slswSphere = new SlideSwitch("Sphere", "Circle");
+
+    /* QButtonGroup *buttGroupOrtho = new QButtonGroup();
     buttGroupOrtho->addButton(entryOrtho, 1);
     buttGroupOrtho->addButton(entryPara, 2);
     entryOrtho->toggle();
@@ -349,7 +359,7 @@ void MainWindow::setupDockWaves() {
     QButtonGroup *buttGroupSphere = new QButtonGroup();
     buttGroupSphere->addButton(entryCircle, 64);
     buttGroupSphere->addButton(entrySphere, 128);
-    entryCircle->toggle();
+    entryCircle->toggle(); */
 
     QCheckBox *orbit1 = new QCheckBox("1");
     QCheckBox *orbit2 = new QCheckBox("2");
@@ -400,17 +410,10 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->addWidget(entryWavelength, 3, 3, 1, 2, Qt::AlignRight);
     layWaveConfig->addWidget(entryResolution, 4, 3, 1, 2, Qt::AlignRight);
 
-    layWaveConfig->addWidget(entryPara, 5, 3, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(entryOrtho, 5, 4, 1, 1, Qt::AlignLeft);
-
-    layWaveConfig->addWidget(entrySuperOn, 6, 3, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(entrySuperOff, 6, 4, 1, 1, Qt::AlignLeft);
-
-    layWaveConfig->addWidget(entryCPU, 7, 3, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(entryGPU, 7, 4, 1, 1, Qt::AlignLeft);
-
-    layWaveConfig->addWidget(entrySphere, 8, 3, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(entryCircle, 8, 4, 1, 1, Qt::AlignLeft);
+    layWaveConfig->addWidget(slswPara, 5, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(slswSuper, 6, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(slswCPU, 7, 3, 1, 2, Qt::AlignRight);
+    layWaveConfig->addWidget(slswSphere, 8, 3, 1, 2, Qt::AlignRight);
 
     layWaveConfig->addWidget(entryVertex, 9, 3, 1, 2, Qt::AlignRight);
     layWaveConfig->addWidget(entryFrag, 10, 3, 1, 2, Qt::AlignRight);
@@ -845,10 +848,11 @@ void MainWindow::handleButtMorbWaves() {
     waveConfig.period = entryPeriod->text().toDouble() * M_PI;
     waveConfig.wavelength = entryWavelength->text().toDouble() * M_PI;
     waveConfig.resolution = entryResolution->text().toInt();
-    waveConfig.parallel = entryPara->isChecked();
-    waveConfig.superposition = entrySuperOn->isChecked();
-    waveConfig.cpu = entryCPU->isChecked();
-    waveConfig.sphere = entrySphere->isChecked();
+    waveConfig.parallel = slswPara->value();
+    // std::cout << std::boolalpha << waveConfig.parallel << std::endl;
+    waveConfig.superposition = slswSuper->value();
+    waveConfig.cpu = slswCPU->value();
+    waveConfig.sphere = slswSphere->value();
     waveConfig.vert = entryVertex->currentText().toStdString();
     waveConfig.frag = entryFrag->currentText().toStdString();
 

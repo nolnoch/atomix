@@ -31,7 +31,15 @@ MainWindow::MainWindow() {
 void MainWindow::onAddNew() {
     cfgParser = new ConfigParser;
     graph = new GWidget(this, cfgParser);
-    // waveConfig = new AtomixConfig;
+
+    valIntSmall = new QIntValidator();
+    valIntSmall->setRange(1, 8);
+    valIntLarge = new QIntValidator();
+    valIntLarge->setRange(1, 999);
+    valDoubleSmall = new QDoubleValidator();
+    valDoubleSmall->setRange(0.0001, 0.9999, 4);
+    valDoubleLarge = new QDoubleValidator();
+    valDoubleLarge->setRange(0.001, 999.999, 3);
 
     /* Setup Dock GUI */
     setupTabs();
@@ -247,6 +255,12 @@ void MainWindow::loadConfig() {
     entryResolution->setText(QString::number(cfg->resolution));
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
+
+    slswPara->setValue(cfg->parallel);
+    slswSuper->setValue(cfg->superposition);
+    slswCPU->setValue(cfg->cpu);
+    slswSphere->setValue(cfg->sphere);
+
     entryCloudLayers->setText(QString::number(cfg->cloudLayDivisor));
     entryCloudRes->setText(QString::number(cfg->cloudResolution));
     entryCloudMinRDP->setText(QString::number(cfg->cloudTolerance));
@@ -328,12 +342,17 @@ void MainWindow::setupDockWaves() {
     labelVertex->setObjectName("configLabel");
     QLabel *labelFrag = new QLabel("Fragment Shader:");
     labelFrag->setObjectName("configLabel");
-
+    
     entryOrbit = new QLineEdit("4");
+    entryOrbit->setValidator(valIntSmall);
     entryAmp = new QLineEdit("0.4");
+    entryAmp->setValidator(valDoubleLarge);
     entryPeriod = new QLineEdit("1.0");
+    entryPeriod->setValidator(valDoubleLarge);
     entryWavelength = new QLineEdit("2.0");
+    entryWavelength->setValidator(valDoubleLarge);
     entryResolution = new QLineEdit("180");
+    entryResolution->setValidator(valIntLarge);
     entryVertex = new QComboBox(this);
     entryFrag = new QComboBox(this);
 
@@ -521,8 +540,11 @@ void MainWindow::setupDockHarmonics() {
     QLabel *labelCloudLayers = new QLabel("Layers per step in radius");
     QLabel *labelMinRDP = new QLabel("Min probability per rendered point");
     entryCloudRes = new QLineEdit(QString::number(cloudConfig.cloudResolution));
+    entryCloudRes->setValidator(valIntLarge);
     entryCloudLayers = new QLineEdit(QString::number(cloudConfig.cloudLayDivisor));
+    entryCloudLayers->setValidator(valIntLarge);
     entryCloudMinRDP = new QLineEdit(QString::number(cloudConfig.cloudTolerance));
+    entryCloudMinRDP->setValidator(valDoubleSmall);
 
     QGridLayout *layGenVertices = new QGridLayout;
     layGenVertices->addWidget(labelCloudLayers, 0, 0, 1, 1);
@@ -824,13 +846,12 @@ void MainWindow::handleButtResetRecipes() {
 }
 
 void MainWindow::handleButtMorbWaves() {
-    waveConfig.waves = entryOrbit->text().toInt();
-    waveConfig.amplitude = entryAmp->text().toDouble();
-    waveConfig.period = entryPeriod->text().toDouble() * M_PI;
-    waveConfig.wavelength = entryWavelength->text().toDouble() * M_PI;
-    waveConfig.resolution = entryResolution->text().toInt();
+    waveConfig.waves = std::clamp(entryOrbit->text().toInt(), 1, 8);
+    waveConfig.amplitude = std::clamp(entryAmp->text().toDouble(), 0.001, 999.999);
+    waveConfig.period = std::clamp(entryPeriod->text().toDouble(), 0.001, 999.999) * M_PI;
+    waveConfig.wavelength = std::clamp(entryWavelength->text().toDouble(), 0.001, 999.999) * M_PI;
+    waveConfig.resolution = std::clamp(entryResolution->text().toInt(), 1, 999);
     waveConfig.parallel = slswPara->value();
-    // std::cout << std::boolalpha << waveConfig.parallel << std::endl;
     waveConfig.superposition = slswSuper->value();
     waveConfig.cpu = slswCPU->value();
     waveConfig.sphere = slswSphere->value();

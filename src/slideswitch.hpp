@@ -60,6 +60,7 @@ private:
     class SwitchCircle;
     class SwitchBackground;
     void _update();
+    void toggle();
 
     bool slsw_value;
     int  slsw_duration;

@@ -115,8 +115,8 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
         cm_times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
     }
     
-    std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
-    this->printTimes();
+    // std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
+    // this->printTimes();
 
     cm_proc_coarse.unlock();
 }
@@ -129,8 +129,8 @@ void CloudManager::initManager() {
     cm_times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
     cm_times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
 
-    std::cout << "Init() -- Functions took:\n";
-    this->printTimes();
+    // std::cout << "Init() -- Functions took:\n";
+    // this->printTimes();
 
     cm_proc_coarse.unlock();
 }

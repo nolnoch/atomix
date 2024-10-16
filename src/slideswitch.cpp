@@ -151,6 +151,55 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
 }
 
 void SlideSwitch::mousePressEvent(QMouseEvent*) {
+    this->toggle();
+}
+
+void SlideSwitch::setEnabled(bool flag) {
+    slsw_enabled = flag;
+    slsw_Button->setEnabled(flag);
+    slsw_SwitchBackground->setEnabled(flag);
+    if (flag) {
+        // If switch disabled
+    } else {
+        // If switch enabled
+        if (slsw_value) {
+            slsw_LabelOn->show();
+            slsw_LabelOff->hide();
+        } else {
+            slsw_LabelOff->show();
+            slsw_LabelOn->hide();
+        }
+    }
+    QWidget::setEnabled(flag);
+}
+
+void SlideSwitch::setDuration(int time) {
+    slsw_duration = time;
+}
+
+void SlideSwitch::setValue(bool flag) {
+    if (flag == value()) {
+        return;
+    } else {
+        toggle();
+        // _update();
+        // setEnabled(slsw_enabled);
+    }
+
+    if (slsw_value) {
+        slsw_LabelOn->show();
+        slsw_LabelOff->hide();
+    } else {
+        slsw_LabelOff->show();
+        slsw_LabelOn->hide();
+    }
+}
+
+bool SlideSwitch::value() const {
+    return slsw_value;
+}
+
+void SlideSwitch::toggle() {
     if (!slsw_enabled) {
         return;
     }
@@ -197,51 +246,6 @@ void SlideSwitch::mousePressEvent(QMouseEvent*) {
     prAnim_backMove->start();
 
     emit valueChanged(slsw_value);
-}
-
-void SlideSwitch::setEnabled(bool flag) {
-    slsw_enabled = flag;
-    slsw_Button->setEnabled(flag);
-    slsw_SwitchBackground->setEnabled(flag);
-    if (flag) {
-        // If switch disabled
-    } else {
-        // If switch enabled
-        if (slsw_value) {
-            slsw_LabelOn->show();
-            slsw_LabelOff->hide();
-        } else {
-            slsw_LabelOff->show();
-            slsw_LabelOn->hide();
-        }
-    }
-    QWidget::setEnabled(flag);
-}
-
-void SlideSwitch::setDuration(int time) {
-    slsw_duration = time;
-}
-
-void SlideSwitch::setValue(bool flag) {
-    if (flag == value()) {
-        return;
-    } else {
-        slsw_value = flag;
-        _update();
-        setEnabled(slsw_enabled);
-    }
-
-    if (slsw_value) {
-        slsw_LabelOn->show();
-        slsw_LabelOff->hide();
-    } else {
-        slsw_LabelOff->show();
-        slsw_LabelOn->hide();
-    }
-}
-
-bool SlideSwitch::value() const {
-    return slsw_value;
 }
 
 void SlideSwitch::_update() {
@@ -301,7 +305,7 @@ void SlideSwitch::SwitchBackground::paintEvent(QPaintEvent*) {
         // painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
 
         painter->setBrush(slsb_linGrad_enabled);
-        painter->drawRoundedRect(0, 0, this->width(), this->height(), parentPtr->slsw_borderRadius, parentPtr->slsw_borderRadius);
+        painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
     } else {
         painter->setBrush(parentPtr->pal.alt);
         painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);

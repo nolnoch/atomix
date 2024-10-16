@@ -111,6 +111,10 @@ private:
     ConfigParser *cfgParser = nullptr;
 
     QFont fontDebug;
+    QIntValidator *valIntSmall = nullptr;
+    QIntValidator *valIntLarge = nullptr;
+    QDoubleValidator *valDoubleSmall = nullptr;
+    QDoubleValidator *valDoubleLarge = nullptr;
 
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;

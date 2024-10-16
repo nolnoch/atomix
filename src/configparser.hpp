@@ -41,7 +41,7 @@ const std::string FSHEXT = ".frag";
 
 
 /* Wave-circle config struct */
-typedef struct {
+struct AtomixConfig {
     double wavelength = 2.0;                        // Wavelength [double] as Multiples of PI
     double amplitude = 0.4;                         // Amplitude [double]
     double period = 1.0;                            // Period [double] as Multiples of PI
@@ -58,7 +58,7 @@ typedef struct {
     bool sphere = false;                            // Spherical waves as Bool
     std::string vert = "gpu_ortho_circle.vert";     // Vertex shader as String
     std::string frag = "wave.frag";                 // Fragment shader as String
-} AtomixConfig;
+};
 Q_DECLARE_METATYPE(AtomixConfig);
 
 

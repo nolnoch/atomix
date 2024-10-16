@@ -131,12 +131,12 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
 
     // Set middle border [half-replaced]
     // painter->setBrush(linGrad_border);
-    // painter->setBrush(this->pal.alt);
-    // painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsw_borderRadius, slsw_borderRadius);
+    painter->setBrush(this->pal.alt);
+    painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsw_borderRadius, slsw_borderRadius);
 
     // Set inner border [fully replaced]
-    painter->setBrush(this->pal.base);
-    painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
+    // painter->setBrush(this->pal.alt);
+    // painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
 
     if (slsw_enabled) {
         // Set Enabled-Off colour
@@ -145,7 +145,7 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
     } else {
         // Set Disabled colour
         painter->setBrush(linGrad_disabled);
-        painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsw_borderRadius, slsw_borderRadius);
+        painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
     }
     painter->end();
 }
@@ -297,13 +297,13 @@ void SlideSwitch::SwitchBackground::paintEvent(QPaintEvent*) {
     QPen pen(Qt::NoPen);
     painter->setPen(pen);
     if (slsb_enabled) {
-        painter->setBrush(parentPtr->pal.light);
-        painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
+        // painter->setBrush(parentPtr->pal.light);
+        // painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
 
         painter->setBrush(slsb_linGrad_enabled);
-        painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsb_borderRadius, slsb_borderRadius);
+        painter->drawRoundedRect(0, 0, this->width(), this->height(), parentPtr->slsw_borderRadius, parentPtr->slsw_borderRadius);
     } else {
-        painter->setBrush(QColor(150, 150, 150));
+        painter->setBrush(parentPtr->pal.alt);
         painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
 
         painter->setBrush(slsb_linGrad_disabled);

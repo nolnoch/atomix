@@ -436,7 +436,7 @@ int ConfigParser::populateConfig() {
     } else {
         int choice = chooseConfigFile();
         if (choice >= 0) {
-            if (status = loadConfigFileGUI(cfgFiles[choice], &this->config)) {
+            if ((status = loadConfigFileGUI(cfgFiles[choice], &this->config))) {
                 cout << "ERROR: Errors in config file. Please correct." << endl;
             }
         }

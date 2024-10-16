@@ -25,8 +25,6 @@
 #ifndef GWIDGET_H
 #define GWIDGET_H
 
-// #include <QScreen>
-// #include <QBoxLayout>
 #include <QOpenGLWidget>
 #include <QMouseEvent>
 #include <QWheelEvent>
@@ -46,14 +44,14 @@
 
 
 /* Debug info struct */
-typedef struct AtomixInfo {
+struct AtomixInfo {
     float pos = 0.0f;       // Camera position
     float near = 0.0f;      // Near culling distance
     float far = 0.0f;       // Far culling distance
     uint64_t vertex = 0;    // Vertex buffer size
     uint64_t data = 0;      // Data buffer size
     uint64_t index = 0;     // Index buffer size
-} AtomixInfo;
+};
 Q_DECLARE_METATYPE(AtomixInfo);
 
 enum egs {

@@ -35,8 +35,7 @@
 
 /*  Mac's Clang does not support Special Math functions from STL. Must use Boost, which is 4x slower  */
 #ifdef MAC_OS
-    #include <boost/math/special_functions/laguerre.hpp>
-    #include <boost/math/special_functions/legendre.hpp>
+    #include <boost/math/special_functions.hpp>
     const inline auto& legp = static_cast<double(*)(int, int, double)>(boost::math::legendre_p);
     const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(boost::math::laguerre);
 #else

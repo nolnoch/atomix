@@ -66,10 +66,10 @@
 /**
  * Stores pairings of generated GLSL samplers and their uniform names.
  */
-typedef struct {
+struct SamplerInfo {
   GLuint samplerID;         /**< Generated sampler ID */
   std::string samplerName;  /**< Uniform name as string */
-} SamplerInfo;
+};
 
 
 /**

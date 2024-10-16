@@ -38,6 +38,9 @@
 #include <complex>
 #include "manager.hpp"
 
+/*  <---[ Mac's Clang uses dispatch() calls instead of std parallel. ]--->  */
+// TODO implement dispatch
+
 /*  Mac's Clang does not support Special Math functions from STL. Must use Boost, which is 4x slower  */
 #ifdef MAC_OS
     #include <boost/math/special_functions.hpp>
@@ -54,7 +57,7 @@
 
 
 
-using std::chrono::system_clock;
+using std::chrono::steady_clock;
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
 // N                                1   2   3   4   5    6    7    8

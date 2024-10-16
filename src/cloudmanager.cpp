@@ -140,7 +140,7 @@ void CloudManager::initManager() {
 
 double CloudManager::create() {
     assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
 
     this->max_n = cloudOrbitals.rbegin()->first;
     int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
@@ -151,7 +151,7 @@ double CloudManager::create() {
     this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
     vec3 pos = vec3(0.0f);
 
-    // auto beginInner = std::chrono::high_resolution_clock::now();
+    // auto beginInner = steady_clock::now();
     allVertices.reserve(pixelCount);
     for (int k = 1; k <= opt_max_radius; k++) {
         double radius = static_cast<double>(k) / this->cloudLayerDivisor;
@@ -175,7 +175,7 @@ double CloudManager::create() {
             }
         }
     }
-    // auto endInner = std::chrono::high_resolution_clock::now();
+    // auto endInner = steady_clock::now();
     // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
     // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
@@ -187,14 +187,14 @@ double CloudManager::create() {
 
     mStatus.advance(em::INIT, em::VERT_READY);
     genVertexArray();
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 double CloudManager::createThreaded() {
     assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
     cm_proc_fine.lock();
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
 
     this->max_n = cloudOrbitals.rbegin()->first;
     int div_local = this->cloudLayerDivisor;
@@ -206,7 +206,7 @@ double CloudManager::createThreaded() {
     this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
 
     /*  Memory -- Begin --- This memory-carving portion takes 94% of create() total time  */
-    // auto beginInner = std::chrono::high_resolution_clock::now();
+    // auto beginInner = steady_clock::now();
     allVertices.reserve(pixelCount);
     dataStaging.reserve(pixelCount);
     allData.reserve(pixelCount);
@@ -217,12 +217,12 @@ double CloudManager::createThreaded() {
     allData.assign(pixelCount, 0.0f);
 
     wavefuncNorms(MAX_SHELLS);
-    // auto endInner = std::chrono::high_resolution_clock::now();
+    // auto endInner = steady_clock::now();
     // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
     // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
     /*  Compute -- Begin --- This compute portion takes only 6% of create() total time  */
-    // auto beginInner = std::chrono::high_resolution_clock::now();
+    // auto beginInner = steady_clock::now();
     vec3 *start = &this->allVertices.at(0);
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
         [layer_size, phi_max_local, deg_fac_local, div_local, start](glm::vec3 &gVector){
@@ -237,14 +237,14 @@ double CloudManager::createThreaded() {
             gVector.y = phi;
             gVector.z = radius;
         });
-    // auto endInner = std::chrono::high_resolution_clock::now();
+    // auto endInner = steady_clock::now();
     // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
     // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
     /*  Exit  */
     mStatus.advance(em::INIT, em::VERT_READY);
     genVertexArray();
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
@@ -279,7 +279,7 @@ void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
 
 double CloudManager::bakeOrbitals() {
     assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
 
     // Iterate through stored recipes, grouped by N
     for (auto const &[key, val] : cloudOrbitals) {
@@ -291,14 +291,14 @@ double CloudManager::bakeOrbitals() {
     // End: check actual max value of accumulated vector
     this->allPDVMaximum = *std::max_element(dataStaging.begin(), dataStaging.end());
     // mStatus.set(em::DATA_GEN);
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 double CloudManager::bakeOrbitalsThreaded() {
     assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
     cm_proc_fine.lock();
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
 
     // this->printRecipes();
 
@@ -357,7 +357,7 @@ double CloudManager::bakeOrbitalsThreaded() {
     mStatus.set(em::DATA_READY);
     genDataBuffer();
 
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
@@ -365,7 +365,7 @@ double CloudManager::bakeOrbitalsThreaded() {
 double CloudManager::bakeOrbitalsThreadedAlt() {
     assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
     cm_proc_fine.lock();
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
 
     /*  Prep -- Threading  */
     std::vector<BS::multi_future<void> *> allRecipeFutures;
@@ -396,7 +396,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     /*  Compute -- Begin
         This section contains 62%-98% of the total execution time of cloud generation!
         For that reason, I'm unrolling all the pretty functions that go into this calc. */
-    // system_clock::time_point inner_begin = std::chrono::high_resolution_clock::now();
+    // steady_clock::time_point inner_begin = steady_clock::now();
     // Recipe Loop
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
@@ -557,14 +557,14 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     /*  Exit  */
     mStatus.set(em::DATA_READY);
     genDataBuffer();
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 double CloudManager::cullTolerance() {
     // assert(mStatus.hasFirstNotLast(em::DATA_READY, (em::INDEX_GEN | em::INDEX_READY)));
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
 
     std::fill(allData.begin(), allData.end(), 0.0);
     idxCulledTolerance.clear();
@@ -579,14 +579,14 @@ double CloudManager::cullTolerance() {
     allIndices.reserve(idxCulledTolerance.size());
 
     mStatus.set(em::DATA_READY);
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 double CloudManager::cullToleranceThreaded() {
     assert(mStatus.hasFirstNotLast(em::DATA_READY, em::INDEX_GEN));
     cm_proc_fine.lock();
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
     idxCulledTolerance.resize(this->dataCount);
     idxCulledTolerance.assign(this->dataCount, 0);
 
@@ -615,14 +615,14 @@ double CloudManager::cullToleranceThreaded() {
 
     /*  Exit  */
     mStatus.set(em::INDEX_GEN);
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 double CloudManager::cullSlider() {
     assert(mStatus.hasFirstNotLast(em::INDEX_GEN, em::INDEX_READY));
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
     if (allIndices.size()) {
         allIndices.clear();
     }
@@ -655,14 +655,14 @@ double CloudManager::cullSlider() {
 
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 double CloudManager::cullSliderThreaded() {
     assert(mStatus.hasFirstNotLast(em::INDEX_GEN, em::INDEX_READY));
     cm_proc_fine.lock();
-    system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point begin = steady_clock::now();
 
     if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
         /*  Default -- sliders are not culling, so copy idxCulledTolerance directly to allIndices!  */
@@ -703,7 +703,7 @@ double CloudManager::cullSliderThreaded() {
     /*  Exit  */
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
-    system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }

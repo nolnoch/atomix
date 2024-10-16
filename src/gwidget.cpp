@@ -65,6 +65,7 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
     if (cloudManager) {
         fwModel->setFuture(futureModel);
         this->max_n = cloudMap->rbegin()->first;
+        emit toggleLoading(true);
     }
 }
 
@@ -84,6 +85,7 @@ void GWidget::newWaveConfig(AtomixConfig *config) {
         futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     }
     fwModel->setFuture(futureModel);
+    emit toggleLoading(true);
 }
 
 void GWidget::selectRenderedWaves(int id, bool checked) {
@@ -637,6 +639,7 @@ void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, ui
 
 void GWidget::threadFinished() {
     flGraphState.set(currentManager->clearUpdates() | egs::UPDATE_REQUIRED);
+    emit toggleLoading(false);
 }
 
 void GWidget::threadFinishedWithResult(uint result) {

@@ -45,6 +45,7 @@ void MainWindow::onAddNew() {
     setupDetails();
 
     connect(graph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
+    connect(graph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
@@ -160,6 +161,23 @@ void MainWindow::setupDetails() {
     labelDetails->hide();
 }
 
+void MainWindow::setupLoading() {
+    QSizePolicy qPolicyLoading = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbLoading = new QProgressBar(graph);
+    pbLoading->setMinimum(0);
+    pbLoading->setMaximum(0);
+    pbLoading->setTextVisible(true);
+
+    int lh = pbLoading->sizeHint().height();
+    int gh = graph->height();
+    int gw = graph->width();
+    pbLoading->resize(gw, lh);
+    pbLoading->move(0, gh - lh);
+
+    pbLoading->raise();
+    // pbLoading->show();
+}
+
 void MainWindow::updateDetails(AtomixInfo *info) {
     this->dInfo.pos = info->pos;
     this->dInfo.near = info->near;
@@ -199,6 +217,14 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     labelDetails->adjustSize();
 }
 
+void MainWindow::setLoading(bool loading) {
+    if (loading) {
+        pbLoading->show();
+    } else {
+        pbLoading->hide();
+    }
+}
+
 void MainWindow::loadConfig() {
     int files = cfgParser->cfgFiles.size();
     int comboID = comboConfigFile->currentData().toInt();
@@ -219,22 +245,8 @@ void MainWindow::loadConfig() {
     entryPeriod->setText(QString::number(cfg->period));
     entryWavelength->setText(QString::number(cfg->wavelength));
     entryResolution->setText(QString::number(cfg->resolution));
-
-    /* To my horror and disgust, neither toggle() nor setChecked() work to flip from False to True.
-       It is therefore necessary to manually set every radio button individually.
-    */
-    /* entryPara->setChecked(cfg->parallel);
-    entryOrtho->setChecked(!cfg->parallel);
-    entrySuperOn->setChecked(cfg->superposition);
-    entrySuperOff->setChecked(!cfg->superposition);
-    entryCPU->setChecked(cfg->cpu);
-    entryGPU->setChecked(!cfg->cpu);
-    entrySphere->setChecked(cfg->sphere);
-    entryCircle->setChecked(!cfg->sphere); */
-
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
-
     entryCloudLayers->setText(QString::number(cfg->cloudLayDivisor));
     entryCloudRes->setText(QString::number(cfg->cloudResolution));
     entryCloudMinRDP->setText(QString::number(cfg->cloudTolerance));
@@ -322,14 +334,6 @@ void MainWindow::setupDockWaves() {
     entryPeriod = new QLineEdit("1.0");
     entryWavelength = new QLineEdit("2.0");
     entryResolution = new QLineEdit("180");
-    /* entryOrtho = new QRadioButton("Ortho");
-    entryPara = new QRadioButton("Para");
-    entrySuperOn = new QRadioButton("On");
-    entrySuperOff = new QRadioButton("Off");
-    entryCPU = new QRadioButton("CPU");
-    entryGPU = new QRadioButton("GPU");
-    entryCircle = new QRadioButton("Circle");
-    entrySphere = new QRadioButton("Sphere"); */
     entryVertex = new QComboBox(this);
     entryFrag = new QComboBox(this);
 
@@ -343,23 +347,6 @@ void MainWindow::setupDockWaves() {
     slswSuper = new SlideSwitch("On", "Off");
     slswCPU = new SlideSwitch("CPU", "GPU");
     slswSphere = new SlideSwitch("Sphere", "Circle");
-
-    /* QButtonGroup *buttGroupOrtho = new QButtonGroup();
-    buttGroupOrtho->addButton(entryOrtho, 1);
-    buttGroupOrtho->addButton(entryPara, 2);
-    entryOrtho->toggle();
-    QButtonGroup *buttGroupSuper = new QButtonGroup();
-    buttGroupSuper->addButton(entrySuperOn, 4);
-    buttGroupSuper->addButton(entrySuperOff, 8);
-    entrySuperOff->toggle();
-    QButtonGroup *buttGroupCPU = new QButtonGroup();
-    buttGroupCPU->addButton(entryCPU, 16);
-    buttGroupCPU->addButton(entryGPU, 32);
-    entryGPU->toggle();
-    QButtonGroup *buttGroupSphere = new QButtonGroup();
-    buttGroupSphere->addButton(entryCircle, 64);
-    buttGroupSphere->addButton(entrySphere, 128);
-    entryCircle->toggle(); */
 
     QCheckBox *orbit1 = new QCheckBox("1");
     QCheckBox *orbit2 = new QCheckBox("2");
@@ -817,17 +804,11 @@ void MainWindow::handleButtLockRecipes() {
 void MainWindow::handleButtClearRecipes() {
     int topLevelItems = treeOrbitalSelect->topLevelItemCount();
 
-    // Check, then uncheck all top-level items. A bit brutal, but very effective :)
-    /* for (int i = 0; i < topLevelItems; i++) {
-        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
-        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
-    } */
-
     // More of a surgeon here...
     for (int i = 0; i < topLevelItems; i++) {
         QTreeWidgetItem *thisItem = treeOrbitalSelect->topLevelItem(i);
         Qt::CheckState itemChecked = thisItem->checkState(0);
-        if (itemChecked == Qt::Checked || itemChecked == Qt::PartiallyChecked) {
+        if (itemChecked & (Qt::Checked | Qt::PartiallyChecked)) {
             thisItem->setCheckState(0, Qt::Unchecked);
         }
     }

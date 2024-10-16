@@ -90,6 +90,10 @@ public:
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
+signals:
+    void detailsChanged(AtomixInfo *info);
+    void toggleLoading (bool loading);
+
 public slots:
     void cleanup();
     void newWaveConfig(AtomixConfig *cfg);
@@ -106,9 +110,6 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
-
-signals:
-    void detailsChanged(AtomixInfo *info);
 
 private:
     void threadFinished();

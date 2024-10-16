@@ -71,12 +71,10 @@ int main(int argc, char* argv[]) {
     QIcon icoAtomix("/home/braer/dev/atomix/res/icons/favicon.ico");
     mainWindow.setWindowIcon(icoAtomix);
 
-    QFont myFont;
-    myFont.setPointSize(13);
-    app.setFont(myFont);
-
     /* Engage */
+    app.processEvents();
     mainWindow.show();
+    mainWindow.setupLoading();
     
     return app.exec();
 }

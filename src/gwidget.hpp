@@ -48,6 +48,7 @@ struct AtomixInfo {
     float pos = 0.0f;       // Camera position
     float near = 0.0f;      // Near culling distance
     float far = 0.0f;       // Far culling distance
+    float start = 0.0f;     // Starting distance
     uint64_t vertex = 0;    // Vertex buffer size
     uint64_t data = 0;      // Data buffer size
     uint64_t index = 0;     // Index buffer size
@@ -165,7 +166,7 @@ private:
     float gw_nearDist = 0.0f;
     float gw_bg = 0.0f;
     float gw_nearScale = 0.05f;
-    float gw_farScale = 2.5f;
+    float gw_farScale = 2.20f;
     
     uint gw_faces = 0;
     uint gw_lines = 0;

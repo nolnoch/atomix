@@ -14,6 +14,7 @@ o Coefficient for orbital recipes
 o Replace radio buttons with toggle slider switch
 o Debug overlay
 o Loading animation for vertex and RDP generation
+- Change far distance based on zoom level
 + Add application icon [WIP]
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Programmatically limit input on GUI fields

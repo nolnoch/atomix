@@ -918,7 +918,8 @@ void CloudManager::wavefuncNorms(int max_n) {
 void CloudManager::clearForNext() {
     mStatus.reset();
 
-    std::fill(dataStaging.begin(), dataStaging.end(), 0.0);
+    dataStaging.assign(this->pixelCount, 0.0);
+    allData.assign(this->pixelCount, 0.0f);
     cloudOrbitals.clear();
     this->orbitalIdx = 0;
     this->allPDVMaximum = 0;

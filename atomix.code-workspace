@@ -92,7 +92,6 @@
 			"valarray": "cpp"
 		},
 		"editor.fontFamily": "Inconsolata",
-		"window.zoomLevel": -2,
 		"cmake.options.statusBarVisibility": "visible"
 	}
 }

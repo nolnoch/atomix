@@ -84,7 +84,12 @@
 			"stop_token": "cpp",
 			"execution": "cpp",
 			"ranges": "cpp",
-			"cfenv": "cpp"
+			"cfenv": "cpp",
+			"csignal": "cpp",
+			"strstream": "cpp",
+			"bitset": "cpp",
+			"typeindex": "cpp",
+			"valarray": "cpp"
 		},
 		"editor.fontFamily": "Inconsolata",
 		"window.zoomLevel": -2,

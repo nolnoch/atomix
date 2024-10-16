@@ -6,7 +6,7 @@ set(GLM_INCLUDE_DIR "/usr/local/include/glm")
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets Concurrent)
 find_package(TBB REQUIRED COMPONENTS tbb)
 
-add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp program.cpp mainwindow.cpp gwidget.cpp configparser.cpp wavemanager.cpp cloudmanager.cpp manager.cpp)
+add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp program.cpp mainwindow.cpp gwidget.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp)
 set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent tbb)

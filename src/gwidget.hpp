@@ -25,8 +25,6 @@
 #ifndef GWIDGET_H
 #define GWIDGET_H
 
-// #include <QScreen>
-// #include <QBoxLayout>
 #include <QOpenGLWidget>
 #include <QMouseEvent>
 #include <QWheelEvent>
@@ -46,14 +44,15 @@
 
 
 /* Debug info struct */
-typedef struct AtomixInfo {
+struct AtomixInfo {
     float pos = 0.0f;       // Camera position
     float near = 0.0f;      // Near culling distance
     float far = 0.0f;       // Far culling distance
+    float start = 0.0f;     // Starting distance
     uint64_t vertex = 0;    // Vertex buffer size
     uint64_t data = 0;      // Data buffer size
     uint64_t index = 0;     // Index buffer size
-} AtomixInfo;
+};
 Q_DECLARE_METATYPE(AtomixInfo);
 
 enum egs {
@@ -92,6 +91,10 @@ public:
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
+signals:
+    void detailsChanged(AtomixInfo *info);
+    void toggleLoading (bool loading);
+
 public slots:
     void cleanup();
     void newWaveConfig(AtomixConfig *cfg);
@@ -108,9 +111,6 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
-
-signals:
-    void detailsChanged(AtomixInfo *info);
 
 private:
     void threadFinished();
@@ -166,7 +166,7 @@ private:
     float gw_nearDist = 0.0f;
     float gw_bg = 0.0f;
     float gw_nearScale = 0.05f;
-    float gw_farScale = 2.5f;
+    float gw_farScale = 2.20f;
     
     uint gw_faces = 0;
     uint gw_lines = 0;

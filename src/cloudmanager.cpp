@@ -115,8 +115,8 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
         cm_times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
     }
     
-    std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
-    this->printTimes();
+    // std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
+    // this->printTimes();
 
     cm_proc_coarse.unlock();
 }
@@ -129,8 +129,8 @@ void CloudManager::initManager() {
     cm_times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
     cm_times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
 
-    std::cout << "Init() -- Functions took:\n";
-    this->printTimes();
+    // std::cout << "Init() -- Functions took:\n";
+    // this->printTimes();
 
     cm_proc_coarse.unlock();
 }
@@ -918,7 +918,8 @@ void CloudManager::wavefuncNorms(int max_n) {
 void CloudManager::clearForNext() {
     mStatus.reset();
 
-    std::fill(dataStaging.begin(), dataStaging.end(), 0.0);
+    dataStaging.assign(this->pixelCount, 0.0);
+    allData.assign(this->pixelCount, 0.0f);
     cloudOrbitals.clear();
     this->orbitalIdx = 0;
     this->allPDVMaximum = 0;

@@ -131,12 +131,12 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
 
     // Set middle border [half-replaced]
     // painter->setBrush(linGrad_border);
-    // painter->setBrush(this->pal.alt);
-    // painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsw_borderRadius, slsw_borderRadius);
+    painter->setBrush(this->pal.alt);
+    painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsw_borderRadius, slsw_borderRadius);
 
     // Set inner border [fully replaced]
-    painter->setBrush(this->pal.base);
-    painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
+    // painter->setBrush(this->pal.alt);
+    // painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
 
     if (slsw_enabled) {
         // Set Enabled-Off colour
@@ -145,12 +145,61 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
     } else {
         // Set Disabled colour
         painter->setBrush(linGrad_disabled);
-        painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsw_borderRadius, slsw_borderRadius);
+        painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
     }
     painter->end();
 }
 
 void SlideSwitch::mousePressEvent(QMouseEvent*) {
+    this->toggle();
+}
+
+void SlideSwitch::setEnabled(bool flag) {
+    slsw_enabled = flag;
+    slsw_Button->setEnabled(flag);
+    slsw_SwitchBackground->setEnabled(flag);
+    if (flag) {
+        // If switch disabled
+    } else {
+        // If switch enabled
+        if (slsw_value) {
+            slsw_LabelOn->show();
+            slsw_LabelOff->hide();
+        } else {
+            slsw_LabelOff->show();
+            slsw_LabelOn->hide();
+        }
+    }
+    QWidget::setEnabled(flag);
+}
+
+void SlideSwitch::setDuration(int time) {
+    slsw_duration = time;
+}
+
+void SlideSwitch::setValue(bool flag) {
+    if (flag == value()) {
+        return;
+    } else {
+        toggle();
+        // _update();
+        // setEnabled(slsw_enabled);
+    }
+
+    if (slsw_value) {
+        slsw_LabelOn->show();
+        slsw_LabelOff->hide();
+    } else {
+        slsw_LabelOff->show();
+        slsw_LabelOn->hide();
+    }
+}
+
+bool SlideSwitch::value() const {
+    return slsw_value;
+}
+
+void SlideSwitch::toggle() {
     if (!slsw_enabled) {
         return;
     }
@@ -197,51 +246,6 @@ void SlideSwitch::mousePressEvent(QMouseEvent*) {
     prAnim_backMove->start();
 
     emit valueChanged(slsw_value);
-}
-
-void SlideSwitch::setEnabled(bool flag) {
-    slsw_enabled = flag;
-    slsw_Button->setEnabled(flag);
-    slsw_SwitchBackground->setEnabled(flag);
-    if (flag) {
-        // If switch disabled
-    } else {
-        // If switch enabled
-        if (slsw_value) {
-            slsw_LabelOn->show();
-            slsw_LabelOff->hide();
-        } else {
-            slsw_LabelOff->show();
-            slsw_LabelOn->hide();
-        }
-    }
-    QWidget::setEnabled(flag);
-}
-
-void SlideSwitch::setDuration(int time) {
-    slsw_duration = time;
-}
-
-void SlideSwitch::setValue(bool flag) {
-    if (flag == value()) {
-        return;
-    } else {
-        slsw_value = flag;
-        _update();
-        setEnabled(slsw_enabled);
-    }
-
-    if (slsw_value) {
-        slsw_LabelOn->show();
-        slsw_LabelOff->hide();
-    } else {
-        slsw_LabelOff->show();
-        slsw_LabelOn->hide();
-    }
-}
-
-bool SlideSwitch::value() const {
-    return slsw_value;
 }
 
 void SlideSwitch::_update() {
@@ -297,13 +301,13 @@ void SlideSwitch::SwitchBackground::paintEvent(QPaintEvent*) {
     QPen pen(Qt::NoPen);
     painter->setPen(pen);
     if (slsb_enabled) {
-        painter->setBrush(parentPtr->pal.light);
-        painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
+        // painter->setBrush(parentPtr->pal.light);
+        // painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
 
         painter->setBrush(slsb_linGrad_enabled);
-        painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsb_borderRadius, slsb_borderRadius);
+        painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
     } else {
-        painter->setBrush(QColor(150, 150, 150));
+        painter->setBrush(parentPtr->pal.alt);
         painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
 
         painter->setBrush(slsb_linGrad_disabled);

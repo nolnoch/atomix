@@ -65,6 +65,7 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
     if (cloudManager) {
         fwModel->setFuture(futureModel);
         this->max_n = cloudMap->rbegin()->first;
+        emit toggleLoading(true);
     }
 }
 
@@ -84,6 +85,7 @@ void GWidget::newWaveConfig(AtomixConfig *config) {
         futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     }
     fwModel->setFuture(futureModel);
+    emit toggleLoading(true);
 }
 
 void GWidget::selectRenderedWaves(int id, bool checked) {
@@ -291,7 +293,7 @@ void GWidget::changeModes(bool force) {
 void GWidget::initVecsAndMatrices() {
     gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
     gw_nearDist = 0.1f;
-    gw_farDist = gw_startDist * gw_farScale;
+    gw_farDist = gw_startDist * 2.0f;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -309,6 +311,7 @@ void GWidget::initVecsAndMatrices() {
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_farDist);
 
     gw_info.pos = gw_startDist;
+    gw_info.start = gw_startDist;
     gw_info.near = gw_nearDist;
     gw_info.far = gw_farDist;
     emit detailsChanged(&gw_info);
@@ -415,8 +418,10 @@ void GWidget::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
     float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
-    // std::cout << glm::to_string(v3_cameraPosition) << std::endl;
+    
     gw_info.pos = v3_cameraPosition.z;
+    gw_info.far = v3_cameraPosition.z + gw_info.start;
+    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_info.far);
     emit detailsChanged(&gw_info);
     update();
 }
@@ -637,6 +642,7 @@ void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, ui
 
 void GWidget::threadFinished() {
     flGraphState.set(currentManager->clearUpdates() | egs::UPDATE_REQUIRED);
+    emit toggleLoading(false);
 }
 
 void GWidget::threadFinishedWithResult(uint result) {

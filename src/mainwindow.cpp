@@ -31,7 +31,15 @@ MainWindow::MainWindow() {
 void MainWindow::onAddNew() {
     cfgParser = new ConfigParser;
     graph = new GWidget(this, cfgParser);
-    // waveConfig = new AtomixConfig;
+
+    valIntSmall = new QIntValidator();
+    valIntSmall->setRange(1, 8);
+    valIntLarge = new QIntValidator();
+    valIntLarge->setRange(1, 999);
+    valDoubleSmall = new QDoubleValidator();
+    valDoubleSmall->setRange(0.0001, 0.9999, 4);
+    valDoubleLarge = new QDoubleValidator();
+    valDoubleLarge->setRange(0.001, 999.999, 3);
 
     /* Setup Dock GUI */
     setupTabs();
@@ -45,6 +53,7 @@ void MainWindow::onAddNew() {
     setupDetails();
 
     connect(graph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
+    connect(graph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
@@ -160,6 +169,23 @@ void MainWindow::setupDetails() {
     labelDetails->hide();
 }
 
+void MainWindow::setupLoading() {
+    QSizePolicy qPolicyLoading = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbLoading = new QProgressBar(graph);
+    pbLoading->setMinimum(0);
+    pbLoading->setMaximum(0);
+    pbLoading->setTextVisible(true);
+
+    int lh = pbLoading->sizeHint().height();
+    int gh = graph->height();
+    int gw = graph->width();
+    pbLoading->resize(gw, lh);
+    pbLoading->move(0, gh - lh);
+
+    pbLoading->raise();
+    // pbLoading->show();
+}
+
 void MainWindow::updateDetails(AtomixInfo *info) {
     this->dInfo.pos = info->pos;
     this->dInfo.near = info->near;
@@ -199,6 +225,14 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     labelDetails->adjustSize();
 }
 
+void MainWindow::setLoading(bool loading) {
+    if (loading) {
+        pbLoading->show();
+    } else {
+        pbLoading->hide();
+    }
+}
+
 void MainWindow::loadConfig() {
     int files = cfgParser->cfgFiles.size();
     int comboID = comboConfigFile->currentData().toInt();
@@ -219,21 +253,13 @@ void MainWindow::loadConfig() {
     entryPeriod->setText(QString::number(cfg->period));
     entryWavelength->setText(QString::number(cfg->wavelength));
     entryResolution->setText(QString::number(cfg->resolution));
-
-    /* To my horror and disgust, neither toggle() nor setChecked() work to flip from False to True.
-       It is therefore necessary to manually set every radio button individually.
-    */
-    /* entryPara->setChecked(cfg->parallel);
-    entryOrtho->setChecked(!cfg->parallel);
-    entrySuperOn->setChecked(cfg->superposition);
-    entrySuperOff->setChecked(!cfg->superposition);
-    entryCPU->setChecked(cfg->cpu);
-    entryGPU->setChecked(!cfg->cpu);
-    entrySphere->setChecked(cfg->sphere);
-    entryCircle->setChecked(!cfg->sphere); */
-
     entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
     entryFrag->setCurrentText(QString::fromStdString(cfg->frag));
+
+    slswPara->setValue(cfg->parallel);
+    slswSuper->setValue(cfg->superposition);
+    slswCPU->setValue(cfg->cpu);
+    slswSphere->setValue(cfg->sphere);
 
     entryCloudLayers->setText(QString::number(cfg->cloudLayDivisor));
     entryCloudRes->setText(QString::number(cfg->cloudResolution));
@@ -316,20 +342,17 @@ void MainWindow::setupDockWaves() {
     labelVertex->setObjectName("configLabel");
     QLabel *labelFrag = new QLabel("Fragment Shader:");
     labelFrag->setObjectName("configLabel");
-
+    
     entryOrbit = new QLineEdit("4");
+    entryOrbit->setValidator(valIntSmall);
     entryAmp = new QLineEdit("0.4");
+    entryAmp->setValidator(valDoubleLarge);
     entryPeriod = new QLineEdit("1.0");
+    entryPeriod->setValidator(valDoubleLarge);
     entryWavelength = new QLineEdit("2.0");
+    entryWavelength->setValidator(valDoubleLarge);
     entryResolution = new QLineEdit("180");
-    /* entryOrtho = new QRadioButton("Ortho");
-    entryPara = new QRadioButton("Para");
-    entrySuperOn = new QRadioButton("On");
-    entrySuperOff = new QRadioButton("Off");
-    entryCPU = new QRadioButton("CPU");
-    entryGPU = new QRadioButton("GPU");
-    entryCircle = new QRadioButton("Circle");
-    entrySphere = new QRadioButton("Sphere"); */
+    entryResolution->setValidator(valIntLarge);
     entryVertex = new QComboBox(this);
     entryFrag = new QComboBox(this);
 
@@ -343,23 +366,6 @@ void MainWindow::setupDockWaves() {
     slswSuper = new SlideSwitch("On", "Off");
     slswCPU = new SlideSwitch("CPU", "GPU");
     slswSphere = new SlideSwitch("Sphere", "Circle");
-
-    /* QButtonGroup *buttGroupOrtho = new QButtonGroup();
-    buttGroupOrtho->addButton(entryOrtho, 1);
-    buttGroupOrtho->addButton(entryPara, 2);
-    entryOrtho->toggle();
-    QButtonGroup *buttGroupSuper = new QButtonGroup();
-    buttGroupSuper->addButton(entrySuperOn, 4);
-    buttGroupSuper->addButton(entrySuperOff, 8);
-    entrySuperOff->toggle();
-    QButtonGroup *buttGroupCPU = new QButtonGroup();
-    buttGroupCPU->addButton(entryCPU, 16);
-    buttGroupCPU->addButton(entryGPU, 32);
-    entryGPU->toggle();
-    QButtonGroup *buttGroupSphere = new QButtonGroup();
-    buttGroupSphere->addButton(entryCircle, 64);
-    buttGroupSphere->addButton(entrySphere, 128);
-    entryCircle->toggle(); */
 
     QCheckBox *orbit1 = new QCheckBox("1");
     QCheckBox *orbit2 = new QCheckBox("2");
@@ -534,8 +540,11 @@ void MainWindow::setupDockHarmonics() {
     QLabel *labelCloudLayers = new QLabel("Layers per step in radius");
     QLabel *labelMinRDP = new QLabel("Min probability per rendered point");
     entryCloudRes = new QLineEdit(QString::number(cloudConfig.cloudResolution));
+    entryCloudRes->setValidator(valIntLarge);
     entryCloudLayers = new QLineEdit(QString::number(cloudConfig.cloudLayDivisor));
+    entryCloudLayers->setValidator(valIntLarge);
     entryCloudMinRDP = new QLineEdit(QString::number(cloudConfig.cloudTolerance));
+    entryCloudMinRDP->setValidator(valDoubleSmall);
 
     QGridLayout *layGenVertices = new QGridLayout;
     layGenVertices->addWidget(labelCloudLayers, 0, 0, 1, 1);
@@ -817,17 +826,11 @@ void MainWindow::handleButtLockRecipes() {
 void MainWindow::handleButtClearRecipes() {
     int topLevelItems = treeOrbitalSelect->topLevelItemCount();
 
-    // Check, then uncheck all top-level items. A bit brutal, but very effective :)
-    /* for (int i = 0; i < topLevelItems; i++) {
-        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Checked);
-        treeOrbitalSelect->topLevelItem(i)->setCheckState(0, Qt::Unchecked);
-    } */
-
     // More of a surgeon here...
     for (int i = 0; i < topLevelItems; i++) {
         QTreeWidgetItem *thisItem = treeOrbitalSelect->topLevelItem(i);
         Qt::CheckState itemChecked = thisItem->checkState(0);
-        if (itemChecked == Qt::Checked || itemChecked == Qt::PartiallyChecked) {
+        if (itemChecked & (Qt::Checked | Qt::PartiallyChecked)) {
             thisItem->setCheckState(0, Qt::Unchecked);
         }
     }
@@ -843,13 +846,12 @@ void MainWindow::handleButtResetRecipes() {
 }
 
 void MainWindow::handleButtMorbWaves() {
-    waveConfig.waves = entryOrbit->text().toInt();
-    waveConfig.amplitude = entryAmp->text().toDouble();
-    waveConfig.period = entryPeriod->text().toDouble() * M_PI;
-    waveConfig.wavelength = entryWavelength->text().toDouble() * M_PI;
-    waveConfig.resolution = entryResolution->text().toInt();
+    waveConfig.waves = std::clamp(entryOrbit->text().toInt(), 1, 8);
+    waveConfig.amplitude = std::clamp(entryAmp->text().toDouble(), 0.001, 999.999);
+    waveConfig.period = std::clamp(entryPeriod->text().toDouble(), 0.001, 999.999) * M_PI;
+    waveConfig.wavelength = std::clamp(entryWavelength->text().toDouble(), 0.001, 999.999) * M_PI;
+    waveConfig.resolution = std::clamp(entryResolution->text().toInt(), 1, 999);
     waveConfig.parallel = slswPara->value();
-    // std::cout << std::boolalpha << waveConfig.parallel << std::endl;
     waveConfig.superposition = slswSuper->value();
     waveConfig.cpu = slswCPU->value();
     waveConfig.sphere = slswSphere->value();

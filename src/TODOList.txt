@@ -13,9 +13,12 @@ o New Tolerance + cullRDPs needs to enter in a different place
 o Coefficient for orbital recipes
 o Replace radio buttons with toggle slider switch
 o Debug overlay
+o Loading animation for vertex and RDP generation
+o Change far distance based on zoom level
+o Programmatically limit input on GUI fields
 + Add application icon [WIP]
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
-- Programmatically limit input on GUI fields
+- Allow more than 8 waves? Can currently gen vertices for n<999, but filtered by indices (visible waves bitflag)
+- Programmatically ensure that certain config combos are maintained (i.e., superposition -> Parallel & CPU)
 - Implement CPU vs GPU orbital rendering
-- Loading animation for vertex and RDP generation
 - Energy tab

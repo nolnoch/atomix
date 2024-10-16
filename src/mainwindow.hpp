@@ -32,7 +32,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QRadioButton>
 #include <QGroupBox>
 #include <QButtonGroup>
 #include <QComboBox>
@@ -43,6 +42,7 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QSlider>
+#include <QProgressBar>
 #include <QSignalBlocker>
 #include <QThread>
 #include "slideswitch.hpp"
@@ -56,9 +56,11 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow();
+    void setupLoading();
 
 public slots:
     void updateDetails(AtomixInfo *info);
+    void setLoading(bool loading);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -109,20 +111,16 @@ private:
     ConfigParser *cfgParser = nullptr;
 
     QFont fontDebug;
+    QIntValidator *valIntSmall = nullptr;
+    QIntValidator *valIntLarge = nullptr;
+    QDoubleValidator *valDoubleSmall = nullptr;
+    QDoubleValidator *valDoubleLarge = nullptr;
 
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;
     QLineEdit *entryPeriod = nullptr;
     QLineEdit *entryWavelength = nullptr;
     QLineEdit *entryResolution = nullptr;
-    /* QRadioButton *entryOrtho = nullptr;
-    QRadioButton *entryPara = nullptr;
-    QRadioButton *entrySuperOn = nullptr;
-    QRadioButton *entrySuperOff = nullptr;
-    QRadioButton *entryCPU = nullptr;
-    QRadioButton *entryGPU = nullptr;
-    QRadioButton *entryCircle = nullptr;
-    QRadioButton *entrySphere = nullptr; */
     SlideSwitch *slswPara = nullptr;
     SlideSwitch *slswSuper = nullptr;
     SlideSwitch *slswCPU = nullptr;
@@ -160,6 +158,7 @@ private:
     QSlider *slideCullingY = nullptr;
 
     QLabel *labelDetails = nullptr;
+    QProgressBar *pbLoading = nullptr;
 
     GWidget *graph = nullptr;
     harmap mapCloudRecipesLocked;

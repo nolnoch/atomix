@@ -90,8 +90,6 @@
 			"bitset": "cpp",
 			"typeindex": "cpp",
 			"valarray": "cpp"
-		},
-		"editor.fontFamily": "Inconsolata",
-		"cmake.options.statusBarVisibility": "visible"
+		}
 	}
 }

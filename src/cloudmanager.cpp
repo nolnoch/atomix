@@ -27,7 +27,8 @@
 
 /*  std::execution (via TBB) and Qt both use the emit keyword, so undef for this file to avoid conflicts  */
 #undef emit
-#include <execution>
+// #include <execution>
+#include <oneapi/dpl/execution>
 
 
 CloudManager::CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes) {

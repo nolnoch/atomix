@@ -84,7 +84,7 @@ struct BitFlag {
     uint32_t bf = 0;
 };
 
-inline constexpr std::string_view ROOT_DIR = "/home/braer/dev/atomix/";
+inline constexpr std::string_view ROOT_DIR = "/Users/braer/dev/atomix/";
 inline constexpr std::string_view SHADERS = "shaders/";
 inline constexpr std::string_view CONFIGS = "configs/";
 

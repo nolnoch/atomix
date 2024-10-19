@@ -37,6 +37,7 @@
 #include <cmath>
 #include <complex>
 #include "manager.hpp"
+#include <oneapi/dpl/algorithm>
 
 /*  <---[ Mac's Clang uses dispatch() calls instead of std parallel. ]--->  */
 // TODO implement dispatch

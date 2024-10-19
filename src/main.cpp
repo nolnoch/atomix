@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);
     mainWindow.move(dispXY.center() - mainWindow.frameGeometry().center());
-    QIcon icoAtomix("/home/braer/dev/atomix/res/icons/favicon.ico");
+    QIcon icoAtomix("~/dev/atomix/resources/icons/favicon.ico");
     mainWindow.setWindowIcon(icoAtomix);
 
     /* Engage */

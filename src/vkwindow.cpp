@@ -730,3 +730,43 @@ void VKWindow::printConfig(AtomixConfig *cfg) {
     std::cout << "Vert Shader: " << cfg->vert << "\n";
     std::cout << "Frag Shader: " << cfg->frag << std::endl;
 }
+
+VKRenderer::VKRenderer(VKWindow *vkWin)
+    : vkw(vkWin) {
+}
+
+VKRenderer::~VKRenderer() {
+    // TODO Destructor
+}
+
+void VKRenderer::initResources() {
+    int vertexData = 0;
+
+    // Define instance, device, and function pointers
+    VkDevice dev = vkw->device();
+    vi = vkw->vulkanInstance();
+    vdf = vi->deviceFunctions(dev);
+    vf = vi->functions();
+
+    // Retrieve physical device constraints
+    const int concFrameCount = vkw->concurrentFrameCount();
+    const VkPhysicalDeviceLimits *pdLimits = &vkw->physicalDeviceProperties()->limits;
+    const VkDeviceSize uniAlignment = pdLimits->minUniformBufferOffsetAlignment;
+
+    // Assign vertex buffer and uniforms
+    VkBufferCreateInfo bufCreateInfo;
+    memset(&bufCreateInfo, 0, sizeof(bufCreateInfo));
+    bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlignment);
+    const VkDeviceSize uniformAllocSize = aligned(UNIFORM_DATA_SIZE, uniAlignment);
+    bufCreateInfo.size = vertexAllocSize + concFrameCount * uniformAllocSize;
+    bufCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+    // Check errors
+    VkResult err = vdf->vkCreateBuffer(dev, &bufCreateInfo, nullptr, &m_buf);
+    if (err != VK_SUCCESS) {
+        qFatal("Failed to create vertex buffer: %d", err);
+    }
+
+    
+}

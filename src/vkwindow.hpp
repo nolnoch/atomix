@@ -78,12 +78,14 @@ const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
 const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
 
 
-class VKWindow : public QVulkanWindow, protected QVulkanFunctions {
+class VKWindow : public QVulkanWindow, public QWidget {
     Q_OBJECT
 
 public:
     VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~VKWindow();
+
+    VKRenderer* createRenderer() override;
 
     void setColorsWaves(int id, uint colorChoice);
     void updateBuffersAndShaders();
@@ -188,6 +190,33 @@ private:
     uint crystalRingCount = 0;
     uint crystalRingOffset = 0;
     uint cloudOffset = 0;
+};
+
+class VKRenderer : public QVulkanWindowRenderer {
+    Q_OBJECT
+
+public:
+    VKRenderer(VKWindow *vkWin);
+    ~VKRenderer();
+
+    void initResources() override;
+    void initSwapChainResources() override;
+    // void logicalDeviceLost() override;
+    // void physicalDeviceLost() override;
+    // void preInitResources() override;
+    void releaseResources() override;
+    void releaseSwapChainResources() override;
+    void startNextFrame() override;
+
+    VkShaderModule createShader(const std::string &name);
+
+private:
+    VKWindow *vkw = nullptr;
+    QVulkanInstance *vi = nullptr;
+    QVulkanFunctions *vf = nullptr;
+    QVulkanDeviceFunctions *vdf = nullptr;
+
+    VkBuffer m_buf = VK_NULL_HANDLE;
 };
 
 #endif

@@ -30,7 +30,7 @@ MainWindow::MainWindow() {
 
 void MainWindow::onAddNew() {
     cfgParser = new ConfigParser;
-    graph = new GWidget(this, cfgParser);
+    graph = new VKWindow(this, cfgParser);
 
     valIntSmall = new QIntValidator();
     valIntSmall->setRange(1, 8);
@@ -44,7 +44,14 @@ void MainWindow::onAddNew() {
     /* Setup Dock GUI */
     setupTabs();
     addDockWidget(Qt::RightDockWidgetArea, dockTabs);
-    setCentralWidget(graph);
+
+    vkInst.setLayers({ "VK_LAYER_KHRONOS_validation" });
+    if (!vkInst.create()) {
+        qFatal("Failed to create Vulkan Instance: %d", vkInst.errorCode());
+    }
+    graph->setVulkanInstance(&vkInst);
+    vkWinWidWrapper = QWidget::createWindowContainer(graph);
+    setCentralWidget(vkWinWidWrapper);
 
     refreshConfigs();
     refreshShaders();
@@ -56,7 +63,7 @@ void MainWindow::onAddNew() {
     connect(graph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
-    connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
+    connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
     connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleDoubleClick);
@@ -160,7 +167,7 @@ void MainWindow::setupDetails() {
                                  "Buffer|Index:  %6\n"\
                                  "Buffer|Total:  %7\n"\
                                  ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
-    labelDetails = new QLabel(graph);
+    labelDetails = new QLabel(vkWinWidWrapper);
     labelDetails->setFont(fontDebug);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
@@ -171,7 +178,7 @@ void MainWindow::setupDetails() {
 
 void MainWindow::setupLoading() {
     QSizePolicy qPolicyLoading = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    pbLoading = new QProgressBar(graph);
+    pbLoading = new QProgressBar(vkWinWidWrapper);
     pbLoading->setMinimum(0);
     pbLoading->setMaximum(0);
     pbLoading->setTextVisible(true);

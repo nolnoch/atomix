@@ -25,7 +25,7 @@
 #include <iostream>
 #include <ranges>
 #include <QTimer>
-#include "gwidget.hpp"
+#include "glwidget.hpp"
 
 #define RADN(t) (glm::radians((t)))
 

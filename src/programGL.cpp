@@ -1,5 +1,5 @@
 /**
- * program.cpp
+ * programGL.cpp
  *
  *    Created on: Apr 8, 2013
  *   Last Update: Sep 23, 2024
@@ -22,7 +22,7 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "program.hpp"
+#include "programGL.hpp"
 
 using std::cout;
 using std::endl;

@@ -46,7 +46,7 @@
 #include <QSignalBlocker>
 #include <QThread>
 #include "slideswitch.hpp"
-#include "gwidget.hpp"
+#include "glwidget.hpp"
 
 const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;

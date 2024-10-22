@@ -36,6 +36,7 @@
 #include <fstream>
 #include <sstream>
 #include <QOpenGLFunctions_4_5_Core>
+#include <QVulkanFunctions>
 
 class Shader {
  public:

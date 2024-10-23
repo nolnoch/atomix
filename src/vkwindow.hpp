@@ -37,6 +37,13 @@
 #include <QOpenGLFunctions_4_5_Core>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <iomanip>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <array>
+#include <algorithm>
+#include <ranges>
 #include "programVK.hpp"
 #include "quaternion.hpp"
 #include "wavemanager.hpp"
@@ -78,8 +85,7 @@ const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
 const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
 
 
-class VKWindow : public QVulkanWindow, public QWidget {
-    Q_OBJECT
+class VKWindow : public QVulkanWindow {
 
 public:
     VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
@@ -193,7 +199,6 @@ private:
 };
 
 class VKRenderer : public QVulkanWindowRenderer {
-    Q_OBJECT
 
 public:
     VKRenderer(VKWindow *vkWin);
@@ -212,11 +217,28 @@ public:
 
 private:
     VKWindow *vkw = nullptr;
+    VkDevice dev;
     QVulkanInstance *vi = nullptr;
     QVulkanFunctions *vf = nullptr;
     QVulkanDeviceFunctions *vdf = nullptr;
 
-    VkBuffer m_buf = VK_NULL_HANDLE;
+    VkDeviceMemory vr_bufMem = VK_NULL_HANDLE;
+    VkBuffer vr_buf = VK_NULL_HANDLE;
+    VkDescriptorBufferInfo vr_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkDescriptorPool vr_descPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout vr_descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSet vr_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkPipelineCache vr_pipelineCache = VK_NULL_HANDLE;
+    VkPipelineLayout vr_pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline vr_pipeline = VK_NULL_HANDLE;
+
+    glm::mat4 m4_proj;
+    glm::mat4 m4_view;
+    glm::mat4 m4_world;
+    glm::mat4 m4_rotation;
+    glm::mat4 m4_translation;
 };
 
 #endif

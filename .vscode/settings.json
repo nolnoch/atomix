@@ -73,5 +73,6 @@
         "fstream": "cpp",
         "iomanip": "cpp",
         "*.wave": "zsh"
-    }
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

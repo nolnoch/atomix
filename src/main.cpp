@@ -28,7 +28,6 @@
 #include <QScreen>
 #include <QCommandLineParser>
 #include <QFont>
-#include "gwidget.hpp"
 #include "mainwindow.hpp"
 
 #define SWIDTH 1280

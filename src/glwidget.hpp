@@ -22,8 +22,8 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef GWIDGET_H
-#define GWIDGET_H
+#ifndef GLWIDGET_H
+#define GLWIDGET_H
 
 #include <QOpenGLWidget>
 #include <QMouseEvent>
@@ -37,7 +37,7 @@
 #include <QOpenGLFunctions_4_5_Core>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "program.hpp"
+#include "programGL.hpp"
 #include "quaternion.hpp"
 #include "wavemanager.hpp"
 #include "cloudmanager.hpp"

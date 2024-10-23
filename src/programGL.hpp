@@ -1,5 +1,5 @@
 /**
- * program.hpp
+ * programGL.hpp
  *
  *    Created on: Apr 8, 2013
  *   Last Update: Sep 9, 2024

@@ -1,11 +1,11 @@
 /**
- * gwidget.cpp
+ * vkwindow.cpp
  *
- *    Created on: Oct 3, 2023
- *   Last Update: Sep 9, 2024
+ *    Created on: Oct 22, 2024
+ *   Last Update: Oct 22, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  *
- *  Copyright 2023, 2024 Wade Burch (GPLv3)
+ *  Copyright 2024 Wade Burch (GPLv3)
  *
  *  This file is part of atomix.
  *
@@ -25,28 +25,28 @@
 #include <iostream>
 #include <ranges>
 #include <QTimer>
-#include "gwidget.hpp"
+#include "vkwindow.hpp"
 
 #define RADN(t) (glm::radians((t)))
 
 
-GWidget::GWidget(QWidget *parent, ConfigParser *configParser)
+VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : QOpenGLWidget(parent), cfgParser(configParser) {
     setFocusPolicy(Qt::StrongFocus);
 }
 
-GWidget::~GWidget() {
+VKWindow::~VKWindow() {
     cleanup();
 }
 
-void GWidget::cleanup() {
+void VKWindow::cleanup() {
     fwModel->waitForFinished();
     changeModes(true);
     delete gw_timer;
     delete crystalProg;
 }
 
-void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
+void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
     flGraphState.set(egs::CLOUD_MODE);
     if (flGraphState.hasAny(eWaveFlags)) {
         changeModes(false);
@@ -69,7 +69,7 @@ void GWidget::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numReci
     }
 }
 
-void GWidget::newWaveConfig(AtomixConfig *config) {
+void VKWindow::newWaveConfig(AtomixConfig *config) {
     flGraphState.set(egs::WAVE_MODE);
     if (flGraphState.hasAny(eCloudFlags)) {
         changeModes(false);
@@ -88,12 +88,12 @@ void GWidget::newWaveConfig(AtomixConfig *config) {
     emit toggleLoading(true);
 }
 
-void GWidget::selectRenderedWaves(int id, bool checked) {
+void VKWindow::selectRenderedWaves(int id, bool checked) {
     // Process and flag for EBO update
     flGraphState.set(waveManager->selectWaves(id, checked) | egs::UPDATE_REQUIRED);
 }
 
-void GWidget::initCrystalProgram() {
+void VKWindow::initCrystalProgram() {
     fvec crystalRingVertices;
     uvec crystalRingIndices;
     std::string vertName = "crystal.vert";
@@ -175,11 +175,11 @@ void GWidget::initCrystalProgram() {
     crystalProg->clearBuffers();
 }
 
-/* void GWidget::initAtomixProg() {
+/* void VKWindow::initAtomixProg() {
     // TODO Consolidate?!
 } */
 
-void GWidget::initWaveProgram() {
+void VKWindow::initWaveProgram() {
     assert(waveManager);
 
     /* Program */
@@ -224,7 +224,7 @@ void GWidget::initWaveProgram() {
     currentManager = waveManager;
 }
 
-void GWidget::initCloudProgram() {
+void VKWindow::initCloudProgram() {
     assert(cloudManager);
 
     /* Program */
@@ -272,7 +272,7 @@ void GWidget::initCloudProgram() {
     currentManager = cloudManager;
 }
 
-void GWidget::changeModes(bool force) {
+void VKWindow::changeModes(bool force) {
     if (!waveManager || force) {
         delete cloudManager;
         delete cloudProg;
@@ -290,7 +290,7 @@ void GWidget::changeModes(bool force) {
     currentProg = 0;
 }
 
-void GWidget::initVecsAndMatrices() {
+void VKWindow::initVecsAndMatrices() {
     gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
     gw_nearDist = 0.1f;
     gw_farDist = gw_startDist * 2.0f;
@@ -317,7 +317,7 @@ void GWidget::initVecsAndMatrices() {
     emit detailsChanged(&gw_info);
 }
 
-void GWidget::initializeGL() {
+void VKWindow::initializeGL() {
     /* Init -- OpenGL Context and Functions */
     if (!context()) {
         gw_context = new QOpenGLContext(this);
@@ -348,15 +348,15 @@ void GWidget::initializeGL() {
     /* Init -- Time */
     gw_timeStart = QDateTime::currentMSecsSinceEpoch();
     gw_timer = new QTimer(this);
-    connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&GWidget::update));
+    connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&VKWindow::update));
     gw_timer->start(33);
 
     /* Init -- Threading */
     fwModel = new QFutureWatcher<void>;
-    connect(fwModel, &QFutureWatcher<void>::finished, this, &GWidget::threadFinished);
+    connect(fwModel, &QFutureWatcher<void>::finished, this, &VKWindow::threadFinished);
 }
 
-void GWidget::paintGL() {
+void VKWindow::paintGL() {
     assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
 
     if (!gw_pause)
@@ -407,14 +407,14 @@ void GWidget::paintGL() {
     q_TotalRot.normalize();
 }
 
-void GWidget::resizeGL(int w, int h) {
+void VKWindow::resizeGL(int w, int h) {
     gw_scrHeight = height();
     gw_scrWidth = width();
     // m4_proj = glm::mat4(1.0f);
     m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, gw_nearDist, gw_farDist);
 }
 
-void GWidget::wheelEvent(QWheelEvent *e) {
+void VKWindow::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
     float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
@@ -426,7 +426,7 @@ void GWidget::wheelEvent(QWheelEvent *e) {
     update();
 }
 
-void GWidget::mousePressEvent(QMouseEvent *e) {
+void VKWindow::mousePressEvent(QMouseEvent *e) {
     glm::vec3 mouseVec = glm::vec3(e->pos().x(), height() - e->pos().y(), v3_cameraPosition.z);
     v3_mouseBegin = mouseVec;
     v3_mouseEnd = mouseVec;
@@ -437,7 +437,7 @@ void GWidget::mousePressEvent(QMouseEvent *e) {
         QWidget::mousePressEvent(e);
 }
 
-void GWidget::mouseMoveEvent(QMouseEvent *e) {
+void VKWindow::mouseMoveEvent(QMouseEvent *e) {
     glm::vec3 mouseVec = glm::vec3(e->pos().x(), gw_scrHeight - e->pos().y(), v3_cameraPosition.z);
     glm::vec3 cameraVec = v3_cameraPosition - v3_cameraTarget;
     v3_mouseBegin = v3_mouseEnd;
@@ -484,14 +484,14 @@ void GWidget::mouseMoveEvent(QMouseEvent *e) {
     update();
 }
 
-void GWidget::mouseReleaseEvent(QMouseEvent *e) {
+void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
     if (e->button() & (Qt::RightButton | Qt::LeftButton | Qt::MiddleButton))
         gw_movement = false;
     else
         QWidget::mouseReleaseEvent(e);
 }
 
-void GWidget::keyPressEvent(QKeyEvent * e) {
+void VKWindow::keyPressEvent(QKeyEvent * e) {
     if (e->key() == Qt::Key_Home) {
         initVecsAndMatrices();
         update();
@@ -509,7 +509,7 @@ void GWidget::keyPressEvent(QKeyEvent * e) {
     }
 }
 
-void GWidget::checkErrors(std::string str) {
+void VKWindow::checkErrors(std::string str) {
     GLenum err;
     int messages = 0;
 
@@ -522,7 +522,7 @@ void GWidget::checkErrors(std::string str) {
         std::cout << std::endl;
 }
 
-void GWidget::setColorsWaves(int id, uint colorChoice) {
+void VKWindow::setColorsWaves(int id, uint colorChoice) {
     switch (id) {
     case 1:
         waveManager->peak = colorChoice;
@@ -539,7 +539,7 @@ void GWidget::setColorsWaves(int id, uint colorChoice) {
     flGraphState.set(egs::UPD_UNI_COLOUR | egs::UPDATE_REQUIRED);
 }
 
-void GWidget::updateBuffersAndShaders() {
+void VKWindow::updateBuffersAndShaders() {
     /* Set up Program with buffers for the first time */
     if (!currentProg || !currentProg->hasBuffer("vertices")) {
         (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
@@ -627,11 +627,11 @@ void GWidget::updateBuffersAndShaders() {
     flGraphState.clear(eUpdateFlags);
 }
 
-void GWidget::setBGColour(float colour) {
+void VKWindow::setBGColour(float colour) {
     gw_bg = colour;
 }
 
-void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
+void VKWindow::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
     uint layer_max = cloudManager->getMaxRadius(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
     uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
 
@@ -640,16 +640,16 @@ void GWidget::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, ui
     (*index) = (pixel_count << 1) * 3;      // (count/2) * (1 uint)   * (4 B/uint)  * (3 vectors) -- idxTolerance + idxSlider + allIndices [very rough estimate]
 }
 
-void GWidget::threadFinished() {
+void VKWindow::threadFinished() {
     flGraphState.set(currentManager->clearUpdates() | egs::UPDATE_REQUIRED);
     emit toggleLoading(false);
 }
 
-void GWidget::threadFinishedWithResult(uint result) {
+void VKWindow::threadFinishedWithResult(uint result) {
     flGraphState.set(currentManager->clearUpdates() | egs::UPDATE_REQUIRED | result);
 }
 
-std::string GWidget::withCommas(int64_t value) {
+std::string VKWindow::withCommas(int64_t value) {
     std::stringstream ssFmt;
     ssFmt.imbue(std::locale(""));
     ssFmt << std::fixed << value;
@@ -657,7 +657,7 @@ std::string GWidget::withCommas(int64_t value) {
     return ssFmt.str();
 }
 
-void GWidget::updateSize() {
+void VKWindow::updateSize() {
     uint64_t VSize = 0, DSize = 0, ISize = 0;
     gw_info.vertex = 0;
     gw_info.data = 0;
@@ -678,7 +678,7 @@ void GWidget::updateSize() {
     emit detailsChanged(&gw_info);
 }
 
-void GWidget::printSize() {
+void VKWindow::printSize() {
     updateSize();
     
     std::array<double, 4> bufs = { static_cast<double>(gw_info.vertex), static_cast<double>(gw_info.data), static_cast<double>(gw_info.index), 0 };
@@ -705,7 +705,7 @@ void GWidget::printSize() {
     std::cout << std::endl;
 }
 
-void GWidget::printFlags(std::string str) {
+void VKWindow::printFlags(std::string str) {
     std::vector<std::string> labels = { "Wave Mode", "Wave Render", "Cloud Mode", "Cloud Render", "Thread Finished", "Update Vert Shader", "Update Frag Shader",\
                                         "Update VBO", "Update Data", "Update EBO", "Update Uniform Colour", "Update Uniform Maths", "Update Matrices", "Update Required"  };
     std::cout << str << std::endl;
@@ -717,7 +717,7 @@ void GWidget::printFlags(std::string str) {
     std::cout << std::endl;
 }
 
-void GWidget::printConfig(AtomixConfig *cfg) {
+void VKWindow::printConfig(AtomixConfig *cfg) {
     std::cout << "Waves: " << cfg->waves << "\n";
     std::cout << "Amplitude: " << cfg->amplitude << "\n";
     std::cout << "Period: " << cfg->period << "\n";
@@ -729,4 +729,44 @@ void GWidget::printConfig(AtomixConfig *cfg) {
     std::cout << "Sphere: " << cfg->sphere << "\n";
     std::cout << "Vert Shader: " << cfg->vert << "\n";
     std::cout << "Frag Shader: " << cfg->frag << std::endl;
+}
+
+VKRenderer::VKRenderer(VKWindow *vkWin)
+    : vkw(vkWin) {
+}
+
+VKRenderer::~VKRenderer() {
+    // TODO Destructor
+}
+
+void VKRenderer::initResources() {
+    int vertexData = 0;
+
+    // Define instance, device, and function pointers
+    VkDevice dev = vkw->device();
+    vi = vkw->vulkanInstance();
+    vdf = vi->deviceFunctions(dev);
+    vf = vi->functions();
+
+    // Retrieve physical device constraints
+    const int concFrameCount = vkw->concurrentFrameCount();
+    const VkPhysicalDeviceLimits *pdLimits = &vkw->physicalDeviceProperties()->limits;
+    const VkDeviceSize uniAlignment = pdLimits->minUniformBufferOffsetAlignment;
+
+    // Assign vertex buffer and uniforms
+    VkBufferCreateInfo bufCreateInfo;
+    memset(&bufCreateInfo, 0, sizeof(bufCreateInfo));
+    bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlignment);
+    const VkDeviceSize uniformAllocSize = aligned(UNIFORM_DATA_SIZE, uniAlignment);
+    bufCreateInfo.size = vertexAllocSize + concFrameCount * uniformAllocSize;
+    bufCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+    // Check errors
+    VkResult err = vdf->vkCreateBuffer(dev, &bufCreateInfo, nullptr, &m_buf);
+    if (err != VK_SUCCESS) {
+        qFatal("Failed to create vertex buffer: %d", err);
+    }
+
+    
 }

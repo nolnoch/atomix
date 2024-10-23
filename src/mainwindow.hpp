@@ -45,8 +45,9 @@
 #include <QProgressBar>
 #include <QSignalBlocker>
 #include <QThread>
+#include <QVulkanInstance>
 #include "slideswitch.hpp"
-#include "gwidget.hpp"
+#include "vkwindow.hpp"
 
 const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;
@@ -160,7 +161,10 @@ private:
     QLabel *labelDetails = nullptr;
     QProgressBar *pbLoading = nullptr;
 
-    GWidget *graph = nullptr;
+    VKWindow *graph = nullptr;
+    QVulkanInstance vkInst;
+    QWidget *vkWinWidWrapper = nullptr;
+
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;
 

@@ -90,6 +90,7 @@
 			"bitset": "cpp",
 			"typeindex": "cpp",
 			"valarray": "cpp"
-		}
+		},
+		"cmake.options.statusBarVisibility": "visible"
 	}
 }

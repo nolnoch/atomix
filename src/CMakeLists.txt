@@ -8,7 +8,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets Concurren
 find_package(oneDPL REQUIRED oneDPL)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 
-add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp programGL.cpp mainwindow.cpp glwidget.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp)
+add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp programGL.cpp mainwindow.cpp glwidget.cpp vkwindow.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp)
 # set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 target_include_directories(atomix PRIVATE ${TBB_INCLUDE_DIR})

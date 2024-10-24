@@ -8,8 +8,8 @@
                 "/usr/include/xcb"
             ],
             "defines": [],
-            "cStandard": "c17",
-            "cppStandard": "gnu++14",
+            "cStandard": "c23",
+            "cppStandard": "c++23",
             "intelliSenseMode": "linux-gcc-x64",
             "configurationProvider": "ms-vscode.cmake-tools",
             "compilerPath": "/usr/bin/g++"

@@ -20,7 +20,6 @@
                 "${workspaceFolder}/**",
                 "/opt/homebrew/Cellar/**",
                 "/usr/local/include/**",
-                // "/Users/braer/Qt/6.5.3/macos/**",
                 "/usr/local/Qt-6.5.3/**",
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/**"
             ],

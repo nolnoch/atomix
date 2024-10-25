@@ -25,7 +25,7 @@
 #ifndef VKWINDOW_H
 #define VKWINDOW_H
 
-#include <QVulkanWindow>
+#include <QtGui/qvulkanwindow.h>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>

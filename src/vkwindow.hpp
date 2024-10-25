@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <vector>
 #include <array>
 #include <algorithm>
@@ -83,6 +84,8 @@ const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
 const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
 const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
+
+class VKRenderer;
 
 
 class VKWindow : public QVulkanWindow {
@@ -136,6 +139,8 @@ private:
     void printSize();
     void printFlags(std::string);
     void printConfig(AtomixConfig *cfg);
+
+    VKRenderer *vrend = nullptr;
 
     QOpenGLContext *gw_context = nullptr;
     Program *crystalProg = nullptr;
@@ -239,6 +244,9 @@ private:
     glm::mat4 m4_world;
     glm::mat4 m4_rotation;
     glm::mat4 m4_translation;
+
+    QMatrix4x4 vm4_proj;
+    QMatrix4x4 vm4_rot;
 };
 
 #endif

@@ -151,8 +151,8 @@ void GWidget::initCrystalProgram() {
     this->crystalRingCount = crystalRingIndices.size() - gw_faces;
     this->crystalRingOffset = gw_faces * sizeof(uint);
 
-    /* Program */
-    crystalProg = new Program(this);
+    /* ProgramGL */
+    crystalProg = new ProgramGL(this);
     crystalProg->addShader(vertName, GL_VERTEX_SHADER);
     crystalProg->addShader(fragName, GL_FRAGMENT_SHADER);
     crystalProg->init();
@@ -182,9 +182,9 @@ void GWidget::initCrystalProgram() {
 void GWidget::initWaveProgram() {
     assert(waveManager);
 
-    /* Program */
-    // Create Program
-    waveProg = new Program(this);
+    /* ProgramGL */
+    // Create ProgramGL
+    waveProg = new ProgramGL(this);
 
     // Add all shaders
     waveProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
@@ -227,9 +227,9 @@ void GWidget::initWaveProgram() {
 void GWidget::initCloudProgram() {
     assert(cloudManager);
 
-    /* Program */
-    // Create Program
-    cloudProg = new Program(this);
+    /* ProgramGL */
+    // Create ProgramGL
+    cloudProg = new ProgramGL(this);
 
     // Add all shaders
     cloudProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
@@ -342,7 +342,7 @@ void GWidget::initializeGL() {
     /* Init -- Matrices */
     initVecsAndMatrices();
 
-    /* Init -- Programs and Shaders */
+    /* Init -- ProgramGLs and Shaders */
     initCrystalProgram();
 
     /* Init -- Time */
@@ -540,7 +540,7 @@ void GWidget::setColorsWaves(int id, uint colorChoice) {
 }
 
 void GWidget::updateBuffersAndShaders() {
-    /* Set up Program with buffers for the first time */
+    /* Set up ProgramGL with buffers for the first time */
     if (!currentProg || !currentProg->hasBuffer("vertices")) {
         (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
         initVecsAndMatrices();
@@ -550,7 +550,7 @@ void GWidget::updateBuffersAndShaders() {
     }
     this->updateSize();
 
-    /* Continue with Program update */
+    /* Continue with ProgramGL update */
     assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
     uint static_dynamic = currentManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     

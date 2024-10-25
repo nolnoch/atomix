@@ -32,14 +32,14 @@ using std::string;
 /**
  * Default Constructor.
  */
-Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
+ProgramGL::ProgramGL(QOpenGLFunctions_4_5_Core *funcPointer)
 : qgf(funcPointer) {
 }
 
 /**
  * Default Destructor.
  */
-Program::~Program() {
+ProgramGL::~ProgramGL() {
     delete samplers;
     if (vao) {
         for (auto &m : buffers) {
@@ -66,7 +66,7 @@ Program::~Program() {
  *               GL_FRAGMENT_SHADER, or GL_GEOMETRY_SHADER
  * @return 1 on success or 0 on error
  */
-int Program::addShader(string fName, GLuint type) {
+int ProgramGL::addShader(string fName, GLuint type) {
     int validFile;
     string fileLoc;
 
@@ -76,7 +76,7 @@ int Program::addShader(string fName, GLuint type) {
         fileLoc = fName;
     }
 
-    this->registeredShaders.push_back(Shader(fileLoc, type, qgf));
+    this->registeredShaders.push_back(Shader(fileLoc, type));
     validFile = this->registeredShaders.back().isValid();
 
     if (!validFile) {
@@ -100,7 +100,7 @@ int Program::addShader(string fName, GLuint type) {
  *               GL_FRAGMENT_SHADER, or GL_GEOMETRY_SHADER
  * @return 1 on success or 0 on error
  */
-int Program::addAllShaders(std::vector<std::string> *fList, GLuint type) {
+int ProgramGL::addAllShaders(std::vector<std::string> *fList, GLuint type) {
     int errors = fList->size();
     GLuint shID, shIdx = 0;
     
@@ -114,7 +114,7 @@ int Program::addAllShaders(std::vector<std::string> *fList, GLuint type) {
             fileLoc = fName;
         }
         
-        registeredShaders.push_back(Shader(fileLoc, type, qgf));
+        registeredShaders.push_back(Shader(fileLoc, type));
         validFile = registeredShaders.back().isValid();
     
         if (validFile) {
@@ -134,7 +134,7 @@ int Program::addAllShaders(std::vector<std::string> *fList, GLuint type) {
 /**
  * Shortcut for adding one shader.vert and one shader.frag.
  */
-void Program::addDefaultShaders() {
+void ProgramGL::addDefaultShaders() {
     this->addShader("shader.vert", GL_VERTEX_SHADER);
     this->addShader("shader.frag", GL_FRAGMENT_SHADER);
     // this->addShader("shader.geom", GL_GEOMETRY_SHADER);
@@ -143,7 +143,7 @@ void Program::addDefaultShaders() {
 /**
  * Generates a sampler uniform bind target for use in the GLSL shader code.
  */
-void Program::addSampler(string sName) {
+void ProgramGL::addSampler(string sName) {
     SamplerInfo info;
     GLuint sample;
 
@@ -160,9 +160,9 @@ void Program::addSampler(string sName) {
 
 /**
  * Initializes the program. Then initializes, loads, and compiles all shaders
- * associated with the Program object.
+ * associated with the ProgramGL object.
  */
-void Program::init() {
+void ProgramGL::init() {
     int numShaders = this->registeredShaders.size();
 
     if (!numShaders || !stage) {
@@ -204,7 +204,7 @@ void Program::init() {
  * @param location - explicitly specify the integer binding target
  * @param name - string representation of the GLSL attribute name
  */
-void Program::bindAttribute(int location, string name) {
+void ProgramGL::bindAttribute(int location, string name) {
     if (stage < 2) {
         cout << "Invalid binding. Must init first." << endl;
         return;
@@ -219,14 +219,14 @@ void Program::bindAttribute(int location, string name) {
     this->stage = 3;
 }
 
-GLuint Program::getShaderIdFromName(std::string& fileName) {
+GLuint ProgramGL::getShaderIdFromName(std::string& fileName) {
     assert(stage >= 2);
     assert(compiledShaders.count(fileName));
     
     return compiledShaders[fileName];
 }
 
-void Program::attachShader(std::string& name) {
+void ProgramGL::attachShader(std::string& name) {
     GLuint shID = getShaderIdFromName(name);
     assert(shID);
 
@@ -242,7 +242,7 @@ void Program::attachShader(std::string& name) {
  *
  * @return GLEW_OK on success or an error code on failure.
  */
-GLint Program::linkAndValidate() {
+GLint ProgramGL::linkAndValidate() {
     if (stage < 2) {
         cout << "Invalid linking. Must init (and bind attributes) first." << endl;
         return 0;
@@ -259,7 +259,7 @@ GLint Program::linkAndValidate() {
     qgf->glValidateProgram(programId);
     qgf->glGetProgramiv(programId, GL_VALIDATE_STATUS, &programValid);
     if (!programValid)
-        displayLogProgram();
+        displayLogProgramGL();
 
     this->stage = programValid ? 5 : 4;
 
@@ -270,7 +270,7 @@ GLint Program::linkAndValidate() {
  * @brief Detach only attached program shaders.
  * This should be done after successful link and validate.
  */
-void Program::detachShaders() {
+void ProgramGL::detachShaders() {
     assert(this->stage >= 5);
 
     if (!attachedShaders.size())
@@ -286,7 +286,7 @@ void Program::detachShaders() {
  * @brief Detach and delete all program shaders.
  * This should be done after successful link and validate.
  */
-void Program::detachDelete() {
+void ProgramGL::detachDelete() {
     assert(this->stage >= 5);
 
     if (!attachedShaders.size())
@@ -300,15 +300,15 @@ void Program::detachDelete() {
 }
 
 /**
- * A sequence-protected wrapper for glUseProgram().  This completely preempts
+ * A sequence-protected wrapper for glUseProgramGL().  This completely preempts
  * the OpenGL graphics pipeline for any shader functions implemented.
  */
-void Program::enable() {
+void ProgramGL::enable() {
     if (stage < 5) {
         if (stage < 4)
-        cout << "Program not ready to enable: must link before use." << endl;
+        cout << "ProgramGL not ready to enable: must link before use." << endl;
         else
-        cout << "Program not ready to enable: linked but not valid." << endl;
+        cout << "ProgramGL not ready to enable: linked but not valid." << endl;
 
         return;
     }
@@ -321,24 +321,24 @@ void Program::enable() {
  * Set the current program to NULL and resume normal OpenGL (direct-mode)
  * operation.
  */
-void Program::disable() {
+void ProgramGL::disable() {
     qgf->glUseProgram(0);
     enabled = false;
 }
 
-void Program::initVAO() {
+void ProgramGL::initVAO() {
     qgf->glGenVertexArrays(1, &this->vao);
 }
 
-void Program::bindVAO() {
+void ProgramGL::bindVAO() {
     qgf->glBindVertexArray(this->vao);
 }
 
-void Program::clearVAO() {
+void ProgramGL::clearVAO() {
     qgf->glBindVertexArray(0);
 }
 
-GLuint Program::bindVBO(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
+GLuint ProgramGL::bindVBO(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
     this->buffers[name] = glm::uvec3(bufCount, 0, GL_ARRAY_BUFFER);
     GLuint *bufId = &buffers[name].y;
     qgf->glGenBuffers(1, bufId);
@@ -348,7 +348,7 @@ GLuint Program::bindVBO(std::string name, uint bufCount, uint bufSize, const GLf
     return *bufId;
 }
 
-void Program::setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step) {
+void ProgramGL::setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step) {
     if (std::find(attribs.begin(), attribs.end(), attrIdx) != attribs.end())
         attribs.push_back(attrIdx);
     //qgf->glVertexAttribPointer(idx, count, GL_FLOAT, GL_FALSE, stride, offset);
@@ -357,25 +357,25 @@ void Program::setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint c
     qgf->glVertexArrayBindingDivisor(this->vao, attrIdx, step);
 }
 
-void Program::setAttributeBuffer(GLuint binding, GLuint vboIdx, GLsizei stride) {
+void ProgramGL::setAttributeBuffer(GLuint binding, GLuint vboIdx, GLsizei stride) {
     qgf->glVertexArrayVertexBuffer(this->vao, binding, vboIdx, 0, stride);
 }
 
-void Program::enableAttribute(GLuint idx) {
+void ProgramGL::enableAttribute(GLuint idx) {
     qgf->glEnableVertexArrayAttrib(this->vao, idx);
 }
 
-void Program::enableAttributes() {
+void ProgramGL::enableAttributes() {
     for (auto a : attribs)
         qgf->glEnableVertexArrayAttrib(this->vao, a);
 }
 
-void Program::disableAttributes() {
+void ProgramGL::disableAttributes() {
     for (auto a : attribs)
         qgf->glDisableVertexArrayAttrib(this->vao, a);
 }
 
-void Program::updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat *buf) {
+void ProgramGL::updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat *buf) {
     int bufId = 0;
     qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
 
@@ -386,28 +386,28 @@ void Program::updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat 
     }
     
     qgf->glBufferSubData(GL_ARRAY_BUFFER, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramGL();
 }
 
-void Program::updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLfloat *buf) {
+void ProgramGL::updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLfloat *buf) {
     GLuint bufId = this->buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramGL();
 }
 
-void Program::resizeVBONamed(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
+void ProgramGL::resizeVBONamed(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
     GLuint bufId = this->buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferData(bufId, bufSize, buf, mode);
-    displayLogProgram();
+    displayLogProgramGL();
 }
 
-void Program::clearVBO() {
+void ProgramGL::clearVBO() {
     qgf->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-GLuint Program::bindEBO(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
+GLuint ProgramGL::bindEBO(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
     this->buffers[name] = glm::uvec3(bufCount, 0, GL_ELEMENT_ARRAY_BUFFER);
     GLuint *bufId = &buffers[name].y;
     qgf->glGenBuffers(1, bufId);
@@ -417,7 +417,7 @@ GLuint Program::bindEBO(std::string name, uint bufCount, uint bufSize, const GLu
     return *bufId;
 }
 
-void Program::updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *buf) {
+void ProgramGL::updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *buf) {
     int bufId = 0;
     qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
 
@@ -428,49 +428,49 @@ void Program::updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *
     }
 
     qgf->glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramGL();
 }
 
-void Program::updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLuint *buf) {
+void ProgramGL::updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLuint *buf) {
     GLuint bufId = this->buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramGL();
 }
 
-void Program::resizeEBONamed(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
+void ProgramGL::resizeEBONamed(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
     GLuint bufId = buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferData(bufId, bufSize, buf, mode);
-    displayLogProgram();
+    displayLogProgramGL();
 }
 
-void Program::clearEBO() {
+void ProgramGL::clearEBO() {
     qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Program::assignFragColour() {
+void ProgramGL::assignFragColour() {
     qgf->glBindFragDataLocation(this->programId, GL_COLOR_ATTACHMENT0, "FragColour");
 }
 
-void Program::beginRender() {
+void ProgramGL::beginRender() {
     enable();
     bindVAO();
     // qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
     // qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
 }
 
-void Program::endRender() {
+void ProgramGL::endRender() {
     clearVAO();
     disable();
 }
 
-void Program::clearBuffers() {
+void ProgramGL::clearBuffers() {
     clearVBO();
     clearEBO();
 }
 
-void Program::deleteBuffer(std::string name) {
+void ProgramGL::deleteBuffer(std::string name) {
     assert(!enabled);
 
     GLuint bufId = this->buffers[name].y;
@@ -479,7 +479,7 @@ void Program::deleteBuffer(std::string name) {
     this->buffers.erase(name);
 }
 
-bool Program::hasBuffer(std::string name) {
+bool ProgramGL::hasBuffer(std::string name) {
     return (buffers.find(name) != buffers.end());
 }
 
@@ -489,7 +489,7 @@ bool Program::hasBuffer(std::string name) {
  * @param name - string representation of the GLSL uniform name
  * @param n - uniform value
  */
-void Program::setUniform(int type, string name, double n) {
+void ProgramGL::setUniform(int type, string name, double n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
     float m = static_cast<float>(n);
 
@@ -499,7 +499,7 @@ void Program::setUniform(int type, string name, double n) {
         cout << "Uniform failure: double to float" << endl;
 }
 
-void Program::setUniform(int type, string name, float n) {
+void ProgramGL::setUniform(int type, string name, float n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
@@ -508,7 +508,7 @@ void Program::setUniform(int type, string name, float n) {
         cout << "Uniform failure: float to float" << endl;
 }
 
-void Program::setUniform(int type, string name, int n) {
+void ProgramGL::setUniform(int type, string name, int n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_INT) {
@@ -517,7 +517,7 @@ void Program::setUniform(int type, string name, int n) {
         cout << "Uniform failure: int to int" << endl;
 }
 
-void Program::setUniform(int type, string name, uint n) {
+void ProgramGL::setUniform(int type, string name, uint n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_UNSIGNED_INT) {
@@ -534,7 +534,7 @@ void Program::setUniform(int type, string name, uint n) {
  * @param name - string representation of the GLSL uniform name
  * @param n - pointer to the array of values
  */
-void Program::setUniformv(int count, int size, int type, string name, const float *n) {
+void ProgramGL::setUniformv(int count, int size, int type, string name, const float *n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
@@ -597,7 +597,7 @@ void Program::setUniformv(int count, int size, int type, string name, const floa
  * @param name - string representation of the GLSL uniform name
  * @param m - pointer to the first matrix value
  */
-void Program::setUniformMatrix(int size, string name, float *m) {
+void ProgramGL::setUniformMatrix(int size, string name, float *m) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (size == 4) {
@@ -611,31 +611,31 @@ void Program::setUniformMatrix(int size, string name, float *m) {
  * Accessor function for the GLenum program ID.
  * @return the program ID
  */
-GLuint Program::getProgramId() {
+GLuint ProgramGL::getProgramGLId() {
     return this->programId;
 }
 
-uint Program::getSize(std::string name) {
+uint ProgramGL::getSize(std::string name) {
     return this->buffers[name].x;
 }
 
 /**
  * Displays the info log for this program.
  */
-void Program::displayLogProgram() {
+void ProgramGL::displayLogProgramGL() {
     GLsizei logLength;
     qgf->glGetProgramiv(this->programId, GL_INFO_LOG_LENGTH, &logLength);
 
     if (logLength) {
-        cout << "Program Info Log content available." << endl;
+        cout << "ProgramGL Info Log content available." << endl;
 
         GLsizei MAXLENGTH = 1 << 30;
         GLchar *logBuffer = new GLchar[logLength];
         qgf->glGetProgramInfoLog(this->programId, MAXLENGTH, &logLength, logBuffer);
         if (strlen(logBuffer)) {
-            cout << "************ Begin Program Log ************" << "\n";
+            cout << "************ Begin ProgramGL Log ************" << "\n";
             cout << logBuffer << "\n";
-            cout << "************* End Program Log *************" << endl;
+            cout << "************* End ProgramGL Log *************" << endl;
         }
         delete[] logBuffer;
     }
@@ -645,7 +645,7 @@ void Program::displayLogProgram() {
  * Displays the info log for the specified shader.
  * @param shader - the shader to be evaluated
  */
-void Program::displayLogShader(GLenum shader) {
+void ProgramGL::displayLogShader(GLenum shader) {
     GLint success;
     qgf->glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success)

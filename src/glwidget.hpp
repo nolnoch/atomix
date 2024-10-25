@@ -130,10 +130,10 @@ private:
     void printConfig(AtomixConfig *cfg);
 
     QOpenGLContext *gw_context = nullptr;
-    Program *crystalProg = nullptr;
-    Program *waveProg = nullptr;
-    Program *cloudProg = nullptr;
-    Program *atomixProg = nullptr; // TODO Consolidate or delete?
+    ProgramGL *crystalProg = nullptr;
+    ProgramGL *waveProg = nullptr;
+    ProgramGL *cloudProg = nullptr;
+    ProgramGL *atomixProg = nullptr; // TODO Consolidate or delete?
     ConfigParser *cfgParser = nullptr;
     WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;
@@ -142,7 +142,7 @@ private:
     QFutureWatcher<void> *fwModel;
     QFuture<void> futureModel;
 
-    Program *currentProg = nullptr;
+    ProgramGL *currentProg = nullptr;
     Manager *currentManager = nullptr;
 
     AtomixInfo gw_info;

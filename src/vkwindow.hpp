@@ -85,7 +85,57 @@ const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
 const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
 
-class VKRenderer;
+class VKWindow;
+
+
+class VKRenderer : public QVulkanWindowRenderer {
+
+public:
+    VKRenderer(VKWindow *vkWin);
+    ~VKRenderer();
+
+    void initResources() override;
+    void initSwapChainResources() override;
+    // void logicalDeviceLost() override;
+    // void physicalDeviceLost() override;
+    // void preInitResources() override;
+    void releaseResources() override;
+    void releaseSwapChainResources() override;
+    void startNextFrame() override;
+
+    VkShaderModule createShader(const std::string &name);
+
+    QVulkanDeviceFunctions *vdf = nullptr;
+
+private:
+    VKWindow *vkw = nullptr;
+    VkDevice dev;
+    QVulkanInstance *vi = nullptr;
+    QVulkanFunctions *vf = nullptr;
+
+    VkBuffer vr_bufVert = VK_NULL_HANDLE;
+    VkDeviceMemory vr_bufMemVert = VK_NULL_HANDLE;
+    VkBuffer vr_bufIdx = VK_NULL_HANDLE;
+    VkDeviceMemory vr_bufMemIdx = VK_NULL_HANDLE;
+    VkDescriptorBufferInfo vr_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkDescriptorPool vr_descPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout vr_descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSet vr_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkPipelineCache vr_pipelineCache = VK_NULL_HANDLE;
+    VkPipelineLayout vr_pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline vr_pipeline = VK_NULL_HANDLE;
+
+    glm::mat4 m4_proj;
+    glm::mat4 m4_view;
+    glm::mat4 m4_world;
+    glm::mat4 m4_rotation;
+    glm::mat4 m4_translation;
+
+    QMatrix4x4 vm4_proj;
+    QMatrix4x4 vm4_rot;
+};
 
 
 class VKWindow : public QVulkanWindow {
@@ -113,9 +163,9 @@ public slots:
     void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes, bool canCreate = true);
 
 protected:
-    void initializeGL() override;
+    /* void initializeGL() override;
     void paintGL() override;
-    void resizeGL(int width, int height) override;
+    void resizeGL(int width, int height) override; */
 
     void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
@@ -143,10 +193,10 @@ private:
     VKRenderer *vrend = nullptr;
 
     QOpenGLContext *gw_context = nullptr;
-    Program *crystalProg = nullptr;
-    Program *waveProg = nullptr;
-    Program *cloudProg = nullptr;
-    Program *atomixProg = nullptr; // TODO Consolidate or delete?
+    ProgramVK *crystalProg = nullptr;
+    ProgramVK *waveProg = nullptr;
+    ProgramVK *cloudProg = nullptr;
+    ProgramVK *atomixProg = nullptr; // TODO Consolidate or delete?
     ConfigParser *cfgParser = nullptr;
     WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;
@@ -155,7 +205,7 @@ private:
     QFutureWatcher<void> *fwModel;
     QFuture<void> futureModel;
 
-    Program *currentProg = nullptr;
+    ProgramVK *currentProg = nullptr;
     Manager *currentManager = nullptr;
 
     AtomixInfo gw_info;
@@ -203,50 +253,6 @@ private:
     uint cloudOffset = 0;
 };
 
-class VKRenderer : public QVulkanWindowRenderer {
 
-public:
-    VKRenderer(VKWindow *vkWin);
-    ~VKRenderer();
-
-    void initResources() override;
-    void initSwapChainResources() override;
-    // void logicalDeviceLost() override;
-    // void physicalDeviceLost() override;
-    // void preInitResources() override;
-    void releaseResources() override;
-    void releaseSwapChainResources() override;
-    void startNextFrame() override;
-
-    VkShaderModule createShader(const std::string &name);
-
-private:
-    VKWindow *vkw = nullptr;
-    VkDevice dev;
-    QVulkanInstance *vi = nullptr;
-    QVulkanFunctions *vf = nullptr;
-    QVulkanDeviceFunctions *vdf = nullptr;
-
-    VkDeviceMemory vr_bufMem = VK_NULL_HANDLE;
-    VkBuffer vr_buf = VK_NULL_HANDLE;
-    VkDescriptorBufferInfo vr_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
-
-    VkDescriptorPool vr_descPool = VK_NULL_HANDLE;
-    VkDescriptorSetLayout vr_descSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSet vr_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
-
-    VkPipelineCache vr_pipelineCache = VK_NULL_HANDLE;
-    VkPipelineLayout vr_pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline vr_pipeline = VK_NULL_HANDLE;
-
-    glm::mat4 m4_proj;
-    glm::mat4 m4_view;
-    glm::mat4 m4_world;
-    glm::mat4 m4_rotation;
-    glm::mat4 m4_translation;
-
-    QMatrix4x4 vm4_proj;
-    QMatrix4x4 vm4_rot;
-};
 
 #endif

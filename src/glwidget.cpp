@@ -689,7 +689,9 @@ void GWidget::printSize() {
     
     bufs[3] = std::accumulate(bufs.cbegin(), bufs.cend(), 0.0);
 
-    for (auto [b, u] : std::views::zip(bufs, uIdx)) {
+    for (uint i = 0; i < bufs.size(); i++) {
+        auto &b = bufs[i];
+        auto &u = uIdx[i];
         while (b > div) {
             b /= div;
             u++;
@@ -697,9 +699,9 @@ void GWidget::printSize() {
     }
 
     std::cout << "[ Total Buffer Sizes ]\n";
-    for (auto [lab, b, u] : std::views::zip(labels, bufs, uIdx)) {
-        if (b) {
-            std::cout << lab << std::setprecision(2) << std::fixed << std::setw(6) << b << " " << units[u] << "\n";
+    for (uint i = 0; i < labels.size(); i++) {
+        if (bufs[i]) {
+            std::cout << labels[i] << std::setprecision(2) << std::fixed << std::setw(6) << bufs[i] << " " << units[uIdx[i]] << "\n";
         }
     }
     std::cout << std::endl;

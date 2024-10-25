@@ -1,25 +1,26 @@
 {
     "configurations": [
-        {
-            "name": "Linux",
-            "includePath": [
-                "${workspaceFolder}/**",
-                "/home/braer/Qt/6.5.3/gcc_64/include/**",
-                "/usr/include/xcb"
-            ],
-            "defines": [],
-            "cStandard": "c23",
-            "cppStandard": "c++23",
-            "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools",
-            "compilerPath": "/usr/bin/g++"
-        },
+        // {
+        //     "name": "Linux",
+        //     "includePath": [
+        //         "${workspaceFolder}/**",
+        //         "/home/braer/Qt/6.5.3/gcc_64/include/**",
+        //         "/usr/include/xcb"
+        //     ],
+        //     "defines": [],
+        //     "cStandard": "c23",
+        //     "cppStandard": "c++23",
+        //     "intelliSenseMode": "linux-gcc-x64",
+        //     "configurationProvider": "ms-vscode.cmake-tools",
+        //     "compilerPath": "/usr/bin/g++"
+        // },
         {
             "name": "MacOS",
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/homebrew/Cellar/**",
-                "/Users/braer/Qt/6.5.3/**",
+                "/usr/local/include/**",
+                // "/Users/braer/Qt/6.5.3/macos/**",
                 "/usr/local/Qt-6.5.3/**",
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/**"
             ],

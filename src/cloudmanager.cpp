@@ -1060,9 +1060,9 @@ void CloudManager::printBuffer(uvec buf, std::string name) {
 }
 
 void CloudManager::printTimes() {
-    for (auto [lab, t] : std::views::zip(cm_labels, cm_times)) {
-        if (t) {
-            std::cout << lab << std::setprecision(2) << std::fixed << std::setw(9) << t << " ms\n";
+    for (int i = 0; i < cm_labels.size(); i++) {
+        if (!cm_times[i]) {
+            std::cout << cm_labels[i] << std::setprecision(2) << std::fixed << std::setw(9) << cm_times[i] << " ms\n";
         }
     }
     std::cout << std::endl;

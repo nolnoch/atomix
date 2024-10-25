@@ -29,6 +29,8 @@
 
 #define RADN(t) (glm::radians((t)))
 
+static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
+
 
 VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : QOpenGLWidget(parent), cfgParser(configParser) {
@@ -44,6 +46,10 @@ void VKWindow::cleanup() {
     changeModes(true);
     delete gw_timer;
     delete crystalProg;
+}
+
+VKRenderer* VKWindow::createRenderer() {
+    return new VKRenderer(this);
 }
 
 void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
@@ -1074,7 +1080,14 @@ void VKRenderer::initResources() {
 }
 
 void VKRenderer::initSwapChainResources() {
-    m4_proj = glm::perspective(glm::radians(45.0f), (float)vkw->width() / (float)vkw->height(), 0.1f, 100.0f);
+    vm4_proj = vkw->clipCorrectionMatrix();
+    const QSize vkwSize = vkw->swapChainImageSize();
+    vm4_proj.perspective(45.0f, (float)vkwSize.width() / (float)vkwSize.height(), 0.1f, 100.0f);
+    // m4_proj = glm::mat4(vm4_proj.transposed().constData());
+}
+
+void VKRenderer::releaseSwapChainResources() {
+    // TODO releaseSwapChainResources
 }
 
 /**
@@ -1110,4 +1123,94 @@ void VKRenderer::releaseResources() {
     if (vr_bufMem) {
         vdf->vkFreeMemory(dev, vr_bufMem, nullptr);
     }
+}
+
+VkShaderModule VKRenderer::createShader(const std::string &name) {
+    std::ifstream file(name, std::ios::ate | std::ios::binary);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open shader file: " + name);
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string shaderSource = buffer.str();
+    file.close();
+
+    VkShaderModuleCreateInfo createInfo = {};
+    memset(&createInfo, 0, sizeof(createInfo));
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.pNext = nullptr;
+    createInfo.flags = 0;
+    createInfo.codeSize = shaderSource.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t *>(shaderSource.c_str());
+    
+    VkShaderModule shaderModule;
+    VkResult err = vdf->vkCreateShaderModule(dev, &createInfo, nullptr, &shaderModule);
+    if (err != VK_SUCCESS) {
+        qFatal("Failed to create shader module: %d", err);
+    }
+
+    return shaderModule;
+}
+
+void VKRenderer::startNextFrame() {
+    VkResult err;
+    VkCommandBuffer commandBuffer = vkw->currentCommandBuffer();
+    const QSize vkwSize = vkw->swapChainImageSize();
+
+    VkClearColorValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+    VkClearDepthStencilValue clearDepthStencil = {1.0f, 0};
+    VkClearValue clearValues[3];
+    memset(clearValues, 0, sizeof(clearValues));
+    clearValues[0].color = clearColor;
+    clearValues[1].depthStencil = clearDepthStencil;
+    clearValues[2].color = clearColor;
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    memset(&renderPassInfo, 0, sizeof(renderPassInfo));
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.pNext = nullptr;
+    renderPassInfo.renderPass = vkw->defaultRenderPass();
+    renderPassInfo.framebuffer = vkw->currentFramebuffer();
+    renderPassInfo.renderArea.extent.width = vkwSize.width();
+    renderPassInfo.renderArea.extent.height = vkwSize.height();
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.clearValueCount = (vkw->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT) ? 3 : 2;
+    renderPassInfo.pClearValues = clearValues;
+    vdf->vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    quint8 *p;
+    err = vdf->vkMapMemory(dev, vr_bufMem, vr_uniformBufInfo[vkw->currentFrame()].offset, UNIFORM_DATA_SIZE, 0, reinterpret_cast<void **>(&p));
+    if (err != VK_SUCCESS) {
+        qFatal("Failed to map memory for vertex buffer: %d", err);
+    }
+    QMatrix4x4 m = vm4_proj;
+    m.rotate(0.0f, 0, 1, 0);
+    memcpy(p, &m, sizeof(m));
+    vdf->vkUnmapMemory(dev, vr_bufMem);
+
+    vdf->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vr_pipeline);
+    vdf->vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vr_pipelineLayout, 0, 1, &vr_descSet[vkw->currentFrame()], 0, nullptr);
+    VkDeviceSize vr_offset = 0;
+    vdf->vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vr_buf, &vr_offset);
+    vdf->vkCmdBindIndexBuffer(commandBuffer, vr_buf, 0, VK_INDEX_TYPE_UINT32);
+
+    VkViewport viewport;
+    memset(&viewport, 0, sizeof(viewport));
+    viewport.width = static_cast<float>(vkwSize.width());
+    viewport.height = static_cast<float>(vkwSize.height());
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vdf->vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor;
+    memset(&scissor, 0, sizeof(scissor));
+    scissor.extent.width = viewport.width;
+    scissor.extent.height = viewport.height;
+    vdf->vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    vdf->vkCmdDrawIndexed(commandBuffer, 6, 1, 0, 0, 0);
+    vdf->vkCmdEndRenderPass(commandBuffer);
+
+    vkw->frameReady();
+    vkw->requestUpdate();
 }

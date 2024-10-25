@@ -30,7 +30,6 @@ MainWindow::MainWindow() {
 
 void MainWindow::onAddNew() {
     cfgParser = new ConfigParser;
-    graph = new VKWindow(this, cfgParser);
 
     valIntSmall = new QIntValidator();
     valIntSmall->setRange(1, 8);
@@ -45,13 +44,21 @@ void MainWindow::onAddNew() {
     setupTabs();
     addDockWidget(Qt::RightDockWidgetArea, dockTabs);
 
+#ifdef USING_QVULKAN
+    vkGraph = new VKWindow(this, cfgParser);
     vkInst.setLayers({ "VK_LAYER_KHRONOS_validation" });
     if (!vkInst.create()) {
         qFatal("Failed to create Vulkan Instance: %d", vkInst.errorCode());
     }
-    graph->setVulkanInstance(&vkInst);
-    vkWinWidWrapper = QWidget::createWindowContainer(graph);
+    vkGraph->setVulkanInstance(&vkInst);
+    vkWinWidWrapper = QWidget::createWindowContainer(vkGraph);
     setCentralWidget(vkWinWidWrapper);
+    graph = vkWinWidWrapper;
+#elifdef USING_QOPENGL
+    glGraph = new GWidget(this, cfgParser);
+    setCentralWidget(glGraph);
+    graph = glGraph;
+#endif
 
     refreshConfigs();
     refreshShaders();
@@ -63,7 +70,11 @@ void MainWindow::onAddNew() {
     connect(graph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
-    connect(buttGroupOrbits, &QButtonGroup::idToggled, graph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
+#ifdef USING_QVULKAN
+    connect(buttGroupOrbits, &QButtonGroup::idToggled, vkGraph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
+#elifdef USING_QOPENGL
+    connect(buttGroupOrbits, &QButtonGroup::idToggled, glGraph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
+#endif
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
     connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleDoubleClick);
@@ -167,7 +178,7 @@ void MainWindow::setupDetails() {
                                  "Buffer|Index:  %6\n"\
                                  "Buffer|Total:  %7\n"\
                                  ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
-    labelDetails = new QLabel(vkWinWidWrapper);
+    labelDetails = new QLabel(graph);
     labelDetails->setFont(fontDebug);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
@@ -178,7 +189,7 @@ void MainWindow::setupDetails() {
 
 void MainWindow::setupLoading() {
     QSizePolicy qPolicyLoading = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    pbLoading = new QProgressBar(vkWinWidWrapper);
+    pbLoading = new QProgressBar(graph);
     pbLoading->setMinimum(0);
     pbLoading->setMaximum(0);
     pbLoading->setTextVisible(true);
@@ -866,7 +877,12 @@ void MainWindow::handleButtMorbWaves() {
     waveConfig.frag = entryFrag->currentText().toStdString();
 
     refreshOrbits();
-    graph->newWaveConfig(&waveConfig);
+
+#ifdef USING_QVULKAN
+    vkGraph->newWaveConfig(&waveConfig);
+#elifdef USING_QOPENGL
+    glGraph->newWaveConfig(&waveConfig);
+#endif
 
     groupColors->setEnabled(true);
     groupOrbits->setEnabled(true);
@@ -879,7 +895,11 @@ void MainWindow::handleButtMorbHarmonics() {
 
     uint vertex, data, index;
     uint64_t total;
-    graph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
+#ifdef USING_QVULKAN
+    vkGraph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
+#elifdef USING_QOPENGL
+    glGraph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
+#endif
     total = vertex + data + index;
     uint64_t oneGiB = 1024 * 1024 * 1024;
 
@@ -913,7 +933,11 @@ void MainWindow::handleButtMorbHarmonics() {
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
     }
 
-    graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
+#ifdef USING_QVULKAN
+    vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
+#elifdef USING_QOPENGL
+    glGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
+#endif
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
@@ -951,7 +975,12 @@ void MainWindow::handleButtColors(int id) {
     std::string ss = "QPushButton {background-color: #" + nbcHex + "; color: #" + ntcHex + ";}";
     QString qss = QString::fromStdString(ss);
     buttGroupColors->button(id)->setStyleSheet(qss);
-    graph->setColorsWaves(id, color);
+
+#ifdef USING_QVULKAN
+    vkGraph->setColorsWaves(id, color);
+#elifdef USING_QOPENGL
+    glGraph->setColorsWaves(id, color);
+#endif
 }
 
 void MainWindow::handleSlideCullingX(int val) {
@@ -968,7 +997,11 @@ void MainWindow::handleSlideCullingY(int val) {
 
 void MainWindow::handleSlideReleased() {
     if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY)) {
-        graph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
+#ifdef USING_QVULKAN
+        vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
+#elifdef USING_QOPENGL
+        glGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
+#endif
         lastSliderSentX = this->cloudConfig.CloudCull_x;
         lastSliderSentY = this->cloudConfig.CloudCull_y;
     }
@@ -977,7 +1010,11 @@ void MainWindow::handleSlideReleased() {
 }
 
 void MainWindow::handleSlideBackground(int val) {
-    graph->setBGColour((static_cast<float>(val) / intSliderLen));
+#ifdef USING_QVULKAN
+    vkGraph->setBGColour((static_cast<float>(val) / intSliderLen));
+#elifdef USING_QOPENGL
+    glGraph->setBGColour((static_cast<float>(val) / intSliderLen));
+#endif
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)

@@ -32,14 +32,14 @@ using std::string;
 /**
  * Default Constructor.
  */
-Program::Program(QOpenGLFunctions_4_5_Core *funcPointer)
-: qgf(funcPointer) {
+ProgramVK::ProgramVK(AtomixDevice *atomixDevice) 
+    : p_dev(atomixDevice->device), p_pdev(atomixDevice->physicalDevice), p_vi(atomixDevice->instance), p_vf(atomixDevice->instance->functions()), p_vdf(atomixDevice->instance->deviceFunctions(this->p_dev)) {
 }
 
 /**
  * Default Destructor.
  */
-Program::~Program() {
+ProgramVK::~ProgramVK() {
     delete samplers;
     if (vao) {
         for (auto &m : buffers) {
@@ -50,7 +50,7 @@ Program::~Program() {
     if (stage >= 2) {
         //for (auto sh : shaders)
         //  delete (&sh);
-        qgf->glDeleteProgram(programId);
+        qgf->glDeleteProgramVK(programId);
     }
 }
 
@@ -66,8 +66,8 @@ Program::~Program() {
  *               GL_FRAGMENT_SHADER, or GL_GEOMETRY_SHADER
  * @return 1 on success or 0 on error
  */
-int Program::addShader(string fName, GLuint type) {
-    int validFile;
+int ProgramVK::addShader(string fName, VKuint type) {
+    int validFile = 0;
     string fileLoc;
 
     if (fName.find('/') == std::string::npos) {
@@ -76,14 +76,15 @@ int Program::addShader(string fName, GLuint type) {
         fileLoc = fName;
     }
 
-    this->registeredShaders.push_back(Shader(fileLoc, type, qgf));
-    validFile = this->registeredShaders.back().isValid();
+    this->registeredShaders.push_back(Shader(fileLoc, type));
 
-    if (!validFile) {
+    if (!this->registeredShaders.back().isValid()) {
         this->registeredShaders.pop_back();
         std::cout << "Failed to add shader source." << std::endl;
-    } else
+    } else {
+        validFile = 1;
         this->stage = 1;
+    }
 
     return validFile;
 }
@@ -100,9 +101,9 @@ int Program::addShader(string fName, GLuint type) {
  *               GL_FRAGMENT_SHADER, or GL_GEOMETRY_SHADER
  * @return 1 on success or 0 on error
  */
-int Program::addAllShaders(std::vector<std::string> *fList, GLuint type) {
+int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
     int errors = fList->size();
-    GLuint shID, shIdx = 0;
+    VKuint shID, shIdx = 0;
     
     for (auto &fName : *fList) {
         uint validFile = 0;
@@ -114,7 +115,7 @@ int Program::addAllShaders(std::vector<std::string> *fList, GLuint type) {
             fileLoc = fName;
         }
         
-        registeredShaders.push_back(Shader(fileLoc, type, qgf));
+        registeredShaders.push_back(Shader(fileLoc, type));
         validFile = registeredShaders.back().isValid();
     
         if (validFile) {
@@ -134,7 +135,7 @@ int Program::addAllShaders(std::vector<std::string> *fList, GLuint type) {
 /**
  * Shortcut for adding one shader.vert and one shader.frag.
  */
-void Program::addDefaultShaders() {
+void ProgramVK::addDefaultShaders() {
     this->addShader("shader.vert", GL_VERTEX_SHADER);
     this->addShader("shader.frag", GL_FRAGMENT_SHADER);
     // this->addShader("shader.geom", GL_GEOMETRY_SHADER);
@@ -143,14 +144,14 @@ void Program::addDefaultShaders() {
 /**
  * Generates a sampler uniform bind target for use in the GLSL shader code.
  */
-void Program::addSampler(string sName) {
+void ProgramVK::addSampler(string sName) {
     SamplerInfo info;
-    GLuint sample;
+    VKuint sample;
 
     if (!samplers)
         this->samplers = new std::vector<SamplerInfo>();
 
-    qgf->glGenSamplers(1, &sample);
+    // qgf->glGenSamplers(1, &sample);
 
     info.samplerID = sample;
     info.samplerName = sName;
@@ -160,9 +161,9 @@ void Program::addSampler(string sName) {
 
 /**
  * Initializes the program. Then initializes, loads, and compiles all shaders
- * associated with the Program object.
+ * associated with the ProgramVK object.
  */
-void Program::init() {
+void ProgramVK::init() {
     int numShaders = this->registeredShaders.size();
 
     if (!numShaders || !stage) {
@@ -170,17 +171,17 @@ void Program::init() {
         return;
     }
 
-    // Init program.
-    this->programId = qgf->glCreateProgram();
+    // Init program
+
 
     for (int i = 0; i < numShaders; i++) {
         // Init shader
         Shader *shad = &(this->registeredShaders[i]);
-        GLuint id = qgf->glCreateShader(shad->type());
+        VKuint id = qgf->glCreateShader(shad->type());
         shad->setId(id);
 
         // Load shader sources.
-        const GLchar *shaderSource = shad->source().c_str();
+        const VKchar *shaderSource = shad->source().c_str();
         qgf->glShaderSource(id, 1, &shaderSource, NULL);
 
         // Compile shader from source.
@@ -196,6 +197,72 @@ void Program::init() {
     this->stage = 2;
 }
 
+uint32_t ProgramVK::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags flagProperties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    this->p_vf->vkGetPhysicalDeviceMemoryProperties(this->p_pdev, &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & flagProperties) == flagProperties) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("Failed to find suitable memory type.");
+}
+
+void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer &buffer, VkMemoryPropertyFlags properties, VkDeviceMemory &bufferMemory) {
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (this->p_vdf->vkCreateBuffer(this->p_dev, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create buffer!");
+    }   
+
+    VkMemoryRequirements memRequirements;
+    this->p_vdf->vkGetBufferMemoryRequirements(this->p_dev, buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (this->p_vdf->vkAllocateMemory(this->p_dev, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory!");
+    }
+
+    this->p_vdf->vkBindBufferMemory(this->p_dev, buffer, bufferMemory, 0);
+}
+
+void ProgramVK::createVertexBuffer() {
+    VKuint vbo;
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(qgf->device, &bufferInfo, nullptr, &stagingBuffer) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create staging buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(qgf->device, stagingBuffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {};
+}
+
+void ProgramVK::createIndexBuffer() {
+    VKuint ibo;
+}
+
 /**
  * Attribute binding (for use with Vertex Array/Buffer Objects) must happen
  * after initialization of the program but is only recognized on the next
@@ -204,7 +271,7 @@ void Program::init() {
  * @param location - explicitly specify the integer binding target
  * @param name - string representation of the GLSL attribute name
  */
-void Program::bindAttribute(int location, string name) {
+void ProgramVK::bindAttribute(int location, string name) {
     if (stage < 2) {
         cout << "Invalid binding. Must init first." << endl;
         return;
@@ -219,15 +286,15 @@ void Program::bindAttribute(int location, string name) {
     this->stage = 3;
 }
 
-GLuint Program::getShaderIdFromName(std::string& fileName) {
+VKuint ProgramVK::getShaderIdFromName(std::string& fileName) {
     assert(stage >= 2);
     assert(compiledShaders.count(fileName));
     
     return compiledShaders[fileName];
 }
 
-void Program::attachShader(std::string& name) {
-    GLuint shID = getShaderIdFromName(name);
+void ProgramVK::attachShader(std::string& name) {
+    VKuint shID = getShaderIdFromName(name);
     assert(shID);
 
     // Attach compiled shader to program.
@@ -242,24 +309,24 @@ void Program::attachShader(std::string& name) {
  *
  * @return GLEW_OK on success or an error code on failure.
  */
-GLint Program::linkAndValidate() {
+VKint ProgramVK::linkAndValidate() {
     if (stage < 2) {
         cout << "Invalid linking. Must init (and bind attributes) first." << endl;
         return 0;
     }
 
-    GLint programValid = 0;
+    VKint programValid = 0;
     
     // Link the compiled and attached program to this code.
-    qgf->glLinkProgram(programId);
+    qgf->glLinkProgramVK(programId);
     if (programId == GL_INVALID_VALUE)
         exit(-1);
 
     // Verify program compilation and linkage.
-    qgf->glValidateProgram(programId);
-    qgf->glGetProgramiv(programId, GL_VALIDATE_STATUS, &programValid);
+    qgf->glValidateProgramVK(programId);
+    qgf->glGetProgramVKiv(programId, GL_VALIDATE_STATUS, &programValid);
     if (!programValid)
-        displayLogProgram();
+        displayLogProgramVK();
 
     this->stage = programValid ? 5 : 4;
 
@@ -270,7 +337,7 @@ GLint Program::linkAndValidate() {
  * @brief Detach only attached program shaders.
  * This should be done after successful link and validate.
  */
-void Program::detachShaders() {
+void ProgramVK::detachShaders() {
     assert(this->stage >= 5);
 
     if (!attachedShaders.size())
@@ -286,7 +353,7 @@ void Program::detachShaders() {
  * @brief Detach and delete all program shaders.
  * This should be done after successful link and validate.
  */
-void Program::detachDelete() {
+void ProgramVK::detachDelete() {
     assert(this->stage >= 5);
 
     if (!attachedShaders.size())
@@ -300,20 +367,20 @@ void Program::detachDelete() {
 }
 
 /**
- * A sequence-protected wrapper for glUseProgram().  This completely preempts
+ * A sequence-protected wrapper for glUseProgramVK().  This completely preempts
  * the OpenGL graphics pipeline for any shader functions implemented.
  */
-void Program::enable() {
+void ProgramVK::enable() {
     if (stage < 5) {
         if (stage < 4)
-        cout << "Program not ready to enable: must link before use." << endl;
+        cout << "ProgramVK not ready to enable: must link before use." << endl;
         else
-        cout << "Program not ready to enable: linked but not valid." << endl;
+        cout << "ProgramVK not ready to enable: linked but not valid." << endl;
 
         return;
     }
 
-    qgf->glUseProgram(this->programId);
+    qgf->glUseProgramVK(this->programId);
     enabled = true;
 }
 
@@ -321,26 +388,26 @@ void Program::enable() {
  * Set the current program to NULL and resume normal OpenGL (direct-mode)
  * operation.
  */
-void Program::disable() {
-    qgf->glUseProgram(0);
+void ProgramVK::disable() {
+    qgf->glUseProgramVK(0);
     enabled = false;
 }
 
-void Program::initVAO() {
+void ProgramVK::initVAO() {
     qgf->glGenVertexArrays(1, &this->vao);
 }
 
-void Program::bindVAO() {
+void ProgramVK::bindVAO() {
     qgf->glBindVertexArray(this->vao);
 }
 
-void Program::clearVAO() {
+void ProgramVK::clearVAO() {
     qgf->glBindVertexArray(0);
 }
 
-GLuint Program::bindVBO(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
+VKuint ProgramVK::bindVBO(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode) {
     this->buffers[name] = glm::uvec3(bufCount, 0, GL_ARRAY_BUFFER);
-    GLuint *bufId = &buffers[name].y;
+    VKuint *bufId = &buffers[name].y;
     qgf->glGenBuffers(1, bufId);
     qgf->glBindBuffer(GL_ARRAY_BUFFER, *bufId);
     qgf->glBufferData(GL_ARRAY_BUFFER, bufSize, buf, mode);
@@ -348,7 +415,7 @@ GLuint Program::bindVBO(std::string name, uint bufCount, uint bufSize, const GLf
     return *bufId;
 }
 
-void Program::setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step) {
+void ProgramVK::setAttributePointerFormat(VKuint attrIdx, VKuint binding, VKuint count, VKenum type, VKuint offset, VKuint step) {
     if (std::find(attribs.begin(), attribs.end(), attrIdx) != attribs.end())
         attribs.push_back(attrIdx);
     //qgf->glVertexAttribPointer(idx, count, GL_FLOAT, GL_FALSE, stride, offset);
@@ -357,25 +424,25 @@ void Program::setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint c
     qgf->glVertexArrayBindingDivisor(this->vao, attrIdx, step);
 }
 
-void Program::setAttributeBuffer(GLuint binding, GLuint vboIdx, GLsizei stride) {
+void ProgramVK::setAttributeBuffer(VKuint binding, VKuint vboIdx, VKsizei stride) {
     qgf->glVertexArrayVertexBuffer(this->vao, binding, vboIdx, 0, stride);
 }
 
-void Program::enableAttribute(GLuint idx) {
+void ProgramVK::enableAttribute(VKuint idx) {
     qgf->glEnableVertexArrayAttrib(this->vao, idx);
 }
 
-void Program::enableAttributes() {
+void ProgramVK::enableAttributes() {
     for (auto a : attribs)
         qgf->glEnableVertexArrayAttrib(this->vao, a);
 }
 
-void Program::disableAttributes() {
+void ProgramVK::disableAttributes() {
     for (auto a : attribs)
         qgf->glDisableVertexArrayAttrib(this->vao, a);
 }
 
-void Program::updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat *buf) {
+void ProgramVK::updateVBO(uint offset, uint bufCount, uint bufSize, const VKfloat *buf) {
     int bufId = 0;
     qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
 
@@ -386,30 +453,30 @@ void Program::updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat 
     }
     
     qgf->glBufferSubData(GL_ARRAY_BUFFER, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramVK();
 }
 
-void Program::updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLfloat *buf) {
-    GLuint bufId = this->buffers[name].y;
+void ProgramVK::updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKfloat *buf) {
+    VKuint bufId = this->buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramVK();
 }
 
-void Program::resizeVBONamed(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode) {
-    GLuint bufId = this->buffers[name].y;
+void ProgramVK::resizeVBONamed(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode) {
+    VKuint bufId = this->buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferData(bufId, bufSize, buf, mode);
-    displayLogProgram();
+    displayLogProgramVK();
 }
 
-void Program::clearVBO() {
+void ProgramVK::clearVBO() {
     qgf->glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-GLuint Program::bindEBO(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
+VKuint ProgramVK::bindEBO(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode) {
     this->buffers[name] = glm::uvec3(bufCount, 0, GL_ELEMENT_ARRAY_BUFFER);
-    GLuint *bufId = &buffers[name].y;
+    VKuint *bufId = &buffers[name].y;
     qgf->glGenBuffers(1, bufId);
     qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *bufId);
     qgf->glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufSize, buf, mode);
@@ -417,7 +484,7 @@ GLuint Program::bindEBO(std::string name, uint bufCount, uint bufSize, const GLu
     return *bufId;
 }
 
-void Program::updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *buf) {
+void ProgramVK::updateEBO(uint offset, uint bufCount, uint bufSize, const VKuint *buf) {
     int bufId = 0;
     qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
 
@@ -428,58 +495,58 @@ void Program::updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *
     }
 
     qgf->glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramVK();
 }
 
-void Program::updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLuint *buf) {
-    GLuint bufId = this->buffers[name].y;
+void ProgramVK::updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKuint *buf) {
+    VKuint bufId = this->buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
-    displayLogProgram();
+    displayLogProgramVK();
 }
 
-void Program::resizeEBONamed(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode) {
-    GLuint bufId = buffers[name].y;
+void ProgramVK::resizeEBONamed(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode) {
+    VKuint bufId = buffers[name].y;
     this->buffers[name].x = bufCount;
     qgf->glNamedBufferData(bufId, bufSize, buf, mode);
-    displayLogProgram();
+    displayLogProgramVK();
 }
 
-void Program::clearEBO() {
+void ProgramVK::clearEBO() {
     qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Program::assignFragColour() {
+void ProgramVK::assignFragColour() {
     qgf->glBindFragDataLocation(this->programId, GL_COLOR_ATTACHMENT0, "FragColour");
 }
 
-void Program::beginRender() {
+void ProgramVK::beginRender() {
     enable();
     bindVAO();
     // qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
     // qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
 }
 
-void Program::endRender() {
+void ProgramVK::endRender() {
     clearVAO();
     disable();
 }
 
-void Program::clearBuffers() {
+void ProgramVK::clearBuffers() {
     clearVBO();
     clearEBO();
 }
 
-void Program::deleteBuffer(std::string name) {
+void ProgramVK::deleteBuffer(std::string name) {
     assert(!enabled);
 
-    GLuint bufId = this->buffers[name].y;
+    VKuint bufId = this->buffers[name].y;
 
     qgf->glDeleteBuffers(1, &bufId);
     this->buffers.erase(name);
 }
 
-bool Program::hasBuffer(std::string name) {
+bool ProgramVK::hasBuffer(std::string name) {
     return (buffers.find(name) != buffers.end());
 }
 
@@ -489,8 +556,8 @@ bool Program::hasBuffer(std::string name) {
  * @param name - string representation of the GLSL uniform name
  * @param n - uniform value
  */
-void Program::setUniform(int type, string name, double n) {
-    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+void ProgramVK::setUniform(int type, string name, double n) {
+    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
     float m = static_cast<float>(n);
 
     if (type == GL_FLOAT) {
@@ -499,8 +566,8 @@ void Program::setUniform(int type, string name, double n) {
         cout << "Uniform failure: double to float" << endl;
 }
 
-void Program::setUniform(int type, string name, float n) {
-    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+void ProgramVK::setUniform(int type, string name, float n) {
+    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
         qgf->glUniform1f(loc, n);
@@ -508,8 +575,8 @@ void Program::setUniform(int type, string name, float n) {
         cout << "Uniform failure: float to float" << endl;
 }
 
-void Program::setUniform(int type, string name, int n) {
-    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+void ProgramVK::setUniform(int type, string name, int n) {
+    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_INT) {
         qgf->glUniform1i(loc, n);
@@ -517,8 +584,8 @@ void Program::setUniform(int type, string name, int n) {
         cout << "Uniform failure: int to int" << endl;
 }
 
-void Program::setUniform(int type, string name, uint n) {
-    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+void ProgramVK::setUniform(int type, string name, uint n) {
+    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_UNSIGNED_INT) {
         qgf->glUniform1ui(loc, n);
@@ -534,8 +601,8 @@ void Program::setUniform(int type, string name, uint n) {
  * @param name - string representation of the GLSL uniform name
  * @param n - pointer to the array of values
  */
-void Program::setUniformv(int count, int size, int type, string name, const float *n) {
-    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+void ProgramVK::setUniformv(int count, int size, int type, string name, const float *n) {
+    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
         switch (size) {
@@ -597,8 +664,8 @@ void Program::setUniformv(int count, int size, int type, string name, const floa
  * @param name - string representation of the GLSL uniform name
  * @param m - pointer to the first matrix value
  */
-void Program::setUniformMatrix(int size, string name, float *m) {
-    GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
+void ProgramVK::setUniformMatrix(int size, string name, float *m) {
+    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (size == 4) {
         qgf->glUniformMatrix4fv(loc, 1, GL_FALSE, m);
@@ -608,34 +675,34 @@ void Program::setUniformMatrix(int size, string name, float *m) {
 }
 
 /**
- * Accessor function for the GLenum program ID.
+ * Accessor function for the VKenum program ID.
  * @return the program ID
  */
-GLuint Program::getProgramId() {
+VKuint ProgramVK::getProgramVKId() {
     return this->programId;
 }
 
-uint Program::getSize(std::string name) {
+VKuint ProgramVK::getSize(std::string name) {
     return this->buffers[name].x;
 }
 
 /**
  * Displays the info log for this program.
  */
-void Program::displayLogProgram() {
-    GLsizei logLength;
-    qgf->glGetProgramiv(this->programId, GL_INFO_LOG_LENGTH, &logLength);
+void ProgramVK::displayLogProgramVK() {
+    VKsizei logLength;
+    qgf->glGetProgramVKiv(this->programId, GL_INFO_LOG_LENGTH, &logLength);
 
     if (logLength) {
-        cout << "Program Info Log content available." << endl;
+        cout << "ProgramVK Info Log content available." << endl;
 
-        GLsizei MAXLENGTH = 1 << 30;
-        GLchar *logBuffer = new GLchar[logLength];
-        qgf->glGetProgramInfoLog(this->programId, MAXLENGTH, &logLength, logBuffer);
+        VKsizei MAXLENGTH = 1 << 30;
+        VKchar *logBuffer = new VKchar[logLength];
+        qgf->glGetProgramVKInfoLog(this->programId, MAXLENGTH, &logLength, logBuffer);
         if (strlen(logBuffer)) {
-            cout << "************ Begin Program Log ************" << "\n";
+            cout << "************ Begin ProgramVK Log ************" << "\n";
             cout << logBuffer << "\n";
-            cout << "************* End Program Log *************" << endl;
+            cout << "************* End ProgramVK Log *************" << endl;
         }
         delete[] logBuffer;
     }
@@ -645,17 +712,17 @@ void Program::displayLogProgram() {
  * Displays the info log for the specified shader.
  * @param shader - the shader to be evaluated
  */
-void Program::displayLogShader(GLenum shader) {
-    GLint success;
+void ProgramVK::displayLogShader(VKenum shader) {
+    VKint success;
     qgf->glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success)
         cout << "Shader compile failure for shader #" << shader << endl;
     
-    GLsizei logLength;
+    VKsizei logLength;
     qgf->glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
 
-    GLsizei MAXLENGTH = 1 << 30;
-    GLchar *logBuffer = new GLchar[MAXLENGTH];
+    VKsizei MAXLENGTH = 1 << 30;
+    VKchar *logBuffer = new VKchar[MAXLENGTH];
     qgf->glGetShaderInfoLog(shader, MAXLENGTH, &logLength, logBuffer);
     if (strlen(logBuffer)) {
         cout << "************ Begin Shader Log ************" << "\n";

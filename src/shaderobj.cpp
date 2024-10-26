@@ -24,19 +24,17 @@
 
 #include "shaderobj.hpp"
 
-using namespace std;
-
 
 /**
  * Primary Constructor.
  */
-Shader::Shader(string fName, int type, QOpenGLFunctions_4_5_Core *funcPointer)
+Shader::Shader(std::string fName, int type)
 : filePath(fName),
   shaderId(0),
   shaderType(type),
   sourceString(""),
-  valid(0),
-  qgf(funcPointer) {
+  valid(0)
+{
   this->fileToString();
   std::size_t nameStart = fName.find_last_of('/') + 1;
   this->fileName = fName.substr(nameStart);
@@ -53,7 +51,7 @@ Shader::~Shader() {
  * Assigns the ID given by shader init.
  * @param idAssigned - the init-provided ID
  */
-void Shader::setId(GLenum idAssigned) {
+void Shader::setId(unsigned int idAssigned) {
   shaderId = idAssigned;
 }
 
@@ -61,7 +59,7 @@ void Shader::setId(GLenum idAssigned) {
  * Accessor function for the assigned ID.
  * @return the init-provided ID
  */
-GLenum Shader::id() {
+unsigned int Shader::id() {
   return this->shaderId;
 }
 
@@ -69,7 +67,7 @@ GLenum Shader::id() {
  * Accessor function for the shader type.
  * @return the shader type
  */
-GLuint Shader::type() {
+unsigned int Shader::type() {
   return this->shaderType;
 }
 
@@ -77,7 +75,7 @@ GLuint Shader::type() {
  * Accessor function for the shader filename as a string.
  * @return the string representation of the shader filename
  */
-string& Shader::name() {
+std::string& Shader::name() {
   return this->fileName;
 }
 
@@ -85,7 +83,7 @@ string& Shader::name() {
  * Accessor function for the shader file path as a string.
  * @return the string representation of the shader file path
  */
-string& Shader::path() {
+std::string& Shader::path() {
   return this->filePath;
 }
 
@@ -93,7 +91,7 @@ string& Shader::path() {
  * Accessor function for the shader source parsed into a string.
  * @return the string representation of the shader source
  */
-string& Shader::source() {
+std::string& Shader::source() {
   return this->sourceString;
 }
 
@@ -101,7 +99,7 @@ string& Shader::source() {
  * Used by Program object to check valid loading of the shader file.
  * @return 1 if successful or 0 if invalid file
  */
-int Shader::isValid() {
+bool Shader::isValid() {
   return this->valid;
 }
 
@@ -109,13 +107,13 @@ int Shader::isValid() {
  * Converts the shader source file to a string for loading by the program.
  */
 void Shader::fileToString() {
-  fstream shaderFile(this->filePath.c_str(), ios::in);
+  std::fstream shaderFile(this->filePath.c_str(), std::ios::in);
 
   if (shaderFile.is_open()) {
-    ostringstream buffer;
+    std::ostringstream buffer;
     buffer << shaderFile.rdbuf();
-    this->sourceString = string(buffer.str());
-    this->valid = 1;
+    this->sourceString = std::string(buffer.str());
+    this->valid = true;
   }
 }
 

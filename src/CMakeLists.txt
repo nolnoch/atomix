@@ -12,12 +12,20 @@ set(VK_ADD_LAYER_PATH ${VULKAN_SDK}/share/vulkan/explicit_layer.d)
 set(VK_ICD_FILENAMES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
 set(VK_DRIVER_FILES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
 
+set(USING_QVULKAN 1)
+
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets Concurrent Gui)
 find_package(oneDPL REQUIRED oneDPL)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 find_package(Vulkan REQUIRED)
 
-add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp programGL.cpp mainwindow.cpp glwidget.cpp vkwindow.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp)
+if(DEFINED USING_QVULKAN)
+    add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp mainwindow.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programVK.cpp vkwindow.cpp)
+    add_compile_definitions(USING_QVULKAN)
+elseif(DEFINED USING_QOPENGL)
+    add_executable(atomix main.cpp quaternion.cpp shaderobj.cpp mainwindow.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programGL.cpp glwidget.cpp)
+    add_compile_definitions(USING_QOPENGL)
+endif()
 # set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 target_include_directories(atomix PRIVATE ${INCLUDE_BASE} ${VULKAN_SDK} ${Qt6_DIR})

@@ -35,31 +35,30 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <QOpenGLFunctions_4_5_Core>
-#include <QVulkanFunctions>
 
 class Shader {
  public:
-  Shader(std::string fName, int type, QOpenGLFunctions_4_5_Core *funcPointer);
+  Shader(std::string fName, int type);
   virtual ~Shader();
 
-  void setId(GLenum idAssigned);
+  void setId(unsigned int idAssigned);
 
-  GLenum id();
-  GLuint type();
+  unsigned int id();
+  unsigned int type();
   std::string& name();
   std::string& path();
   std::string& source();
-  int isValid();
+  
+  bool isValid();
 
  private:
-  GLenum shaderId;
-  GLuint shaderType;
+  unsigned int shaderId;
+  unsigned int shaderType;
   std::string filePath;
   std::string fileName;
   std::string sourceString;
-  int valid;
-  QOpenGLFunctions_4_5_Core *qgf = nullptr;
+  
+  bool valid = false;
 
   void fileToString();
 };

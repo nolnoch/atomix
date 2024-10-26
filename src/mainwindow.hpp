@@ -25,6 +25,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+
 #include <QMainWindow>
 #include <QDockWidget>
 #include <QMessageBox>
@@ -45,9 +46,15 @@
 #include <QProgressBar>
 #include <QSignalBlocker>
 #include <QThread>
-#include <QVulkanInstance>
 #include "slideswitch.hpp"
-#include "vkwindow.hpp"
+
+#ifdef USING_QVULKAN
+    #include <QVulkanInstance>
+    #include "vkwindow.hpp"
+#elifdef USING_QOPENGL
+    #include <QOpenGLWidget>
+    #include "glwidget.hpp"
+#endif
 
 const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;
@@ -161,9 +168,14 @@ private:
     QLabel *labelDetails = nullptr;
     QProgressBar *pbLoading = nullptr;
 
-    VKWindow *graph = nullptr;
+#ifdef USING_QVULKAN
+    VKWindow *vkGraph = nullptr;
     QVulkanInstance vkInst;
     QWidget *vkWinWidWrapper = nullptr;
+#elifdef USING_QOPENGL
+    GWidget *glGraph = nullptr;
+#endif
+    QWidget *graph = nullptr;
 
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;

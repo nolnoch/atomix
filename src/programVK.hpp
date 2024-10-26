@@ -50,9 +50,12 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PROGRAM_HPP_
-#define PROGRAM_HPP_
+#ifndef PROGRAMVK_HPP_
+#define PROGRAMVK_HPP_
 
+#include <QVulkanDeviceFunctions>
+#include <QVulkanFunctions>
+#include <QVulkanInstance>
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -62,12 +65,29 @@
 #include "shaderobj.hpp"
 #include "global.hpp"
 
+typedef unsigned int VKuint;
+typedef unsigned int VKenum;
+typedef float VKfloat;
+typedef char VKchar;
+typedef int VKint;
+typedef int VKsizei;
+
+#define GL_VERTEX_SHADER 0x8B31
+#define GL_FRAGMENT_SHADER 0x8B30
+
+struct AtomixDevice {
+    QVulkanInstance *instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+};
+Q_DECLARE_METATYPE(AtomixDevice);
+
 
 /**
  * Stores pairings of generated GLSL samplers and their uniform names.
  */
 struct SamplerInfo {
-  GLuint samplerID;         /**< Generated sampler ID */
+  VKuint samplerID;         /**< Generated sampler ID */
   std::string samplerName;  /**< Uniform name as string */
 };
 
@@ -76,93 +96,104 @@ struct SamplerInfo {
  * Class representing an OpenGL shader program. Simplifies the initialization
  * and management of all sources and bindings.
  */
-class Program {
-    public:
-        Program(QVulkanFunctions *funcPointer);
-        virtual ~Program();
+class ProgramVK {
+public:
+    ProgramVK(AtomixDevice *atomixDevice);
+    virtual ~ProgramVK();
 
-        int addShader(std::string fName, GLuint type);
-        int addAllShaders(std::vector<std::string> *fList, GLuint type);
-        void addDefaultShaders();
-        void addSampler(std::string sName);
+    int addShader(std::string fName, VKuint type);
+    int addAllShaders(std::vector<std::string> *fList, VKuint type);
+    void addDefaultShaders();
+    void addSampler(std::string sName);
 
-        void init();
-        void bindAttribute(int location, std::string name);
-        GLuint getShaderIdFromName(std::string& fileName);
-        void attachShader(std::string& name);
-        GLint linkAndValidate();
-        void detachShaders();
-        void detachDelete();
-        void enable();
-        void disable();
+    void init();
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer& buffer, VkMemoryPropertyFlags properties, VkDeviceMemory& bufferMemory);
+    void createVertexBuffer();
+    void createIndexBuffer();
 
-        void initVAO();
-        void bindVAO();
-        void clearVAO();
+    void bindAttribute(int location, std::string name);
+    
+    void attachShader(std::string& name);
+    VKint linkAndValidate();
+    void detachShaders();
+    void detachDelete();
+    void enable();
+    void disable();
 
-        GLuint bindVBO(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode);
-        void setAttributePointerFormat(GLuint attrIdx, GLuint binding, GLuint count, GLenum type, GLuint offset, GLuint step = 0);
-        void setAttributeBuffer(GLuint binding, GLuint vboIdx, GLsizei stride);
-        void enableAttribute(GLuint idx);
-        void enableAttributes();
-        void disableAttributes();
-        void updateVBO(uint offset, uint bufCount, uint bufSize, const GLfloat *buf);
-        void updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLfloat *buf);
-        void resizeVBONamed(std::string name, uint bufCount, uint bufSize, const GLfloat *buf, uint mode);
-        void clearVBO();
+    void initVAO();
+    void bindVAO();
+    void clearVAO();
 
-        GLuint bindEBO(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode);
-        void updateEBO(uint offset, uint bufCount, uint bufSize, const GLuint *buf);
-        void updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const GLuint *buf);
-        void resizeEBONamed(std::string name, uint bufCount, uint bufSize, const GLuint *buf, uint mode);
-        void clearEBO();
+    VKuint bindVBO(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode);
+    void setAttributePointerFormat(VKuint attrIdx, VKuint binding, VKuint count, VKenum type, VKuint offset, VKuint step = 0);
+    void setAttributeBuffer(VKuint binding, VKuint vboIdx, VKsizei stride);
+    void enableAttribute(VKuint idx);
+    void enableAttributes();
+    void disableAttributes();
+    void updateVBO(uint offset, uint bufCount, uint bufSize, const VKfloat *buf);
+    void updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKfloat *buf);
+    void resizeVBONamed(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode);
+    void clearVBO();
 
-        void assignFragColour();
+    VKuint bindEBO(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode);
+    void updateEBO(uint offset, uint bufCount, uint bufSize, const VKuint *buf);
+    void updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKuint *buf);
+    void resizeEBONamed(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode);
+    void clearEBO();
 
-        void beginRender();
-        void endRender();
-        
-        void clearBuffers();
-        void deleteBuffer(std::string name);
-        
-        bool hasBuffer(std::string name);
+    void assignFragColour();
 
-        void setUniform(int type, std::string name, double n);
-        void setUniform(int type, std::string name, float n);
-        void setUniform(int type, std::string name, int n);
-        void setUniform(int type, std::string name, uint n);
-        void setUniformv(int count, int size, int type, std::string name, const float *n);
-        void setUniformMatrix(int size, std::string name, float *m);
-        //void setTexture(int samplerIdx, TexInfo& texInfo);
+    void beginRender();
+    void endRender();
+    
+    void clearBuffers();
+    void deleteBuffer(std::string name);
+    
+    bool hasBuffer(std::string name);
 
-        GLuint getProgramId();
-        GLuint getFirstVBOId();
-        GLuint getLastVBOId();
-        uint getSize(std::string name);
+    void setUniform(int type, std::string name, double n);
+    void setUniform(int type, std::string name, float n);
+    void setUniform(int type, std::string name, int n);
+    void setUniform(int type, std::string name, uint n);
+    void setUniformv(int count, int size, int type, std::string name, const float *n);
+    void setUniformMatrix(int size, std::string name, float *m);
+    //void setTexture(int samplerIdx, TexInfo& texInfo);
 
-        void displayLogProgram();
-        void displayLogShader(GLenum shader);
+    VKuint getProgramVKId();
+    VKuint getFirstVBOId();
+    VKuint getLastVBOId();
+    VKuint getSize(std::string name);
+    VKuint getShaderIdFromName(std::string& fileName);
 
-    private:
-        QVulkanFunctions *qvf = nullptr;
-        std::vector<SamplerInfo> *samplers = nullptr;
-        std::vector<Shader> registeredShaders;
-        std::map<std::string, GLuint> compiledShaders;
-        std::vector<GLuint> attachedShaders;
-        std::vector<GLuint> attribs;
+    void displayLogProgramVK();
+    void displayLogShader(VKenum shader);
 
-        GLuint programId = 0;
-        GLuint vao;
-        // std::deque<GLuint> vbo;
-        // std::deque<GLuint> ebo;
-        // std::deque<uint> vboSizes;
-        // std::deque<uint> eboSizes;
+private:
+    std::vector<SamplerInfo> *samplers = nullptr;
+    std::vector<Shader> registeredShaders;
+    std::map<std::string, VKuint> compiledShaders;
+    std::vector<VKuint> attachedShaders;
+    std::vector<VKuint> attribs;
 
-        std::map<std::string, glm::uvec3> buffers;
-        
-        bool enabled = false;
-        
-        int stage = 0;
+    // VKuint programId = 0;
+    std::deque<VKuint> vbo;
+    std::deque<VKuint> ebo;
+    // std::deque<uint> vboSizes;
+    // std::deque<uint> eboSizes;
+
+    std::map<std::string, glm::uvec3> buffers;
+
+    VkDevice p_dev = VK_NULL_HANDLE;
+    VkPhysicalDevice p_pdev = VK_NULL_HANDLE;
+    QVulkanDeviceFunctions *p_vdf = nullptr;
+    QVulkanFunctions *p_vf = nullptr;
+    QVulkanInstance *p_vi = nullptr;
+    VkResult err;
+    
+    bool enabled = false;
+    
+    int stage = 0;
 };
 
 #endif /* PROGRAM_HPP_ */

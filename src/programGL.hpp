@@ -50,9 +50,10 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PROGRAM_HPP_
-#define PROGRAM_HPP_
+#ifndef PROGRAMGL_HPP_
+#define PROGRAMGL_HPP_
 
+#include <QOpenGLFunctions_4_5_Core>
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -76,10 +77,10 @@ struct SamplerInfo {
  * Class representing an OpenGL shader program. Simplifies the initialization
  * and management of all sources and bindings.
  */
-class Program {
+class ProgramGL {
     public:
-        Program(QOpenGLFunctions_4_5_Core *funcPointer);
-        virtual ~Program();
+        ProgramGL(QOpenGLFunctions_4_5_Core *funcPointer);
+        virtual ~ProgramGL();
 
         int addShader(std::string fName, GLuint type);
         int addAllShaders(std::vector<std::string> *fList, GLuint type);
@@ -135,12 +136,12 @@ class Program {
         void setUniformMatrix(int size, std::string name, float *m);
         //void setTexture(int samplerIdx, TexInfo& texInfo);
 
-        GLuint getProgramId();
+        GLuint getProgramGLId();
         GLuint getFirstVBOId();
         GLuint getLastVBOId();
         uint getSize(std::string name);
 
-        void displayLogProgram();
+        void displayLogProgramGL();
         void displayLogShader(GLenum shader);
 
     private:

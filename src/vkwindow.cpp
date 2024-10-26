@@ -771,6 +771,7 @@ void VKRenderer::initResources() {
 
     // Define instance, device, and function pointers
     dev = vkw->device();
+    VkPhysicalDevice pdev = vkw->physicalDevice();
     vi = vkw->vulkanInstance();
     vdf = vi->deviceFunctions(dev);
     vf = vi->functions();

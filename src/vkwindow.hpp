@@ -61,7 +61,7 @@ struct AtomixInfo {
     uint64_t data = 0;      // Data buffer size
     uint64_t index = 0;     // Index buffer size
 };
-// Q_DECLARE_METATYPE(AtomixInfo);
+Q_DECLARE_METATYPE(AtomixInfo);
 
 enum egs {
     WAVE_MODE =         1 << 0,     // Button from Wave tab clicked, only making Waves

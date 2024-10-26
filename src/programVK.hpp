@@ -54,6 +54,8 @@
 #define PROGRAMVK_HPP_
 
 #include <QVulkanDeviceFunctions>
+#include <QVulkanFunctions>
+#include <QVulkanInstance>
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -73,6 +75,13 @@ typedef int VKsizei;
 #define GL_VERTEX_SHADER 0x8B31
 #define GL_FRAGMENT_SHADER 0x8B30
 
+struct AtomixDevice {
+    QVulkanInstance *instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+};
+Q_DECLARE_METATYPE(AtomixDevice);
+
 
 /**
  * Stores pairings of generated GLSL samplers and their uniform names.
@@ -89,7 +98,7 @@ struct SamplerInfo {
  */
 class ProgramVK {
 public:
-    ProgramVK(VkDevice device, QVulkanDeviceFunctions *functions);
+    ProgramVK(AtomixDevice *atomixDevice);
     virtual ~ProgramVK();
 
     int addShader(std::string fName, VKuint type);
@@ -98,8 +107,13 @@ public:
     void addSampler(std::string sName);
 
     void init();
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer& buffer, VkMemoryPropertyFlags properties, VkDeviceMemory& bufferMemory);
+    void createVertexBuffer();
+    void createIndexBuffer();
+
     void bindAttribute(int location, std::string name);
-    VKuint getShaderIdFromName(std::string& fileName);
+    
     void attachShader(std::string& name);
     VKint linkAndValidate();
     void detachShaders();
@@ -149,7 +163,8 @@ public:
     VKuint getProgramVKId();
     VKuint getFirstVBOId();
     VKuint getLastVBOId();
-    uint getSize(std::string name);
+    VKuint getSize(std::string name);
+    VKuint getShaderIdFromName(std::string& fileName);
 
     void displayLogProgramVK();
     void displayLogShader(VKenum shader);
@@ -169,8 +184,11 @@ private:
 
     std::map<std::string, glm::uvec3> buffers;
 
-    VkDevice dev = VK_NULL_HANDLE;
-    QVulkanDeviceFunctions *qvf = nullptr;
+    VkDevice p_dev = VK_NULL_HANDLE;
+    VkPhysicalDevice p_pdev = VK_NULL_HANDLE;
+    QVulkanDeviceFunctions *p_vdf = nullptr;
+    QVulkanFunctions *p_vf = nullptr;
+    QVulkanInstance *p_vi = nullptr;
     VkResult err;
     
     bool enabled = false;

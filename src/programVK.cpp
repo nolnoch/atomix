@@ -32,8 +32,8 @@ using std::string;
 /**
  * Default Constructor.
  */
-ProgramVK::ProgramVK(VkDevice device, QVulkanDeviceFunctions *functions) 
-    : dev(device), qvf(functions) {
+ProgramVK::ProgramVK(AtomixDevice *atomixDevice) 
+    : p_dev(atomixDevice->device), p_pdev(atomixDevice->physicalDevice), p_vi(atomixDevice->instance), p_vf(atomixDevice->instance->functions()), p_vdf(atomixDevice->instance->deviceFunctions(this->p_dev)) {
 }
 
 /**
@@ -195,6 +195,72 @@ void ProgramVK::init() {
     }
 
     this->stage = 2;
+}
+
+uint32_t ProgramVK::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags flagProperties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    this->p_vf->vkGetPhysicalDeviceMemoryProperties(this->p_pdev, &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & flagProperties) == flagProperties) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("Failed to find suitable memory type.");
+}
+
+void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer &buffer, VkMemoryPropertyFlags properties, VkDeviceMemory &bufferMemory) {
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (this->p_vdf->vkCreateBuffer(this->p_dev, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create buffer!");
+    }   
+
+    VkMemoryRequirements memRequirements;
+    this->p_vdf->vkGetBufferMemoryRequirements(this->p_dev, buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (this->p_vdf->vkAllocateMemory(this->p_dev, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory!");
+    }
+
+    this->p_vdf->vkBindBufferMemory(this->p_dev, buffer, bufferMemory, 0);
+}
+
+void ProgramVK::createVertexBuffer() {
+    VKuint vbo;
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(qgf->device, &bufferInfo, nullptr, &stagingBuffer) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create staging buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(qgf->device, stagingBuffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {};
+}
+
+void ProgramVK::createIndexBuffer() {
+    VKuint ibo;
 }
 
 /**
@@ -616,7 +682,7 @@ VKuint ProgramVK::getProgramVKId() {
     return this->programId;
 }
 
-uint ProgramVK::getSize(std::string name) {
+VKuint ProgramVK::getSize(std::string name) {
     return this->buffers[name].x;
 }
 

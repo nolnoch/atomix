@@ -1,7 +1,7 @@
 set(CMAKE_AUTOMOC ON)
 set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
 
-set(USING_QVULKAN 1)
+set(USING_QOPENGL 1)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets Concurrent)
 find_package(TBB REQUIRED COMPONENTS tbb)

@@ -82,13 +82,29 @@ struct AtomixDevice {
 };
 Q_DECLARE_METATYPE(AtomixDevice);
 
+struct ProgBufInfo {
+    std::string name;
+    uint bufSize;
+    void *data;
+    uint bufId;
+    uint binding;
+    uint locationCount;
+    uint *types;
+    uint *sizes;
+};
+
+struct ProgUniInfo {
+    std::string name;
+    uint location;
+    uint binding;
+};
 
 /**
  * Stores pairings of generated GLSL samplers and their uniform names.
  */
 struct SamplerInfo {
-  VKuint samplerID;         /**< Generated sampler ID */
-  std::string samplerName;  /**< Uniform name as string */
+    VKuint samplerID;         /**< Generated sampler ID */
+    std::string samplerName;  /**< Uniform name as string */
 };
 
 
@@ -106,11 +122,13 @@ public:
     void addDefaultShaders();
     void addSampler(std::string sName);
 
+    void addBufferConfig(ProgBufInfo &info);
+
     void init();
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer& buffer, VkMemoryPropertyFlags properties, VkDeviceMemory& bufferMemory);
-    void createVertexBuffer();
-    void createIndexBuffer();
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void createVertexBuffer(std::string name);
+    void createIndexBuffer(std::string name);
 
     void bindAttribute(int location, std::string name);
     
@@ -176,13 +194,10 @@ private:
     std::vector<VKuint> attachedShaders;
     std::vector<VKuint> attribs;
 
-    // VKuint programId = 0;
-    std::deque<VKuint> vbo;
-    std::deque<VKuint> ebo;
-    // std::deque<uint> vboSizes;
-    // std::deque<uint> eboSizes;
+    std::deque<ProgBufInfo *> buffers;
+    std::deque<ProgUniInfo *> uniforms;
 
-    std::map<std::string, glm::uvec3> buffers;
+    // std::map<std::string, glm::uvec3> buffers;
 
     VkDevice p_dev = VK_NULL_HANDLE;
     VkPhysicalDevice p_pdev = VK_NULL_HANDLE;

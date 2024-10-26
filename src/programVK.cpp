@@ -159,6 +159,10 @@ void ProgramVK::addSampler(string sName) {
     this->samplers->push_back(info);
 }
 
+void ProgramVK::addBufferConfig(ProgBufInfo &info) {
+    this->buffers.push_back(new ProgBufInfo(info));
+}
+
 /**
  * Initializes the program. Then initializes, loads, and compiles all shaders
  * associated with the ProgramVK object.
@@ -210,7 +214,7 @@ uint32_t ProgramVK::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags fl
     throw std::runtime_error("Failed to find suitable memory type.");
 }
 
-void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer &buffer, VkMemoryPropertyFlags properties, VkDeviceMemory &bufferMemory) {
+void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -232,34 +236,47 @@ void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBuff
     if (this->p_vdf->vkAllocateMemory(this->p_dev, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate buffer memory!");
     }
-
+    
     this->p_vdf->vkBindBufferMemory(this->p_dev, buffer, bufferMemory, 0);
 }
 
-void ProgramVK::createVertexBuffer() {
-    VKuint vbo;
+void ProgramVK::createVertexBuffer(std::string name) {
+    ProgBufInfo *buf = nullptr;
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    for (auto b : this->buffers) {
+        if (b->name == name) {
+            buf = b;
+            break;
+        }
+    }
+    if (buf == nullptr) {
+        throw std::runtime_error("Vertex buffer not found.");
+    }
 
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkBuffer stagingBuffer, vertexBuffer;
+    VkDeviceMemory stagingBufferMemory, vertexBufferMemory;
 
-    if (vkCreateBuffer(qgf->device, &bufferInfo, nullptr, &stagingBuffer) !=
+    createBuffer(buf->bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    this->p_vdf->vkMapMemory(this->p_dev, stagingBufferMemory, 0, buf->bufSize, 0, &data);
+    memcpy(data, buf->data, (size_t) buf->bufSize);
+    this->p_vdf->vkUnmapMemory(this->p_dev, stagingBufferMemory);
+
+    createBuffer(buf->bufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+
+    if (this->p_vdf->vkCreateBuffer(this->p_dev, &bufferInfo, nullptr, &stagingBuffer) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create staging buffer!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(qgf->device, stagingBuffer, &memRequirements);
+    this->p_vdf->vkGetBufferMemoryRequirements(this->p_dev, stagingBuffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {};
 }
 
-void ProgramVK::createIndexBuffer() {
+void ProgramVK::createIndexBuffer(std::string name) {
     VKuint ibo;
 }
 

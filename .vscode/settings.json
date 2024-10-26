@@ -1,11 +1,6 @@
 {
     "cmake.sourceDirectory": "/Users/braer/dev/atomix",
-    "cmake.configureArgs": [        // "-DXKB_INCLUDE_DIR=/usr/local/include/xcb/",
-
-    ],
-    "C_Cpp.default.systemIncludePath": [
-        "/usr/local/include",
-    ],
+    "cmake.buildDirectory": "/Users/braer/dev/atomix/build",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "C_Cpp.errorSquiggles": "enabled",
     "files.associations": {

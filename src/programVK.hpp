@@ -54,6 +54,7 @@
 #define PROGRAMVK_HPP_
 
 #include <QVulkanDeviceFunctions>
+#include <QVulkanWindow>
 #include <QVulkanFunctions>
 #include <QVulkanInstance>
 #include <iostream>
@@ -136,7 +137,7 @@ std::array<VkFormat, 16> dataFormats = {
 
 struct AtomixDevice {
     QVulkanInstance *instance = VK_NULL_HANDLE;
-    VKWindow *window = VK_NULL_HANDLE;
+    QVulkanWindow *window = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
 };
@@ -206,16 +207,16 @@ public:
     void addDefaultShaders();
     void addSampler(std::string sName);
 
-    void addBufferConfig(ProgBufInfo &info);
+    void addBufferConfig(std::string name, ProgBufInfo &info);
 
     void init();
     void createSwapChain();
     void createCommandPool();
     void createCommandBuffers();
-    void createSwapChain();
     void createRenderPass();
-    void createFixedPipeline();
+    void createPipelineParts();
     void createPipeline();
+
     void createVertexBuffer(std::string name);
     void createIndexBuffer(std::string name);
     void createUniformBuffer(std::string name);
@@ -228,6 +229,11 @@ public:
     void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+    void updateVBO(std::string name, uint bufCount, uint offset, uint bufSize, const VKfloat *buf);
+    void updateEBO(std::string name, uint bufCount, uint offset, uint bufSize, const VKuint *buf);
+    void bindShader(std::string name);
+    void render();
 
     void bindAttribute(int location, std::string name);
     
@@ -318,7 +324,7 @@ private:
     QVulkanDeviceFunctions *p_vdf = nullptr;
     QVulkanFunctions *p_vf = nullptr;
     QVulkanInstance *p_vi = nullptr;
-    VKWindow *p_vkw = nullptr;
+    QWindow *p_vkw = nullptr;
     
     std::deque<VkCommandBuffer> p_cbs;
     std::map<std::string, ProgBufInfo *> p_buffers;

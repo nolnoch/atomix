@@ -42,8 +42,8 @@ ProgramVK::ProgramVK(AtomixDevice *atomixDevice)
 ProgramVK::~ProgramVK() {
     delete samplers;
 
-    for (auto &b : buffers) {
-        delete b;
+    for (auto &b : p_buffers) {
+        delete b.second;
     }
 
     cleanup();
@@ -164,8 +164,8 @@ void ProgramVK::addSampler(string sName) {
     this->samplers->push_back(info);
 }
 
-void ProgramVK::addBufferConfig(ProgBufInfo &info) {
-    this->buffers.push_back(new ProgBufInfo(info));
+void ProgramVK::addBufferConfig(string name, ProgBufInfo &info) {
+    this->p_buffers[name] = new ProgBufInfo(info);
 }
 
 /**
@@ -180,9 +180,10 @@ void ProgramVK::init() {
         return;
     }
 
-    // Init program
-
-
+    // Process registered shaders
+    for (auto &shad : this->registeredShaders) {
+        // TODO implement shader compilation
+    }
     for (int i = 0; i < numShaders; i++) {
         // Init shader
         Shader *shad = &(this->registeredShaders[i]);
@@ -202,6 +203,13 @@ void ProgramVK::init() {
         // Add to compiledShaders map
         compiledShaders[shad->name()] = id;
     }
+
+    createCommandPool();
+    createCommandBuffers();
+    createSwapChain();
+    createRenderPass();
+    createPipelineParts();
+    createPipeline();
 
     this->stage = 2;
 }
@@ -329,7 +337,7 @@ void ProgramVK::createRenderPass() {
     }
 }
 
-void ProgramVK::createFixedPipeline() {
+void ProgramVK::createPipelineParts() {
     // Input Assembly
     memset(&this->p_pipeInfo.ia, 0, sizeof(this->p_pipeInfo.ia));
     this->p_pipeInfo.ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

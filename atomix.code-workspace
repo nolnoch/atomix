@@ -89,7 +89,8 @@
 			"strstream": "cpp",
 			"bitset": "cpp",
 			"typeindex": "cpp",
-			"valarray": "cpp"
+			"valarray": "cpp",
+			"qvulkanwindow": "cpp"
 		}
 	}
 }

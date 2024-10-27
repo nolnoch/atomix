@@ -34,7 +34,7 @@ static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 
 VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : cfgParser(configParser) {
-    // setFocusPolicy(Qt::StrongFocus);
+    setSurfaceType(QVulkanWindow::VulkanSurface);
 }
 
 VKWindow::~VKWindow() {
@@ -783,7 +783,7 @@ void VKRenderer::initResources() {
 
     // Assign vertex buffer and uniforms
     VkBufferCreateInfo bufCreateInfo;
-    memset(&bufCreateInfo, 0, sizeof(bufCreateInfo));
+    std::memset(&bufCreateInfo, 0, sizeof(bufCreateInfo));
     bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlignment);
     const VkDeviceSize uniformAllocSize = aligned(sizeof(float) * 16, uniAlignment);
@@ -1118,11 +1118,11 @@ void VKRenderer::releaseResources() {
     if (vr_descPool) {
         vdf->vkDestroyDescriptorPool(dev, vr_descPool, nullptr);
     }
-    if (vr_buf) {
-        vdf->vkDestroyBuffer(dev, vr_buf, nullptr);
+    if (vr_bufVert) {
+        vdf->vkDestroyBuffer(dev, vr_bufVert, nullptr);
     }
-    if (vr_bufMem) {
-        vdf->vkFreeMemory(dev, vr_bufMem, nullptr);
+    if (vr_bufMemVert) {
+        vdf->vkFreeMemory(dev, vr_bufMemVert, nullptr);
     }
 }
 
@@ -1180,20 +1180,20 @@ void VKRenderer::startNextFrame() {
     vdf->vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     quint8 *p;
-    err = vdf->vkMapMemory(dev, vr_bufMem, vr_uniformBufInfo[vkw->currentFrame()].offset, UNIFORM_DATA_SIZE, 0, reinterpret_cast<void **>(&p));
+    err = vdf->vkMapMemory(dev, vr_bufMemVert, vr_uniformBufInfo[vkw->currentFrame()].offset, UNIFORM_DATA_SIZE, 0, reinterpret_cast<void **>(&p));
     if (err != VK_SUCCESS) {
         qFatal("Failed to map memory for vertex buffer: %d", err);
     }
     QMatrix4x4 m = vm4_proj;
     m.rotate(0.0f, 0, 1, 0);
     memcpy(p, &m, sizeof(m));
-    vdf->vkUnmapMemory(dev, vr_bufMem);
+    vdf->vkUnmapMemory(dev, vr_bufMemVert);
 
     vdf->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vr_pipeline);
     vdf->vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vr_pipelineLayout, 0, 1, &vr_descSet[vkw->currentFrame()], 0, nullptr);
     VkDeviceSize vr_offset = 0;
-    vdf->vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vr_buf, &vr_offset);
-    vdf->vkCmdBindIndexBuffer(commandBuffer, vr_buf, 0, VK_INDEX_TYPE_UINT32);
+    vdf->vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vr_bufVert, &vr_offset);
+    vdf->vkCmdBindIndexBuffer(commandBuffer, vr_bufVert, 0, VK_INDEX_TYPE_UINT32);
 
     VkViewport viewport;
     memset(&viewport, 0, sizeof(viewport));

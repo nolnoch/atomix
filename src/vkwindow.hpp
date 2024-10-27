@@ -34,7 +34,6 @@
 #include <QFuture>
 #include <QPromise>
 #include <QtConcurrent/QtConcurrent>
-#include <QOpenGLFunctions_4_5_Core>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iomanip>

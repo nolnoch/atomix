@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     mainWindow.resize(dispX, dispY);
     mainWindow.move(dispXY.center() - mainWindow.frameGeometry().center());
     QIcon icoAtomix("~/dev/atomix/resources/icons/favicon.ico");
-    mainWindow.setWindowIcon(icoAtomix);
+    app.setWindowIcon(icoAtomix);
 
     /* Engage */
     app.processEvents();

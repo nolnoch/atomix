@@ -1,7 +1,12 @@
 {
     "env": {
-        "myIncludePath": ["${workspaceFolder}/**"],
-        "myDefines": ["USING_QVULKAN"]
+        "myIncludePath": [
+            "${workspaceFolder}"
+        ],
+        "myDefines": [
+            "USING_QVULKAN=0",
+            "USING_QOPENGL=1"
+        ]
     },
     "configurations": [
         {
@@ -9,7 +14,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/home/braer/Qt/6.5.3/gcc_64/include/**",
-                "/usr/include/xcb"
+                "/usr/include/**"
             ],
             "defines": [],
             "cStandard": "c23",
@@ -21,7 +26,6 @@
         {
             "name": "MacOS",
             "includePath": [
-                "${workspaceFolder}/**",
                 "/opt/homebrew/Cellar/**",
                 "/usr/local/include/**",
                 "/usr/local/Qt-6.5.3/**",
@@ -29,10 +33,10 @@
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/**"
             ],
             "defines": [],
-            "macFrameworkPath": ["/System/Library/Frameworks", "/Library/Frameworks"],
-            "browse": {
-                "path": ["${myIncludePath}", "${workspaceFolder}"]
-            },
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
             "cStandard": "c23",
             "cppStandard": "c++23",
             "intelliSenseMode": "macos-clang-arm64",

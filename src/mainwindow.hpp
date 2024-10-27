@@ -49,10 +49,8 @@
 #include "slideswitch.hpp"
 
 #ifdef USING_QVULKAN
-    #include <QVulkanInstance>
     #include "vkwindow.hpp"
 #elifdef USING_QOPENGL
-    #include <QOpenGLWidget>
     #include "glwidget.hpp"
 #endif
 

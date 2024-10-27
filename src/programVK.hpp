@@ -72,31 +72,114 @@ typedef char VKchar;
 typedef int VKint;
 typedef int VKsizei;
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
+enum class DataType : unsigned int {
+    FLOAT           = 0,
+    FLOAT_VEC2      = 1,
+    FLOAT_VEC3      = 2,
+    FLOAT_VEC4      = 3,
+    INT             = 4,
+    INT_VEC2        = 5,
+    INT_VEC3        = 6,
+    INT_VEC4        = 7,
+    UINT            = 8,
+    UINT_VEC2       = 9,
+    UINT_VEC3       = 10,
+    UINT_VEC4       = 11,
+    DOUBLE          = 12,
+    DOUBLE_VEC2     = 13,
+    DOUBLE_VEC3     = 14,
+    DOUBLE_VEC4     = 15
+};
+
+std::array<unsigned int, 16> dataSizes = {
+    sizeof(float),
+    sizeof(float) * 2,
+    sizeof(float) * 3,
+    sizeof(float) * 4,
+    sizeof(int),
+    sizeof(int) * 2,
+    sizeof(int) * 3,
+    sizeof(int) * 4,
+    sizeof(uint),
+    sizeof(uint) * 2,
+    sizeof(uint) * 3,
+    sizeof(uint) * 4,
+    sizeof(double),
+    sizeof(double) * 2,
+    sizeof(double) * 3,
+    sizeof(double) * 4
+};
+
+std::array<VkFormat, 16> dataFormats = {
+    VK_FORMAT_R32_SFLOAT,
+    VK_FORMAT_R32G32_SFLOAT,
+    VK_FORMAT_R32G32B32_SFLOAT,
+    VK_FORMAT_R32G32B32A32_SFLOAT,
+    VK_FORMAT_R32_SINT,
+    VK_FORMAT_R32G32_SINT,
+    VK_FORMAT_R32G32B32_SINT,
+    VK_FORMAT_R32G32B32A32_SINT,
+    VK_FORMAT_R32_UINT,
+    VK_FORMAT_R32G32_UINT,
+    VK_FORMAT_R32G32B32_UINT,
+    VK_FORMAT_R32G32B32A32_UINT,
+    VK_FORMAT_R64_SFLOAT,
+    VK_FORMAT_R64G64_SFLOAT,
+    VK_FORMAT_R64G64B64_SFLOAT,
+    VK_FORMAT_R64G64B64A64_SFLOAT
+};
+
 #define GL_VERTEX_SHADER 0x8B31
 #define GL_FRAGMENT_SHADER 0x8B30
 
 struct AtomixDevice {
     QVulkanInstance *instance = VK_NULL_HANDLE;
+    VKWindow *window = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
 };
-Q_DECLARE_METATYPE(AtomixDevice);
 
 struct ProgBufInfo {
-    std::string name;
     uint bufSize;
     void *data;
     uint bufId;
     uint binding;
-    uint locationCount;
-    uint *types;
-    uint *sizes;
+    std::vector<DataType> dataTypes;
 };
 
 struct ProgUniInfo {
     std::string name;
     uint location;
     uint binding;
+};
+
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+};
+
+struct SwapChainSupportInfo {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
+struct PipelineInfo {
+    VkDynamicState dynStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkPipelineInputAssemblyStateCreateInfo ia{};
+    VkPipelineViewportStateCreateInfo vp{};
+    VkPipelineDynamicStateCreateInfo dyn{};
+    VkPipelineRasterizationStateCreateInfo rs{};
+    VkPipelineMultisampleStateCreateInfo ms{};
+    VkPipelineDepthStencilStateCreateInfo ds{};
+    VkPipelineColorBlendStateCreateInfo cb{};
+    VkPipelineColorBlendAttachmentState cbAtt{};
+    VkPipelineShaderStageCreateInfo shaderStages[2];
+    VkPipelineVertexInputStateCreateInfo vboInfo{};
+    VkPipelineLayoutCreateInfo layoutInfo{};
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 };
 
 /**
@@ -116,6 +199,7 @@ class ProgramVK {
 public:
     ProgramVK(AtomixDevice *atomixDevice);
     virtual ~ProgramVK();
+    void cleanup();
 
     int addShader(std::string fName, VKuint type);
     int addAllShaders(std::vector<std::string> *fList, VKuint type);
@@ -125,10 +209,25 @@ public:
     void addBufferConfig(ProgBufInfo &info);
 
     void init();
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void createSwapChain();
+    void createCommandPool();
+    void createCommandBuffers();
+    void createSwapChain();
+    void createRenderPass();
+    void createFixedPipeline();
+    void createPipeline();
     void createVertexBuffer(std::string name);
     void createIndexBuffer(std::string name);
+    void createUniformBuffer(std::string name);
+
+    SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    ProgBufInfo* getBufferInfo(std::string name);
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+
+    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
     void bindAttribute(int location, std::string name);
     
@@ -194,21 +293,44 @@ private:
     std::vector<VKuint> attachedShaders;
     std::vector<VKuint> attribs;
 
-    std::deque<ProgBufInfo *> buffers;
-    std::deque<ProgUniInfo *> uniforms;
-
     // std::map<std::string, glm::uvec3> buffers;
 
     VkDevice p_dev = VK_NULL_HANDLE;
-    VkPhysicalDevice p_pdev = VK_NULL_HANDLE;
+    VkPhysicalDevice p_phydev = VK_NULL_HANDLE;
+    VkCommandPool p_cmdpool = VK_NULL_HANDLE;
+    VkQueue p_queue = VK_NULL_HANDLE;
+    VkCommandBuffer p_cmdbuff = VK_NULL_HANDLE;
+    VkFramebuffer p_frames[MAX_FRAMES_IN_FLIGHT] = { 0 };
+    VkPipeline p_pipe = VK_NULL_HANDLE;
+    VkPipelineLayout p_pipeLayout = VK_NULL_HANDLE;
+    VkDescriptorSet p_descSet = VK_NULL_HANDLE;
+    VkDescriptorSetLayout p_descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorPool p_descPool = VK_NULL_HANDLE;
+    VkRenderPass p_renderPass = VK_NULL_HANDLE;
+    VkExtent2D p_swapExtent = { 0, 0 };
+    VkClearValue p_clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};;
+
+    PipelineInfo p_pipeInfo;
+
+    VkViewport p_viewport = { 0, 0, 0, 0 };
+    VkRect2D p_scissor = { {0, 0}, {0, 0} };
+
     QVulkanDeviceFunctions *p_vdf = nullptr;
     QVulkanFunctions *p_vf = nullptr;
     QVulkanInstance *p_vi = nullptr;
+    VKWindow *p_vkw = nullptr;
+    
+    std::deque<VkCommandBuffer> p_cbs;
+    std::map<std::string, ProgBufInfo *> p_buffers;
+    uint vbosBound;
+
+    VkBuffer stagingBuffer, vertexBuffer, indexBuffer, uniformBuffer;
+    VkDeviceMemory stagingBufferMemory, vertexBufferMemory, indexBufferMemory, uniformBufferMemory;
+    
     VkResult err;
     
     bool enabled = false;
-    
     int stage = 0;
 };
 
-#endif /* PROGRAM_HPP_ */
+#endif /* PROGRAMVK_HPP_ */

@@ -56,6 +56,7 @@
 #include <QVulkanDeviceFunctions>
 #include <QVulkanFunctions>
 #include <QVulkanInstance>
+#include <QVulkanWindow>
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -71,8 +72,6 @@ typedef float VKfloat;
 typedef char VKchar;
 typedef int VKint;
 typedef int VKsizei;
-
-const int MAX_FRAMES_IN_FLIGHT = 2;
 
 enum class DataType : unsigned int {
     FLOAT           = 0,
@@ -131,21 +130,24 @@ std::array<VkFormat, 16> dataFormats = {
     VK_FORMAT_R64G64B64A64_SFLOAT
 };
 
-#define GL_VERTEX_SHADER 0x8B31
-#define GL_FRAGMENT_SHADER 0x8B30
+enum class BufferType : unsigned int {
+    VERTEX = 0,
+    INDEX  = 1,
+    UNIFORM = 2
+};
 
 struct AtomixDevice {
-    QVulkanInstance *instance = VK_NULL_HANDLE;
-    VKWindow *window = VK_NULL_HANDLE;
+    QVulkanWindow *window = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
 };
 
 struct ProgBufInfo {
-    uint bufSize;
-    void *data;
-    uint bufId;
+    BufferType type;
     uint binding;
+    uint size;
+    void *data;
+    std::string name;
     std::vector<DataType> dataTypes;
 };
 
@@ -197,28 +199,32 @@ struct SamplerInfo {
  */
 class ProgramVK {
 public:
-    ProgramVK(AtomixDevice *atomixDevice);
+    ProgramVK();
     virtual ~ProgramVK();
     void cleanup();
 
-    int addShader(std::string fName, VKuint type);
+    void setInstance(AtomixDevice *atomixDevice);
+
+    bool addShader(std::string fName, VKuint type);
     int addAllShaders(std::vector<std::string> *fList, VKuint type);
-    void addDefaultShaders();
+    bool compileShader(Shader *shader);
+    int compileAllShaders();
+    void bindShader(std::string name);
     void addSampler(std::string sName);
 
     void addBufferConfig(ProgBufInfo &info);
 
-    void init();
+    bool init();
     void createSwapChain();
     void createCommandPool();
     void createCommandBuffers();
-    void createSwapChain();
     void createRenderPass();
-    void createFixedPipeline();
+    void createPipelineParts();
     void createPipeline();
-    void createVertexBuffer(std::string name);
-    void createIndexBuffer(std::string name);
-    void createUniformBuffer(std::string name);
+
+    void createVertexBuffer(std::variant<std::string, ProgBufInfo *> info);
+    void createIndexBuffer(std::variant<std::string, ProgBufInfo *> info);
+    void createUniformBuffer(std::variant<std::string, ProgBufInfo *> info);
 
     SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
@@ -227,7 +233,11 @@ public:
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void recordCommandBuffer();
+
+    void updateVBO(std::string name, uint bufCount, uint offset, uint bufSize, const VKfloat *buf);
+    void updateEBO(std::string name, uint bufCount, uint offset, uint bufSize, const VKuint *buf);
+    void render();
 
     void bindAttribute(int location, std::string name);
     
@@ -286,21 +296,22 @@ public:
     void displayLogProgramVK();
     void displayLogShader(VKenum shader);
 
+    static std::vector<Shader *> registeredShaders;
+    static std::vector<Shader *> compiledShaders;
+
 private:
     std::vector<SamplerInfo> *samplers = nullptr;
-    std::vector<Shader> registeredShaders;
-    std::map<std::string, VKuint> compiledShaders;
-    std::vector<VKuint> attachedShaders;
+    std::vector<Shader *> boundShaders;
     std::vector<VKuint> attribs;
 
-    // std::map<std::string, glm::uvec3> buffers;
+    const int MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 
     VkDevice p_dev = VK_NULL_HANDLE;
     VkPhysicalDevice p_phydev = VK_NULL_HANDLE;
     VkCommandPool p_cmdpool = VK_NULL_HANDLE;
     VkQueue p_queue = VK_NULL_HANDLE;
     VkCommandBuffer p_cmdbuff = VK_NULL_HANDLE;
-    VkFramebuffer p_frames[MAX_FRAMES_IN_FLIGHT] = { 0 };
+    VkFramebuffer p_frames[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT] = { 0 };
     VkPipeline p_pipe = VK_NULL_HANDLE;
     VkPipelineLayout p_pipeLayout = VK_NULL_HANDLE;
     VkDescriptorSet p_descSet = VK_NULL_HANDLE;
@@ -310,6 +321,11 @@ private:
     VkExtent2D p_swapExtent = { 0, 0 };
     VkClearValue p_clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};;
 
+    VkShaderModule p_shaderVert = VK_NULL_HANDLE;
+    VkShaderModule p_shaderFrag = VK_NULL_HANDLE;
+    VkShaderModule p_shaderGeom = VK_NULL_HANDLE;
+    VkShaderModule p_shaderComp = VK_NULL_HANDLE;
+
     PipelineInfo p_pipeInfo;
 
     VkViewport p_viewport = { 0, 0, 0, 0 };
@@ -318,11 +334,11 @@ private:
     QVulkanDeviceFunctions *p_vdf = nullptr;
     QVulkanFunctions *p_vf = nullptr;
     QVulkanInstance *p_vi = nullptr;
-    VKWindow *p_vkw = nullptr;
+    QVulkanWindow *p_vkw = nullptr;
     
-    std::deque<VkCommandBuffer> p_cbs;
-    std::map<std::string, ProgBufInfo *> p_buffers;
-    uint vbosBound;
+    std::vector<ProgBufInfo *> p_vbos;
+    std::vector<ProgBufInfo *> p_ibos;
+    std::vector<ProgBufInfo *> p_ubos;
 
     VkBuffer stagingBuffer, vertexBuffer, indexBuffer, uniformBuffer;
     VkDeviceMemory stagingBufferMemory, vertexBufferMemory, indexBufferMemory, uniformBufferMemory;

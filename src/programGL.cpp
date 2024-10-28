@@ -24,10 +24,6 @@
 
 #include "programGL.hpp"
 
-using std::cout;
-using std::endl;
-using std::string;
-
 
 /**
  * Default Constructor.
@@ -56,32 +52,32 @@ ProgramGL::~ProgramGL() {
 
 /**
  * Associate a shader source file with the program as a Shader object.
- * This will populate the Shader with its string-parsed source, but init()
+ * This will populate the Shader with its std::string-parsed source, but init()
  * must still be called to compile and attach the shader to the program.
  *
  * This function will return 0 upon error and automatically remove the
  * failed shader from the program's list of Shaders.
- * @param fName - string representation of the shader filename
+ * @param fName - std::string representation of the shader filename
  * @param type - GLEW-defined constant, one of: GL_VERTEX_SHADER,
  *               GL_FRAGMENT_SHADER, or GL_GEOMETRY_SHADER
  * @return 1 on success or 0 on error
  */
-int ProgramGL::addShader(string fName, GLuint type) {
+int ProgramGL::addShader(std::string fName, GLuint type) {
     int validFile;
-    string fileLoc;
+    std::string fileLoc;
 
     if (fName.find('/') == std::string::npos) {
-        fileLoc = string(ROOT_DIR) + string(SHADERS) + fName;
+        fileLoc = std::string(ROOT_DIR) + std::string(SHADERS) + fName;
     } else {
         fileLoc = fName;
     }
 
     this->registeredShaders.push_back(Shader(fileLoc, type));
-    validFile = this->registeredShaders.back().isValid();
+    validFile = this->registeredShaders.back().isValidFile();
 
     if (!validFile) {
         this->registeredShaders.pop_back();
-        std::cout << "Failed to add shader source." << std::endl;
+        std::cout << "Failed to add shader source: " << fName << std::endl;
     } else
         this->stage = 1;
 
@@ -90,12 +86,12 @@ int ProgramGL::addShader(string fName, GLuint type) {
 
 /**
  * Associate N shader source files with the program as Shader objects.
- * This will populate the Shaders with their string-parsed sources, but init()
+ * This will populate the Shaders with their std::string-parsed sources, but init()
  * must still be called to compile and attach the shader(s) to the program.
  *
  * This function will return 0 upon error and automatically remove the
  * failed shader(s) from the program's list of Shaders.
- * @param fName - string representation of the shader filename
+ * @param fName - std::string representation of the shader filename
  * @param type - GLEW-defined constant, one of: GL_VERTEX_SHADER,
  *               GL_FRAGMENT_SHADER, or GL_GEOMETRY_SHADER
  * @return 1 on success or 0 on error
@@ -106,22 +102,22 @@ int ProgramGL::addAllShaders(std::vector<std::string> *fList, GLuint type) {
     
     for (auto &fName : *fList) {
         uint validFile = 0;
-        string fileLoc;
+        std::string fileLoc;
         
         if (fName.find('/') == std::string::npos) {
-            fileLoc = string(ROOT_DIR) + string(SHADERS) + fName;
+            fileLoc = std::string(ROOT_DIR) + std::string(SHADERS) + fName;
         } else {
             fileLoc = fName;
         }
         
         registeredShaders.push_back(Shader(fileLoc, type));
-        validFile = registeredShaders.back().isValid();
+        validFile = registeredShaders.back().isValidFile();
     
         if (validFile) {
             errors--;
         } else {
             registeredShaders.pop_back();
-            std::cout << "Failed to add shader source." << std::endl;
+            std::cout << "Failed to add shader source: " << fName << std::endl;
         }
     }
     
@@ -143,7 +139,7 @@ void ProgramGL::addDefaultShaders() {
 /**
  * Generates a sampler uniform bind target for use in the GLSL shader code.
  */
-void ProgramGL::addSampler(string sName) {
+void ProgramGL::addSampler(std::string sName) {
     SamplerInfo info;
     GLuint sample;
 
@@ -166,7 +162,7 @@ void ProgramGL::init() {
     int numShaders = this->registeredShaders.size();
 
     if (!numShaders || !stage) {
-        cout << "No shader files associated with program. Aborting..." << endl;
+        std::cout << "No shader files associated with program. Aborting..." << std::endl;
         return;
     }
 
@@ -176,12 +172,12 @@ void ProgramGL::init() {
     for (int i = 0; i < numShaders; i++) {
         // Init shader
         Shader *shad = &(this->registeredShaders[i]);
-        GLuint id = qgf->glCreateShader(shad->type());
+        GLuint id = qgf->glCreateShader(shad->getType());
         shad->setId(id);
 
         // Load shader sources.
-        const GLchar *shaderSource = shad->sourceRaw().c_str();
-        qgf->glShaderSource(id, 1, &shaderSource, NULL);
+        const GLchar *shaderSource = shad->getSourceRaw();
+        qgf->glShaderSource(id, 1, &shaderSource, nullptr);
 
         // Compile shader from source.
         qgf->glCompileShader(id);
@@ -190,7 +186,7 @@ void ProgramGL::init() {
         displayLogShader(id);
 
         // Add to compiledShaders map
-        compiledShaders[shad->name()] = id;
+        compiledShaders[shad->getName()] = id;
     }
 
     this->stage = 2;
@@ -202,15 +198,15 @@ void ProgramGL::init() {
  * linking. Linking may skip this step, but warnings will be given if done
  * out of order.
  * @param location - explicitly specify the integer binding target
- * @param name - string representation of the GLSL attribute name
+ * @param name - std::string representation of the GLSL attribute name
  */
-void ProgramGL::bindAttribute(int location, string name) {
+void ProgramGL::bindAttribute(int location, std::string name) {
     if (stage < 2) {
-        cout << "Invalid binding. Must init first." << endl;
+        std::cout << "Invalid binding. Must init first." << std::endl;
         return;
     } else if (stage >= 4) {
-        cout << "This attribute binding will not take effect until next linking."
-            << endl;
+        std::cout << "This attribute binding will not take effect until next linking."
+            << std::endl;
     }
 
     // Bind explicit attribute locations before linking.
@@ -244,7 +240,7 @@ void ProgramGL::attachShader(std::string& name) {
  */
 GLint ProgramGL::linkAndValidate() {
     if (stage < 2) {
-        cout << "Invalid linking. Must init (and bind attributes) first." << endl;
+        std::cout << "Invalid linking. Must init (and bind attributes) first." << std::endl;
         return 0;
     }
 
@@ -306,9 +302,9 @@ void ProgramGL::detachDelete() {
 void ProgramGL::enable() {
     if (stage < 5) {
         if (stage < 4)
-        cout << "ProgramGL not ready to enable: must link before use." << endl;
+        std::cout << "ProgramGL not ready to enable: must link before use." << std::endl;
         else
-        cout << "ProgramGL not ready to enable: linked but not valid." << endl;
+        std::cout << "ProgramGL not ready to enable: linked but not valid." << std::endl;
 
         return;
     }
@@ -486,44 +482,44 @@ bool ProgramGL::hasBuffer(std::string name) {
 /**
  * A quick wrapper for single, non-referenced uniform values.
  * @param type - GL_FLOAT or GL_INT
- * @param name - string representation of the GLSL uniform name
+ * @param name - std::string representation of the GLSL uniform name
  * @param n - uniform value
  */
-void ProgramGL::setUniform(int type, string name, double n) {
+void ProgramGL::setUniform(int type, std::string name, double n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
     float m = static_cast<float>(n);
 
     if (type == GL_FLOAT) {
         qgf->glUniform1f(loc, n);
     } else
-        cout << "Uniform failure: double to float" << endl;
+        std::cout << "Uniform failure: double to float" << std::endl;
 }
 
-void ProgramGL::setUniform(int type, string name, float n) {
+void ProgramGL::setUniform(int type, std::string name, float n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
         qgf->glUniform1f(loc, n);
     } else
-        cout << "Uniform failure: float to float" << endl;
+        std::cout << "Uniform failure: float to float" << std::endl;
 }
 
-void ProgramGL::setUniform(int type, string name, int n) {
+void ProgramGL::setUniform(int type, std::string name, int n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_INT) {
         qgf->glUniform1i(loc, n);
     } else
-        cout << "Uniform failure: int to int" << endl;
+        std::cout << "Uniform failure: int to int" << std::endl;
 }
 
-void ProgramGL::setUniform(int type, string name, uint n) {
+void ProgramGL::setUniform(int type, std::string name, uint n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_UNSIGNED_INT) {
         qgf->glUniform1ui(loc, n);
     } else
-        cout << "Uniform failure: uint to uint" << endl;
+        std::cout << "Uniform failure: uint to uint" << std::endl;
 }
 
 /**
@@ -531,10 +527,10 @@ void ProgramGL::setUniform(int type, string name, uint n) {
  * @param count - number of vectors in the array
  * @param size - number of values per vector
  * @param type - GL_FLOAT or GL_INT
- * @param name - string representation of the GLSL uniform name
+ * @param name - std::string representation of the GLSL uniform name
  * @param n - pointer to the array of values
  */
-void ProgramGL::setUniformv(int count, int size, int type, string name, const float *n) {
+void ProgramGL::setUniformv(int count, int size, int type, std::string name, const float *n) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (type == GL_FLOAT) {
@@ -594,10 +590,10 @@ void ProgramGL::setUniformv(int count, int size, int type, string name, const fl
 /**
  * A quick wrapper for passing matrices to GLSL uniforms.
  * @param size - width of the square matrix
- * @param name - string representation of the GLSL uniform name
+ * @param name - std::string representation of the GLSL uniform name
  * @param m - pointer to the first matrix value
  */
-void ProgramGL::setUniformMatrix(int size, string name, float *m) {
+void ProgramGL::setUniformMatrix(int size, std::string name, float *m) {
     GLint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
 
     if (size == 4) {
@@ -625,17 +621,17 @@ uint ProgramGL::getSize(std::string name) {
 void ProgramGL::displayLogProgramGL() {
     GLsizei logLength;
     qgf->glGetProgramiv(this->programId, GL_INFO_LOG_LENGTH, &logLength);
-
+    
     if (logLength) {
-        cout << "ProgramGL Info Log content available." << endl;
+        std::cout << "ProgramGL Info Log content available." << std::endl;
 
         GLsizei MAXLENGTH = 1 << 30;
         GLchar *logBuffer = new GLchar[logLength];
         qgf->glGetProgramInfoLog(this->programId, MAXLENGTH, &logLength, logBuffer);
-        if (strlen(logBuffer)) {
-            cout << "************ Begin ProgramGL Log ************" << "\n";
-            cout << logBuffer << "\n";
-            cout << "************* End ProgramGL Log *************" << endl;
+        if (std::string(logBuffer).length()) {
+            std::cout << "************ Begin ProgramGL Log ************" << "\n";
+            std::cout << logBuffer << "\n";
+            std::cout << "************* End ProgramGL Log *************" << std::endl;
         }
         delete[] logBuffer;
     }
@@ -649,7 +645,7 @@ void ProgramGL::displayLogShader(GLenum shader) {
     GLint success;
     qgf->glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success)
-        cout << "Shader compile failure for shader #" << shader << endl;
+        std::cout << "Shader compile failure for shader #" << shader << std::endl;
     
     GLsizei logLength;
     qgf->glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
@@ -657,10 +653,10 @@ void ProgramGL::displayLogShader(GLenum shader) {
     GLsizei MAXLENGTH = 1 << 30;
     GLchar *logBuffer = new GLchar[MAXLENGTH];
     qgf->glGetShaderInfoLog(shader, MAXLENGTH, &logLength, logBuffer);
-    if (strlen(logBuffer)) {
-        cout << "************ Begin Shader Log ************" << "\n";
-        cout << logBuffer << "\n";
-        cout << "************* End Shader Log *************" << endl;
+    if (std::string(logBuffer).length()) {
+        std::cout << "************ Begin Shader Log ************" << "\n";
+        std::cout << logBuffer << "\n";
+        std::cout << "************* End Shader Log *************" << std::endl;
     }
     delete[] logBuffer;
 }

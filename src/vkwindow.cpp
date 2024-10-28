@@ -176,7 +176,7 @@ void VKWindow::initCrystalProgram() {
     crystalProg->init();
     
     // Add buffers to program
-    ProgBufInfo crystalVert{};
+    BufferInfo crystalVert{};
     crystalVert.type = BufferType::VERTEX;
     crystalVert.binding = 0;
     crystalVert.size = crystalRingVertices.size() * sizeof(float);
@@ -186,7 +186,7 @@ void VKWindow::initCrystalProgram() {
     crystalProg->addBufferConfig(crystalVert);
     crystalProg->createVertexBuffer(&crystalVert);
 
-    ProgBufInfo crystalInd{};
+    BufferInfo crystalInd{};
     crystalInd.type = BufferType::INDEX;
     crystalInd.binding = 1;
     crystalInd.size = crystalRingIndices.size() * sizeof(uint);

@@ -225,20 +225,70 @@ void ProgramVK::addSampler(string sName) {
     this->samplers->push_back(info);
 }
 
-void ProgramVK::addBufferConfig(ProgBufInfo &info) {
-    std::vector<ProgBufInfo *> *buf;
+BufferInfo *ProgramVK::addBuffer(BufferCreateInfo &info) {
+    VKuint idx = p_buffers.size();
+    BufferInfo *buf;
 
-    if (info.type == BufferType::VERTEX) {
-        buf = &this->p_vbos;
-    } else if (info.type == BufferType::INDEX) {
-        buf = &this->p_ibos;
-    } else if (info.type == BufferType::UNIFORM) {
-        buf = &this->p_ubos;
+    const auto [it, success] = p_mapBuf.insert({info.name, idx});
+
+    if (success) {
+        buf = new BufferInfo{};
+        buf->id = idx;
+        buf->type = info.type;
+        buf->binding = info.binding;
+        buf->size = info.size;
+        if (info.storeData) {
+            buf->data = operator new(buf->size);
+            memcpy(buf->data, info.data, buf->size);
+            p_allocatedBuffers.push_back(buf->data);
+        } else {
+            buf->data = info.data;
+        }
+        buf->dataTypes = info.dataTypes;
+        p_buffers.push_back(buf);
+        return buf;
     } else {
-        throw std::runtime_error("Invalid buffer type in addBufferConfig");
+        std::cout << "Buffer already exists. Returning existing buffer." << std::endl;
+        return this->p_buffers[it->second];
     }
+
+    return nullptr;
+}
+
+void ProgramVK::addModel(ModelCreateInfo &info) {
+    ModelInfo *model;
+    uint idx = p_models.size();
+
+    const auto [it, success] = p_mapModel.insert({info.name, idx});
+
+    if (!success) {
+        std::cout << "Model already exists. Updating model " << info.name << "..." << std::endl;
+        model = p_models[it->second];
+    } else {
+        model = new ModelInfo{0, std::vector<BufferInfo *>(info.vboCount), nullptr, nullptr, nullptr, nullptr};
+        model->id = idx;
+    }
+
+    for (int i = 0; i < info.vboCount; i++) {
+        model->vbos[i] = addBuffer(info.vbos[i]);
+    }
+    model->ibo = addBuffer(*info.ibo);
+    model->ubo = addBuffer(*info.ubo);
     
-    buf->push_back(new ProgBufInfo(info));
+    model->vertShader = getShaderFromName(info.vertShader);
+    model->fragShader = getShaderFromName(info.fragShader);
+
+    if (success) {
+        p_models.push_back(model);
+    }
+}
+
+void ProgramVK::modelsToBuffers() {
+    for (auto &model : p_models) {
+        for (auto &vbo : model->vbos) {
+        
+        }
+    }
 }
 
 /**
@@ -468,14 +518,14 @@ void ProgramVK::createPipelineParts() {
     this->p_pipeInfo.cb.blendConstants[3] = 0.0f;
 
     // Layout
-    memset(&this->p_pipeInfo.layoutInfo, 0, sizeof(this->p_pipeInfo.layoutInfo));
-    this->p_pipeInfo.layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    this->p_pipeInfo.layoutInfo.setLayoutCount = 0;
-    this->p_pipeInfo.layoutInfo.pSetLayouts = nullptr;
-    this->p_pipeInfo.layoutInfo.pushConstantRangeCount = 0;
-    this->p_pipeInfo.layoutInfo.pPushConstantRanges = nullptr;
+    memset(&this->p_pipeInfo.pipeLayInfo, 0, sizeof(this->p_pipeInfo.pipeLayInfo));
+    this->p_pipeInfo.pipeLayInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    this->p_pipeInfo.pipeLayInfo.setLayoutCount = 0;
+    this->p_pipeInfo.pipeLayInfo.pSetLayouts = nullptr;
+    this->p_pipeInfo.pipeLayInfo.pushConstantRangeCount = 0;
+    this->p_pipeInfo.pipeLayInfo.pPushConstantRanges = nullptr;
 
-    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &this->p_pipeInfo.layoutInfo, nullptr, &this->p_pipeLayout) != VK_SUCCESS) {
+    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &this->p_pipeInfo.pipeLayInfo, nullptr, &this->p_pipeLayout) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create pipeline layout!");
     }
 }
@@ -528,18 +578,8 @@ void ProgramVK::createCommandBuffers() {
     }
 }
 
-ProgBufInfo* ProgramVK::getBufferInfo(std::string name) {
-    for (auto b : this->p_vbos) {
-        if (b->name == name) {
-            return b;
-        }
-    }
-    for (auto b : this->p_ibos) {
-        if (b->name == name) {
-            return b;
-        }
-    }
-    for (auto b : this->p_ubos) {
+BufferInfo* ProgramVK::getBufferInfo(std::string name) {
+    for (auto b : this->p_buffers) {
         if (b->name == name) {
             return b;
         }
@@ -615,25 +655,15 @@ void ProgramVK::copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) {
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-
+    
     this->p_vdf->vkQueueSubmit(this->p_queue, 1, &submitInfo, VK_NULL_HANDLE);
     this->p_vdf->vkQueueWaitIdle(this->p_queue);
 
     this->p_vdf->vkFreeCommandBuffers(this->p_dev, this->p_cmdpool, 1, &commandBuffer);
 }
 
-void ProgramVK::createVertexBuffer(std::variant<std::string, ProgBufInfo *> info) {
-    ProgBufInfo *buf = nullptr;
-
-    if (std::holds_alternative<std::string>(info)) {
-        std::string name = std::get<std::string>(info);
-        if ((buf = getBufferInfo(name)) == nullptr) {
-            throw std::runtime_error("Vertex buffer not found.");
-        }
-    } else {
-        buf = std::get<ProgBufInfo *>(info);
-    }
-    
+void ProgramVK::createVertexBuffer(BufferInfo *buf) {
+    // Calculate locations and sizes
     int locs = buf->dataTypes.size();
     std::vector<uint> offsets;
     offsets.push_back(0);
@@ -643,7 +673,7 @@ void ProgramVK::createVertexBuffer(std::variant<std::string, ProgBufInfo *> info
     uint vboStride = std::accumulate(offsets.cbegin(), offsets.cend(), 0);
 
     VkVertexInputBindingDescription bindingDescription = {};
-    bindingDescription.binding = p_vbos.size();
+    bindingDescription.binding = buf->binding;
     bindingDescription.stride = vboStride;
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
@@ -679,18 +709,7 @@ void ProgramVK::createVertexBuffer(std::variant<std::string, ProgBufInfo *> info
     this->p_vdf->vkFreeMemory(this->p_dev, stagingBufferMemory, nullptr);
 }
 
-void ProgramVK::createIndexBuffer(std::variant<std::string, ProgBufInfo *> info) {
-    ProgBufInfo *buf = nullptr;
-
-    if (std::holds_alternative<std::string>(info)) {
-        std::string name = std::get<std::string>(info);
-        if ((buf = getBufferInfo(name)) == nullptr) {
-            throw std::runtime_error("Index buffer not found.");
-        }
-    } else {
-        buf = std::get<ProgBufInfo *>(info);
-    }
-
+void ProgramVK::createIndexBuffer(BufferInfo *buf) {
     createBuffer(buf->size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), stagingBuffer, stagingBufferMemory);
 
     void* data;
@@ -706,26 +725,91 @@ void ProgramVK::createIndexBuffer(std::variant<std::string, ProgBufInfo *> info)
     this->p_vdf->vkFreeMemory(this->p_dev, stagingBufferMemory, nullptr);
 }
 
-void ProgramVK::createUniformBuffer(std::variant<std::string, ProgBufInfo *> info) {
-    ProgBufInfo *buf = nullptr;
+void ProgramVK::createPersistentUniformBuffer(BufferInfo *buf) {
+    VkDeviceSize bufferSize = buf->size;
+    
+    p_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    p_uniformMemory.resize(MAX_FRAMES_IN_FLIGHT);
+    uniformMappings.resize(MAX_FRAMES_IN_FLIGHT);
 
-    if (std::holds_alternative<std::string>(info)) {
-        std::string name = std::get<std::string>(info);
-        if ((buf = getBufferInfo(name)) == nullptr) {
-            throw std::runtime_error("Uniform buffer not found.");
-        }
-    } else {
-        buf = std::get<ProgBufInfo *>(info);
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_uniformBuffers[i], p_uniformMemory[i]);
     }
 
-    createBuffer(buf->size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), uniformBuffer, uniformBufferMemory);
+    this->p_vdf->vkMapMemory(this->p_dev, p_uniformMemory[0], 0, bufferSize, 0, &uniformMappings[0]);
+}
 
-    void* data;
-    this->p_vdf->vkMapMemory(this->p_dev, uniformBufferMemory, 0, buf->size, 0, &data);
-    std::copy(buf->data, buf->data + buf->size, data);
-    this->p_vdf->vkUnmapMemory(this->p_dev, uniformBufferMemory);
+void ProgramVK::createDescriptorSet() {
+    createDescriptorSetLayout();
+    createDescriptorPool();
+    createDescriptorSets();
+}
 
-    copyBuffer(uniformBuffer, uniformBuffer, buf->size);
+void ProgramVK::createDescriptorSets() {
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, this->p_descSetLayout);
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = this->p_descPool;
+    allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+    allocInfo.pSetLayouts = layouts.data();
+
+    if (this->p_vdf->vkAllocateDescriptorSets(this->p_dev, &allocInfo, this->p_descSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = this->p_uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = VK_WHOLE_SIZE;
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = this->p_descSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+
+        this->p_vdf->vkUpdateDescriptorSets(this->p_dev, 1, &descriptorWrite, 0, nullptr);
+    }
+}
+
+void ProgramVK::createDescriptorPool() {
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = MAX_FRAMES_IN_FLIGHT;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
+    poolInfo.flags = 0;
+
+    if (this->p_vdf->vkCreateDescriptorPool(this->p_dev, &poolInfo, nullptr, &this->p_descPool) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create descriptor pool!");
+    }
+}
+
+void ProgramVK::createDescriptorSetLayout() {
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    if (this->p_vdf->vkCreateDescriptorSetLayout(this->p_dev, &layoutInfo, nullptr, &this->p_descSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
 }
 
 void ProgramVK::recordCommandBuffer() {
@@ -781,6 +865,23 @@ VKuint ProgramVK::getShaderIdFromName(std::string& fileName) {
     assert(compiledShaders.count(fileName));
     
     return compiledShaders[fileName];
+}
+
+Shader* ProgramVK::getShaderFromName(std::string& fileName) {
+    assert(stage >= 2);
+    Shader *s = nullptr;
+    
+    for (const auto& shader : compiledShaders) {
+        if (shader->getName() == fileName) {
+            s = shader;
+        }
+    }
+
+    if (s == nullptr) {
+        throw std::runtime_error("Shader " + fileName + " not found.");
+    }
+    
+    return s;
 }
 
 void ProgramVK::attachShader(std::string& name) {

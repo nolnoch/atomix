@@ -1,8 +1,8 @@
 /**
  * shaderobj.hpp
  *
- *    Created on: Apr 8, 2013
- *   Last Update: Sep 9, 2024
+ *    Created on: Apr 08, 2013
+ *   Last Update: Oct 27, 2024
  *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
  *
  *  This was created specifically for my Program class for easier use of
@@ -36,31 +36,46 @@
 #include <fstream>
 #include <sstream>
 
+#ifndef USING_QOPENGL
+    #define GL_VERTEX_SHADER 0x8B31
+    #define GL_FRAGMENT_SHADER 0x8B30
+    #define GL_GEOMETRY_SHADER 0x8DD9
+    #define GL_COMPUTE_SHADER 0x91B9
+#endif
+
+
 class Shader {
- public:
-  Shader(std::string fName, int type);
-  virtual ~Shader();
+public:
+    Shader(std::string fName, uint type);
+    virtual ~Shader();
 
-  void setId(unsigned int idAssigned);
+    bool compile();
+    void setId(unsigned int idAssigned);
 
-  unsigned int id();
-  unsigned int type();
-  std::string& name();
-  std::string& path();
-  std::string& source();
-  
-  bool isValid();
+    unsigned int getId();
+    unsigned int getType();
+    std::string& getName();
+    std::string& getPath();
+    const char* getSourceRaw();
+    const uint* getSourceCompiled();
+    size_t lengthRaw();
+    size_t lengthCompiled();
+    
+    bool isValidFile();
+    bool isValidCompile();
 
- private:
-  unsigned int shaderId;
-  unsigned int shaderType;
-  std::string filePath;
-  std::string fileName;
-  std::string sourceString;
-  
-  bool valid = false;
+private:
+    bool fileToString();
 
-  void fileToString();
+    unsigned int shaderId;
+    unsigned int shaderType;
+    std::string filePath;
+    std::string fileName;
+    std::string sourceStringRaw;
+    std::vector<unsigned int> sourceBufferCompiled;
+    
+    bool validFile = false;
+    bool validCompile = false;
 };
 
 #endif /* SHADER_HPP_ */

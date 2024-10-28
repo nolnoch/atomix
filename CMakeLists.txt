@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0...3.5)
 project(atomix VERSION 0.1.0 LANGUAGES C CXX)
 add_subdirectory(src)
+set (ENV{CMAKE_BUILD_PARALLEL_LEVEL} 8)
 target_compile_options(atomix PRIVATE -std=c++23 -ltbb)

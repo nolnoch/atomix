@@ -1,0 +1,44 @@
+    "workbench.externalBrowser": "edge",
+    "workbench.colorCustomizations": {
+        "[Default Dark Modern]": {
+            "editor.background": "#1c1c1f",
+        }
+    },
+    "editor.tokenColorCustomizations": {
+        "[Default Dark Modern]": {
+            "textMateRules": [
+                {
+                    "scope": [
+                        "comment.block",
+                        "punctuation.definition.comment.end",
+                        "punctuation.definition.comment.begin"
+                    ],
+                    "settings": {
+                        "foreground": "#02642e"
+                    }
+                },{
+                    "scope": [
+                        "comment.block.documentation",
+                        "comment.block.javadoc.java",
+                        "punctuation.definition.comment.begin.documentation",
+                        "punctuation.definition.comment.end.documentation"
+                    ],
+                    "settings": {
+                        "foreground": "#2d50b0",
+                        "fontStyle": "bold"
+                    }
+                },{
+                    "scope":["comment.line", "punctuation.definition.comment"],
+                    "settings": {
+                        "foreground": "#2e6fd1e3"
+
+                    }
+                },{
+                    "scope": ["variable.other.enummember"],
+                    "settings": {
+                        "foreground": "#8789ff"
+                    }
+                }
+            ]
+        }
+    },

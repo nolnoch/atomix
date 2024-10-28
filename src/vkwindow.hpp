@@ -26,6 +26,7 @@
 #define VKWINDOW_H
 
 #include <QVulkanWindow>
+#include <QWindow>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
@@ -88,30 +89,31 @@ class VKWindow;
 
 
 class VKRenderer : public QVulkanWindowRenderer {
-
 public:
     VKRenderer(VKWindow *vkWin);
     ~VKRenderer();
 
+    SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+    // void preInitResources() override;
     void initResources() override;
     void initSwapChainResources() override;
     // void logicalDeviceLost() override;
     // void physicalDeviceLost() override;
-    // void preInitResources() override;
-    void releaseResources() override;
     void releaseSwapChainResources() override;
+    void releaseResources() override;
+
     void startNextFrame() override;
 
-    VkShaderModule createShader(const std::string &name);
-
-    QVulkanDeviceFunctions *vdf = nullptr;
-
 private:
-    VKWindow *vkw = nullptr;
-    VkDevice dev;
-    QVulkanInstance *vi = nullptr;
-    QVulkanFunctions *vf = nullptr;
+    QVulkanInstance *vr_vi = nullptr;
+    QVulkanFunctions *vr_vf = nullptr;
+    QVulkanDeviceFunctions *vr_vdf = nullptr;
 
+    VKWindow *vr_vkw = nullptr;
+    VkDevice vr_dev;
+    VkPhysicalDevice vr_phydev;
     VkBuffer vr_bufVert = VK_NULL_HANDLE;
     VkDeviceMemory vr_bufMemVert = VK_NULL_HANDLE;
     VkBuffer vr_bufIdx = VK_NULL_HANDLE;
@@ -138,18 +140,21 @@ private:
 
 
 class VKWindow : public QVulkanWindow {
-
 public:
     VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~VKWindow();
 
     VKRenderer* createRenderer() override;
+    void createPrograms();
+    void populatePrograms(AtomixDevice *dev);
 
     void setColorsWaves(int id, uint colorChoice);
     void updateBuffersAndShaders();
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
+
+    VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
 
 signals:
     void detailsChanged(AtomixInfo *info);
@@ -172,6 +177,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
 
+    
+
 private:
     void threadFinished();
     void threadFinishedWithResult(uint result);
@@ -189,7 +196,7 @@ private:
     void printFlags(std::string);
     void printConfig(AtomixConfig *cfg);
 
-    VKRenderer *vrend = nullptr;
+    VKRenderer *vw_rend = nullptr;
 
     QOpenGLContext *gw_context = nullptr;
     ProgramVK *crystalProg = nullptr;

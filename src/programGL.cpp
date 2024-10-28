@@ -180,7 +180,7 @@ void ProgramGL::init() {
         shad->setId(id);
 
         // Load shader sources.
-        const GLchar *shaderSource = shad->source().c_str();
+        const GLchar *shaderSource = shad->sourceRaw().c_str();
         qgf->glShaderSource(id, 1, &shaderSource, NULL);
 
         // Compile shader from source.

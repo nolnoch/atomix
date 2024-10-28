@@ -49,7 +49,20 @@ void VKWindow::cleanup() {
 }
 
 VKRenderer* VKWindow::createRenderer() {
-    return new VKRenderer(this);
+    this->vw_rend = new VKRenderer(this);
+    return this->vw_rend;
+}
+
+void VKWindow::createPrograms() {
+    crystalProg = new ProgramVK();
+    waveProg = new ProgramVK();
+    cloudProg = new ProgramVK();
+}
+
+void VKWindow::populatePrograms(AtomixDevice *atomixDevice) {
+    crystalProg->setInstance(atomixDevice);
+    waveProg->setInstance(atomixDevice);
+    cloudProg->setInstance(atomixDevice);
 }
 
 void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
@@ -105,6 +118,7 @@ void VKWindow::initCrystalProgram() {
     std::string vertName = "crystal.vert";
     std::string fragName = "crystal.frag";
 
+    // Crystal Diamond setup
     float zero, peak, edge, back, forX, forZ, root;
     edge = 0.3f;  // <-- Change this to scale diamond
     peak = edge;
@@ -114,7 +128,7 @@ void VKWindow::initCrystalProgram() {
     forZ = root / 6 * edge;
     forX = edge / 2;
 
-    const std::array<GLfloat, 30> vertices = {
+    const std::array<VKfloat, 30> vertices = {
               //Vertex              //Colour
           zero,  peak,  zero,   0.6f, 0.6f, 0.6f,    //top
          -forX,  zero,  forZ,   0.1f, 0.4f, 0.4f,    //left - cyan
@@ -123,7 +137,7 @@ void VKWindow::initCrystalProgram() {
           zero, -peak,  zero,   0.0f, 0.0f, 0.0f     //bottom
     };
 
-    const std::array<GLuint, 18> indices = {
+    const std::array<VKuint, 18> indices = {
         0, 1, 2,
         2, 3, 0,
         3, 1, 0,
@@ -133,8 +147,7 @@ void VKWindow::initCrystalProgram() {
     };
     this->gw_faces = indices.size();
 
-    // vVec3 crystalRingVertices;
-    // uvec crystalRingIndices;
+    // Crystal Ring setup
     int crystalRes = 80;
     double crystalDegFac = PI_TWO / crystalRes;
     double crystalRadius = 0.4f;
@@ -157,33 +170,31 @@ void VKWindow::initCrystalProgram() {
     this->crystalRingCount = crystalRingIndices.size() - gw_faces;
     this->crystalRingOffset = gw_faces * sizeof(uint);
 
-    /* ProgramVK */
-    crystalProg = new ProgramVK(vrend->vdf);
-    crystalProg->addShader(vertName, GL_VERTEX_SHADER);
-    crystalProg->addShader(fragName, GL_FRAGMENT_SHADER);
+    // Add shaders to program
+    crystalProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
+    crystalProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
     crystalProg->init();
-    crystalProg->attachShader(vertName);
-    crystalProg->attachShader(fragName);
-    crystalProg->linkAndValidate();
-    crystalProg->detachDelete();
-    crystalProg->initVAO();
-    crystalProg->bindVAO();
-    GLuint vboID = crystalProg->bindVBO("vertices", crystalRingVertices.size(), sizeof(float) * crystalRingVertices.size(), &crystalRingVertices[0], GL_STATIC_DRAW);
-    crystalProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
-    crystalProg->enableAttribute(0);
-    crystalProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                       // Vertices
-    crystalProg->enableAttribute(1);
-    crystalProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);     // Colours
-    crystalProg->bindEBO("indices", crystalRingIndices.size(), sizeof(uint) * crystalRingIndices.size(), &crystalRingIndices[0], GL_STATIC_DRAW);
+    
+    // Add buffers to program
+    ProgBufInfo crystalVert{};
+    crystalVert.type = BufferType::VERTEX;
+    crystalVert.binding = 0;
+    crystalVert.size = crystalRingVertices.size() * sizeof(float);
+    crystalVert.data = &crystalRingVertices[0];
+    crystalVert.name = "vertices";
+    crystalVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
+    crystalProg->addBufferConfig(crystalVert);
+    crystalProg->createVertexBuffer(&crystalVert);
 
-    /* Release */
-    crystalProg->endRender();
-    crystalProg->clearBuffers();
+    ProgBufInfo crystalInd{};
+    crystalInd.type = BufferType::INDEX;
+    crystalInd.binding = 1;
+    crystalInd.size = crystalRingIndices.size() * sizeof(uint);
+    crystalInd.data = &crystalRingIndices[0];
+    crystalInd.name = "indices";
+    crystalInd.dataTypes = {DataType::UINT};
+    crystalProg->addBufferConfig(crystalInd);
 }
-
-/* void VKWindow::initAtomixProg() {
-    // TODO Consolidate?!
-} */
 
 void VKWindow::initWaveProgram() {
     assert(waveManager);
@@ -314,7 +325,7 @@ void VKWindow::initVecsAndMatrices() {
     v3_mouseEnd = glm::vec3(0);
 
     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_farDist);
+    m4_proj = glm::perspective(RADN(45.0f), VKfloat(width()) / height(), gw_nearDist, gw_farDist);
 
     gw_info.pos = gw_startDist;
     gw_info.start = gw_startDist;
@@ -758,7 +769,7 @@ static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
 }
 
 VKRenderer::VKRenderer(VKWindow *vkWin)
-    : vkw(vkWin) {
+    : vr_vkw(vkWin) {
 }
 
 VKRenderer::~VKRenderer() {
@@ -766,323 +777,115 @@ VKRenderer::~VKRenderer() {
 }
 
 void VKRenderer::initResources() {
-    VkResult err;
-    float vertexData[] = { 0.0f, 0.0f };
 
     // Define instance, device, and function pointers
-    dev = vkw->device();
-    VkPhysicalDevice pdev = vkw->physicalDevice();
-    vi = vkw->vulkanInstance();
-    vdf = vi->deviceFunctions(dev);
-    vf = vi->functions();
+    vr_dev = vr_vkw->device();
+    vr_phydev = vr_vkw->physicalDevice();
+    vr_vi = vr_vkw->vulkanInstance();
+    vr_vdf = vr_vi->deviceFunctions(vr_dev);
+    vr_vf = vr_vi->functions();
 
     // Retrieve physical device constraints
-    const int concFrameCount = vkw->concurrentFrameCount();
-    const VkPhysicalDeviceLimits *pdLimits = &vkw->physicalDeviceProperties()->limits;
+    const int concFrameCount = vr_vkw->concurrentFrameCount();
+    const VkPhysicalDeviceLimits *pdLimits = &vr_vkw->physicalDeviceProperties()->limits;
     const VkDeviceSize uniAlignment = pdLimits->minUniformBufferOffsetAlignment;
+    // const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlignment);  // Example of using aligned() -- not used
 
-    // Assign vertex buffer and uniforms
-    VkBufferCreateInfo bufCreateInfo;
-    std::memset(&bufCreateInfo, 0, sizeof(bufCreateInfo));
-    bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlignment);
-    const VkDeviceSize uniformAllocSize = aligned(sizeof(float) * 16, uniAlignment);
-    bufCreateInfo.size = vertexAllocSize + concFrameCount * uniformAllocSize;
-    bufCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    // Create Program
+    AtomixDevice *progDev = new AtomixDevice();
+    progDev->window = vr_vkw;
+    progDev->physicalDevice = vr_phydev;
+    progDev->device = vr_dev;
+    this->vr_vkw->populatePrograms(progDev);
+}
 
-    // Create vertex buffer
-    err = vdf->vkCreateBuffer(dev, &bufCreateInfo, nullptr, &vr_bufVert);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to create vertex buffer: %d", err);
-    }
+QueueFamilyIndices VKRenderer::findQueueFamilies(VkPhysicalDevice device) {
+    /* QueueFamilyIndices indices;
 
-    // Get memory requirements for buffer vr_buf
-    VkMemoryRequirements memReq;
-    vdf->vkGetBufferMemoryRequirements(dev, vr_bufVert, &memReq);
-    VkMemoryAllocateInfo memAllocInfo = {
-        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        nullptr,
-        memReq.size,
-        vkw->hostVisibleMemoryIndex()
-    };
+    uint32_t queueFamilyCount = 0;
+    this->vr_vf->vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    this->vr_vf->vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-    // Allocate, bind, and map memory for buffer vr_buf
-    err = vdf->vkAllocateMemory(dev, &memAllocInfo, nullptr, &vr_bufMemVert);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to allocate memory for vr_buf: %d", err);
-    }
-    err = vdf->vkBindBufferMemory(dev, vr_bufVert, vr_bufMemVert, 0);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to bind buffer memory: %d", err);
-    }
-    uint8_t *p;
-    err = vdf->vkMapMemory(dev, vr_bufMemVert, 0, memReq.size, 0, reinterpret_cast<void **>(&p));
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to map buffer memory: %d", err);
-    }
-
-    // Copy data to mapped memory, then unmap
-    memcpy(p, vertexData, sizeof(vertexData));
-    glm::mat4 ident;
-    memset(vr_uniformBufInfo, 0, sizeof(vr_uniformBufInfo));
-    for (int i = 0; i < concFrameCount; i++) {
-        const VkDeviceSize offset = vertexAllocSize + (i * uniformAllocSize);
-        memcpy(p + offset, glm::value_ptr(ident), 16 * sizeof(float));
-        vr_uniformBufInfo[i].buffer = vr_bufVert;
-        vr_uniformBufInfo[i].offset = offset;
-        vr_uniformBufInfo[i].range = uniformAllocSize;
-    }
-    vdf->vkUnmapMemory(dev, vr_bufMemVert);
-
-    // Describe vertex data
-    VkVertexInputBindingDescription vertexBindingDesc{};
-    memset(&vertexBindingDesc, 0, sizeof(vertexBindingDesc));
-    vertexBindingDesc.binding = 0;
-    vertexBindingDesc.stride = 5 * sizeof(float);
-    vertexBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    
-    // Describe vertex attributes
-    VkVertexInputAttributeDescription vertexAttrDesc[2]{};
-    memset(vertexAttrDesc, 0, sizeof(vertexAttrDesc));
-    // Position
-    vertexAttrDesc[0].location = 0;
-    vertexAttrDesc[0].binding = 0;
-    vertexAttrDesc[0].format = VK_FORMAT_R32G32_SFLOAT;
-    vertexAttrDesc[0].offset = 0;
-    // Colour
-    vertexAttrDesc[1].location = 1;
-    vertexAttrDesc[1].binding = 0;
-    vertexAttrDesc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    vertexAttrDesc[1].offset = 2 * sizeof(float);
-
-    // Describe Pipeline using above structs (which define vertex data and attributes)
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo;
-    memset(&vertexInputInfo, 0, sizeof(vertexInputInfo));
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.pNext = nullptr;
-    vertexInputInfo.flags = 0;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &vertexBindingDesc;
-    vertexInputInfo.vertexAttributeDescriptionCount = 2;
-    vertexInputInfo.pVertexAttributeDescriptions = vertexAttrDesc;
-
-    // Define descriptor pool with layout
-    VkDescriptorPoolSize descPoolSizes = { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uint32_t(concFrameCount) };
-    VkDescriptorPoolCreateInfo descPoolInfo;
-    memset(&descPoolInfo, 0, sizeof(descPoolInfo));
-    descPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descPoolInfo.maxSets = concFrameCount;
-    descPoolInfo.poolSizeCount = 1;
-    descPoolInfo.pPoolSizes = &descPoolSizes;
-
-    // Create descriptor pool
-    err = vdf->vkCreateDescriptorPool(dev, &descPoolInfo, nullptr, &vr_descPool);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to create descriptor pool: %d", err);
-    }
-
-    // Define descriptor set layouts for binding and creation
-    VkDescriptorSetLayoutBinding layoutBinding{};
-    memset(&layoutBinding, 0, sizeof(layoutBinding));
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    layoutBinding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo descLayoutInfo{};
-    memset(&descLayoutInfo, 0, sizeof(descLayoutInfo));
-    descLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descLayoutInfo.pNext = nullptr;
-    descLayoutInfo.flags = 0;
-    descLayoutInfo.bindingCount = 1;
-    descLayoutInfo.pBindings = &layoutBinding;
-
-    // Create descriptor set
-    err = vdf->vkCreateDescriptorSetLayout(dev, &descLayoutInfo, nullptr, &vr_descSetLayout);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to create descriptor set layout: %d", err);
-    }
-
-    // Define allocation info for descriptor sets
-    VkDescriptorSetAllocateInfo descSetAllocInfo{};
-    memset(&descSetAllocInfo, 0, sizeof(descSetAllocInfo));
-    descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descSetAllocInfo.pNext = nullptr;
-    descSetAllocInfo.descriptorPool = vr_descPool;
-    descSetAllocInfo.descriptorSetCount = concFrameCount;
-    descSetAllocInfo.pSetLayouts = &vr_descSetLayout;
-
-    // For each possible conccurrent frame...
-    for (int i = 0; i < concFrameCount; ++i) {
-        // Allocate descriptor set
-        err = vdf->vkAllocateDescriptorSets(dev, &descSetAllocInfo, &vr_descSet[i]);
-        if (err != VK_SUCCESS) {
-            qFatal("Failed to allocate descriptor set: %d", err);
+    int i = 0;
+    for (const auto &queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+            break;
         }
-
-        // Fill descriptor set
-        VkWriteDescriptorSet descWrite;
-        memset(&descWrite, 0, sizeof(descWrite));
-        descWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descWrite.dstSet = vr_descSet[i];
-        descWrite.descriptorCount = 1;
-        descWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descWrite.pBufferInfo = &vr_uniformBufInfo[i];
-        vdf->vkUpdateDescriptorSets(dev, 1, &descWrite, 0, nullptr);
+        i++;
     }
 
-    // Describe pipeline cache
-    VkPipelineCacheCreateInfo pipelineCacheInfo;
-    memset(&pipelineCacheInfo, 0, sizeof(pipelineCacheInfo));
-    pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    pipelineCacheInfo.pNext = nullptr;
-    pipelineCacheInfo.flags = 0;
-    pipelineCacheInfo.initialDataSize = 0;
+    return indices; */
+}
 
-    // Create pipeline cache
-    err = vdf->vkCreatePipelineCache(dev, &pipelineCacheInfo, nullptr, &vr_pipelineCache);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to create pipeline cache: %d", err);
+SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
+    /* SwapChainSupportInfo info;
+    
+    this->vr_vf->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->vr_vkw->vw_surface, &info.capabilities);
+    
+    VKuint formatCount = 0;
+    this->vr_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_vkw->vw_surface, &formatCount, nullptr);
+    if (formatCount) {
+        info.formats.resize(formatCount);
+        this->vr_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_vkw->vw_surface, &formatCount, info.formats.data());
     }
 
-    // Describe pipeline layout
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo;
-    memset(&pipelineLayoutInfo, 0, sizeof(pipelineLayoutInfo));
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.pNext = nullptr;
-    pipelineLayoutInfo.flags = 0;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &vr_descSetLayout;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
-
-    // Create pipeline layout
-    err = vdf->vkCreatePipelineLayout(dev, &pipelineLayoutInfo, nullptr, &vr_pipelineLayout);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to create pipeline layout: %d", err);
+    VKuint presentModeCount = 0;
+    this->vr_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_vkw->vw_surface, &presentModeCount, nullptr);
+    if (presentModeCount) {
+        info.presentModes.resize(presentModeCount);
+        this->vr_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_vkw->vw_surface, &presentModeCount, info.presentModes.data());
     }
-
-    // Create shader modules
-    VkShaderModule vertShaderModule = createShader("vert.spv");
-    VkShaderModule fragShaderModule = createShader("frag.spv");
-
-    // Describe shader stage
-    VkPipelineShaderStageCreateInfo shaderStages[2];
-    // Vertex shader
-    shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shaderStages[0].pNext = nullptr;
-    shaderStages[0].flags = 0;
-    shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    shaderStages[0].module = vertShaderModule;
-    shaderStages[0].pName = "main";
-    shaderStages[0].pSpecializationInfo = nullptr;
-    // Fragment shader
-    shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shaderStages[1].pNext = nullptr;
-    shaderStages[1].flags = 0;
-    shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    shaderStages[1].module = fragShaderModule;
-    shaderStages[1].pName = "main";
-    shaderStages[1].pSpecializationInfo = nullptr;
-
-    // Input Assembly
-    VkPipelineInputAssemblyStateCreateInfo ia;
-    memset(&ia, 0, sizeof(ia));
-    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-    // Viewport and Scissor
-    // The viewport and scissor will be set dynamically via vkCmdSetViewport/Scissor.
-    // This way the pipeline does not need to be touched when resizing the window.
-    VkPipelineViewportStateCreateInfo vp;
-    memset(&vp, 0, sizeof(vp));
-    vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    vp.viewportCount = 1;
-    vp.scissorCount = 1;
-
-    // Rasterization
-    VkPipelineRasterizationStateCreateInfo rs;
-    memset(&rs, 0, sizeof(rs));
-    rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs.polygonMode = VK_POLYGON_MODE_FILL;
-    rs.cullMode = VK_CULL_MODE_NONE; // we want the back face as well
-    rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rs.lineWidth = 1.0f;
-
-    // Multisampling
-    VkPipelineMultisampleStateCreateInfo ms;
-    memset(&ms, 0, sizeof(ms));
-    ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    // Enable multisampling.
-    ms.rasterizationSamples = vkw->sampleCountFlagBits();
-
-    // Depth Stencil
-    VkPipelineDepthStencilStateCreateInfo ds;
-    memset(&ds, 0, sizeof(ds));
-    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    ds.depthTestEnable = VK_TRUE;
-    ds.depthWriteEnable = VK_TRUE;
-    ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-
-    // Color Blending
-    VkPipelineColorBlendStateCreateInfo cb;
-    memset(&cb, 0, sizeof(cb));
-    cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    // no blend, write out all of rgba
-    VkPipelineColorBlendAttachmentState att;
-    memset(&att, 0, sizeof(att));
-    att.colorWriteMask = 0xF;
-    cb.attachmentCount = 1;
-    cb.pAttachments = &att;
-
-    // Dynamic State
-    VkDynamicState dynEnable[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-    VkPipelineDynamicStateCreateInfo dyn;
-    memset(&dyn, 0, sizeof(dyn));
-    dyn.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dyn.dynamicStateCount = sizeof(dynEnable) / sizeof(VkDynamicState);
-    dyn.pDynamicStates = dynEnable;
-
-    // Describe pipeline for creation
-    VkGraphicsPipelineCreateInfo pipelineInfo;
-    memset(&pipelineInfo, 0, sizeof(pipelineInfo));
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.pNext = nullptr;
-    pipelineInfo.flags = 0;
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages;
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &ia;
-    pipelineInfo.pViewportState = &vp;
-    pipelineInfo.pRasterizationState = &rs;
-    pipelineInfo.pMultisampleState = &ms;
-    pipelineInfo.pDepthStencilState = &ds;
-    pipelineInfo.pColorBlendState = &cb;
-    pipelineInfo.pDynamicState = &dyn;
-    pipelineInfo.layout = vr_pipelineLayout;
-    pipelineInfo.renderPass = vkw->defaultRenderPass();
-    pipelineInfo.subpass = 0;
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-    pipelineInfo.basePipelineIndex = -1;
-
-    // Create pipeline
-    err = vdf->vkCreateGraphicsPipelines(dev, vr_pipelineCache, 1, &pipelineInfo, nullptr, &vr_pipeline);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to create graphics pipeline: %d", err);
-    }
-
-    if (vertShaderModule) {
-        vdf->vkDestroyShaderModule(dev, vertShaderModule, nullptr);
-    }
-    if (fragShaderModule) {
-        vdf->vkDestroyShaderModule(dev, fragShaderModule, nullptr);
-    }
+    
+    return info; */
 }
 
 void VKRenderer::initSwapChainResources() {
-    vm4_proj = vkw->clipCorrectionMatrix();
-    const QSize vkwSize = vkw->swapChainImageSize();
+    /* QSize swapChainImageSize = this->vr_vkw->swapChainImageSize();
+    VkExtent2D extent = {swapChainImageSize.width(), swapChainImageSize.height()};
+    this->vr_vkw->vw_surface = QVulkanInstance::surfaceForWindow(this->vr_vkw);
+    SwapChainSupportInfo swapChainSupport = querySwapChainSupport(this->vr_phydev);
+
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = this->vr_vkw->vw_surface;
+    createInfo.minImageCount = 2;
+    createInfo.imageFormat = swapChainSupport.formats[0].format;
+    createInfo.imageColorSpace = swapChainSupport.formats[0].colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    QueueFamilyIndices indices = findQueueFamilies(this->vr_phydev);
+    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+
+    if (indices.graphicsFamily != indices.presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    } else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0; // Optional
+        createInfo.pQueueFamilyIndices = nullptr; // Optional
+    }
+
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = swapChainSupport.presentModes[0];
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    VkSwapchainKHR swapchain;
+    if ((this->vr_vf->vkCreateSwapchainKHR(this->vr_dev, &createInfo, nullptr, &swapchain)) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create swap chain!");
+    }
+
+    this->vr_vkw->setSwapChain(swapchain); */
+    QVulkanWindowRenderer::initSwapChainResources();
+
+    vm4_proj = vr_vkw->clipCorrectionMatrix();
+    const QSize vkwSize = vr_vkw->swapChainImageSize();
     vm4_proj.perspective(45.0f, (float)vkwSize.width() / (float)vkwSize.height(), 0.1f, 100.0f);
     // m4_proj = glm::mat4(vm4_proj.transposed().constData());
 }
@@ -1104,114 +907,33 @@ void VKRenderer::releaseSwapChainResources() {
  */
 void VKRenderer::releaseResources() {
     if (vr_pipeline) {
-        vdf->vkDestroyPipeline(dev, vr_pipeline, nullptr);
+        vr_vdf->vkDestroyPipeline(vr_dev, vr_pipeline, nullptr);
     }
     if (vr_pipelineLayout) {
-        vdf->vkDestroyPipelineLayout(dev, vr_pipelineLayout, nullptr);
+        vr_vdf->vkDestroyPipelineLayout(vr_dev, vr_pipelineLayout, nullptr);
     }
     if (vr_pipelineCache) {
-        vdf->vkDestroyPipelineCache(dev, vr_pipelineCache, nullptr);
+        vr_vdf->vkDestroyPipelineCache(vr_dev, vr_pipelineCache, nullptr);
     }
     if (vr_descSetLayout) {
-        vdf->vkDestroyDescriptorSetLayout(dev, vr_descSetLayout, nullptr);
+        vr_vdf->vkDestroyDescriptorSetLayout(vr_dev, vr_descSetLayout, nullptr);
     }
     if (vr_descPool) {
-        vdf->vkDestroyDescriptorPool(dev, vr_descPool, nullptr);
+        vr_vdf->vkDestroyDescriptorPool(vr_dev, vr_descPool, nullptr);
     }
     if (vr_bufVert) {
-        vdf->vkDestroyBuffer(dev, vr_bufVert, nullptr);
+        vr_vdf->vkDestroyBuffer(vr_dev, vr_bufVert, nullptr);
     }
     if (vr_bufMemVert) {
-        vdf->vkFreeMemory(dev, vr_bufMemVert, nullptr);
+        vr_vdf->vkFreeMemory(vr_dev, vr_bufMemVert, nullptr);
     }
-}
-
-VkShaderModule VKRenderer::createShader(const std::string &name) {
-    std::ifstream file(name, std::ios::ate | std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open shader file: " + name);
-    }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string shaderSource = buffer.str();
-    file.close();
-
-    VkShaderModuleCreateInfo createInfo = {};
-    memset(&createInfo, 0, sizeof(createInfo));
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.pNext = nullptr;
-    createInfo.flags = 0;
-    createInfo.codeSize = shaderSource.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t *>(shaderSource.c_str());
-    
-    VkShaderModule shaderModule;
-    VkResult err = vdf->vkCreateShaderModule(dev, &createInfo, nullptr, &shaderModule);
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to create shader module: %d", err);
-    }
-
-    return shaderModule;
 }
 
 void VKRenderer::startNextFrame() {
     VkResult err;
-    VkCommandBuffer commandBuffer = vkw->currentCommandBuffer();
-    const QSize vkwSize = vkw->swapChainImageSize();
+    VkCommandBuffer commandBuffer = vr_vkw->currentCommandBuffer();
+    const QSize vkwSize = vr_vkw->swapChainImageSize();
+    VkExtent2D renderExtent = {vkwSize.width(), vkwSize.height()};
 
-    VkClearColorValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-    VkClearDepthStencilValue clearDepthStencil = {1.0f, 0};
-    VkClearValue clearValues[3];
-    memset(clearValues, 0, sizeof(clearValues));
-    clearValues[0].color = clearColor;
-    clearValues[1].depthStencil = clearDepthStencil;
-    clearValues[2].color = clearColor;
-
-    VkRenderPassBeginInfo renderPassInfo = {};
-    memset(&renderPassInfo, 0, sizeof(renderPassInfo));
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.pNext = nullptr;
-    renderPassInfo.renderPass = vkw->defaultRenderPass();
-    renderPassInfo.framebuffer = vkw->currentFramebuffer();
-    renderPassInfo.renderArea.extent.width = vkwSize.width();
-    renderPassInfo.renderArea.extent.height = vkwSize.height();
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.clearValueCount = (vkw->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT) ? 3 : 2;
-    renderPassInfo.pClearValues = clearValues;
-    vdf->vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    quint8 *p;
-    err = vdf->vkMapMemory(dev, vr_bufMemVert, vr_uniformBufInfo[vkw->currentFrame()].offset, UNIFORM_DATA_SIZE, 0, reinterpret_cast<void **>(&p));
-    if (err != VK_SUCCESS) {
-        qFatal("Failed to map memory for vertex buffer: %d", err);
-    }
-    QMatrix4x4 m = vm4_proj;
-    m.rotate(0.0f, 0, 1, 0);
-    memcpy(p, &m, sizeof(m));
-    vdf->vkUnmapMemory(dev, vr_bufMemVert);
-
-    vdf->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vr_pipeline);
-    vdf->vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vr_pipelineLayout, 0, 1, &vr_descSet[vkw->currentFrame()], 0, nullptr);
-    VkDeviceSize vr_offset = 0;
-    vdf->vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vr_bufVert, &vr_offset);
-    vdf->vkCmdBindIndexBuffer(commandBuffer, vr_bufVert, 0, VK_INDEX_TYPE_UINT32);
-
-    VkViewport viewport;
-    memset(&viewport, 0, sizeof(viewport));
-    viewport.width = static_cast<float>(vkwSize.width());
-    viewport.height = static_cast<float>(vkwSize.height());
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vdf->vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-    VkRect2D scissor;
-    memset(&scissor, 0, sizeof(scissor));
-    scissor.extent.width = viewport.width;
-    scissor.extent.height = viewport.height;
-    vdf->vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    vdf->vkCmdDrawIndexed(commandBuffer, 6, 1, 0, 0, 0);
-    vdf->vkCmdEndRenderPass(commandBuffer);
-
-    vkw->frameReady();
-    vkw->requestUpdate();
+    // Call Program to render
 }

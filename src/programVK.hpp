@@ -92,26 +92,7 @@ enum class DataType : unsigned int {
     DOUBLE_VEC4     = 15
 };
 
-std::array<unsigned int, 16> dataSizes = {
-    sizeof(float),
-    sizeof(float) * 2,
-    sizeof(float) * 3,
-    sizeof(float) * 4,
-    sizeof(int),
-    sizeof(int) * 2,
-    sizeof(int) * 3,
-    sizeof(int) * 4,
-    sizeof(uint),
-    sizeof(uint) * 2,
-    sizeof(uint) * 3,
-    sizeof(uint) * 4,
-    sizeof(double),
-    sizeof(double) * 2,
-    sizeof(double) * 3,
-    sizeof(double) * 4
-};
-
-std::array<VkFormat, 16> dataFormats = {
+std::array<VkFormat, 16> DataFormats = {
     VK_FORMAT_R32_SFLOAT,
     VK_FORMAT_R32G32_SFLOAT,
     VK_FORMAT_R32G32B32_SFLOAT,
@@ -142,12 +123,41 @@ struct AtomixDevice {
     VkDevice device = VK_NULL_HANDLE;
 };
 
-struct ProgBufInfo {
+struct ModelCreateInfo {
+    std::string name;
+    uint vboCount;
+    BufferCreateInfo *vbos;
+    BufferCreateInfo *ibo;
+    BufferCreateInfo *ubo;
+    std::string vertShader;
+    std::string fragShader;
+};
+
+struct ModelInfo {
+    uint id;
+    std::vector<BufferInfo *> vbos;
+    BufferInfo *ibo;
+    BufferInfo *ubo;
+    Shader *vertShader;
+    Shader *fragShader;
+};
+
+struct BufferCreateInfo {
+    std::string name;
     BufferType type;
     uint binding;
     uint size;
     void *data;
-    std::string name;
+    bool storeData = false;
+    std::vector<DataType> dataTypes;
+};
+
+struct BufferInfo {
+    uint id;
+    BufferType type;
+    uint binding;
+    uint size;
+    void *data;
     std::vector<DataType> dataTypes;
 };
 
@@ -170,6 +180,9 @@ struct SwapChainSupportInfo {
 
 struct PipelineInfo {
     VkDynamicState dynStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions;
     VkPipelineInputAssemblyStateCreateInfo ia{};
     VkPipelineViewportStateCreateInfo vp{};
     VkPipelineDynamicStateCreateInfo dyn{};
@@ -180,8 +193,8 @@ struct PipelineInfo {
     VkPipelineColorBlendAttachmentState cbAtt{};
     VkPipelineShaderStageCreateInfo shaderStages[2];
     VkPipelineVertexInputStateCreateInfo vboInfo{};
-    VkPipelineLayoutCreateInfo layoutInfo{};
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    VkPipelineLayoutCreateInfo pipeLayInfo{};
+    VkPipelineLayout pipeLayout;
 };
 
 /**
@@ -212,7 +225,10 @@ public:
     void bindShader(std::string name);
     void addSampler(std::string sName);
 
-    void addBufferConfig(ProgBufInfo &info);
+    BufferInfo* addBuffer(BufferCreateInfo &info);
+    void addModel(ModelCreateInfo &info);
+
+    void modelsToBuffers();
 
     bool init();
     void createSwapChain();
@@ -222,13 +238,17 @@ public:
     void createPipelineParts();
     void createPipeline();
 
-    void createVertexBuffer(std::variant<std::string, ProgBufInfo *> info);
-    void createIndexBuffer(std::variant<std::string, ProgBufInfo *> info);
-    void createUniformBuffer(std::variant<std::string, ProgBufInfo *> info);
+    void createVertexBuffer(BufferInfo *buf);
+    void createIndexBuffer(BufferInfo *buf);
+    void createPersistentUniformBuffer(BufferInfo *buf);
+    void createDescriptorSet();
+    void createDescriptorSetLayout();
+    void createDescriptorPool();
+    void createDescriptorSets();
 
     SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-    ProgBufInfo* getBufferInfo(std::string name);
+    BufferInfo* getBufferInfo(std::string name);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
@@ -292,19 +312,19 @@ public:
     VKuint getLastVBOId();
     VKuint getSize(std::string name);
     VKuint getShaderIdFromName(std::string& fileName);
+    Shader* getShaderFromName(std::string& fileName);
 
     void displayLogProgramVK();
     void displayLogShader(VKenum shader);
 
-    static std::vector<Shader *> registeredShaders;
-    static std::vector<Shader *> compiledShaders;
+    std::vector<void *> uniformMappings;
 
 private:
     std::vector<SamplerInfo> *samplers = nullptr;
     std::vector<Shader *> boundShaders;
     std::vector<VKuint> attribs;
 
-    const int MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
+    const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 
     VkDevice p_dev = VK_NULL_HANDLE;
     VkPhysicalDevice p_phydev = VK_NULL_HANDLE;
@@ -314,7 +334,6 @@ private:
     VkFramebuffer p_frames[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT] = { 0 };
     VkPipeline p_pipe = VK_NULL_HANDLE;
     VkPipelineLayout p_pipeLayout = VK_NULL_HANDLE;
-    VkDescriptorSet p_descSet = VK_NULL_HANDLE;
     VkDescriptorSetLayout p_descSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool p_descPool = VK_NULL_HANDLE;
     VkRenderPass p_renderPass = VK_NULL_HANDLE;
@@ -336,17 +355,45 @@ private:
     QVulkanInstance *p_vi = nullptr;
     QVulkanWindow *p_vkw = nullptr;
     
-    std::vector<ProgBufInfo *> p_vbos;
-    std::vector<ProgBufInfo *> p_ibos;
-    std::vector<ProgBufInfo *> p_ubos;
+    std::vector<Shader *> registeredShaders;
+    std::vector<Shader *> compiledShaders;
+    std::vector<BufferInfo *> p_buffers;
+    std::vector<ModelInfo *> p_models;
+    std::map<std::string, VKuint> p_mapBuf;
+    std::map<std::string, VKuint> p_mapModel;
+    std::vector<VKuint> p_activeModels;
+    std::vector<void *> p_allocatedBuffers;
 
-    VkBuffer stagingBuffer, vertexBuffer, indexBuffer, uniformBuffer;
-    VkDeviceMemory stagingBufferMemory, vertexBufferMemory, indexBufferMemory, uniformBufferMemory;
+    std::vector<VkDescriptorSets> p_descSets;
+    std::vector<VkBuffer> p_uniformBuffers;
+    std::vector<VkDeviceMemory> p_uniformMemory;
+
+    VkBuffer stagingBuffer, vertexBuffer, indexBuffer;
+    VkDeviceMemory stagingBufferMemory, vertexBufferMemory, indexBufferMemory;
     
     VkResult err;
     
     bool enabled = false;
     int stage = 0;
+
+    std::array<unsigned int, 16> dataSizes = {
+        sizeof(float),
+        sizeof(float) * 2,
+        sizeof(float) * 3,
+        sizeof(float) * 4,
+        sizeof(int),
+        sizeof(int) * 2,
+        sizeof(int) * 3,
+        sizeof(int) * 4,
+        sizeof(uint),
+        sizeof(uint) * 2,
+        sizeof(uint) * 3,
+        sizeof(uint) * 4,
+        sizeof(double),
+        sizeof(double) * 2,
+        sizeof(double) * 3,
+        sizeof(double) * 4
+    };
 };
 
 #endif /* PROGRAMVK_HPP_ */

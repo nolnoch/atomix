@@ -207,18 +207,15 @@ struct SwapChainSupportInfo {
 
 struct ModelPipelineInfo {
     std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBindings;
-    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    VkPipelineShaderStageCreateInfo vertStage{};
-    VkPipelineShaderStageCreateInfo fragStage{};
-    VkPipelineVertexInputStateCreateInfo vboInfo{};
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    VkPipelineVertexInputStateCreateInfo vbo{};
     VkPipelineInputAssemblyStateCreateInfo ia{};
     VkPipelineRasterizationStateCreateInfo rs{};
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 };
 
 struct PipelineInfo {
     VkDynamicState dynStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
-    std::vector<VkVertexInputBindingDescription> bindingDescriptions;
     VkPipelineViewportStateCreateInfo vp{};
     VkPipelineDynamicStateCreateInfo dyn{};
     VkPipelineMultisampleStateCreateInfo ms{};
@@ -255,7 +252,6 @@ public:
     bool compileShader(Shader *shader);
     int compileAllShaders();
     void bindShader(std::string name);
-    void addSampler(std::string sName);
 
     BufferInfo* addBuffer(BufferCreateInfo &info);
     void addModel(ModelCreateInfo &info);
@@ -359,6 +355,8 @@ public:
 
 
 private:
+    void addSampler(std::string sName);
+
     std::vector<SamplerInfo> *samplers = nullptr;
     std::vector<Shader *> boundShaders;
     std::vector<VKuint> attribs;

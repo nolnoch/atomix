@@ -58,8 +58,8 @@ public:
     std::string& getPath();
     const char* getSourceRaw();
     const uint* getSourceCompiled();
-    size_t lengthRaw();
-    size_t lengthCompiled();
+    size_t getLengthRaw();
+    size_t getLengthCompiled();
     
     bool isValidFile();
     bool isValidCompile();

@@ -4,8 +4,8 @@
             "${workspaceFolder}"
         ],
         "myDefines": [
-            "USING_QVULKAN=0",
-            "USING_QOPENGL=1"
+            "USING_QVULKAN=1",
+            "USING_QOPENGL=0"
         ]
     },
     "configurations": [

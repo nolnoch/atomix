@@ -187,7 +187,7 @@ void ProgramVK::bindShader(std::string name) {
 
     VkShaderModuleCreateInfo moduleCreateInfo{};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = activeShader->lengthCompiled();
+    moduleCreateInfo.codeSize = activeShader->getLengthCompiled();
     moduleCreateInfo.pCode = activeShader->getSourceCompiled();
 
     VkShaderModule shaderModule;
@@ -301,14 +301,8 @@ bool ProgramVK::init() {
     // Process registered shaders
     compileAllShaders();
 
-    // Init program
-
-    createCommandPool();
-    createCommandBuffers();
-    createSwapChain();
-    createRenderPass();
+    // Init program    
     assemblePipeline();
-    createPipeline();
 
     this->stage = 2;
 }
@@ -447,10 +441,10 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
             throw std::runtime_error("Failed to create shader module: " + m->shaders->vertShader->getName());
         }
 
-        m->pipe->vertStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        m->pipe->vertStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        m->pipe->vertStage.module = m->shaders->vertModule;
-        m->pipe->vertStage.pName = "main";
+        m->pipe->shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        m->pipe->shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+        m->pipe->shaderStages[0].module = m->shaders->vertModule;
+        m->pipe->shaderStages[0].pName = "main";
     }
 
     if (m->shaders->fragShader) {
@@ -463,10 +457,10 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
             throw std::runtime_error("Failed to create shader module: " + m->shaders->fragShader->getName());
         }
 
-        m->pipe->fragStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        m->pipe->fragStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        m->pipe->fragStage.module = m->shaders->fragModule;
-        m->pipe->fragStage.pName = "main";
+        m->pipe->shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        m->pipe->shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        m->pipe->shaderStages[1].module = m->shaders->fragModule;
+        m->pipe->shaderStages[1].pName = "main";
     }
 }
 
@@ -564,11 +558,11 @@ void ProgramVK::assemblePipeline() {
     this->p_pipeInfo.cb.blendConstants[2] = 0.0f;
     this->p_pipeInfo.cb.blendConstants[3] = 0.0f;
 
-    // Layout
+    // Dscription Set Layout
     memset(&this->p_pipeInfo.pipeLayInfo, 0, sizeof(this->p_pipeInfo.pipeLayInfo));
     this->p_pipeInfo.pipeLayInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    this->p_pipeInfo.pipeLayInfo.setLayoutCount = 0;
-    this->p_pipeInfo.pipeLayInfo.pSetLayouts = nullptr;
+    this->p_pipeInfo.pipeLayInfo.setLayoutCount = 1;
+    this->p_pipeInfo.pipeLayInfo.pSetLayouts = &p_descSetLayout;
     this->p_pipeInfo.pipeLayInfo.pushConstantRangeCount = 0;
     this->p_pipeInfo.pipeLayInfo.pPushConstantRanges = nullptr;
 
@@ -578,21 +572,25 @@ void ProgramVK::assemblePipeline() {
 }
 
 void ProgramVK::createPipeline(ModelInfo *m) {
-    // TODO redo this
-
+    // Model-specific pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = this->p_pipeInfo.shaderStages.data();
-    pipelineInfo.pVertexInputState = &this->p_pipeInfo.vboInfo;
-    pipelineInfo.pInputAssemblyState = &this->p_pipeInfo.ia;
-    pipelineInfo.pViewportState = &this->p_pipeInfo.vp;
+    pipelineInfo.pStages = m->pipe->shaderStages.data();
+    pipelineInfo.pVertexInputState = &m->pipe->vbo;
+    pipelineInfo.pInputAssemblyState = &m->pipe->ia;
     pipelineInfo.pRasterizationState = &m->pipe->rs;
+    
+    // Global pipeline
+    pipelineInfo.pViewportState = &this->p_pipeInfo.vp;
+    pipelineInfo.pDynamicState = &this->p_pipeInfo.dyn;
     pipelineInfo.pMultisampleState = &this->p_pipeInfo.ms;
     pipelineInfo.pDepthStencilState = &this->p_pipeInfo.ds;
     pipelineInfo.pColorBlendState = &this->p_pipeInfo.cb;
     pipelineInfo.layout = this->p_pipeLayout;
-    pipelineInfo.renderPass = this->p_renderPass;
+    
+    // Render pass (Qt) and closing out pipeline
+    pipelineInfo.renderPass = this->p_vkw->defaultRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineIndex = -1;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -752,13 +750,13 @@ void ProgramVK::defineModelAttributes(ModelInfo *model) {
 }
 
 void ProgramVK::lockModelAttributes(ModelInfo *model) {
-    model->pipe->vboInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    model->pipe->vboInfo.vertexBindingDescriptionCount = model->attributes->bindings.size();
-    model->pipe->vboInfo.vertexAttributeDescriptionCount = model->attributes->attributes.size();
-    model->pipe->vboInfo.pVertexBindingDescriptions = model->attributes->bindings.data();
-    model->pipe->vboInfo.pVertexAttributeDescriptions = model->attributes->attributes.data();
-    model->pipe->vboInfo.flags = 0;
-    model->pipe->vboInfo.pNext = nullptr;
+    model->pipe->vbo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    model->pipe->vbo.vertexBindingDescriptionCount = model->attributes->bindings.size();
+    model->pipe->vbo.vertexAttributeDescriptionCount = model->attributes->attributes.size();
+    model->pipe->vbo.pVertexBindingDescriptions = model->attributes->bindings.data();
+    model->pipe->vbo.pVertexAttributeDescriptions = model->attributes->attributes.data();
+    model->pipe->vbo.flags = 0;
+    model->pipe->vbo.pNext = nullptr;
 }
 
 void ProgramVK::createVertexBuffer(BufferInfo *buf) {

@@ -73,7 +73,7 @@ void Shader::setId(unsigned int idAssigned) {
  */
 bool Shader::compile() {
     const char *shaderSource = this->getSourceRaw();
-    int shaderLength = this->lengthRaw();
+    int shaderLength = this->getLengthRaw();
     EShLanguage stage = (this->shaderType == GL_VERTEX_SHADER) ? EShLangVertex : EShLangFragment;
     EShMessages messages = EShMsgDefault;
     
@@ -163,11 +163,11 @@ const uint* Shader::getSourceCompiled() {
     return this->sourceBufferCompiled.data();
 }
 
-size_t Shader::lengthRaw() {
+size_t Shader::getLengthRaw() {
     return this->sourceStringRaw.size();
 }
 
-size_t Shader::lengthCompiled() {
+size_t Shader::getLengthCompiled() {
     return this->sourceBufferCompiled.size();
 }
 

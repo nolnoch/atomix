@@ -61,6 +61,8 @@
 #include <vector>
 #include <deque>
 #include <map>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "shaderobj.hpp"
@@ -125,46 +127,71 @@ struct AtomixDevice {
 
 struct ModelCreateInfo {
     std::string name;
-    uint vboCount;
-    BufferCreateInfo *vbos;
-    BufferCreateInfo *ibo;
-    BufferCreateInfo *ubo;
+    uint vboCount = 0;
+    BufferCreateInfo *vbos = nullptr;
+    BufferCreateInfo *ibo = nullptr;
+    BufferCreateInfo *ubo = nullptr;
     std::string vertShader;
     std::string fragShader;
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 };
 
 struct ModelInfo {
-    uint id;
+    uint id = 0;
     std::vector<BufferInfo *> vbos;
-    BufferInfo *ibo;
-    BufferInfo *ubo;
-    Shader *vertShader;
-    Shader *fragShader;
+    BufferInfo *ibo = nullptr;
+    BufferInfo *ubo = nullptr;
+    ShaderInfo *shaders = nullptr;
+    AttribInfo *attributes = nullptr;
+    ModelPipelineInfo *pipe = nullptr;
 };
 
 struct BufferCreateInfo {
     std::string name;
+    uint id = 0;
     BufferType type;
-    uint binding;
-    uint size;
-    void *data;
+    uint binding = 0;
+    uint size = 0;
+    void *data = nullptr;
     bool storeData = false;
     std::vector<DataType> dataTypes;
 };
 
 struct BufferInfo {
-    uint id;
+    uint id = 0;
     BufferType type;
-    uint binding;
-    uint size;
-    void *data;
+    uint binding = 0;
+    uint size = 0;
+    void *data = nullptr;
     std::vector<DataType> dataTypes;
+};
+
+struct AttribInfo {
+    std::vector<VkVertexInputBindingDescription> bindings;
+	std::vector<VkVertexInputAttributeDescription> attributes;
+};
+
+struct DescInfo {
+    std::string name;
+    uint location = 0;
+    uint binding = 0;
+};
+
+struct ShaderInfo {
+    Shader *vertShader = nullptr;
+    Shader *fragShader = nullptr;
+    Shader *geomShader = nullptr;
+    Shader *computeShader = nullptr;
+    VkShaderModule vertModule = VK_NULL_HANDLE;
+    VkShaderModule fragModule = VK_NULL_HANDLE;
+    VkShaderModule geomModule = VK_NULL_HANDLE;
+    VkShaderModule computeModule = VK_NULL_HANDLE;
 };
 
 struct ProgUniInfo {
     std::string name;
-    uint location;
-    uint binding;
+    uint location = 0;
+    uint binding = 0;
 };
 
 struct QueueFamilyIndices {
@@ -178,21 +205,26 @@ struct SwapChainSupportInfo {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct ModelPipelineInfo {
+    std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBindings;
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    VkPipelineShaderStageCreateInfo vertStage{};
+    VkPipelineShaderStageCreateInfo fragStage{};
+    VkPipelineVertexInputStateCreateInfo vboInfo{};
+    VkPipelineInputAssemblyStateCreateInfo ia{};
+    VkPipelineRasterizationStateCreateInfo rs{};
+};
+
 struct PipelineInfo {
     VkDynamicState dynStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
     std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
     std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-    VkPipelineInputAssemblyStateCreateInfo ia{};
     VkPipelineViewportStateCreateInfo vp{};
     VkPipelineDynamicStateCreateInfo dyn{};
-    VkPipelineRasterizationStateCreateInfo rs{};
     VkPipelineMultisampleStateCreateInfo ms{};
     VkPipelineDepthStencilStateCreateInfo ds{};
     VkPipelineColorBlendStateCreateInfo cb{};
     VkPipelineColorBlendAttachmentState cbAtt{};
-    VkPipelineShaderStageCreateInfo shaderStages[2];
-    VkPipelineVertexInputStateCreateInfo vboInfo{};
     VkPipelineLayoutCreateInfo pipeLayInfo{};
     VkPipelineLayout pipeLayout;
 };
@@ -228,15 +260,20 @@ public:
     BufferInfo* addBuffer(BufferCreateInfo &info);
     void addModel(ModelCreateInfo &info);
 
-    void modelsToBuffers();
-
     bool init();
     void createSwapChain();
     void createCommandPool();
     void createCommandBuffers();
     void createRenderPass();
-    void createPipelineParts();
-    void createPipeline();
+    void createShaderStages(ModelInfo *model);
+
+    void pipelineModelSetup(ModelInfo *model);
+    void assemblePipeline();
+    void createPipeline(ModelInfo *model);
+
+    void defineModelAttributes(ModelInfo *model);
+    void defineDescriptorSets(ModelInfo *model);
+    void lockModelAttributes(ModelInfo *model);
 
     void createVertexBuffer(BufferInfo *buf);
     void createIndexBuffer(BufferInfo *buf);
@@ -255,8 +292,9 @@ public:
 
     void recordCommandBuffer();
 
-    void updateVBO(std::string name, uint bufCount, uint offset, uint bufSize, const VKfloat *buf);
-    void updateEBO(std::string name, uint bufCount, uint offset, uint bufSize, const VKuint *buf);
+    void updateVBO(std::string name, VKuint *data);
+    void updateIBO(VKuint *data);
+    void updateUBO(VKuint *data);
     void render();
 
     void bindAttribute(int location, std::string name);
@@ -317,7 +355,8 @@ public:
     void displayLogProgramVK();
     void displayLogShader(VKenum shader);
 
-    std::vector<void *> uniformMappings;
+    void printModel(ModelInfo *model);
+
 
 private:
     std::vector<SamplerInfo> *samplers = nullptr;
@@ -364,12 +403,17 @@ private:
     std::vector<VKuint> p_activeModels;
     std::vector<void *> p_allocatedBuffers;
 
-    std::vector<VkDescriptorSets> p_descSets;
+    std::vector<VkDescriptorSet> p_descSets;
     std::vector<VkBuffer> p_uniformBuffers;
     std::vector<VkDeviceMemory> p_uniformMemory;
+    std::vector<void *> uniformMappings;
 
-    VkBuffer stagingBuffer, vertexBuffer, indexBuffer;
-    VkDeviceMemory stagingBufferMemory, vertexBufferMemory, indexBufferMemory;
+    // std::vector<VkBuffer> p_stagingBuffers;
+    // std::vector<VkDeviceMemory> p_stagingMemory;
+    std::vector<VkBuffer> p_vertexBuffers;
+    std::vector<VkDeviceMemory> p_vertexMemory;
+    VkBuffer p_stagingBuffer, p_indexBuffer;
+    VkDeviceMemory p_stagingMemory, p_indexMemory;
     
     VkResult err;
     

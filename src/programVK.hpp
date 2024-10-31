@@ -205,18 +205,33 @@ struct SwapChainSupportInfo {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct PipelineCacheHeader {
+    uint32_t headerSize = sizeof(PipelineCacheHeader);
+    uint32_t version = VK_PIPELINE_CACHE_HEADER_VERSION_ONE;
+    uint32_t dataSize = 0;
+    uint8_t uuid[VK_UUID_SIZE] = {0};
+};
+
+struct PipelineCacheInfo {
+    PipelineCacheHeader header;
+    ModelPipelineInfo *modelPipe = nullptr;
+    GlobalPipelineInfo *globalPipe = nullptr;
+};
+
 struct ModelPipelineInfo {
-    std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBindings;
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    // std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    VkPipelineShaderStageCreateInfo vs{};
+    VkPipelineShaderStageCreateInfo fs{};
     VkPipelineVertexInputStateCreateInfo vbo{};
     VkPipelineInputAssemblyStateCreateInfo ia{};
     VkPipelineRasterizationStateCreateInfo rs{};
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 };
 
-struct PipelineInfo {
+struct GlobalPipelineInfo {
     VkDynamicState dynStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     VkPipelineViewportStateCreateInfo vp{};
+    VkPipelineTessellationStateCreateInfo ts{};
     VkPipelineDynamicStateCreateInfo dyn{};
     VkPipelineMultisampleStateCreateInfo ms{};
     VkPipelineDepthStencilStateCreateInfo ds{};
@@ -224,6 +239,13 @@ struct PipelineInfo {
     VkPipelineColorBlendAttachmentState cbAtt{};
     VkPipelineLayoutCreateInfo pipeLayInfo{};
     VkPipelineLayout pipeLayout;
+};
+
+struct PipelineLibrary {
+    VkPipeline vertexInput;
+    VkPipeline preRasterization;
+    VkPipeline fragmentShader;
+    VkPipeline fragmentOutput;
 };
 
 /**
@@ -256,6 +278,10 @@ public:
     BufferInfo* addBuffer(BufferCreateInfo &info);
     void addModel(ModelCreateInfo &info);
 
+    void createPipelineCache();
+    void savePipelineToCache();
+    void loadPipelineFromCache();
+
     bool init();
     void createSwapChain();
     void createCommandPool();
@@ -266,6 +292,9 @@ public:
     void pipelineModelSetup(ModelInfo *model);
     void assemblePipeline();
     void createPipeline(ModelInfo *model);
+    void createGlobalPipeLibs(ModelInfo *model);
+    void createModelPipeLib(ModelInfo *model);
+    void createPipeFromLibrary();
 
     void defineModelAttributes(ModelInfo *model);
     void defineDescriptorSets(ModelInfo *model);
@@ -371,6 +400,7 @@ private:
     VkFramebuffer p_frames[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT] = { 0 };
     VkPipeline p_pipe = VK_NULL_HANDLE;
     VkPipelineLayout p_pipeLayout = VK_NULL_HANDLE;
+    VkPipelineCache p_pipeCache = VK_NULL_HANDLE;
     VkDescriptorSetLayout p_descSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool p_descPool = VK_NULL_HANDLE;
     VkRenderPass p_renderPass = VK_NULL_HANDLE;
@@ -382,7 +412,7 @@ private:
     VkShaderModule p_shaderGeom = VK_NULL_HANDLE;
     VkShaderModule p_shaderComp = VK_NULL_HANDLE;
 
-    PipelineInfo p_pipeInfo;
+    GlobalPipelineInfo p_pipeInfo;
 
     VkViewport p_viewport = { 0, 0, 0, 0 };
     VkRect2D p_scissor = { {0, 0}, {0, 0} };
@@ -412,6 +442,8 @@ private:
     std::vector<VkDeviceMemory> p_vertexMemory;
     VkBuffer p_stagingBuffer, p_indexBuffer;
     VkDeviceMemory p_stagingMemory, p_indexMemory;
+
+    PipelineLibrary p_pipeLibs;
     
     VkResult err;
     

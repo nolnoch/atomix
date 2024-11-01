@@ -127,23 +127,24 @@ struct AtomixDevice {
 
 struct ModelCreateInfo {
     std::string name;
-    uint vboCount = 0;
-    BufferCreateInfo *vbos = nullptr;
+    std::vector<BufferCreateInfo *> vbos;
     BufferCreateInfo *ibo = nullptr;
-    BufferCreateInfo *ubo = nullptr;
-    std::string vertShader;
-    std::string fragShader;
-    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    std::vector<std::string> vertShaders;
+    std::vector<std::string> fragShaders;
+    std::vector<VkPrimitiveTopology> topologies;
+    std::vector<OffsetInfo> offsets;
 };
 
 struct ModelInfo {
     uint id = 0;
     std::vector<BufferInfo *> vbos;
     BufferInfo *ibo = nullptr;
-    BufferInfo *ubo = nullptr;
     ShaderInfo *shaders = nullptr;
     AttribInfo *attributes = nullptr;
-    ModelPipelineInfo *pipe = nullptr;
+    ModelPipelineInfo *pipeInfo = nullptr;
+    std::vector<VkPrimitiveTopology> topologies;
+    std::vector<OffsetInfo> offsets;
+    std::vector<VkPipeline> pipelines;
 };
 
 struct BufferCreateInfo {
@@ -178,14 +179,15 @@ struct DescInfo {
 };
 
 struct ShaderInfo {
-    Shader *vertShader = nullptr;
-    Shader *fragShader = nullptr;
-    Shader *geomShader = nullptr;
-    Shader *computeShader = nullptr;
-    VkShaderModule vertModule = VK_NULL_HANDLE;
-    VkShaderModule fragModule = VK_NULL_HANDLE;
-    VkShaderModule geomModule = VK_NULL_HANDLE;
-    VkShaderModule computeModule = VK_NULL_HANDLE;
+    std::vector<VkShaderModule> vertModules;
+    std::vector<VkShaderModule> fragModules;
+};
+
+struct OffsetInfo {
+    VkDeviceSize offset = 0;
+    VKuint vertShaderIndex = 0;
+    VKuint fragShaderIndex = 0;
+    VKuint topologyIndex = 0;
 };
 
 struct ProgUniInfo {
@@ -199,33 +201,13 @@ struct QueueFamilyIndices {
     std::optional<uint32_t> presentFamily;
 };
 
-struct SwapChainSupportInfo {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
-
-struct PipelineCacheHeader {
-    uint32_t headerSize = sizeof(PipelineCacheHeader);
-    uint32_t version = VK_PIPELINE_CACHE_HEADER_VERSION_ONE;
-    uint32_t dataSize = 0;
-    uint8_t uuid[VK_UUID_SIZE] = {0};
-};
-
-struct PipelineCacheInfo {
-    PipelineCacheHeader header;
-    ModelPipelineInfo *modelPipe = nullptr;
-    GlobalPipelineInfo *globalPipe = nullptr;
-};
-
 struct ModelPipelineInfo {
-    // std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-    VkPipelineShaderStageCreateInfo vs{};
-    VkPipelineShaderStageCreateInfo fs{};
-    VkPipelineVertexInputStateCreateInfo vbo{};
-    VkPipelineInputAssemblyStateCreateInfo ia{};
-    VkPipelineRasterizationStateCreateInfo rs{};
-    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    std::vector<VkPipelineShaderStageCreateInfo> vsCreates;
+    std::vector<VkPipelineShaderStageCreateInfo> fsCreates;
+    std::vector<VkPipelineVertexInputStateCreateInfo> vboCreates;
+    std::vector<VkPipelineInputAssemblyStateCreateInfo> iaCreates;
+    std::vector<VkPipelineRasterizationStateCreateInfo> rsCreates;
+    PipelineLibrary *pipeLib = nullptr;
 };
 
 struct GlobalPipelineInfo {
@@ -239,21 +221,13 @@ struct GlobalPipelineInfo {
     VkPipelineColorBlendAttachmentState cbAtt{};
     VkPipelineLayoutCreateInfo pipeLayInfo{};
     VkPipelineLayout pipeLayout;
+    bool init = false;
 };
 
 struct PipelineLibrary {
-    VkPipeline vertexInput;
-    VkPipeline preRasterization;
-    VkPipeline fragmentShader;
-    VkPipeline fragmentOutput;
-};
-
-/**
- * Stores pairings of generated GLSL samplers and their uniform names.
- */
-struct SamplerInfo {
-    VKuint samplerID;         /**< Generated sampler ID */
-    std::string samplerName;  /**< Uniform name as string */
+    std::vector<VkPipeline> vertexInput;
+    std::vector<VkPipeline> preRasterization;
+    std::vector<VkPipeline> fragmentShader;
 };
 
 
@@ -273,7 +247,9 @@ public:
     int addAllShaders(std::vector<std::string> *fList, VKuint type);
     bool compileShader(Shader *shader);
     int compileAllShaders();
-    void bindShader(std::string name);
+    VkShaderModule createShaderModule(Shader *shader);
+    void createShaderStages(ModelInfo *model);
+    void defineModelAttributes(ModelInfo *model);
 
     BufferInfo* addBuffer(BufferCreateInfo &info);
     void addModel(ModelCreateInfo &info);
@@ -283,32 +259,28 @@ public:
     void loadPipelineFromCache();
 
     bool init();
-    void createSwapChain();
     void createCommandPool();
     void createCommandBuffers();
     void createRenderPass();
-    void createShaderStages(ModelInfo *model);
+    void defineDescriptorSets();
 
     void pipelineModelSetup(ModelInfo *model);
-    void assemblePipeline();
+    void pipelineGlobalSetup();
     void createPipeline(ModelInfo *model);
-    void createGlobalPipeLibs(ModelInfo *model);
-    void createModelPipeLib(ModelInfo *model);
-    void createPipeFromLibrary();
-
-    void defineModelAttributes(ModelInfo *model);
-    void defineDescriptorSets(ModelInfo *model);
-    void lockModelAttributes(ModelInfo *model);
+    VkPipeline& genVertexInputPipeLib(VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia);
+    VkPipeline& genPreRasterizationPipeLib(VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs);
+    VkPipeline& genFragmentShaderPipeLib(VkPipelineShaderStageCreateInfo &frag);
+    VkPipeline& genFragmentOutputPipeLib();
+    VkPipeline& createPipeFromLibraries(VkPipeline &vis, VkPipeline &pre, VkPipeline &frag);
+    void updatePipeFromLibraries();
 
     void createVertexBuffer(BufferInfo *buf);
     void createIndexBuffer(BufferInfo *buf);
     void createPersistentUniformBuffer(BufferInfo *buf);
-    void createDescriptorSet();
     void createDescriptorSetLayout();
     void createDescriptorPool();
     void createDescriptorSets();
 
-    SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     BufferInfo* getBufferInfo(std::string name);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
@@ -317,79 +289,12 @@ public:
 
     void recordCommandBuffer();
 
-    void updateVBO(std::string name, VKuint *data);
-    void updateIBO(VKuint *data);
-    void updateUBO(VKuint *data);
-    void render();
-
-    void bindAttribute(int location, std::string name);
-    
-    void attachShader(std::string& name);
-    VKint linkAndValidate();
-    void detachShaders();
-    void detachDelete();
-    void enable();
-    void disable();
-
-    void initVAO();
-    void bindVAO();
-    void clearVAO();
-
-    VKuint bindVBO(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode);
-    void setAttributePointerFormat(VKuint attrIdx, VKuint binding, VKuint count, VKenum type, VKuint offset, VKuint step = 0);
-    void setAttributeBuffer(VKuint binding, VKuint vboIdx, VKsizei stride);
-    void enableAttribute(VKuint idx);
-    void enableAttributes();
-    void disableAttributes();
-    void updateVBO(uint offset, uint bufCount, uint bufSize, const VKfloat *buf);
-    void updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKfloat *buf);
-    void resizeVBONamed(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode);
-    void clearVBO();
-
-    VKuint bindEBO(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode);
-    void updateEBO(uint offset, uint bufCount, uint bufSize, const VKuint *buf);
-    void updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKuint *buf);
-    void resizeEBONamed(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode);
-    void clearEBO();
-
-    void assignFragColour();
-
-    void beginRender();
-    void endRender();
-    
-    void clearBuffers();
-    void deleteBuffer(std::string name);
-    
-    bool hasBuffer(std::string name);
-
-    void setUniform(int type, std::string name, double n);
-    void setUniform(int type, std::string name, float n);
-    void setUniform(int type, std::string name, int n);
-    void setUniform(int type, std::string name, uint n);
-    void setUniformv(int count, int size, int type, std::string name, const float *n);
-    void setUniformMatrix(int size, std::string name, float *m);
-    //void setTexture(int samplerIdx, TexInfo& texInfo);
-
-    VKuint getProgramVKId();
-    VKuint getFirstVBOId();
-    VKuint getLastVBOId();
-    VKuint getSize(std::string name);
-    VKuint getShaderIdFromName(std::string& fileName);
     Shader* getShaderFromName(std::string& fileName);
-
-    void displayLogProgramVK();
-    void displayLogShader(VKenum shader);
 
     void printModel(ModelInfo *model);
 
 
 private:
-    void addSampler(std::string sName);
-
-    std::vector<SamplerInfo> *samplers = nullptr;
-    std::vector<Shader *> boundShaders;
-    std::vector<VKuint> attribs;
-
     const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 
     VkDevice p_dev = VK_NULL_HANDLE;
@@ -398,7 +303,6 @@ private:
     VkQueue p_queue = VK_NULL_HANDLE;
     VkCommandBuffer p_cmdbuff = VK_NULL_HANDLE;
     VkFramebuffer p_frames[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT] = { 0 };
-    VkPipeline p_pipe = VK_NULL_HANDLE;
     VkPipelineLayout p_pipeLayout = VK_NULL_HANDLE;
     VkPipelineCache p_pipeCache = VK_NULL_HANDLE;
     VkDescriptorSetLayout p_descSetLayout = VK_NULL_HANDLE;
@@ -406,13 +310,6 @@ private:
     VkRenderPass p_renderPass = VK_NULL_HANDLE;
     VkExtent2D p_swapExtent = { 0, 0 };
     VkClearValue p_clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};;
-
-    VkShaderModule p_shaderVert = VK_NULL_HANDLE;
-    VkShaderModule p_shaderFrag = VK_NULL_HANDLE;
-    VkShaderModule p_shaderGeom = VK_NULL_HANDLE;
-    VkShaderModule p_shaderComp = VK_NULL_HANDLE;
-
-    GlobalPipelineInfo p_pipeInfo;
 
     VkViewport p_viewport = { 0, 0, 0, 0 };
     VkRect2D p_scissor = { {0, 0}, {0, 0} };
@@ -436,14 +333,14 @@ private:
     std::vector<VkDeviceMemory> p_uniformMemory;
     std::vector<void *> uniformMappings;
 
-    // std::vector<VkBuffer> p_stagingBuffers;
-    // std::vector<VkDeviceMemory> p_stagingMemory;
     std::vector<VkBuffer> p_vertexBuffers;
     std::vector<VkDeviceMemory> p_vertexMemory;
     VkBuffer p_stagingBuffer, p_indexBuffer;
     VkDeviceMemory p_stagingMemory, p_indexMemory;
 
-    PipelineLibrary p_pipeLibs;
+    std::vector<VkPipeline> p_pipelines;
+    GlobalPipelineInfo p_pipeInfo{};
+    VkPipeline p_fragmentOutput;
     
     VkResult err;
     

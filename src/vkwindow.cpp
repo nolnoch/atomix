@@ -45,7 +45,7 @@ void VKWindow::cleanup() {
     fwModel->waitForFinished();
     changeModes(true);
     delete gw_timer;
-    delete crystalProg;
+    delete atomixProg;
 }
 
 VKRenderer* VKWindow::createRenderer() {
@@ -54,15 +54,15 @@ VKRenderer* VKWindow::createRenderer() {
 }
 
 void VKWindow::createPrograms() {
-    crystalProg = new ProgramVK();
-    waveProg = new ProgramVK();
-    cloudProg = new ProgramVK();
+    atomixProg = new ProgramVK();
+    atomixProg = new ProgramVK();
+    atomixProg = new ProgramVK();
 }
 
 void VKWindow::populatePrograms(AtomixDevice *atomixDevice) {
-    crystalProg->setInstance(atomixDevice);
-    waveProg->setInstance(atomixDevice);
-    cloudProg->setInstance(atomixDevice);
+    atomixProg->setInstance(atomixDevice);
+    atomixProg->setInstance(atomixDevice);
+    atomixProg->setInstance(atomixDevice);
 }
 
 void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
@@ -162,82 +162,83 @@ void VKWindow::initCrystalProgram() {
         crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos_t));
         crystalRingVertices.push_back(0.0f);
         crystalRingVertices.push_back(static_cast<float>(crystalRadius * sin_t));
-        crystalRingVertices.push_back(0.9f);
-        crystalRingVertices.push_back(0.9f);
-        crystalRingVertices.push_back(0.9f);
+        crystalRingVertices.push_back(0.85f);
+        crystalRingVertices.push_back(0.85f);
+        crystalRingVertices.push_back(0.85f);
         crystalRingIndices.push_back(vs + i);
     }
     this->crystalRingCount = crystalRingIndices.size() - gw_faces;
     this->crystalRingOffset = gw_faces * sizeof(uint);
 
     // Add shaders to program
-    crystalProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
-    crystalProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
-    crystalProg->init();
+    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
+    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
+    atomixProg->init();
     
-    // Add buffers to program
-    BufferInfo crystalVert{};
+    // Add Model to program
+    BufferCreateInfo crystalVert{};
     crystalVert.type = BufferType::VERTEX;
     crystalVert.binding = 0;
     crystalVert.size = crystalRingVertices.size() * sizeof(float);
     crystalVert.data = &crystalRingVertices[0];
-    crystalVert.name = "vertices";
+    crystalVert.name = "crystalVertices";
     crystalVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
-    crystalProg->addBufferConfig(crystalVert);
-    crystalProg->createVertexBuffer(&crystalVert);
+    crystalVert.storeData = true;
 
-    BufferInfo crystalInd{};
+    BufferCreateInfo crystalInd{};
     crystalInd.type = BufferType::INDEX;
-    crystalInd.binding = 1;
     crystalInd.size = crystalRingIndices.size() * sizeof(uint);
     crystalInd.data = &crystalRingIndices[0];
-    crystalInd.name = "indices";
+    crystalInd.name = "crystalIndices";
     crystalInd.dataTypes = {DataType::UINT};
-    crystalProg->addBufferConfig(crystalInd);
+    crystalInd.storeData = true;
+
+    ModelCreateInfo crystalModel{};
+    crystalModel.name = "crystal";
+    crystalModel.vbos = { &crystalVert, &crystalInd };
+    crystalModel.ibo = &crystalInd;
+    crystalModel.vertShaders = { vertName };
+    crystalModel.fragShaders = { fragName };
+    crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
+    crystalModel.offsets = { { 0, 0, 0, 0 }, { crystalRingOffset, 0, 0, 1 } };
+
+    atomixProg->addModel(crystalModel);
 }
 
 void VKWindow::initWaveProgram() {
     assert(waveManager);
 
     /* ProgramVK */
-    // Create ProgramVK
-    waveProg = new ProgramVK(vrend->vdf);
-
-    // Add all shaders
-    waveProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
-    waveProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
-    waveProg->init();
-
     // Attach shaders, link/validate program, and clean up
-    waveProg->attachShader(waveManager->getShaderVert());
-    waveProg->attachShader(waveManager->getShaderFrag());
-    waveProg->linkAndValidate();
-    waveProg->detachShaders();
+    atomixProg->attachShader(waveManager->getShaderVert());
+    atomixProg->attachShader(waveManager->getShaderFrag());
+    atomixProg->linkAndValidate();
+    atomixProg->detachShaders();
 
     /* VAO */
-    waveProg->initVAO();
-    waveProg->bindVAO();
+    atomixProg->initVAO();
+    atomixProg->bindVAO();
 
     /* VBO: Vertices & Colours */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
     uint static_dynamic = waveManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    GLuint vboID = waveProg->bindVBO("vertices", waveManager->getVertexCount(), waveManager->getVertexSize(), waveManager->getVertexData(), static_dynamic);
-    waveProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
-    waveProg->enableAttribute(0);
-    waveProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
-    waveProg->enableAttribute(1);
-    waveProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
+    GLuint vboID = atomixProg->bindVBO("vertices", waveManager->getVertexCount(), waveManager->getVertexSize(), waveManager->getVertexData(), static_dynamic);
+    atomixProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
+    atomixProg->enableAttribute(0);
+    atomixProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
+    atomixProg->enableAttribute(1);
+    atomixProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
 
     /* EBO: Indices */
-    waveProg->bindEBO("indices", waveManager->getIndexCount(), waveManager->getIndexSize(), waveManager->getIndexData(), static_dynamic);
+    atomixProg->bindEBO("indices", waveManager->getIndexCount(), waveManager->getIndexSize(), waveManager->getIndexData(), static_dynamic);
 
     /* Release */
-    waveProg->endRender();
-    waveProg->clearBuffers();
+    atomixProg->endRender();
+    atomixProg->clearBuffers();
     flGraphState.set(egs::WAVE_RENDER);
     flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR);
 
-    currentProg = waveProg;
+    currentProg = atomixProg;
     currentManager = waveManager;
 }
 
@@ -246,61 +247,61 @@ void VKWindow::initCloudProgram() {
 
     /* ProgramVK */
     // Create ProgramVK
-    cloudProg = new ProgramVK(vrend->vdf);
+    atomixProg = new ProgramVK(vrend->vdf);
 
     // Add all shaders
-    cloudProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
-    cloudProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
-    cloudProg->init();
+    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
+    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
+    atomixProg->init();
 
     // Attach shaders, link/validate program, and clean up
-    cloudProg->attachShader(cloudManager->getShaderVert());
-    cloudProg->attachShader(cloudManager->getShaderFrag());
-    cloudProg->linkAndValidate();
-    cloudProg->detachShaders();
+    atomixProg->attachShader(cloudManager->getShaderVert());
+    atomixProg->attachShader(cloudManager->getShaderFrag());
+    atomixProg->linkAndValidate();
+    atomixProg->detachShaders();
 
     /* VAO */
-    cloudProg->initVAO();
-    cloudProg->bindVAO();
+    atomixProg->initVAO();
+    atomixProg->bindVAO();
 
     /* VBO 1: Vertices */
     // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
     uint static_dynamic = cloudManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    GLuint vboIDa = cloudProg->bindVBO("vertices", cloudManager->getVertexCount(), cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
-    cloudProg->setAttributeBuffer(0, vboIDa, 3 * sizeof(GLfloat));
-    cloudProg->enableAttribute(0);
-    cloudProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
+    GLuint vboIDa = atomixProg->bindVBO("vertices", cloudManager->getVertexCount(), cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
+    atomixProg->setAttributeBuffer(0, vboIDa, 3 * sizeof(GLfloat));
+    atomixProg->enableAttribute(0);
+    atomixProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
 
     /* VBO 2: RDPs */
-    GLuint vboIDb = cloudProg->bindVBO("pdvs", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData(), static_dynamic);
-    cloudProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
-    cloudProg->enableAttribute(1);
-    cloudProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
+    GLuint vboIDb = atomixProg->bindVBO("pdvs", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData(), static_dynamic);
+    atomixProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
+    atomixProg->enableAttribute(1);
+    atomixProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
 
     /* EBO: Indices */
-    GLuint eboId = cloudProg->bindEBO("indices", cloudManager->getIndexCount(), cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
+    GLuint eboId = atomixProg->bindEBO("indices", cloudManager->getIndexCount(), cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
 
     /* Release */
-    cloudProg->endRender();
-    cloudProg->clearBuffers();
+    atomixProg->endRender();
+    atomixProg->clearBuffers();
     flGraphState.set(CLOUD_RENDER);
 
-    currentProg = cloudProg;
+    currentProg = atomixProg;
     currentManager = cloudManager;
 }
 
 void VKWindow::changeModes(bool force) {
     if (!waveManager || force) {
         delete cloudManager;
-        delete cloudProg;
+        delete atomixProg;
         cloudManager = 0;
-        cloudProg = 0;
+        atomixProg = 0;
         flGraphState.clear(eCloudFlags);
     } else if (!cloudManager || force) {
         delete waveManager;
-        delete waveProg;
+        delete atomixProg;
         waveManager = 0;
-        waveProg = 0;
+        atomixProg = 0;
         flGraphState.clear(eWaveFlags);
     }
     currentManager = 0;
@@ -397,13 +398,13 @@ void VKWindow::initVecsAndMatrices() {
 //     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
 
 //     /* Render -- Crystal */
-//     crystalProg->beginRender();
-//     crystalProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-//     crystalProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-//     crystalProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+//     atomixProg->beginRender();
+//     atomixProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+//     atomixProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+//     atomixProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
 //     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
 //     glDrawElements(GL_LINE_LOOP, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
-//     crystalProg->endRender();
+//     atomixProg->endRender();
 
 //     /* Render -- Waves */
 //     if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_RENDER) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_RENDER)) {
@@ -621,15 +622,15 @@ void VKWindow::updateBuffersAndShaders() {
 
     /* Uniforms */
     if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
-        waveProg->setUniform(GL_FLOAT, "two_pi_L", waveManager->two_pi_L);
-        waveProg->setUniform(GL_FLOAT, "two_pi_T", waveManager->two_pi_T);
-        waveProg->setUniform(GL_FLOAT, "amp", waveManager->waveAmplitude);
+        atomixProg->setUniform(GL_FLOAT, "two_pi_L", waveManager->two_pi_L);
+        atomixProg->setUniform(GL_FLOAT, "two_pi_T", waveManager->two_pi_T);
+        atomixProg->setUniform(GL_FLOAT, "amp", waveManager->waveAmplitude);
         flGraphState.clear(egs::UPD_UNI_MATHS);
     }
     if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
-        waveProg->setUniform(GL_UNSIGNED_INT, "peak", waveManager->peak);
-        waveProg->setUniform(GL_UNSIGNED_INT, "base", waveManager->base);
-        waveProg->setUniform(GL_UNSIGNED_INT, "trough", waveManager->trough);
+        atomixProg->setUniform(GL_UNSIGNED_INT, "peak", waveManager->peak);
+        atomixProg->setUniform(GL_UNSIGNED_INT, "base", waveManager->base);
+        atomixProg->setUniform(GL_UNSIGNED_INT, "trough", waveManager->trough);
         flGraphState.clear(egs::UPD_UNI_COLOUR);
     }
 

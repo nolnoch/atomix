@@ -199,10 +199,7 @@ private:
     VKRenderer *vw_rend = nullptr;
 
     QOpenGLContext *gw_context = nullptr;
-    ProgramVK *crystalProg = nullptr;
-    ProgramVK *waveProg = nullptr;
-    ProgramVK *cloudProg = nullptr;
-    ProgramVK *atomixProg = nullptr; // TODO Consolidate or delete?
+    ProgramVK *atomixProg = nullptr;
     ConfigParser *cfgParser = nullptr;
     WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;

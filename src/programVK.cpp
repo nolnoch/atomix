@@ -36,7 +36,7 @@ ProgramVK::ProgramVK() {
  */
 ProgramVK::~ProgramVK() {
     // destruct shaders
-    for (auto &shader : registeredShaders) {
+    for (auto &shader : p_registeredShaders) {
         delete shader;
     }
 
@@ -103,7 +103,7 @@ bool ProgramVK::addShader(std::string fName, VKuint type) {
 
     Shader *shader = new Shader(fileLoc, type);
 
-    for (auto &s : this->registeredShaders) {
+    for (auto &s : this->p_registeredShaders) {
         if (s->getName() == shader->getName()) {
             std::cout << "Shader already registered: " << fName << std::endl;
             delete shader;
@@ -115,7 +115,7 @@ bool ProgramVK::addShader(std::string fName, VKuint type) {
         delete shader;
         std::cout << "Failed to add shader source: " << fName << std::endl;
     } else {
-        this->registeredShaders.push_back(shader);
+        this->p_registeredShaders.push_back(shader);
         validFile = true;
         this->stage = 1;
     }
@@ -154,13 +154,13 @@ int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
 bool ProgramVK::compileShader(Shader *shader) {
     if (!shader->compile()) {
         std::cout << "Failed to compile shader. Deleting Shader." << std::endl;
-        auto it = std::find(this->registeredShaders.begin(), this->registeredShaders.end(), shader);
-        this->registeredShaders.erase(it);
+        auto it = std::find(this->p_registeredShaders.begin(), this->p_registeredShaders.end(), shader);
+        this->p_registeredShaders.erase(it);
         delete shader;
         return false;
     }
 
-    this->compiledShaders.push_back(shader);
+    this->p_compiledShaders.push_back(shader);
 
     return true;
 }
@@ -173,9 +173,9 @@ bool ProgramVK::compileShader(Shader *shader) {
  * @return number of errors, or 0 if all shaders compiled successfully
  */
 int ProgramVK::compileAllShaders() {
-    int errors = this->registeredShaders.size();
+    int errors = this->p_registeredShaders.size();
     
-    for (auto &shader : this->registeredShaders) {
+    for (auto &shader : this->p_registeredShaders) {
         if (this->compileShader(shader)) {
             errors--;
         }
@@ -185,7 +185,7 @@ int ProgramVK::compileAllShaders() {
 }
 
 VkShaderModule ProgramVK::createShaderModule(Shader *shader) {
-    if (std::find(this->compiledShaders.cbegin(), this->compiledShaders.cend(), shader) == this->compiledShaders.cend()) {
+    if (std::find(this->p_compiledShaders.cbegin(), this->p_compiledShaders.cend(), shader) == this->p_compiledShaders.cend()) {
         throw std::runtime_error("Shader not compiled: " + shader->getName());
     }
 
@@ -237,7 +237,7 @@ BufferInfo *ProgramVK::addBuffer(BufferCreateInfo &info) {
         buf->size = info.size;
         if (info.storeData) {
             buf->data = operator new(buf->size);
-            memcpy(buf->data, info.data, buf->size);
+            memcpy(const_cast<void *>(buf->data), info.data, buf->size);
             p_allocatedBuffers.push_back(buf->data);
         } else {
             buf->data = info.data;
@@ -253,10 +253,10 @@ BufferInfo *ProgramVK::addBuffer(BufferCreateInfo &info) {
     return nullptr;
 }
 
-void ProgramVK::addModel(ModelCreateInfo &info) {
+VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     assert(this->p_pipeInfo.init);
     ModelInfo *model;
-    uint idx = p_models.size();
+    VKuint idx = p_models.size();
 
     const auto [it, success] = p_mapModel.insert({info.name, idx});
 
@@ -265,11 +265,14 @@ void ProgramVK::addModel(ModelCreateInfo &info) {
         std::cout << "Model already exists. Updating model " << info.name << "..." << std::endl;
         model = p_models[it->second];
 
-        // TODO: Check if model is compatible with new model
+        // TODO: Handle old model data
         return;
     } else {
         model = new ModelInfo{};
         model->id = idx;
+        model->name = info.name;
+        p_models.push_back(model);
+        p_mapModel[info.name] = model->id;
     }
 
     // Add buffers
@@ -319,8 +322,39 @@ void ProgramVK::addModel(ModelCreateInfo &info) {
         }
     }
 
-    p_models.push_back(model);
-    p_mapModel[info.name] = idx;
+    return model->id;
+}
+
+VKuint ProgramVK::activateModel(std::string name) {
+    VKuint id = -1;
+
+    try {
+        id = p_mapModel.at(name);
+    } catch (const std::out_of_range &e) {
+        std::cout << "Model not found: " << name << std::endl;
+        return id;
+    }
+    p_activeModels.push_back(id);
+    
+    return id;
+}
+
+VKuint ProgramVK::deactivateModel(std::string name) {
+    VKuint id = -1;
+
+    try {
+        id = p_mapModel.at(name);
+    } catch (const std::out_of_range &e) {
+        std::cout << "Model not found: " << name << std::endl;
+        return id;
+    }
+
+    if (!std::erase(p_activeModels, id)) {
+        std::cout << "Model not found and not removed from active models: " << name << std::endl;
+        id = -1;
+    }
+
+    return id;
 }
 
 void ProgramVK::createPipelineCache() {
@@ -357,7 +391,7 @@ void ProgramVK::loadPipelineFromCache() {
  * associated with the ProgramVK object.
  */
 bool ProgramVK::init() {
-    int numShaders = this->registeredShaders.size();
+    int numShaders = this->p_registeredShaders.size();
 
     if (!numShaders || !stage) {
         std::cout << "No shader files associated with program. Aborting..." << std::endl;
@@ -1025,7 +1059,7 @@ Shader* ProgramVK::getShaderFromName(std::string& fileName) {
     assert(stage >= 2);
     Shader *s = nullptr;
     
-    for (const auto& shader : compiledShaders) {
+    for (const auto& shader : p_compiledShaders) {
         if (shader->getName() == fileName) {
             s = shader;
         }
@@ -1036,6 +1070,20 @@ Shader* ProgramVK::getShaderFromName(std::string& fileName) {
     }
     
     return s;
+}
+
+std::vector<VKuint> ProgramVK::getActiveModelsById() {
+    return p_activeModels;
+}
+
+std::vector<std::string> ProgramVK::getActiveModelsByName() {
+    std::vector<std::string> names;
+
+    for (VKuint id : p_activeModels) {
+        names.push_back(p_models[id]->name);
+    }
+
+    return names;
 }
 
 void ProgramVK::printModel(ModelInfo *model) {

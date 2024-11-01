@@ -35,9 +35,22 @@ ProgramVK::ProgramVK() {
  * Default Destructor.
  */
 ProgramVK::~ProgramVK() {
-    delete samplers;
+    // destruct shaders
+    for (auto &shader : registeredShaders) {
+        delete shader;
+    }
 
     // destruct buffers
+    for (auto &buf : p_buffers) {
+        delete buf;
+    }
+
+    // destruct models
+    for (auto &model : p_models) {
+        delete model;
+    }
+
+
 
     cleanup();
 }
@@ -171,24 +184,15 @@ int ProgramVK::compileAllShaders() {
     return errors;
 }
 
-void ProgramVK::bindShader(std::string name) {
-    Shader *activeShader;
-    for (auto &shader : this->compiledShaders) {
-        if (shader->getName() == name) {
-            activeShader = shader;
-            break;
-        }
-    }
-
-    if (!activeShader) {
-        std::cout << "Invalid shader name. Aborting..." << std::endl;
-        return;
+VkShaderModule ProgramVK::createShaderModule(Shader *shader) {
+    if (std::find(this->compiledShaders.cbegin(), this->compiledShaders.cend(), shader) == this->compiledShaders.cend()) {
+        throw std::runtime_error("Shader not compiled: " + shader->getName());
     }
 
     VkShaderModuleCreateInfo moduleCreateInfo{};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = activeShader->getLengthCompiled();
-    moduleCreateInfo.pCode = activeShader->getSourceCompiled();
+    moduleCreateInfo.codeSize = shader->getLengthCompiled();
+    moduleCreateInfo.pCode = shader->getSourceCompiled();
 
     VkShaderModule shaderModule;
     err = p_vdf->vkCreateShaderModule(p_dev, &moduleCreateInfo, nullptr, &shaderModule);
@@ -196,33 +200,27 @@ void ProgramVK::bindShader(std::string name) {
         throw std::runtime_error("Failed to create shader module: " + std::to_string(err));
     }
 
-    if (activeShader->getType() == GL_VERTEX_SHADER) {
-        this->p_shaderVert = shaderModule;
-    } else if (activeShader->getType() == GL_FRAGMENT_SHADER) {
-        this->p_shaderFrag = shaderModule;
-    } else if (activeShader->getType() == GL_GEOMETRY_SHADER) {
-        this->p_shaderGeom = shaderModule;
-    } else if (activeShader->getType() == GL_COMPUTE_SHADER) {
-        this->p_shaderComp = shaderModule;
-    }
+    return shaderModule;
 }
 
-/**
- * Generates a sampler uniform bind target for use in the GLSL shader code.
- */
-void ProgramVK::addSampler(std::string sName) {
-    SamplerInfo info;
-    VKuint sample;
+void ProgramVK::createShaderStages(ModelInfo *m) {
+    for (auto &module : m->shaders->vertModules) {
+        VkPipelineShaderStageCreateInfo shaderStage{};
+        shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        shaderStage.module = module;       
+        shaderStage.pName = "main";
+        m->pipeInfo->vsCreates.push_back(shaderStage);
+    }
 
-    if (!samplers)
-        this->samplers = new std::vector<SamplerInfo>();
-
-    // qgf->glGenSamplers(1, &sample);
-
-    info.samplerID = sample;
-    info.samplerName = sName;
-
-    this->samplers->push_back(info);
+    for (auto &module : m->shaders->fragModules) {
+        VkPipelineShaderStageCreateInfo shaderStage{};
+        shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        shaderStage.module = module;       
+        shaderStage.pName = "main";
+        m->pipeInfo->fsCreates.push_back(shaderStage);
+    }
 }
 
 BufferInfo *ProgramVK::addBuffer(BufferCreateInfo &info) {
@@ -256,34 +254,73 @@ BufferInfo *ProgramVK::addBuffer(BufferCreateInfo &info) {
 }
 
 void ProgramVK::addModel(ModelCreateInfo &info) {
+    assert(this->p_pipeInfo.init);
     ModelInfo *model;
     uint idx = p_models.size();
 
     const auto [it, success] = p_mapModel.insert({info.name, idx});
 
+    // Check for existing model and add if it doesn't exist
     if (!success) {
         std::cout << "Model already exists. Updating model " << info.name << "..." << std::endl;
         model = p_models[it->second];
+
+        // TODO: Check if model is compatible with new model
+        return;
     } else {
-        model = new ModelInfo{0, std::vector<BufferInfo *>(info.vboCount), nullptr, nullptr, nullptr, nullptr};
+        model = new ModelInfo{};
         model->id = idx;
     }
 
-    for (int i = 0; i < info.vboCount; i++) {
-        model->vbos[i] = addBuffer(info.vbos[i]);
+    // Add buffers
+    for (auto &vbo : info.vbos) {
+        model->vbos.push_back(addBuffer(*vbo));
     }
     model->ibo = addBuffer(*info.ibo);
-    model->ubo = addBuffer(*info.ubo);
     
-    model->shaders = new ShaderInfo;
-    model->shaders->vertShader = getShaderFromName(info.vertShader);
-    model->shaders->fragShader = getShaderFromName(info.fragShader);
-
-    model->pipe = new ModelPipelineInfo;
-
-    if (success) {
-        p_models.push_back(model);
+    // Add shaders
+    model->shaders = new ShaderInfo{};
+    for (auto &vert : info.vertShaders) {
+        model->shaders->vertModules.push_back(createShaderModule(getShaderFromName(vert)));
     }
+    for (auto &frag : info.fragShaders) {
+        model->shaders->fragModules.push_back(createShaderModule(getShaderFromName(frag)));
+    }
+    this->createShaderStages(model);
+
+    // Add model-specific pipeline definition
+    model->pipeInfo = new ModelPipelineInfo{};
+    model->pipeInfo->pipeLib = new PipelineLibrary{};
+    model->offsets = info.offsets;
+    this->defineModelAttributes(model);
+    this->pipelineModelSetup(model);
+    
+    // Generate model-specific pipeline libraries
+    for (auto &vbo : model->pipeInfo->vboCreates) {
+        for (auto &ia : model->pipeInfo->iaCreates) {
+            this->genVertexInputPipeLib(vbo, ia);
+        }
+    }
+    for (auto &vert : model->pipeInfo->vsCreates) {
+        for (auto &rs : model->pipeInfo->rsCreates) {
+            this->genPreRasterizationPipeLib(vert, rs);
+        }
+    }
+    for (auto &frag : model->pipeInfo->fsCreates) {
+        this->genFragmentShaderPipeLib(frag);
+    }
+
+    // Create all pipelines used by model
+    for (auto &vis : model->pipeInfo->pipeLib->vertexInput) {
+        for (auto &pre : model->pipeInfo->pipeLib->preRasterization) {
+            for (auto &fs : model->pipeInfo->pipeLib->fragmentShader) {
+                model->pipelines.push_back(createPipeFromLibraries(vis, pre, fs));
+            }
+        }
+    }
+
+    p_models.push_back(model);
+    p_mapModel[info.name] = idx;
 }
 
 void ProgramVK::createPipelineCache() {
@@ -331,7 +368,7 @@ bool ProgramVK::init() {
     compileAllShaders();
 
     // Init program    
-    assemblePipeline();
+    pipelineGlobalSetup();
 
     this->stage = 2;
 }
@@ -355,74 +392,6 @@ QueueFamilyIndices ProgramVK::findQueueFamilies(VkPhysicalDevice device) {
 
     return indices;
 }
-
-SwapChainSupportInfo ProgramVK::querySwapChainSupport(VkPhysicalDevice device) {
-/*     SwapChainSupportInfo info;
-    
-    this->p_vkw->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->p_vkw->surface, &info.capabilities);
-    
-    VKuint formatCount = 0;
-    this->p_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->p_vkw->surface, &formatCount, nullptr);
-    if (formatCount) {
-        info.formats.resize(formatCount);
-        this->p_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->p_vkw->surface, &formatCount, info.formats.data());
-    }
-
-    VKuint presentModeCount = 0;
-    this->p_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->p_vkw->surface, &presentModeCount, nullptr);
-    if (presentModeCount) {
-        info.presentModes.resize(presentModeCount);
-        this->p_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->p_vkw->surface, &presentModeCount, info.presentModes.data());
-    }
-    
-    return info; */
-}
-
-void ProgramVK::createSwapChain() {
-/*     // VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(this->p_vkw->availableFormats);
-    // VkPresentModeKHR presentMode = chooseSwapPresentMode(this->p_vkw->availablePresentModes);
-    // VkExtent2D extent = chooseSwapExtent(this->p_vkw->availableResolutions);
-
-    VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = this->p_vkw->surface;
-    createInfo.minImageCount = this->p_vkw->minImageCount;
-    createInfo.imageFormat = this->p_vkw->availableFormats[0].format;
-    createInfo.imageColorSpace = this->p_vkw->availableFormats[0].colorSpace;
-    createInfo.imageExtent = this->p_vkw->availableResolutions[0];
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    QueueFamilyIndices indices = findQueueFamilies(this->p_phydev);
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
-    if (indices.graphicsFamily != indices.presentFamily) {
-        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
-    } else {
-        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        createInfo.queueFamilyIndexCount = 0; // Optional
-        createInfo.pQueueFamilyIndices = nullptr; // Optional
-    }
-
-    createInfo.preTransform = this->p_vkw->capabilities.currentTransform;
-    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = this->p_vkw->presentMode;
-    createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-    VkSwapchainKHR swapchain;
-    if ((this->p_vkw->vkCreateSwapchainKHR(this->p_dev, &createInfo, nullptr, &swapchain)) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create swap chain!");
-    }
-
-    // this->p_vkw->swapchain = swapchain; */
-}
-
-/* void ProgramVK::createImageViews() {
-    
-} */
 
 void ProgramVK::createRenderPass() {
     VkAttachmentDescription2 colorAttachment{};
@@ -459,87 +428,55 @@ void ProgramVK::createRenderPass() {
     }
 }
 
-void ProgramVK::createShaderStages(ModelInfo *m) {
-    if (m->shaders->vertShader) {
-        VkShaderModuleCreateInfo vertModuleCreateInfo{};
-        vertModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        vertModuleCreateInfo.codeSize = m->shaders->vertShader->getLengthCompiled();
-        vertModuleCreateInfo.pCode = m->shaders->vertShader->getSourceCompiled();
-        
-        if ((this->p_vdf->vkCreateShaderModule(this->p_dev, &vertModuleCreateInfo, nullptr, &m->shaders->vertModule)) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create shader module: " + m->shaders->vertShader->getName());
-        }
-
-        m->pipe->vs.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        m->pipe->vs.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        m->pipe->vs.module = m->shaders->vertModule;       // .pNext = &vertModuleCreateInfo;
-        m->pipe->vs.pName = "main";
-
-        /* m->pipe->shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        m->pipe->shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-        m->pipe->shaderStages[0].module = m->shaders->vertModule;       // .pNext = &vertModuleCreateInfo;
-        m->pipe->shaderStages[0].pName = "main"; */
-    }
-
-    if (m->shaders->fragShader) {
-        VkShaderModuleCreateInfo fragModuleCreateInfo{};
-        fragModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        fragModuleCreateInfo.codeSize = m->shaders->fragShader->getLengthCompiled();
-        fragModuleCreateInfo.pCode = m->shaders->fragShader->getSourceCompiled();
-        
-        if ((this->p_vdf->vkCreateShaderModule(this->p_dev, &fragModuleCreateInfo, nullptr, &m->shaders->fragModule)) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create shader module: " + m->shaders->fragShader->getName());
-        }
-
-        m->pipe->fs.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        m->pipe->fs.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        m->pipe->fs.module = m->shaders->fragModule;       // .pNext = &fragModuleCreateInfo;  
-        m->pipe->fs.pName = "main";
-
-        /* m->pipe->shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        m->pipe->shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        m->pipe->shaderStages[1].module = m->shaders->fragModule;       // .pNext = &fragModuleCreateInfo;
-        m->pipe->shaderStages[1].pName = "main"; */
-    }
-}
-
 void ProgramVK::pipelineModelSetup(ModelInfo *m) {
-    VkPolygonMode polyMode;
-    if (m->pipe->topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        polyMode = VK_POLYGON_MODE_POINT;
-    } else if (m->pipe->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST) {
-        polyMode = VK_POLYGON_MODE_LINE;
-    } else {
-        polyMode = VK_POLYGON_MODE_FILL;
+    // For each topology
+    for (auto &topology : m->topologies) {
+        VkPolygonMode polyMode;
+        if (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+            polyMode = VK_POLYGON_MODE_POINT;
+        } else if (topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST) {
+            polyMode = VK_POLYGON_MODE_LINE;
+        } else {
+            polyMode = VK_POLYGON_MODE_FILL;
+        }
+
+        // Input Assembly
+        VkPipelineInputAssemblyStateCreateInfo ia{};
+        ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        ia.topology = topology;
+        ia.primitiveRestartEnable = VK_FALSE;
+        ia.flags = 0;
+        ia.pNext = nullptr;
+        m->pipeInfo->iaCreates.push_back(ia);
+
+        // Rasterization
+        VkPipelineRasterizationStateCreateInfo rs{};
+        rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rs.polygonMode = polyMode;
+        rs.cullMode = VK_CULL_MODE_NONE;
+        rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rs.lineWidth = 1.0f;
+        rs.depthClampEnable = VK_FALSE;
+        rs.depthBiasEnable = VK_FALSE;
+        rs.depthBiasConstantFactor = 0.0f;
+        rs.depthBiasClamp = 0.0f;
+        rs.depthBiasSlopeFactor = 0.0f;
+        m->pipeInfo->rsCreates.push_back(rs);
     }
 
-    // Shader
-    this->createShaderStages(m);
-
-    // Vertex Input
-    this->defineModelAttributes(m);
-    this->lockModelAttributes(m);
-
-    // Input Assembly
-    memset(&m->pipe->ia, 0, sizeof(m->pipe->ia));
-    m->pipe->ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    m->pipe->ia.topology = m->pipe->topology;
-
-    // Rasterization
-    memset(&m->pipe->rs, 0, sizeof(m->pipe->rs));
-    m->pipe->rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    m->pipe->rs.polygonMode = polyMode;
-    m->pipe->rs.cullMode = VK_CULL_MODE_NONE;
-    m->pipe->rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    m->pipe->rs.lineWidth = 1.0f;
-    m->pipe->rs.depthClampEnable = VK_FALSE;
-    m->pipe->rs.depthBiasEnable = VK_FALSE;
-    m->pipe->rs.depthBiasConstantFactor = 0.0f;
-    m->pipe->rs.depthBiasClamp = 0.0f;
-    m->pipe->rs.depthBiasSlopeFactor = 0.0f;
+    // Vertex Inpute State
+    VkPipelineVertexInputStateCreateInfo vbo{};
+    vbo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vbo.vertexBindingDescriptionCount = m->attributes->bindings.size();
+    vbo.vertexAttributeDescriptionCount = m->attributes->attributes.size();
+    vbo.pVertexBindingDescriptions = m->attributes->bindings.data();
+    vbo.pVertexAttributeDescriptions = m->attributes->attributes.data();
+    vbo.flags = 0;
+    vbo.pNext = nullptr;
+    m->pipeInfo->vboCreates.push_back(vbo);
 }
 
-void ProgramVK::assemblePipeline() {
+void ProgramVK::pipelineGlobalSetup() {
     // Viewport and Scissor
     memset(&this->p_pipeInfo.vp, 0, sizeof(this->p_pipeInfo.vp));
     this->p_pipeInfo.vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -614,13 +551,18 @@ void ProgramVK::assemblePipeline() {
     if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &this->p_pipeInfo.pipeLayInfo, nullptr, &this->p_pipeLayout) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create pipeline layout!");
     }
+
+    this->p_pipeInfo.init = true;
 }
 
 void ProgramVK::createPipeline(ModelInfo *m) {
+    std::vector<VkPipelineShaderStageCreateInfo> shaderModules = { m->pipeInfo->vsCreates[0], m->pipeInfo->fsCreates[0] };
+
     // Global pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderModules.data();
     pipelineInfo.pViewportState = &this->p_pipeInfo.vp;
     pipelineInfo.pDynamicState = &this->p_pipeInfo.dyn;
     pipelineInfo.pMultisampleState = &this->p_pipeInfo.ms;
@@ -633,17 +575,75 @@ void ProgramVK::createPipeline(ModelInfo *m) {
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     // Model-specific pipeline
-    pipelineInfo.pStages = &m->pipe->vs;                // Was shaderStages.data()
-    pipelineInfo.pVertexInputState = &m->pipe->vbo;
-    pipelineInfo.pInputAssemblyState = &m->pipe->ia;
-    pipelineInfo.pRasterizationState = &m->pipe->rs;
+    pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreates[0];
+    pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[0];
+    pipelineInfo.pRasterizationState = &m->pipeInfo->rsCreates[0];
 
-    if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &this->p_pipe)) != VK_SUCCESS) {
+    VkPipeline pipe = VK_NULL_HANDLE;
+    if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &pipe)) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
     }
+    m->pipelines.push_back(pipe);
 }
 
-void ProgramVK::createGlobalPipeLibs(ModelInfo *m) {
+VkPipeline& ProgramVK::genVertexInputPipeLib(VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia) {
+    // Declare model-specific pipeline library part: Vertex Input State
+    VkGraphicsPipelineLibraryCreateInfoEXT pipeLibVBOInfo{};
+    pipeLibVBOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
+    pipeLibVBOInfo.pNext = nullptr;
+    pipeLibVBOInfo.flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
+
+    // Create model-specific pipeline library part: Vertex Input State
+    VkGraphicsPipelineCreateInfo pipeCreateLibVBOInfo{};
+    pipeCreateLibVBOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeCreateLibVBOInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
+    pipeCreateLibVBOInfo.pNext = &pipeLibVBOInfo;
+    pipeCreateLibVBOInfo.pVertexInputState = &vbo;
+    pipeCreateLibVBOInfo.pInputAssemblyState = &ia;
+    pipeCreateLibVBOInfo.pDynamicState = &this->p_pipeInfo.dyn;
+
+    VkPipeline pipe = VK_NULL_HANDLE;
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibVBOInfo, nullptr, &pipe);
+    if (err != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vertex Input pipeline library!");
+    }
+    this->p_pipelines.push_back(pipe);
+
+    return pipe;
+}
+
+VkPipeline& ProgramVK::genPreRasterizationPipeLib(VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs) {
+    // Declare model-specific pipeline library part: Pre-Rasterization State
+    VkGraphicsPipelineLibraryCreateInfoEXT pipeLibPRSInfo{};
+    pipeLibPRSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
+    pipeLibPRSInfo.pNext = nullptr;
+    pipeLibPRSInfo.flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
+
+    // Create model-specific pipeline library part: Pre-Rasterization State
+    VkGraphicsPipelineCreateInfo pipeCreateLibPRSInfo{};
+    pipeCreateLibPRSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeCreateLibPRSInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
+    pipeCreateLibPRSInfo.pNext = &pipeLibPRSInfo;
+    pipeCreateLibPRSInfo.stageCount = 1;
+    pipeCreateLibPRSInfo.pStages = &vert;
+    pipeCreateLibPRSInfo.pRasterizationState = &rs;
+    pipeCreateLibPRSInfo.pViewportState = &this->p_pipeInfo.vp;
+    pipeCreateLibPRSInfo.pDynamicState = &this->p_pipeInfo.dyn;
+    pipeCreateLibPRSInfo.layout = this->p_pipeLayout;
+    pipeCreateLibPRSInfo.renderPass = this->p_vkw->defaultRenderPass();
+    pipeCreateLibPRSInfo.subpass = 0;
+
+    VkPipeline pipe = VK_NULL_HANDLE;
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibPRSInfo, nullptr, &pipe);
+    if (err != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Pre-Rasterization pipeline library!");
+    }
+    this->p_pipelines.push_back(pipe);
+
+    return pipe;
+}
+
+VkPipeline& ProgramVK::genFragmentShaderPipeLib(VkPipelineShaderStageCreateInfo &frag) {
     // Create global pipeline library part: Fragment Shader State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibFSInfo{};
     pipeLibFSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -655,18 +655,24 @@ void ProgramVK::createGlobalPipeLibs(ModelInfo *m) {
     pipeCreateLibFSInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pipeCreateLibFSInfo.pNext = &pipeLibFSInfo;
     pipeCreateLibFSInfo.stageCount = 1;
-    pipeCreateLibFSInfo.pStages = &m->pipe->fs;
+    pipeCreateLibFSInfo.pStages = &frag;
     pipeCreateLibFSInfo.pDepthStencilState = &this->p_pipeInfo.ds;
     pipeCreateLibFSInfo.pMultisampleState = &this->p_pipeInfo.ms;
     pipeCreateLibFSInfo.pDynamicState = &this->p_pipeInfo.dyn;
     pipeCreateLibFSInfo.renderPass = this->p_vkw->defaultRenderPass();
     pipeCreateLibFSInfo.subpass = 0;
 
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFSInfo, nullptr, &this->p_pipeLibs.fragmentShader);
+    VkPipeline pipe = VK_NULL_HANDLE;
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFSInfo, nullptr, &pipe);
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Fragment Shader pipeline library!");
     }
+    this->p_pipelines.push_back(pipe);
 
+    return pipe;
+}
+
+VkPipeline& ProgramVK::genFragmentOutputPipeLib() {
     // Create global pipeline library part: Fragment Output State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibFOInfo{};
     pipeLibFOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -683,85 +689,18 @@ void ProgramVK::createGlobalPipeLibs(ModelInfo *m) {
     pipeCreateLibFOInfo.renderPass = this->p_vkw->defaultRenderPass();
     pipeCreateLibFOInfo.subpass = 0;
 
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFOInfo, nullptr, &this->p_pipeLibs.fragmentOutput);
+    VkPipeline pipe = VK_NULL_HANDLE;
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFOInfo, nullptr, &pipe);
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Fragment Output pipeline library!");
     }
+    this->p_pipelines.push_back(pipe);
+
+    return pipe;
 }
 
-void ProgramVK::createModelPipeLib(ModelInfo *m) {
-    // Declare model-specific pipeline library part: Vertex Input State
-    VkGraphicsPipelineLibraryCreateInfoEXT pipeLibVBOInfo{};
-    pipeLibVBOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
-    pipeLibVBOInfo.pNext = nullptr;
-    pipeLibVBOInfo.flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
-
-    // Create model-specific pipeline library part: Vertex Input State
-    VkGraphicsPipelineCreateInfo pipeCreateLibVBOInfo{};
-    pipeCreateLibVBOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeCreateLibVBOInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
-    pipeCreateLibVBOInfo.pNext = &pipeLibVBOInfo;
-    pipeCreateLibVBOInfo.pVertexInputState = &m->pipe->vbo;
-    pipeCreateLibVBOInfo.pInputAssemblyState = &m->pipe->ia;
-    pipeCreateLibVBOInfo.pDynamicState = &this->p_pipeInfo.dyn;
-
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibVBOInfo, nullptr, &this->p_pipeLibs.vertexInput);
-    if (err != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vertex Input pipeline library!");
-    }
-
-    // Declare model-specific pipeline library part: Pre-Rasterization State
-    VkGraphicsPipelineLibraryCreateInfoEXT pipeLibPRSInfo{};
-    pipeLibPRSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
-    pipeLibPRSInfo.pNext = nullptr;
-    pipeLibPRSInfo.flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
-
-    // Create model-specific pipeline library part: Pre-Rasterization State
-    VkGraphicsPipelineCreateInfo pipeCreateLibPRSInfo{};
-    pipeCreateLibPRSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeCreateLibPRSInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
-    pipeCreateLibPRSInfo.pNext = &pipeLibPRSInfo;
-    pipeCreateLibPRSInfo.stageCount = 1;
-    pipeCreateLibPRSInfo.pStages = &m->pipe->vs;
-    pipeCreateLibPRSInfo.pRasterizationState = &m->pipe->rs;
-    pipeCreateLibPRSInfo.pViewportState = &this->p_pipeInfo.vp;
-    pipeCreateLibPRSInfo.pDynamicState = &this->p_pipeInfo.dyn;
-    pipeCreateLibPRSInfo.layout = this->p_pipeLayout;
-    pipeCreateLibPRSInfo.renderPass = this->p_vkw->defaultRenderPass();
-    pipeCreateLibPRSInfo.subpass = 0;
-
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibPRSInfo, nullptr, &this->p_pipeLibs.preRasterization);
-    if (err != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Pre-Rasterization pipeline library!");
-    }
-    
-
-    // Vertex Input State
-    VkPipelineVertexInputStateCreateInfo vbo{};
-    VkPipelineInputAssemblyStateCreateInfo ia{};
-
-    // Pre-Rasterization State
-    VkPipelineShaderStageCreateInfo vs{};           // Only for Vertex Shader
-    VkPipelineViewportStateCreateInfo vp{};
-    VkPipelineRasterizationStateCreateInfo rs{};
-    VkPipelineTessellationStateCreateInfo ts{};
-    VkRenderPass rp{};                              // With subpass
-    VkPipelineDynamicStateCreateInfo dyn{};
-
-    // Fragment Shader State
-    VkPipelineShaderStageCreateInfo fs{};           // Only for Fragment Shader
-    VkPipelineMultisampleStateCreateInfo ms{};      // If sample shading or if renderpass is not NULL
-    VkPipelineDepthStencilStateCreateInfo ds{};
-    VkRenderPass rp{};                              // With subpass
-
-    // Fragment Output State
-    VkPipelineColorBlendStateCreateInfo cb{};
-    VkPipelineMultisampleStateCreateInfo ms{};
-    VkRenderPass rp{};                              // With subpass
-}
-
-void ProgramVK::createPipeFromLibrary() {
-    std::vector<VkPipeline> libs = { this->p_pipeLibs.vertexInput, this->p_pipeLibs.preRasterization, this->p_pipeLibs.fragmentShader, this->p_pipeLibs.fragmentOutput };
+VkPipeline& ProgramVK::createPipeFromLibraries(VkPipeline &vis, VkPipeline &pre, VkPipeline &frag) {
+    std::vector<VkPipeline> libs = {vis, pre, frag, this->p_fragmentOutput};
 
     VkPipelineLibraryCreateInfoKHR pipeLibLinkInfo{};
     pipeLibLinkInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
@@ -774,10 +713,17 @@ void ProgramVK::createPipeFromLibrary() {
     pipeInfo.pNext = &pipeLibLinkInfo;
     pipeInfo.flags = VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
 
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeInfo, nullptr, &this->p_pipe);
+    VkPipeline pipe = VK_NULL_HANDLE;
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeInfo, nullptr, &pipe);
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
     }
+
+    return pipe;
+}
+
+void ProgramVK::updatePipeFromLibraries() {
+    // Update pipe with new pipeLibs
 }
 
 void ProgramVK::createCommandPool() {
@@ -929,16 +875,6 @@ void ProgramVK::defineModelAttributes(ModelInfo *model) {
     model->attributes = attribInfo;
 }
 
-void ProgramVK::lockModelAttributes(ModelInfo *model) {
-    model->pipe->vbo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    model->pipe->vbo.vertexBindingDescriptionCount = model->attributes->bindings.size();
-    model->pipe->vbo.vertexAttributeDescriptionCount = model->attributes->attributes.size();
-    model->pipe->vbo.pVertexBindingDescriptions = model->attributes->bindings.data();
-    model->pipe->vbo.pVertexAttributeDescriptions = model->attributes->attributes.data();
-    model->pipe->vbo.flags = 0;
-    model->pipe->vbo.pNext = nullptr;
-}
-
 void ProgramVK::createVertexBuffer(BufferInfo *buf) {
     uint idx = buf->binding;
 
@@ -946,7 +882,7 @@ void ProgramVK::createVertexBuffer(BufferInfo *buf) {
 
     void* data;
     this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, buf->size, 0, &data);
-    std::copy(buf->data, buf->data + buf->size, data);
+    memcpy(data, buf->data, buf->size);
     this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
 
     createBuffer(buf->size, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, p_vertexBuffers[idx], p_vertexMemory[idx]);
@@ -962,7 +898,7 @@ void ProgramVK::createIndexBuffer(BufferInfo *buf) {
 
     void* data;
     this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, buf->size, 0, &data);
-    std::copy(buf->data, buf->data + buf->size, data);
+    memcpy(data, buf->data, buf->size);
     this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
 
     createBuffer(buf->size, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, p_indexBuffer, p_indexMemory);
@@ -987,7 +923,7 @@ void ProgramVK::createPersistentUniformBuffer(BufferInfo *buf) {
     this->p_vdf->vkMapMemory(this->p_dev, p_uniformMemory[0], 0, bufferSize, 0, &uniformMappings[0]);
 }
 
-void ProgramVK::createDescriptorSet() {
+void ProgramVK::defineDescriptorSets() {
     createDescriptorSetLayout();
     createDescriptorPool();
     createDescriptorSets();
@@ -1073,7 +1009,7 @@ void ProgramVK::recordCommandBuffer() {
     renderPassInfo.pClearValues = &this->p_clearColor;                  // Optional
 
     this->p_vdf->vkCmdBeginRenderPass(cmdBuf, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    this->p_vdf->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipe);
+    this->p_vdf->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, &pipeline);
     this->p_vdf->vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayout, 0, 1, &p_descSet[p_vkw->currentFrame()], 0, nullptr);
     this->p_vdf->vkCmdSetViewport(cmdBuf, 0, 1, &this->p_viewport);
     this->p_vdf->vkCmdSetScissor(cmdBuf, 0, 1, &this->p_scissor);
@@ -1083,36 +1019,6 @@ void ProgramVK::recordCommandBuffer() {
     this->p_vdf->vkCmdEndRenderPass(cmdBuf);
     this->p_vkw->frameReady();
     this->p_vkw->requestUpdate();
-}
-
-/**
- * Attribute binding (for use with Vertex Array/Buffer Objects) must happen
- * after initialization of the program but is only recognized on the next
- * linking. Linking may skip this step, but warnings will be given if done
- * out of order.
- * @param location - explicitly specify the integer binding target
- * @param name - std::string representation of the GLSL attribute name
- */
-void ProgramVK::bindAttribute(int location, std::string name) {
-    if (stage < 2) {
-        std::cout << "Invalid binding. Must init first." << std::endl;
-        return;
-    } else if (stage >= 4) {
-        std::cout << "This attribute binding will not take effect until next linking."
-            << std::endl;
-    }
-
-    // Bind explicit attribute locations before linking.
-    qgf->glBindAttribLocation(this->programId, location, name.c_str());
-
-    this->stage = 3;
-}
-
-VKuint ProgramVK::getShaderIdFromName(std::string& fileName) {
-    assert(stage >= 2);
-    assert(compiledShaders.count(fileName));
-    
-    return compiledShaders[fileName];
 }
 
 Shader* ProgramVK::getShaderFromName(std::string& fileName) {
@@ -1130,445 +1036,6 @@ Shader* ProgramVK::getShaderFromName(std::string& fileName) {
     }
     
     return s;
-}
-
-void ProgramVK::attachShader(std::string& name) {
-    VKuint shID = getShaderIdFromName(name);
-    assert(shID);
-
-    // Attach compiled shader to program.
-    qgf->glAttachShader(this->programId, shID);
-    attachedShaders.push_back(shID);
-}
-
-/**
- * Completes the linking of the program with all attached shaders.
- * Automatically validates the program and displays the info log if the
- * info log is not empty.
- *
- * @return GLEW_OK on success or an error code on failure.
- */
-VKint ProgramVK::linkAndValidate() {
-    if (stage < 2) {
-        std::cout << "Invalid linking. Must init (and bind attributes) first." << std::endl;
-        return 0;
-    }
-
-    VKint programValid = 0;
-    
-    // Link the compiled and attached program to this code.
-    qgf->glLinkProgramVK(programId);
-    if (programId == GL_INVALID_VALUE)
-        exit(-1);
-
-    // Verify program compilation and linkage.
-    qgf->glValidateProgramVK(programId);
-    qgf->glGetProgramVKiv(programId, GL_VALIDATE_STATUS, &programValid);
-    if (!programValid)
-        displayLogProgramVK();
-
-    this->stage = programValid ? 5 : 4;
-
-    return programValid;
-}
-
-/**
- * @brief Detach only attached program shaders.
- * This should be done after successful link and validate.
- */
-void ProgramVK::detachShaders() {
-    assert(this->stage >= 5);
-
-    if (!attachedShaders.size())
-        return;
-
-    for (auto id : attachedShaders) {
-        qgf->glDetachShader(programId, id);
-    }
-    attachedShaders.clear();
-}
-
-/**
- * @brief Detach and delete all program shaders.
- * This should be done after successful link and validate.
- */
-void ProgramVK::detachDelete() {
-    assert(this->stage >= 5);
-
-    if (!attachedShaders.size())
-        return;
-
-    for (auto id : attachedShaders) {
-        qgf->glDetachShader(programId, id);
-        qgf->glDeleteShader(id);
-    }
-    attachedShaders.clear();
-}
-
-/**
- * A sequence-protected wrapper for glUseProgramVK().  This completely preempts
- * the OpenGL graphics pipeline for any shader functions implemented.
- */
-void ProgramVK::enable() {
-    if (stage < 5) {
-        if (stage < 4)
-        std::cout << "ProgramVK not ready to enable: must link before use." << std::endl;
-        else
-        std::cout << "ProgramVK not ready to enable: linked but not valid." << std::endl;
-
-        return;
-    }
-
-    qgf->glUseProgramVK(this->programId);
-    enabled = true;
-}
-
-/**
- * Set the current program to NULL and resume normal OpenGL (direct-mode)
- * operation.
- */
-void ProgramVK::disable() {
-    qgf->glUseProgramVK(0);
-    enabled = false;
-}
-
-void ProgramVK::initVAO() {
-    qgf->glGenVertexArrays(1, &this->vao);
-}
-
-void ProgramVK::bindVAO() {
-    qgf->glBindVertexArray(this->vao);
-}
-
-void ProgramVK::clearVAO() {
-    qgf->glBindVertexArray(0);
-}
-
-VKuint ProgramVK::bindVBO(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode) {
-    this->buffers[name] = glm::uvec3(bufCount, 0, GL_ARRAY_BUFFER);
-    VKuint *bufId = &buffers[name].y;
-    qgf->glGenBuffers(1, bufId);
-    qgf->glBindBuffer(GL_ARRAY_BUFFER, *bufId);
-    qgf->glBufferData(GL_ARRAY_BUFFER, bufSize, buf, mode);
-
-    return *bufId;
-}
-
-void ProgramVK::setAttributePointerFormat(VKuint attrIdx, VKuint binding, VKuint count, VKenum type, VKuint offset, VKuint step) {
-    if (std::find(attribs.begin(), attribs.end(), attrIdx) != attribs.end())
-        attribs.push_back(attrIdx);
-    //qgf->glVertexAttribPointer(idx, count, GL_FLOAT, GL_FALSE, stride, offset);
-    qgf->glVertexArrayAttribFormat(this->vao, attrIdx, count, type, GL_FALSE, offset);
-    qgf->glVertexArrayAttribBinding(this->vao, attrIdx, binding);
-    qgf->glVertexArrayBindingDivisor(this->vao, attrIdx, step);
-}
-
-void ProgramVK::setAttributeBuffer(VKuint binding, VKuint vboIdx, VKsizei stride) {
-    qgf->glVertexArrayVertexBuffer(this->vao, binding, vboIdx, 0, stride);
-}
-
-void ProgramVK::enableAttribute(VKuint idx) {
-    qgf->glEnableVertexArrayAttrib(this->vao, idx);
-}
-
-void ProgramVK::enableAttributes() {
-    for (auto a : attribs)
-        qgf->glEnableVertexArrayAttrib(this->vao, a);
-}
-
-void ProgramVK::disableAttributes() {
-    for (auto a : attribs)
-        qgf->glDisableVertexArrayAttrib(this->vao, a);
-}
-
-void ProgramVK::updateVBO(uint offset, uint bufCount, uint bufSize, const VKfloat *buf) {
-    int bufId = 0;
-    qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
-
-    for (auto &m : this->buffers) {
-        if (m.second.y == bufId) {
-            m.second.x = bufCount;
-        }
-    }
-    
-    qgf->glBufferSubData(GL_ARRAY_BUFFER, offset, bufSize, buf);
-    displayLogProgramVK();
-}
-
-void ProgramVK::updateVBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKfloat *buf) {
-    VKuint bufId = this->buffers[name].y;
-    this->buffers[name].x = bufCount;
-    qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
-    displayLogProgramVK();
-}
-
-void ProgramVK::resizeVBONamed(std::string name, uint bufCount, uint bufSize, const VKfloat *buf, uint mode) {
-    VKuint bufId = this->buffers[name].y;
-    this->buffers[name].x = bufCount;
-    qgf->glNamedBufferData(bufId, bufSize, buf, mode);
-    displayLogProgramVK();
-}
-
-void ProgramVK::clearVBO() {
-    qgf->glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-VKuint ProgramVK::bindEBO(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode) {
-    this->buffers[name] = glm::uvec3(bufCount, 0, GL_ELEMENT_ARRAY_BUFFER);
-    VKuint *bufId = &buffers[name].y;
-    qgf->glGenBuffers(1, bufId);
-    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *bufId);
-    qgf->glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufSize, buf, mode);
-
-    return *bufId;
-}
-
-void ProgramVK::updateEBO(uint offset, uint bufCount, uint bufSize, const VKuint *buf) {
-    int bufId = 0;
-    qgf->glGetIntegerv(GL_ARRAY_BUFFER, &bufId);
-
-    for (auto &m : this->buffers) {
-        if (m.second.y == bufId) {
-            m.second.x = bufCount;
-        }
-    }
-
-    qgf->glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bufSize, buf);
-    displayLogProgramVK();
-}
-
-void ProgramVK::updateEBONamed(std::string name, uint bufCount, uint offset, uint bufSize, const VKuint *buf) {
-    VKuint bufId = this->buffers[name].y;
-    this->buffers[name].x = bufCount;
-    qgf->glNamedBufferSubData(bufId, offset, bufSize, buf);
-    displayLogProgramVK();
-}
-
-void ProgramVK::resizeEBONamed(std::string name, uint bufCount, uint bufSize, const VKuint *buf, uint mode) {
-    VKuint bufId = buffers[name].y;
-    this->buffers[name].x = bufCount;
-    qgf->glNamedBufferData(bufId, bufSize, buf, mode);
-    displayLogProgramVK();
-}
-
-void ProgramVK::clearEBO() {
-    qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-void ProgramVK::assignFragColour() {
-    qgf->glBindFragDataLocation(this->programId, GL_COLOR_ATTACHMENT0, "FragColour");
-}
-
-void ProgramVK::beginRender() {
-    enable();
-    bindVAO();
-    // qgf->glBindBuffer(GL_ARRAY_BUFFER, this->vbo.back());
-    // qgf->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo.back());
-}
-
-void ProgramVK::endRender() {
-    clearVAO();
-    disable();
-}
-
-void ProgramVK::clearBuffers() {
-    clearVBO();
-    clearEBO();
-}
-
-void ProgramVK::deleteBuffer(std::string name) {
-    assert(!enabled);
-
-    VKuint bufId = this->buffers[name].y;
-
-    qgf->glDeleteBuffers(1, &bufId);
-    this->buffers.erase(name);
-}
-
-bool ProgramVK::hasBuffer(std::string name) {
-    return (buffers.find(name) != buffers.end());
-}
-
-/**
- * A quick wrapper for single, non-referenced uniform values.
- * @param type - GL_FLOAT or GL_INT
- * @param name - std::string representation of the GLSL uniform name
- * @param n - uniform value
- */
-void ProgramVK::setUniform(int type, std::string name, double n) {
-    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
-    float m = static_cast<float>(n);
-
-    if (type == GL_FLOAT) {
-        qgf->glUniform1f(loc, n);
-    } else
-        std::cout << "Uniform failure: double to float" << std::endl;
-}
-
-void ProgramVK::setUniform(int type, std::string name, float n) {
-    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
-
-    if (type == GL_FLOAT) {
-        qgf->glUniform1f(loc, n);
-    } else
-        std::cout << "Uniform failure: float to float" << std::endl;
-}
-
-void ProgramVK::setUniform(int type, std::string name, int n) {
-    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
-
-    if (type == GL_INT) {
-        qgf->glUniform1i(loc, n);
-    } else
-        std::cout << "Uniform failure: int to int" << std::endl;
-}
-
-void ProgramVK::setUniform(int type, std::string name, uint n) {
-    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
-
-    if (type == GL_UNSIGNED_INT) {
-        qgf->glUniform1ui(loc, n);
-    } else
-        std::cout << "Uniform failure: uint to uint" << std::endl;
-}
-
-/**
- * A quick wrapper for array of referenced uniform values.
- * @param count - number of vectors in the array
- * @param size - number of values per vector
- * @param type - GL_FLOAT or GL_INT
- * @param name - std::string representation of the GLSL uniform name
- * @param n - pointer to the array of values
- */
-void ProgramVK::setUniformv(int count, int size, int type, std::string name, const float *n) {
-    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
-
-    if (type == GL_FLOAT) {
-        switch (size) {
-        case 1:
-            qgf->glUniform1fv(loc, count, n);
-            break;
-        case 2:
-            qgf->glUniform2fv(loc, count, n);
-            break;
-        case 3:
-            qgf->glUniform3fv(loc, count, n);
-            break;
-        case 4:
-            qgf->glUniform4fv(loc, count, n);
-            break;
-        default:
-            break;
-        }
-    } else if (type == GL_INT) {
-        switch (size) {
-        case 1:
-            qgf->glUniform1iv(loc, count, reinterpret_cast<const int *>(n));
-            break;
-        case 2:
-            qgf->glUniform2iv(loc, count, reinterpret_cast<const int *>(n));
-            break;
-        case 3:
-            qgf->glUniform3iv(loc, count, reinterpret_cast<const int *>(n));
-            break;
-        case 4:
-            qgf->glUniform4iv(loc, count, reinterpret_cast<const int *>(n));
-            break;
-        default:
-            break;
-        }
-    } else if (type == GL_UNSIGNED_INT) {
-        switch (size) {
-        case 1:
-            qgf->glUniform1uiv(loc, count, reinterpret_cast<const uint *>(n));
-            break;
-        case 2:
-            qgf->glUniform2uiv(loc, count, reinterpret_cast<const uint *>(n));
-            break;
-        case 3:
-            qgf->glUniform3uiv(loc, count, reinterpret_cast<const uint *>(n));
-            break;
-        case 4:
-            qgf->glUniform4uiv(loc, count, reinterpret_cast<const uint *>(n));
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-/**
- * A quick wrapper for passing matrices to GLSL uniforms.
- * @param size - width of the square matrix
- * @param name - std::string representation of the GLSL uniform name
- * @param m - pointer to the first matrix value
- */
-void ProgramVK::setUniformMatrix(int size, std::string name, float *m) {
-    VKint loc = qgf->glGetUniformLocation(this->programId, name.c_str());
-
-    if (size == 4) {
-        qgf->glUniformMatrix4fv(loc, 1, GL_FALSE, m);
-    } else if (size == 3) {
-        qgf->glUniformMatrix3fv(loc, 1, GL_FALSE, m);
-    }
-}
-
-/**
- * Accessor function for the VKenum program ID.
- * @return the program ID
- */
-VKuint ProgramVK::getProgramVKId() {
-    return this->programId;
-}
-
-VKuint ProgramVK::getSize(std::string name) {
-    return this->buffers[name].x;
-}
-
-/**
- * Displays the info log for this program.
- */
-void ProgramVK::displayLogProgramVK() {
-    VKsizei logLength;
-    qgf->glGetProgramVKiv(this->programId, GL_INFO_LOG_LENGTH, &logLength);
-
-    if (logLength) {
-        std::cout << "ProgramVK Info Log content available." << std::endl;
-
-        VKsizei MAXLENGTH = 1 << 30;
-        VKchar *logBuffer = new VKchar[logLength];
-        qgf->glGetProgramVKInfoLog(this->programId, MAXLENGTH, &logLength, logBuffer);
-        if (strlen(logBuffer)) {
-            std::cout << "************ Begin ProgramVK Log ************" << "\n";
-            std::cout << logBuffer << "\n";
-            std::cout << "************* End ProgramVK Log *************" << std::endl;
-        }
-        delete[] logBuffer;
-    }
-}
-
-/**
- * Displays the info log for the specified shader.
- * @param shader - the shader to be evaluated
- */
-void ProgramVK::displayLogShader(VKenum shader) {
-    VKint success;
-    qgf->glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
-        std::cout << "Shader compile failure for shader #" << shader << std::endl;
-    
-    VKsizei logLength;
-    qgf->glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-
-    VKsizei MAXLENGTH = 1 << 30;
-    VKchar *logBuffer = new VKchar[MAXLENGTH];
-    qgf->glGetShaderInfoLog(shader, MAXLENGTH, &logLength, logBuffer);
-    if (strlen(logBuffer)) {
-        std::cout << "************ Begin Shader Log ************" << "\n";
-        std::cout << logBuffer << "\n";
-        std::cout << "************* End Shader Log *************" << std::endl;
-    }
-    delete[] logBuffer;
 }
 
 void ProgramVK::printModel(ModelInfo *model) {

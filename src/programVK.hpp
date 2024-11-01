@@ -116,7 +116,8 @@ std::array<VkFormat, 16> DataFormats = {
 enum class BufferType : unsigned int {
     VERTEX = 0,
     INDEX  = 1,
-    UNIFORM = 2
+    UNIFORM = 2,
+    DATA = 3
 };
 
 struct AtomixDevice {
@@ -137,6 +138,7 @@ struct ModelCreateInfo {
 
 struct ModelInfo {
     uint id = 0;
+    std::string name;
     std::vector<BufferInfo *> vbos;
     BufferInfo *ibo = nullptr;
     ShaderInfo *shaders = nullptr;
@@ -153,7 +155,7 @@ struct BufferCreateInfo {
     BufferType type;
     uint binding = 0;
     uint size = 0;
-    void *data = nullptr;
+    const void *data = nullptr;
     bool storeData = false;
     std::vector<DataType> dataTypes;
 };
@@ -163,7 +165,7 @@ struct BufferInfo {
     BufferType type;
     uint binding = 0;
     uint size = 0;
-    void *data = nullptr;
+    const void *data = nullptr;
     std::vector<DataType> dataTypes;
 };
 
@@ -252,7 +254,9 @@ public:
     void defineModelAttributes(ModelInfo *model);
 
     BufferInfo* addBuffer(BufferCreateInfo &info);
-    void addModel(ModelCreateInfo &info);
+    VKuint addModel(ModelCreateInfo &info);
+    VKuint activateModel(std::string name);
+    VKuint deactivateModel(std::string name);
 
     void createPipelineCache();
     void savePipelineToCache();
@@ -290,6 +294,8 @@ public:
     void recordCommandBuffer();
 
     Shader* getShaderFromName(std::string& fileName);
+    std::vector<VKuint> getActiveModelsById();
+    std::vector<std::string> getActiveModelsByName();
 
     void printModel(ModelInfo *model);
 
@@ -319,14 +325,14 @@ private:
     QVulkanInstance *p_vi = nullptr;
     QVulkanWindow *p_vkw = nullptr;
     
-    std::vector<Shader *> registeredShaders;
-    std::vector<Shader *> compiledShaders;
+    std::vector<Shader *> p_registeredShaders;
+    std::vector<Shader *> p_compiledShaders;
     std::vector<BufferInfo *> p_buffers;
     std::vector<ModelInfo *> p_models;
+    std::vector<VKuint> p_activeModels;
     std::map<std::string, VKuint> p_mapBuf;
     std::map<std::string, VKuint> p_mapModel;
-    std::vector<VKuint> p_activeModels;
-    std::vector<void *> p_allocatedBuffers;
+    std::vector<const void *> p_allocatedBuffers;
 
     std::vector<VkDescriptorSet> p_descSets;
     std::vector<VkBuffer> p_uniformBuffers;

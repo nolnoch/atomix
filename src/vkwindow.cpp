@@ -24,7 +24,10 @@
 
 #include <iostream>
 #include <ranges>
+
 #include <QTimer>
+#include <QFileDialog>
+
 #include "vkwindow.hpp"
 
 #define RADN(t) (glm::radians((t)))
@@ -49,20 +52,13 @@ void VKWindow::cleanup() {
 }
 
 VKRenderer* VKWindow::createRenderer() {
-    this->vw_rend = new VKRenderer(this);
-    return this->vw_rend;
+    return new VKRenderer(this);
 }
 
-void VKWindow::createPrograms() {
+void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     atomixProg = new ProgramVK();
-    atomixProg = new ProgramVK();
-    atomixProg = new ProgramVK();
-}
-
-void VKWindow::populatePrograms(AtomixDevice *atomixDevice) {
     atomixProg->setInstance(atomixDevice);
-    atomixProg->setInstance(atomixDevice);
-    atomixProg->setInstance(atomixDevice);
+    atomixProg->init();
 }
 
 void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
@@ -175,7 +171,8 @@ void VKWindow::initCrystalProgram() {
     atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
     atomixProg->init();
     
-    // Add Model to program
+    
+    // Define VBO for Crystal Diamond & Ring
     BufferCreateInfo crystalVert{};
     crystalVert.type = BufferType::VERTEX;
     crystalVert.binding = 0;
@@ -185,6 +182,7 @@ void VKWindow::initCrystalProgram() {
     crystalVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
     crystalVert.storeData = true;
 
+    // Define IBO for Crystal Diamond & Ring
     BufferCreateInfo crystalInd{};
     crystalInd.type = BufferType::INDEX;
     crystalInd.size = crystalRingIndices.size() * sizeof(uint);
@@ -193,6 +191,7 @@ void VKWindow::initCrystalProgram() {
     crystalInd.dataTypes = {DataType::UINT};
     crystalInd.storeData = true;
 
+    // Define Crystal Model with above buffers
     ModelCreateInfo crystalModel{};
     crystalModel.name = "crystal";
     crystalModel.vbos = { &crystalVert, &crystalInd };
@@ -200,94 +199,95 @@ void VKWindow::initCrystalProgram() {
     crystalModel.vertShaders = { vertName };
     crystalModel.fragShaders = { fragName };
     crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
-    crystalModel.offsets = { { 0, 0, 0, 0 }, { crystalRingOffset, 0, 0, 1 } };
+    crystalModel.offsets = {
+        { 0, 0, 0, 0 },
+        { crystalRingOffset, 0, 0, 1 }
+    };
 
+    // Add Crystal Model to program
     atomixProg->addModel(crystalModel);
 }
 
 void VKWindow::initWaveProgram() {
     assert(waveManager);
 
-    /* ProgramVK */
-    // Attach shaders, link/validate program, and clean up
-    atomixProg->attachShader(waveManager->getShaderVert());
-    atomixProg->attachShader(waveManager->getShaderFrag());
-    atomixProg->linkAndValidate();
-    atomixProg->detachShaders();
+    // Define VBO for Atomix Wave
+    BufferCreateInfo waveVert{};
+    waveVert.type = BufferType::VERTEX;
+    waveVert.binding = 0;
+    waveVert.size = waveManager->getVertexSize();
+    waveVert.data = waveManager->getVertexData();
+    waveVert.name = "waveVertices";
+    waveVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
+    waveVert.storeData = false;
 
-    /* VAO */
-    atomixProg->initVAO();
-    atomixProg->bindVAO();
+    // Define IBO for Atomix Wave
+    BufferCreateInfo waveInd{};
+    waveInd.type = BufferType::INDEX;
+    waveInd.size = waveManager->getIndexSize();
+    waveInd.data = waveManager->getIndexData();
+    waveInd.name = "waveIndices";
+    waveInd.dataTypes = {DataType::UINT};
+    waveInd.storeData = false;
 
-    /* VBO: Vertices & Colours */
-    // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
-    uint static_dynamic = waveManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    GLuint vboID = atomixProg->bindVBO("vertices", waveManager->getVertexCount(), waveManager->getVertexSize(), waveManager->getVertexData(), static_dynamic);
-    atomixProg->setAttributeBuffer(0, vboID, 6 * sizeof(GLfloat));
-    atomixProg->enableAttribute(0);
-    atomixProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
-    atomixProg->enableAttribute(1);
-    atomixProg->setAttributePointerFormat(1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), 0);       // r,g,b colour or factorsB
+    // Define Atomix Wave Model with above buffers
+    ModelCreateInfo waveModel{};
+    waveModel.name = "wave";
+    waveModel.vbos = { &waveVert, &waveInd };
+    waveModel.ibo = &waveInd;
+    waveModel.vertShaders = { waveManager->getShaderVert() };
+    waveModel.fragShaders = { waveManager->getShaderFrag() };
+    waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
+    waveModel.offsets = { { 0, 0, 0, 0 } };
 
-    /* EBO: Indices */
-    atomixProg->bindEBO("indices", waveManager->getIndexCount(), waveManager->getIndexSize(), waveManager->getIndexData(), static_dynamic);
-
-    /* Release */
-    atomixProg->endRender();
-    atomixProg->clearBuffers();
-    flGraphState.set(egs::WAVE_RENDER);
-    flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR);
-
-    currentProg = atomixProg;
-    currentManager = waveManager;
+    // Add Atomix Wave Model to program
+    atomixProg->addModel(waveModel);
 }
 
 void VKWindow::initCloudProgram() {
     assert(cloudManager);
 
-    /* ProgramVK */
-    // Create ProgramVK
-    atomixProg = new ProgramVK(vrend->vdf);
+    // Define VBO::Vertex for Atomix Cloud
+    BufferCreateInfo cloudVert{};
+    cloudVert.type = BufferType::VERTEX;
+    cloudVert.binding = 0;
+    cloudVert.size = cloudManager->getVertexSize();
+    cloudVert.data = cloudManager->getVertexData();
+    cloudVert.name = "cloudVertices";
+    cloudVert.dataTypes = { DataType::FLOAT_VEC3 };
+    cloudVert.storeData = false;
 
-    // Add all shaders
-    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
-    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
-    atomixProg->init();
+    // Define VBO::Data for Atomix Cloud
+    BufferCreateInfo cloudData{};
+    cloudData.type = BufferType::DATA;
+    cloudData.binding = 1;
+    cloudData.size = cloudManager->getDataSize();
+    cloudData.data = cloudManager->getDataData();
+    cloudData.name = "cloudData";
+    cloudData.dataTypes = { DataType::FLOAT };
+    cloudData.storeData = false;
 
-    // Attach shaders, link/validate program, and clean up
-    atomixProg->attachShader(cloudManager->getShaderVert());
-    atomixProg->attachShader(cloudManager->getShaderFrag());
-    atomixProg->linkAndValidate();
-    atomixProg->detachShaders();
+    // Define IBO for Atomix Cloud
+    BufferCreateInfo cloudInd{};
+    cloudInd.type = BufferType::INDEX;
+    cloudInd.size = cloudManager->getIndexSize();
+    cloudInd.data = cloudManager->getIndexData();
+    cloudInd.name = "cloudIndices";
+    cloudInd.dataTypes = {DataType::UINT};
+    cloudInd.storeData = false;
 
-    /* VAO */
-    atomixProg->initVAO();
-    atomixProg->bindVAO();
+    // Define Atomix Cloud Model with above buffers
+    ModelCreateInfo cloudModel{};
+    cloudModel.name = "cloud";
+    cloudModel.vbos = { &cloudVert, &cloudData };
+    cloudModel.ibo = &cloudInd;
+    cloudModel.vertShaders = { cloudManager->getShaderVert() };
+    cloudModel.fragShaders = { cloudManager->getShaderFrag() };
+    cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
+    cloudModel.offsets = { { 0, 0, 0, 0 } };
 
-    /* VBO 1: Vertices */
-    // Dynamic Draw for updating vertices per-render (CPU) or Static Draw for one-time load (GPU)
-    uint static_dynamic = cloudManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-    GLuint vboIDa = atomixProg->bindVBO("vertices", cloudManager->getVertexCount(), cloudManager->getVertexSize(), cloudManager->getVertexData(), static_dynamic);
-    atomixProg->setAttributeBuffer(0, vboIDa, 3 * sizeof(GLfloat));
-    atomixProg->enableAttribute(0);
-    atomixProg->setAttributePointerFormat(0, 0, 3, GL_FLOAT, 0, 0);                         // x,y,z coords or factorsA
-
-    /* VBO 2: RDPs */
-    GLuint vboIDb = atomixProg->bindVBO("pdvs", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData(), static_dynamic);
-    atomixProg->setAttributeBuffer(1, vboIDb, 1 * sizeof(GLfloat));
-    atomixProg->enableAttribute(1);
-    atomixProg->setAttributePointerFormat(1, 1, 3, GL_FLOAT, 0, 0);                         // r,g,b colour or factorsB
-
-    /* EBO: Indices */
-    GLuint eboId = atomixProg->bindEBO("indices", cloudManager->getIndexCount(), cloudManager->getIndexSize(), cloudManager->getIndexData(), static_dynamic);
-
-    /* Release */
-    atomixProg->endRender();
-    atomixProg->clearBuffers();
-    flGraphState.set(CLOUD_RENDER);
-
-    currentProg = atomixProg;
-    currentManager = cloudManager;
+    // Add Atomix Cloud Model to program
+    atomixProg->addModel(cloudModel);
 }
 
 void VKWindow::changeModes(bool force) {
@@ -429,7 +429,7 @@ void VKWindow::initVecsAndMatrices() {
 //     gw_scrHeight = height();
 //     gw_scrWidth = width();
 //     // m4_proj = glm::mat4(1.0f);
-//     m4_proj = glm::perspective(RADN(45.0f), GLfloat(w) / h, gw_nearDist, gw_farDist);
+//     m4_proj = glm::perspective(RADN(45.0f), VKfloat(w) / h, gw_nearDist, gw_farDist);
 // }
 
 void VKWindow::wheelEvent(QWheelEvent *e) {
@@ -439,9 +439,9 @@ void VKWindow::wheelEvent(QWheelEvent *e) {
     
     gw_info.pos = v3_cameraPosition.z;
     gw_info.far = v3_cameraPosition.z + gw_info.start;
-    m4_proj = glm::perspective(RADN(45.0f), GLfloat(width()) / height(), gw_nearDist, gw_info.far);
+    m4_proj = glm::perspective(RADN(45.0f), VKfloat(width()) / height(), gw_nearDist, gw_info.far);
     emit detailsChanged(&gw_info);
-    update();
+    requestUpdate();
 }
 
 void VKWindow::mousePressEvent(QMouseEvent *e) {
@@ -452,7 +452,7 @@ void VKWindow::mousePressEvent(QMouseEvent *e) {
     if (!gw_movement && (e->button() & (Qt::LeftButton | Qt::RightButton | Qt::MiddleButton)))
         gw_movement |= e->button();
     else
-        QWidget::mousePressEvent(e);
+        QWindow::mousePressEvent(e);
 }
 
 void VKWindow::mouseMoveEvent(QMouseEvent *e) {
@@ -461,13 +461,13 @@ void VKWindow::mouseMoveEvent(QMouseEvent *e) {
     v3_mouseBegin = v3_mouseEnd;
     v3_mouseEnd = mouseVec;
 
-    //GLfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
+    //VKfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
 
     if (gw_movement & Qt::RightButton) {
         /* Right-click-drag HORIZONTAL movement will rotate about Y axis */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
             float dragRatio = (v3_mouseEnd.x - v3_mouseBegin.x) / gw_scrWidth;
-            GLfloat waveAngleH = TWO_PI * dragRatio;
+            VKfloat waveAngleH = TWO_PI * dragRatio;
             glm::vec3 waveAxisH = glm::vec3(0.0, 1.0f, 0.0);
             Quaternion qWaveRotH = Quaternion(waveAngleH, waveAxisH, RAD);
             q_TotalRot = qWaveRotH * q_TotalRot;
@@ -475,7 +475,7 @@ void VKWindow::mouseMoveEvent(QMouseEvent *e) {
         /* Right-click-drag VERTICAL movement will rotate about X and Z axes */
         if (v3_mouseBegin.y != v3_mouseEnd.y) {
             float dragRatio = (v3_mouseBegin.y - v3_mouseEnd.y) / gw_scrHeight;
-            GLfloat waveAngleV = TWO_PI * dragRatio;
+            VKfloat waveAngleV = TWO_PI * dragRatio;
             glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
             glm::vec3 waveAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
             Quaternion qWaveRotV = Quaternion(waveAngleV, waveAxisV, RAD);
@@ -493,26 +493,26 @@ void VKWindow::mouseMoveEvent(QMouseEvent *e) {
         /* Middle-click-drag will rotate about camera look vector */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
             float dragRatio = (v3_mouseBegin.x - v3_mouseEnd.x) / gw_scrWidth;
-            GLfloat waveAngleL = TWO_PI * dragRatio;
+            VKfloat waveAngleL = TWO_PI * dragRatio;
             glm::vec3 waveAxisL = glm::normalize(cameraVec);
             Quaternion qWaveRotL = Quaternion(waveAngleL, waveAxisL, RAD);
             q_TotalRot = qWaveRotL * q_TotalRot;
         }
     }
-    update();
+    requestUpdate();
 }
 
 void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
     if (e->button() & (Qt::RightButton | Qt::LeftButton | Qt::MiddleButton))
         gw_movement = false;
     else
-        QWidget::mouseReleaseEvent(e);
+        QWindow::mouseReleaseEvent(e);
 }
 
 void VKWindow::keyPressEvent(QKeyEvent * e) {
     if (e->key() == Qt::Key_Home) {
         initVecsAndMatrices();
-        update();
+        requestUpdate();
     } else if (e->key() == Qt::Key_Space) {
         gw_pause = !gw_pause;
         if (gw_pause) {
@@ -521,23 +521,26 @@ void VKWindow::keyPressEvent(QKeyEvent * e) {
             gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
             gw_timeStart += gw_timeEnd - gw_timePaused;
         }
-        update();
+        requestUpdate();
     } else {
-        QWidget::keyPressEvent(e);
+        QWindow::keyPressEvent(e);
     }
 }
 
-void VKWindow::checkErrors(std::string str) {
-    GLenum err;
-    int messages = 0;
-
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cout << "\n" << str << std::hex << err;
-        messages++;
+void VKWindow::onGrabRequested() {
+    if (!this->supportsGrab()) {
+        std::cout << "Grabbing not supported" << std::endl;
+        return;
     }
 
-    if (messages)
-        std::cout << std::endl;
+    QImage image = this->grab();
+
+    QFileDialog fd(this, "Save Image");             // Needs to be a MainWindow
+    fd.setAcceptMode(QFileDialog::AcceptSave);
+    fd.setDefaultSuffix("png");
+    fd.selectFile("test.png");
+    if (fd.exec() == QDialog::Accepted)
+        image.save(fd.selectedFiles().first());
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -778,7 +781,6 @@ VKRenderer::~VKRenderer() {
 }
 
 void VKRenderer::initResources() {
-
     // Define instance, device, and function pointers
     vr_dev = vr_vkw->device();
     vr_phydev = vr_vkw->physicalDevice();
@@ -797,7 +799,8 @@ void VKRenderer::initResources() {
     progDev->window = vr_vkw;
     progDev->physicalDevice = vr_phydev;
     progDev->device = vr_dev;
-    this->vr_vkw->populatePrograms(progDev);
+    this->vr_vkw->initProgram(progDev);
+
 }
 
 QueueFamilyIndices VKRenderer::findQueueFamilies(VkPhysicalDevice device) {

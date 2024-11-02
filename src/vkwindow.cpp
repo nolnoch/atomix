@@ -26,7 +26,6 @@
 #include <ranges>
 
 #include <QTimer>
-#include <QFileDialog>
 
 #include "vkwindow.hpp"
 
@@ -38,6 +37,7 @@ static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : cfgParser(configParser) {
     setSurfaceType(QVulkanWindow::VulkanSurface);
+    this->vw_renderer = createRenderer();
 }
 
 VKWindow::~VKWindow() {
@@ -59,6 +59,16 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     atomixProg = new ProgramVK();
     atomixProg->setInstance(atomixDevice);
     atomixProg->init();
+
+    vw_renderer->setProgram(atomixProg);
+}
+
+void VKWindow::initWindow() {
+    /* Init -- Matrices */
+    initVecsAndMatrices();
+
+    /* Init -- ProgramGLs and Shaders */
+    initCrystalProgram();
 }
 
 void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
@@ -175,7 +185,6 @@ void VKWindow::initCrystalProgram() {
     // Define VBO for Crystal Diamond & Ring
     BufferCreateInfo crystalVert{};
     crystalVert.type = BufferType::VERTEX;
-    crystalVert.binding = 0;
     crystalVert.size = crystalRingVertices.size() * sizeof(float);
     crystalVert.data = &crystalRingVertices[0];
     crystalVert.name = "crystalVertices";
@@ -185,6 +194,7 @@ void VKWindow::initCrystalProgram() {
     // Define IBO for Crystal Diamond & Ring
     BufferCreateInfo crystalInd{};
     crystalInd.type = BufferType::INDEX;
+    crystalInd.count = crystalRingIndices.size();
     crystalInd.size = crystalRingIndices.size() * sizeof(uint);
     crystalInd.data = &crystalRingIndices[0];
     crystalInd.name = "crystalIndices";
@@ -214,7 +224,6 @@ void VKWindow::initWaveProgram() {
     // Define VBO for Atomix Wave
     BufferCreateInfo waveVert{};
     waveVert.type = BufferType::VERTEX;
-    waveVert.binding = 0;
     waveVert.size = waveManager->getVertexSize();
     waveVert.data = waveManager->getVertexData();
     waveVert.name = "waveVertices";
@@ -250,7 +259,6 @@ void VKWindow::initCloudProgram() {
     // Define VBO::Vertex for Atomix Cloud
     BufferCreateInfo cloudVert{};
     cloudVert.type = BufferType::VERTEX;
-    cloudVert.binding = 0;
     cloudVert.size = cloudManager->getVertexSize();
     cloudVert.data = cloudManager->getVertexData();
     cloudVert.name = "cloudVertices";
@@ -260,7 +268,6 @@ void VKWindow::initCloudProgram() {
     // Define VBO::Data for Atomix Cloud
     BufferCreateInfo cloudData{};
     cloudData.type = BufferType::DATA;
-    cloudData.binding = 1;
     cloudData.size = cloudManager->getDataSize();
     cloudData.data = cloudManager->getDataData();
     cloudData.name = "cloudData";
@@ -326,7 +333,11 @@ void VKWindow::initVecsAndMatrices() {
     v3_mouseEnd = glm::vec3(0);
 
     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    m4_proj = glm::perspective(RADN(45.0f), VKfloat(width()) / height(), gw_nearDist, gw_farDist);
+    float width = static_cast<float>(this->width());
+    float height = static_cast<float>(this->height());
+    float aspect = width / height;
+
+    m4_proj = glm::perspective(RADN(45.0f), aspect, gw_nearDist, gw_farDist);
 
     gw_info.pos = gw_startDist;
     gw_info.start = gw_startDist;
@@ -533,14 +544,14 @@ void VKWindow::onGrabRequested() {
         return;
     }
 
-    QImage image = this->grab();
+    /* QImage image = this->grab();
 
     QFileDialog fd(this, "Save Image");             // Needs to be a MainWindow
     fd.setAcceptMode(QFileDialog::AcceptSave);
     fd.setDefaultSuffix("png");
     fd.selectFile("test.png");
     if (fd.exec() == QDialog::Accepted)
-        image.save(fd.selectedFiles().first());
+        image.save(fd.selectedFiles().first()); */
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -562,7 +573,7 @@ void VKWindow::setColorsWaves(int id, uint colorChoice) {
 
 void VKWindow::updateBuffersAndShaders() {
     /* Set up ProgramVK with buffers for the first time */
-    if (!currentProg || !currentProg->hasBuffer("vertices")) {
+    if (!atomixProg->isActive("wave") || !atomixProg->isActive("cloud")) {
         (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
         initVecsAndMatrices();
     } else {
@@ -573,73 +584,51 @@ void VKWindow::updateBuffersAndShaders() {
 
     /* Continue with ProgramVK update */
     assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
-    uint static_dynamic = currentManager->isCPU() ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
     
-    /* Bind */
-    currentProg->beginRender();
-
     /* Shaders */
     if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
-        // TODO needed? - Detach current shaders
-        currentProg->detachShaders();
-
-        // Attach shaders, link/validate program, and clean up
-        currentProg->attachShader(currentManager->getShaderVert());
-        currentProg->attachShader(currentManager->getShaderFrag());
-        currentProg->linkAndValidate();
-        currentProg->detachShaders();
+        OffsetInfo off{};
+        off.vertShaderIndex = 1;
+        off.offset = 0;
+        atomixProg->updateRender("wave", off);
     }
+    BufferUpdateInfo updBuf{};
+    updBuf.modelName = gw_currentModel;
 
     /* VBO 1: Vertices */
     if (flGraphState.hasAny(egs::UPD_VBO)) {
-        if (currentManager->getVertexCount() > currentProg->getSize("vertices")) {
-            // std::cout << "Resizing VBO: Vertices from " << currentProg->getSize("vertices") << " to " << currentManager->getVertexCount() << std::endl;
-            currentProg->resizeVBONamed("vertices", currentManager->getVertexCount(), currentManager->getVertexSize(), currentManager->getVertexData(), static_dynamic);
-        } else {
-            // std::cout << "Updating VBO" << std::endl;
-            currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
-        }
+        updBuf.bufferName = gw_currentModel + "Vertices";
+        updBuf.type = BufferType::VERTEX;
+        updBuf.count = currentManager->getVertexCount();
+        updBuf.size = currentManager->getVertexSize();
+        updBuf.data = currentManager->getVertexData();
+        currentProg->updateBuffer(updBuf);
     }
 
     /* VBO 2: Data */
     if (flGraphState.hasAny(egs::UPD_DATA)) {
-        if (currentManager->getDataCount() > currentProg->getSize("pdvs")) {
-            // std::cout << "Resizing VBO: Datas from " << currentProg->getSize("pdvs") << " to " << currentManager->getDataCount() << std::endl;
-            currentProg->resizeVBONamed("pdvs", currentManager->getDataCount(), currentManager->getDataSize(), currentManager->getDataData(), static_dynamic);
-        } else {
-            // std::cout << "Updating VBO: Datas" << std::endl;
-            currentProg->updateVBONamed("pdvs", currentManager->getDataCount(), 0, currentManager->getDataSize(), currentManager->getDataData());
-        }
+        updBuf.bufferName = gw_currentModel + "Data";
+        updBuf.type = BufferType::DATA;
+        updBuf.count = currentManager->getDataCount();
+        updBuf.size = currentManager->getDataSize();
+        updBuf.data = currentManager->getDataData();
+        currentProg->updateBuffer(updBuf);
     }
 
     /* EBO: Indices */
     if (flGraphState.hasAny(egs::UPD_EBO)) {
-        if (currentManager->getIndexCount() > currentProg->getSize("indices")) {
-            // std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << currentManager->getIndexCount() << std::endl;
-            currentProg->resizeEBONamed("indices", currentManager->getIndexCount(), currentManager->getIndexSize(), currentManager->getIndexData(), static_dynamic);
-        } else {
-            // std::cout << "Updating EBO" << std::endl;
-            currentProg->updateEBONamed("indices", currentManager->getIndexCount(), 0, currentManager->getIndexSize(), currentManager->getIndexData());
-        }
+        updBuf.bufferName = gw_currentModel + "Indices";
+        updBuf.type = BufferType::INDEX;
+        updBuf.count = currentManager->getIndexCount();
+        updBuf.size = currentManager->getIndexSize();
+        updBuf.data = currentManager->getIndexData();
+        currentProg->updateBuffer(updBuf);
     }
 
     /* Uniforms */
-    if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
-        atomixProg->setUniform(GL_FLOAT, "two_pi_L", waveManager->two_pi_L);
-        atomixProg->setUniform(GL_FLOAT, "two_pi_T", waveManager->two_pi_T);
-        atomixProg->setUniform(GL_FLOAT, "amp", waveManager->waveAmplitude);
-        flGraphState.clear(egs::UPD_UNI_MATHS);
+    if (flGraphState.hasAny(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR)) {
+        this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_wave), &this->vw_wave);
     }
-    if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
-        atomixProg->setUniform(GL_UNSIGNED_INT, "peak", waveManager->peak);
-        atomixProg->setUniform(GL_UNSIGNED_INT, "base", waveManager->base);
-        atomixProg->setUniform(GL_UNSIGNED_INT, "trough", waveManager->trough);
-        flGraphState.clear(egs::UPD_UNI_COLOUR);
-    }
-
-    /* Release */
-    currentProg->endRender();
-    currentProg->clearBuffers();
 
     if (flGraphState.hasAny(egs::UPD_MATRICES)) {
         initVecsAndMatrices();
@@ -789,10 +778,47 @@ void VKRenderer::initResources() {
     vr_vf = vr_vi->functions();
 
     // Retrieve physical device constraints
+    QString dev_info;
+    dev_info += QString::asprintf("Number of physical devices: %d\n", int(vr_vkw->availablePhysicalDevices().count()));
+
+    VkPhysicalDeviceProperties vr_props;
+    vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
+
+    dev_info += QString::asprintf("Active physical device name: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
+                              vr_props.deviceName,
+                              VK_VERSION_MAJOR(vr_props.driverVersion), VK_VERSION_MINOR(vr_props.driverVersion),
+                              VK_VERSION_PATCH(vr_props.driverVersion),
+                              VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion),
+                              VK_VERSION_PATCH(vr_props.apiVersion));
+
+    dev_info += QStringLiteral("Supported instance layers:\n");
+    for (const QVulkanLayer &layer : vr_vi->supportedLayers())
+        dev_info += QString::asprintf("    %s v%u\n", layer.name.constData(), layer.version);
+    dev_info += QStringLiteral("Enabled instance layers:\n");
+    for (const QByteArray &layer : vr_vi->layers())
+        dev_info += QString::asprintf("    %s\n", layer.constData());
+
+    dev_info += QStringLiteral("Supported instance extensions:\n");
+    for (const QVulkanExtension &ext : vr_vi->supportedExtensions())
+        dev_info += QString::asprintf("    %s v%u\n", ext.name.constData(), ext.version);
+    dev_info += QStringLiteral("Enabled instance extensions:\n");
+    for (const QByteArray &ext : vr_vi->extensions())
+        dev_info += QString::asprintf("    %s\n", ext.constData());
+
+    dev_info += QString::asprintf("Color format: %u\nDepth-stencil format: %u\n",
+                              vr_vkw->colorFormat(), vr_vkw->depthStencilFormat());
+
+    dev_info += QStringLiteral("Supported sample counts:");
+    const QList<int> sampleCounts = vr_vkw->supportedSampleCounts();
+    for (int count : sampleCounts)
+        dev_info += QLatin1Char(' ') + QString::number(count);
+    dev_info += QLatin1Char('\n');
+
+    std::cout << dev_info.toStdString() << std::endl;
+
     const int concFrameCount = vr_vkw->concurrentFrameCount();
-    const VkPhysicalDeviceLimits *pdLimits = &vr_vkw->physicalDeviceProperties()->limits;
-    const VkDeviceSize uniAlignment = pdLimits->minUniformBufferOffsetAlignment;
-    // const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlignment);  // Example of using aligned() -- not used
+    const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
+    const VkDeviceSize uniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();
@@ -801,10 +827,11 @@ void VKRenderer::initResources() {
     progDev->device = vr_dev;
     this->vr_vkw->initProgram(progDev);
 
+    this->vr_vkw->initWindow();
 }
 
-QueueFamilyIndices VKRenderer::findQueueFamilies(VkPhysicalDevice device) {
-    /* QueueFamilyIndices indices;
+/* QueueFamilyIndices VKRenderer::findQueueFamilies(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
     this->vr_vf->vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -820,11 +847,11 @@ QueueFamilyIndices VKRenderer::findQueueFamilies(VkPhysicalDevice device) {
         i++;
     }
 
-    return indices; */
-}
+    return indices;
+} */
 
-SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
-    /* SwapChainSupportInfo info;
+/* SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
+    SwapChainSupportInfo info;
     
     this->vr_vf->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->vr_vkw->vw_surface, &info.capabilities);
     
@@ -842,8 +869,8 @@ SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) 
         this->vr_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_vkw->vw_surface, &presentModeCount, info.presentModes.data());
     }
     
-    return info; */
-}
+    return info;
+} */
 
 void VKRenderer::initSwapChainResources() {
     /* QSize swapChainImageSize = this->vr_vkw->swapChainImageSize();
@@ -937,7 +964,17 @@ void VKRenderer::startNextFrame() {
     VkResult err;
     VkCommandBuffer commandBuffer = vr_vkw->currentCommandBuffer();
     const QSize vkwSize = vr_vkw->swapChainImageSize();
-    VkExtent2D renderExtent = {vkwSize.width(), vkwSize.height()};
+    VkExtent2D renderExtent = {static_cast<uint32_t>(vkwSize.width()), static_cast<uint32_t>(vkwSize.height())};
+
+    // Re-calculate world-state matrices
+    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
+    vr_world.m4_world = m4_translation * m4_rotation;
+    vr_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    // Adjust Y sign for Vulkan coordinate system
+    vr_world.m4_proj[1][1] *= -1.0f;
+
+    // Update uniform buffer
+    this->atomixProg->updateUniformBuffer(vr_vkw->currentSwapChainImageIndex(), sizeof(vr_world), &vr_world);
 
     // Call Program to render
 }

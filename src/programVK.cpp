@@ -40,11 +40,6 @@ ProgramVK::~ProgramVK() {
         delete shader;
     }
 
-    // destruct buffers
-    for (auto &buf : p_buffers) {
-        delete buf;
-    }
-
     // destruct models
     for (auto &model : p_models) {
         delete model;
@@ -56,14 +51,17 @@ ProgramVK::~ProgramVK() {
 }
 
 void ProgramVK::cleanup() {
-    this->p_vdf->vkDestroyBuffer(this->p_dev, p_indexBuffer, nullptr);
-    this->p_vdf->vkFreeMemory(this->p_dev, p_indexMemory, nullptr);
-
-    for (int i = 0; i < p_vertexBuffers.size(); i++) {
-        this->p_vdf->vkDestroyBuffer(this->p_dev, p_vertexBuffers[i], nullptr);
-        this->p_vdf->vkFreeMemory(this->p_dev, p_vertexMemory[i], nullptr);
+    // destruct models
+    for (auto &model : p_models) {
+        delete model;
     }
 
+    // destruct shaders
+    for (auto &shader : p_registeredShaders) {
+        delete shader;
+    }
+    
+    // destruct uniform buffers
     for (int i = 0; i < p_uniformBuffers.size(); i++) {
         this->p_vdf->vkDestroyBuffer(this->p_dev, p_uniformBuffers[i], nullptr);
         this->p_vdf->vkFreeMemory(this->p_dev, p_uniformMemory[i], nullptr);
@@ -91,7 +89,7 @@ void ProgramVK::setInstance(AtomixDevice *atomixDevice) {
  *               VERTEX, FRAGMENT, GEOMETRY, or COMPUTE
  * @return true on success or false on error
  */
-bool ProgramVK::addShader(std::string fName, VKuint type) {
+bool ProgramVK::addShader(const std::string &fName, VKuint type) {
     bool validFile = false;
     std::string fileLoc;
     
@@ -223,42 +221,12 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
     }
 }
 
-BufferInfo *ProgramVK::addBuffer(BufferCreateInfo &info) {
-    VKuint idx = p_buffers.size();
-    BufferInfo *buf;
-
-    const auto [it, success] = p_mapBuf.insert({info.name, idx});
-
-    if (success) {
-        buf = new BufferInfo{};
-        buf->id = idx;
-        buf->type = info.type;
-        buf->binding = info.binding;
-        buf->size = info.size;
-        if (info.storeData) {
-            buf->data = operator new(buf->size);
-            memcpy(const_cast<void *>(buf->data), info.data, buf->size);
-            p_allocatedBuffers.push_back(buf->data);
-        } else {
-            buf->data = info.data;
-        }
-        buf->dataTypes = info.dataTypes;
-        p_buffers.push_back(buf);
-        return buf;
-    } else {
-        std::cout << "Buffer already exists. Returning existing buffer." << std::endl;
-        return this->p_buffers[it->second];
-    }
-
-    return nullptr;
-}
-
 VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     assert(this->p_pipeInfo.init);
     ModelInfo *model;
     VKuint idx = p_models.size();
 
-    const auto [it, success] = p_mapModel.insert({info.name, idx});
+    const auto [it, success] = p_mapModels.insert({info.name, idx});
 
     // Check for existing model and add if it doesn't exist
     if (!success) {
@@ -266,21 +234,15 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         model = p_models[it->second];
 
         // TODO: Handle old model data
-        return;
+        return -1;
     } else {
         model = new ModelInfo{};
         model->id = idx;
         model->name = info.name;
         p_models.push_back(model);
-        p_mapModel[info.name] = model->id;
+        p_mapModels[info.name] = model->id;
     }
 
-    // Add buffers
-    for (auto &vbo : info.vbos) {
-        model->vbos.push_back(addBuffer(*vbo));
-    }
-    model->ibo = addBuffer(*info.ibo);
-    
     // Add shaders
     model->shaders = new ShaderInfo{};
     for (auto &vert : info.vertShaders) {
@@ -291,45 +253,60 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     }
     this->createShaderStages(model);
 
+    // Add buffers
+    for (auto &vbo : info.vbos) {
+        model->vbos.push_back(VkBuffer{});
+        model->vboMemory.push_back(VkDeviceMemory{});
+        this->stageAndCopyVertexBuffer(model, model->vbos.size() - 1, false, vbo->size, vbo->data);
+        p_mapBuffers[vbo->name] = model->vbos.size() - 1;
+    }
+    this->stageAndCopyIndexBuffer(model, false, info.ibo->size, info.ibo->data);
+    this->createPersistentUniformBuffer(info.uboSize);
+    p_mapBuffers[info.ibo->name] = model->id;
+
     // Add model-specific pipeline definition
     model->pipeInfo = new ModelPipelineInfo{};
     model->pipeInfo->pipeLib = new PipelineLibrary{};
-    model->offsets = info.offsets;
-    this->defineModelAttributes(model);
-    this->pipelineModelSetup(model);
+    model->attributes = defineModelAttributes(&info);
+    this->pipelineModelSetup(&info, model);
     
     // Generate model-specific pipeline libraries
-    for (auto &vbo : model->pipeInfo->vboCreates) {
-        for (auto &ia : model->pipeInfo->iaCreates) {
-            this->genVertexInputPipeLib(vbo, ia);
-        }
+    for (auto &ia : model->pipeInfo->iaCreates) {
+        this->genVertexInputPipeLib(model, model->pipeInfo->vboCreate, ia);
     }
     for (auto &vert : model->pipeInfo->vsCreates) {
         for (auto &rs : model->pipeInfo->rsCreates) {
-            this->genPreRasterizationPipeLib(vert, rs);
+            this->genPreRasterizationPipeLib(model, vert, rs);
         }
     }
     for (auto &frag : model->pipeInfo->fsCreates) {
-        this->genFragmentShaderPipeLib(frag);
+        this->genFragmentShaderPipeLib(model, frag);
     }
 
-    // Create all pipelines used by model
-    for (auto &vis : model->pipeInfo->pipeLib->vertexInput) {
-        for (auto &pre : model->pipeInfo->pipeLib->preRasterization) {
-            for (auto &fs : model->pipeInfo->pipeLib->fragmentShader) {
-                model->pipelines.push_back(createPipeFromLibraries(vis, pre, fs));
-            }
-        }
+    // Create all pipelines used by the model
+    for (auto &off : info.offsets) {
+        model->renders.push_back(new RenderInfo{});
+        RenderInfo *render = model->renders.back();
+        render->firstVbo = model->vbos.data();
+        render->ibo = &model->ibo;
+        render->vboOffsets.resize(model->vbos.size(), 0);
+        render->iboOffset = off.offset;
+        render->indexCount = info.ibo->count - off.offset;
+        int preIndex = off.vertShaderIndex * model->pipeInfo->rsCreates.size() + off.topologyIndex;
+        this->createPipeFromLibraries(render,
+                                      model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
+                                      model->pipeInfo->pipeLib->preRasterization[preIndex],
+                                      model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
     }
 
     return model->id;
 }
 
-VKuint ProgramVK::activateModel(std::string name) {
+VKuint ProgramVK::activateModel(const std::string &name) {
     VKuint id = -1;
 
     try {
-        id = p_mapModel.at(name);
+        id = p_mapModels.at(name);
     } catch (const std::out_of_range &e) {
         std::cout << "Model not found: " << name << std::endl;
         return id;
@@ -339,11 +316,11 @@ VKuint ProgramVK::activateModel(std::string name) {
     return id;
 }
 
-VKuint ProgramVK::deactivateModel(std::string name) {
+VKuint ProgramVK::deactivateModel(const std::string &name) {
     VKuint id = -1;
 
     try {
-        id = p_mapModel.at(name);
+        id = p_mapModels.at(name);
     } catch (const std::out_of_range &e) {
         std::cout << "Model not found: " << name << std::endl;
         return id;
@@ -405,6 +382,8 @@ bool ProgramVK::init() {
     pipelineGlobalSetup();
 
     this->stage = 2;
+
+    return true;
 }
 
 QueueFamilyIndices ProgramVK::findQueueFamilies(VkPhysicalDevice device) {
@@ -462,9 +441,9 @@ void ProgramVK::createRenderPass() {
     }
 }
 
-void ProgramVK::pipelineModelSetup(ModelInfo *m) {
+void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
     // For each topology
-    for (auto &topology : m->topologies) {
+    for (auto &topology : info->topologies) {
         VkPolygonMode polyMode;
         if (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
             polyMode = VK_POLYGON_MODE_POINT;
@@ -498,7 +477,7 @@ void ProgramVK::pipelineModelSetup(ModelInfo *m) {
         m->pipeInfo->rsCreates.push_back(rs);
     }
 
-    // Vertex Inpute State
+    // Vertex Input State
     VkPipelineVertexInputStateCreateInfo vbo{};
     vbo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vbo.vertexBindingDescriptionCount = m->attributes->bindings.size();
@@ -507,7 +486,7 @@ void ProgramVK::pipelineModelSetup(ModelInfo *m) {
     vbo.pVertexAttributeDescriptions = m->attributes->attributes.data();
     vbo.flags = 0;
     vbo.pNext = nullptr;
-    m->pipeInfo->vboCreates.push_back(vbo);
+    m->pipeInfo->vboCreate = vbo;
 }
 
 void ProgramVK::pipelineGlobalSetup() {
@@ -609,7 +588,7 @@ void ProgramVK::createPipeline(ModelInfo *m) {
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     // Model-specific pipeline
-    pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreates[0];
+    pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreate;
     pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[0];
     pipelineInfo.pRasterizationState = &m->pipeInfo->rsCreates[0];
 
@@ -617,10 +596,10 @@ void ProgramVK::createPipeline(ModelInfo *m) {
     if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &pipe)) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
     }
-    m->pipelines.push_back(pipe);
+    m->renders[0]->pipeline = pipe;
 }
 
-VkPipeline& ProgramVK::genVertexInputPipeLib(VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia) {
+void ProgramVK::genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia) {
     // Declare model-specific pipeline library part: Vertex Input State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibVBOInfo{};
     pipeLibVBOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -641,12 +620,10 @@ VkPipeline& ProgramVK::genVertexInputPipeLib(VkPipelineVertexInputStateCreateInf
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vertex Input pipeline library!");
     }
-    this->p_pipelines.push_back(pipe);
-
-    return pipe;
+    model->pipeInfo->pipeLib->vertexInput.push_back(pipe);
 }
 
-VkPipeline& ProgramVK::genPreRasterizationPipeLib(VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs) {
+void ProgramVK::genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs) {
     // Declare model-specific pipeline library part: Pre-Rasterization State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibPRSInfo{};
     pipeLibPRSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -672,19 +649,17 @@ VkPipeline& ProgramVK::genPreRasterizationPipeLib(VkPipelineShaderStageCreateInf
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Pre-Rasterization pipeline library!");
     }
-    this->p_pipelines.push_back(pipe);
-
-    return pipe;
+    model->pipeInfo->pipeLib->preRasterization.push_back(pipe);
 }
 
-VkPipeline& ProgramVK::genFragmentShaderPipeLib(VkPipelineShaderStageCreateInfo &frag) {
+void ProgramVK::genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag) {
     // Create global pipeline library part: Fragment Shader State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibFSInfo{};
     pipeLibFSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
     pipeLibFSInfo.pNext = nullptr;
     pipeLibFSInfo.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
-    VkGraphicsPipelineCreateInfo pipeCreateLibFSInfo{};
+    VkGraphicsPipelineCreateInfo pipeCreateLibFSInfo {};
     pipeCreateLibFSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeCreateLibFSInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pipeCreateLibFSInfo.pNext = &pipeLibFSInfo;
@@ -701,12 +676,10 @@ VkPipeline& ProgramVK::genFragmentShaderPipeLib(VkPipelineShaderStageCreateInfo 
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Fragment Shader pipeline library!");
     }
-    this->p_pipelines.push_back(pipe);
-
-    return pipe;
+    model->pipeInfo->pipeLib->fragmentShader.push_back(pipe);
 }
 
-VkPipeline& ProgramVK::genFragmentOutputPipeLib() {
+void ProgramVK::genFragmentOutputPipeLib() {
     // Create global pipeline library part: Fragment Output State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibFOInfo{};
     pipeLibFOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -728,13 +701,11 @@ VkPipeline& ProgramVK::genFragmentOutputPipeLib() {
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Fragment Output pipeline library!");
     }
-    this->p_pipelines.push_back(pipe);
-
-    return pipe;
+    this->p_fragmentOutput = pipe;
 }
 
-VkPipeline& ProgramVK::createPipeFromLibraries(VkPipeline &vis, VkPipeline &pre, VkPipeline &frag) {
-    std::vector<VkPipeline> libs = {vis, pre, frag, this->p_fragmentOutput};
+void ProgramVK::createPipeFromLibraries(RenderInfo *render, VkPipeline &vis, VkPipeline &pre, VkPipeline &frag) {
+    std::vector<VkPipeline> libs = { vis, pre, frag, this->p_fragmentOutput };
 
     VkPipelineLibraryCreateInfoKHR pipeLibLinkInfo{};
     pipeLibLinkInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
@@ -753,7 +724,7 @@ VkPipeline& ProgramVK::createPipeFromLibraries(VkPipeline &vis, VkPipeline &pre,
         throw std::runtime_error("Failed to create graphics pipeline!");
     }
 
-    return pipe;
+    render->pipeline = pipe;
 }
 
 void ProgramVK::updatePipeFromLibraries() {
@@ -785,18 +756,6 @@ void ProgramVK::createCommandBuffers() {
     }
 }
 
-BufferInfo* ProgramVK::getBufferInfo(std::string name) {
-    BufferInfo *buf;
-
-    buf = p_buffers[p_mapBuf[name]];
-
-    if (buf == nullptr) {
-        throw std::runtime_error("Buffer not found!");
-    }
-
-    return buf;
-}
-
 uint32_t ProgramVK::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags flagProperties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     this->p_vf->vkGetPhysicalDeviceMemoryProperties(this->p_phydev, &memProperties);
@@ -818,8 +777,8 @@ void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (this->p_vdf->vkCreateBuffer(this->p_dev, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create buffer!");
-    }   
+        throw std::runtime_error("Failed to create buffer!");
+    }
 
     VkMemoryRequirements memRequirements;
     this->p_vdf->vkGetBufferMemoryRequirements(this->p_dev, buffer, &memRequirements);
@@ -830,13 +789,13 @@ void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
     if (this->p_vdf->vkAllocateMemory(this->p_dev, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate buffer memory!");
+        throw std::runtime_error("Failed to allocate buffer memory!");
     }
     
     this->p_vdf->vkBindBufferMemory(this->p_dev, buffer, bufferMemory, 0);
 }
 
-void ProgramVK::copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) {
+void ProgramVK::copyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -871,13 +830,13 @@ void ProgramVK::copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) {
     this->p_vdf->vkFreeCommandBuffers(this->p_dev, this->p_cmdpool, 1, &commandBuffer);
 }
 
-void ProgramVK::defineModelAttributes(ModelInfo *model) {
+AttribInfo* ProgramVK::defineModelAttributes(ModelCreateInfo *info) {
     AttribInfo *attribInfo = new AttribInfo{};
     int bindings = 0;
     int locations = 0;
 
     // Populate binding and attribute info
-    for (auto &vbo : model->vbos) {
+    for (auto &vbo : info->vbos) {
         uint thisOffset = 0;
         std::vector<uint> offsets;
         offsets.push_back(0);
@@ -888,7 +847,7 @@ void ProgramVK::defineModelAttributes(ModelInfo *model) {
 
         // Calculate atribute locations and sizes
         for (auto &attrib : vbo->dataTypes) {
-            VkFormat thisFormat = DataFormats[static_cast<uint>(attrib)];
+            VkFormat thisFormat = dataFormats[static_cast<uint>(attrib)];
 
             VkVertexInputAttributeDescription attributeDescription{};
             attributeDescription.binding = bindings;
@@ -906,55 +865,63 @@ void ProgramVK::defineModelAttributes(ModelInfo *model) {
         bindings++;
     }
 
-    model->attributes = attribInfo;
+    return attribInfo;
 }
 
-void ProgramVK::createVertexBuffer(BufferInfo *buf) {
-    uint idx = buf->binding;
+void ProgramVK::stageAndCopyVertexBuffer(ModelInfo *model, VKuint idx, bool update, VKuint64 bufSize, const void *bufData) {
+    VkBuffer vbo = model->vbos[idx];
+    VkDeviceMemory vboMem = model->vboMemory[idx];
 
-    createBuffer(buf->size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
+    createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
 
     void* data;
-    this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, buf->size, 0, &data);
-    memcpy(data, buf->data, buf->size);
-    this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
+    this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, bufSize, 0, &data);
+    memcpy(data, bufData, bufSize);
+    this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);   
 
-    createBuffer(buf->size, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, p_vertexBuffers[idx], p_vertexMemory[idx]);
+    if (!update) {
+        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vbo, vboMem);
+    }
     
-    copyBuffer(p_stagingBuffer, p_vertexBuffers[idx], buf->size);
+    copyBuffer(vbo, p_stagingBuffer, bufSize);
 
     this->p_vdf->vkDestroyBuffer(this->p_dev, p_stagingBuffer, nullptr);
     this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);
 }
 
-void ProgramVK::createIndexBuffer(BufferInfo *buf) {
-    createBuffer(buf->size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
+void ProgramVK::stageAndCopyIndexBuffer(ModelInfo *model, bool update, VKuint64 bufSize, const void *bufData) {
+    VkBuffer ibo = model->ibo;
+    VkDeviceMemory iboMem = model->iboMemory;
+
+    createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
 
     void* data;
-    this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, buf->size, 0, &data);
-    memcpy(data, buf->data, buf->size);
+    this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, bufSize, 0, &data);
+    memcpy(data, bufData, bufSize);
     this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
 
-    createBuffer(buf->size, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, p_indexBuffer, p_indexMemory);
+    if (!update) {
+        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ibo, iboMem);
+    }
 
-    copyBuffer(p_stagingBuffer, p_indexBuffer, buf->size);
+    copyBuffer(ibo, p_stagingBuffer, bufSize);
 
     this->p_vdf->vkDestroyBuffer(this->p_dev, p_stagingBuffer, nullptr);
     this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);
 }
 
-void ProgramVK::createPersistentUniformBuffer(BufferInfo *buf) {
-    VkDeviceSize bufferSize = buf->size;
-    
+void ProgramVK::createPersistentUniformBuffer(VkDeviceSize bufferSize) {
+    p_descSets.resize(MAX_FRAMES_IN_FLIGHT);
     p_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     p_uniformMemory.resize(MAX_FRAMES_IN_FLIGHT);
     uniformMappings.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_uniformBuffers[i], p_uniformMemory[i]);
+        this->p_vdf->vkMapMemory(this->p_dev, p_uniformMemory[i], 0, bufferSize, 0, &uniformMappings[i]);
     }
 
-    this->p_vdf->vkMapMemory(this->p_dev, p_uniformMemory[0], 0, bufferSize, 0, &uniformMappings[0]);
+    defineDescriptorSets();
 }
 
 void ProgramVK::defineDescriptorSets() {
@@ -1030,8 +997,73 @@ void ProgramVK::createDescriptorSetLayout() {
     }
 }
 
+void ProgramVK::updateRender(const std::string &modelName, OffsetInfo &off) {
+    ModelInfo *model = getModelFromName(modelName);
+
+    // Recreate pipeline to use new shader
+    for (auto &render : model->renders) {
+        if (render->iboOffset == off.offset) {
+            int preIndex = off.vertShaderIndex * model->pipeInfo->rsCreates.size() + off.topologyIndex;
+            this->createPipeFromLibraries(render,
+                                          model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
+                                          model->pipeInfo->pipeLib->preRasterization[preIndex],
+                                          model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
+        }
+    }
+}
+
+void ProgramVK::updateBuffer(BufferUpdateInfo &buf) {
+    VKuint id = -1;
+    
+    // Find model
+    ModelInfo *model = getModelFromName(buf.modelName);
+
+    // Find buffer and update with new data
+    if (buf.type == BufferType::VERTEX) {
+        try {
+            id = p_mapBuffers.at(buf.bufferName);
+        } catch (const std::out_of_range &e) {
+            std::cout << "Buffer not found: " << buf.bufferName << std::endl;
+            return;
+        }
+        this->stageAndCopyVertexBuffer(model, id, true, buf.size, buf.data);
+    } else if (buf.type == BufferType::INDEX) {
+        this->stageAndCopyIndexBuffer(model, true, buf.size, buf.data);
+    }
+}
+
+void ProgramVK::updateUniformBuffer(uint32_t currentImage, uint32_t uboSize, void *uboData) {
+    memcpy(uniformMappings[currentImage], uboData, uboSize);
+}
+
+void ProgramVK::updateClearColor(float r, float g, float b, float a) {
+    p_clearColor = {{{r, g, b, a}}};
+    // p_clearColor.color.float32[0] = r;
+    // p_clearColor.color.float32[1] = g;
+    // p_clearColor.color.float32[2] = b;
+    // p_clearColor.color.float32[3] = a;
+}
+
+void ProgramVK::updateSwapExtent(int x, int y) {
+    this->p_swapExtent.width = x;
+    this->p_swapExtent.height = y;
+}
+
 void ProgramVK::recordCommandBuffer() {
     VkCommandBuffer cmdBuf = this->p_vkw->currentCommandBuffer();
+
+    p_viewport.x = 0.0f;
+    p_viewport.y = 0.0f;
+    p_viewport.width = static_cast<float>(this->p_swapExtent.width);
+    p_viewport.height = static_cast<float>(this->p_swapExtent.height);
+    p_viewport.minDepth = 0.0f;
+    p_viewport.maxDepth = 1.0f;
+    p_scissor.offset = {0, 0};
+    p_scissor.extent = this->p_swapExtent;
+
+    VkCommandBufferBeginInfo cmdBeginInfo{};
+    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1042,20 +1074,33 @@ void ProgramVK::recordCommandBuffer() {
     renderPassInfo.clearValueCount = 1;                                 // Optional
     renderPassInfo.pClearValues = &this->p_clearColor;                  // Optional
 
+    if ((err = this->p_vdf->vkBeginCommandBuffer(cmdBuf, &cmdBeginInfo)) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to begin recording command buffer: " + std::to_string(err));
+    }
+    
     this->p_vdf->vkCmdBeginRenderPass(cmdBuf, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    this->p_vdf->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, &pipeline);
-    this->p_vdf->vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayout, 0, 1, &p_descSet[p_vkw->currentFrame()], 0, nullptr);
-    this->p_vdf->vkCmdSetViewport(cmdBuf, 0, 1, &this->p_viewport);
-    this->p_vdf->vkCmdSetScissor(cmdBuf, 0, 1, &this->p_scissor);
-    this->p_vdf->vkCmdBindVertexBuffers(cmdBuf, 0, vbosBound, &this->p_vb, &this->p_offset);
-    this->p_vdf->vkCmdBindIndexBuffer(cmdBuf, this->p_ib, 0, VK_INDEX_TYPE_UINT32);
-    this->p_vdf->vkCmdDrawIndexed(cmdBuf, 6, 1, 0, 0, 0);
+    
+    for (auto &actMod : this->p_activeModels) {
+        ModelInfo *model = this->p_models[actMod];
+
+        for (auto &render : model->renders) {
+            this->p_vdf->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
+            this->p_vdf->vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayout, 0, 1, &p_descSets[p_vkw->currentFrame()], 0, nullptr);
+            this->p_vdf->vkCmdSetViewport(cmdBuf, 0, 1, &this->p_viewport);
+            this->p_vdf->vkCmdSetScissor(cmdBuf, 0, 1, &this->p_scissor);
+            this->p_vdf->vkCmdBindVertexBuffers(cmdBuf, 0, model->vbos.size(), render->firstVbo, render->vboOffsets.data());
+            this->p_vdf->vkCmdBindIndexBuffer(cmdBuf, *render->ibo, render->iboOffset, VK_INDEX_TYPE_UINT32);
+            this->p_vdf->vkCmdDrawIndexed(cmdBuf, render->indexCount, 1, 0, 0, 0);
+        }
+    }
+    
     this->p_vdf->vkCmdEndRenderPass(cmdBuf);
+    this->p_vdf->vkEndCommandBuffer(cmdBuf);
     this->p_vkw->frameReady();
     this->p_vkw->requestUpdate();
 }
 
-Shader* ProgramVK::getShaderFromName(std::string& fileName) {
+Shader* ProgramVK::getShaderFromName(const std::string& fileName) {
     assert(stage >= 2);
     Shader *s = nullptr;
     
@@ -1072,6 +1117,29 @@ Shader* ProgramVK::getShaderFromName(std::string& fileName) {
     return s;
 }
 
+ModelInfo* ProgramVK::getModelFromName(const std::string& name) {
+    ModelInfo *m = nullptr;
+    uint id;
+
+    try {
+        id = p_mapModels.at(name);
+    } catch (const std::out_of_range &e) {
+        std::cout << "Model not found: " << name << std::endl;
+        return nullptr;
+    }
+    
+    return p_models[id];
+}
+
+VKuint ProgramVK::getModelIdFromName(const std::string& name) {
+    try {
+        return p_mapModels.at(name);
+    } catch (const std::out_of_range &e) {
+        std::cout << "Model not found: " << name << std::endl;
+        return -1;
+    }
+}
+
 std::vector<VKuint> ProgramVK::getActiveModelsById() {
     return p_activeModels;
 }
@@ -1084,6 +1152,12 @@ std::vector<std::string> ProgramVK::getActiveModelsByName() {
     }
 
     return names;
+}
+
+bool ProgramVK::isActive(const std::string &modelName) {
+    VKuint id = getModelIdFromName(modelName);
+
+    return (p_activeModels.end() != std::find(p_activeModels.cbegin(), p_activeModels.cend(), id));
 }
 
 void ProgramVK::printModel(ModelInfo *model) {

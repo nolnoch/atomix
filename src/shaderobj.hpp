@@ -33,6 +33,8 @@
 #define SHADEROBJ_HPP_
 
 #include <string>
+#include <cstdint>
+#include <vector>
 #include <fstream>
 #include <sstream>
 
@@ -72,7 +74,7 @@ private:
     std::string filePath;
     std::string fileName;
     std::string sourceStringRaw;
-    std::vector<unsigned int> sourceBufferCompiled;
+    std::vector<uint32_t> sourceBufferCompiled;
     
     bool validFile = false;
     bool validCompile = false;

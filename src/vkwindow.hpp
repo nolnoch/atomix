@@ -85,17 +85,82 @@ const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
 const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
 
-class VKWindow; class VKRenderer;
+class VKWindow;
+
+
+class VKRenderer : public QVulkanWindowRenderer {
+public:
+    VKRenderer(VKWindow *vkWin);
+    ~VKRenderer();
+
+    // SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
+    void setProgram(ProgramVK *prog) { atomixProg = prog; }
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+
+    // void preInitResources() override;
+    void initResources() override;
+    void initSwapChainResources() override;
+    // void logicalDeviceLost() override;
+    // void physicalDeviceLost() override;
+    void releaseSwapChainResources() override;
+    void releaseResources() override;
+
+    void startNextFrame() override;
+
+private:
+    ProgramVK *atomixProg = nullptr;
+
+    QVulkanInstance *vr_vi = nullptr;
+    QVulkanFunctions *vr_vf = nullptr;
+    QVulkanDeviceFunctions *vr_vdf = nullptr;
+
+    VKWindow *vr_vkw = nullptr;
+    VkDevice vr_dev;
+    VkPhysicalDevice vr_phydev;
+    VkBuffer vr_bufVert = VK_NULL_HANDLE;
+    VkDeviceMemory vr_bufMemVert = VK_NULL_HANDLE;
+    VkBuffer vr_bufIdx = VK_NULL_HANDLE;
+    VkDeviceMemory vr_bufMemIdx = VK_NULL_HANDLE;
+    VkDescriptorBufferInfo vr_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkDescriptorPool vr_descPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout vr_descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSet vr_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkPipelineCache vr_pipelineCache = VK_NULL_HANDLE;
+    VkPipelineLayout vr_pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline vr_pipeline = VK_NULL_HANDLE;
+
+    struct WorldState {
+        glm::mat4 m4_world;
+        glm::mat4 m4_view;
+        glm::mat4 m4_proj;
+    } vr_world;
+    
+    glm::mat4 m4_rotation;
+    glm::mat4 m4_translation;
+    glm::vec3 v3_cameraPosition;
+    glm::vec3 v3_cameraTarget;
+    glm::vec3 v3_cameraUp;
+    glm::vec3 v3_mouseBegin;
+    glm::vec3 v3_mouseEnd;
+    Quaternion q_TotalRot;
+
+    QMatrix4x4 vm4_proj;
+    QMatrix4x4 vm4_rot;
+};
 
 
 class VKWindow : public QVulkanWindow {
+    Q_OBJECT
 public:
     VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~VKWindow();
 
     VKRenderer* createRenderer() override;
     void initProgram(AtomixDevice *dev);
-
+    void initWindow();
 
     void setColorsWaves(int id, uint colorChoice);
     void updateBuffersAndShaders();
@@ -143,7 +208,8 @@ private:
     void printFlags(std::string);
     void printConfig(AtomixConfig *cfg);
 
-    VKRenderer *vw_rend = nullptr;
+    VKRenderer *vw_renderer = nullptr;
+    std::string gw_currentModel = "";
 
     QOpenGLContext *gw_context = nullptr;
     ProgramVK *atomixProg = nullptr;
@@ -201,58 +267,15 @@ private:
     uint crystalRingCount = 0;
     uint crystalRingOffset = 0;
     uint cloudOffset = 0;
-};
 
-
-class VKRenderer : public QVulkanWindowRenderer {
-public:
-    VKRenderer(VKWindow *vkWin);
-    ~VKRenderer();
-
-    // SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-
-
-    // void preInitResources() override;
-    void initResources() override;
-    void initSwapChainResources() override;
-    // void logicalDeviceLost() override;
-    // void physicalDeviceLost() override;
-    void releaseSwapChainResources() override;
-    void releaseResources() override;
-
-    void startNextFrame() override;
-
-private:
-    QVulkanInstance *vr_vi = nullptr;
-    QVulkanFunctions *vr_vf = nullptr;
-    QVulkanDeviceFunctions *vr_vdf = nullptr;
-
-    VKWindow *vr_vkw = nullptr;
-    VkDevice vr_dev;
-    VkPhysicalDevice vr_phydev;
-    VkBuffer vr_bufVert = VK_NULL_HANDLE;
-    VkDeviceMemory vr_bufMemVert = VK_NULL_HANDLE;
-    VkBuffer vr_bufIdx = VK_NULL_HANDLE;
-    VkDeviceMemory vr_bufMemIdx = VK_NULL_HANDLE;
-    VkDescriptorBufferInfo vr_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
-
-    VkDescriptorPool vr_descPool = VK_NULL_HANDLE;
-    VkDescriptorSetLayout vr_descSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSet vr_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
-
-    VkPipelineCache vr_pipelineCache = VK_NULL_HANDLE;
-    VkPipelineLayout vr_pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline vr_pipeline = VK_NULL_HANDLE;
-
-    glm::mat4 m4_proj;
-    glm::mat4 m4_view;
-    glm::mat4 m4_world;
-    glm::mat4 m4_rotation;
-    glm::mat4 m4_translation;
-
-    QMatrix4x4 vm4_proj;
-    QMatrix4x4 vm4_rot;
+    struct WaveState {
+        float two_pi_L = 0.0f;
+        float two_pi_T = 0.0f;
+        float amp = 0.0f;
+        float peak = 0.0f;
+        float base = 0.0f;
+        float trough = 0.0f;
+    } vw_wave;
 };
 
 #endif

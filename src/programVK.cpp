@@ -304,28 +304,14 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
 }
 
 VKuint ProgramVK::activateModel(const std::string &name) {
-    VKuint id = -1;
-
-    try {
-        id = p_mapModels.at(name);
-    } catch (const std::out_of_range &e) {
-        std::cout << "Model not found: " << name << std::endl;
-        return id;
-    }
+    VKuint id = getModelIdFromName(name);
     p_activeModels.push_back(id);
     
     return id;
 }
 
 VKuint ProgramVK::deactivateModel(const std::string &name) {
-    VKuint id = -1;
-
-    try {
-        id = p_mapModels.at(name);
-    } catch (const std::out_of_range &e) {
-        std::cout << "Model not found: " << name << std::endl;
-        return id;
-    }
+    VKuint id = getModelIdFromName(name);
 
     if (!std::erase(p_activeModels, id)) {
         std::cout << "Model not found and not removed from active models: " << name << std::endl;
@@ -877,8 +863,8 @@ AttribInfo* ProgramVK::defineModelAttributes(ModelCreateInfo *info) {
 }
 
 void ProgramVK::stageAndCopyVertexBuffer(ModelInfo *model, VKuint idx, bool update, VKuint64 bufSize, const void *bufData) {
-    VkBuffer vbo = model->vbos[idx];
-    VkDeviceMemory vboMem = model->vboMemory[idx];
+    VkBuffer *vbo = &model->vbos[idx];
+    VkDeviceMemory *vboMem = &model->vboMemory[idx];
 
     createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
 
@@ -888,18 +874,18 @@ void ProgramVK::stageAndCopyVertexBuffer(ModelInfo *model, VKuint idx, bool upda
     this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);   
 
     if (!update) {
-        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vbo, vboMem);
+        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, *vbo, *vboMem);
     }
     
-    copyBuffer(vbo, p_stagingBuffer, bufSize);
+    copyBuffer(*vbo, p_stagingBuffer, bufSize);
 
     this->p_vdf->vkDestroyBuffer(this->p_dev, p_stagingBuffer, nullptr);
     this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);
 }
 
 void ProgramVK::stageAndCopyIndexBuffer(ModelInfo *model, bool update, VKuint64 bufSize, const void *bufData) {
-    VkBuffer ibo = model->ibo;
-    VkDeviceMemory iboMem = model->iboMemory;
+    VkBuffer *ibo = &model->ibo;
+    VkDeviceMemory *iboMem = &model->iboMemory;
 
     createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
 
@@ -909,10 +895,10 @@ void ProgramVK::stageAndCopyIndexBuffer(ModelInfo *model, bool update, VKuint64 
     this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
 
     if (!update) {
-        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ibo, iboMem);
+        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, *ibo, *iboMem);
     }
 
-    copyBuffer(ibo, p_stagingBuffer, bufSize);
+    copyBuffer(*ibo, p_stagingBuffer, bufSize);
 
     this->p_vdf->vkDestroyBuffer(this->p_dev, p_stagingBuffer, nullptr);
     this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);

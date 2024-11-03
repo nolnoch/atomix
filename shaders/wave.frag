@@ -1,9 +1,9 @@
 #version 450 core
 
-in vec4 vertColour;
+layout(location = 0) in vec4 vertColour;
 //in float wavefunc;
 
-out vec4 FragColour;
+layout(location = 0) out vec4 FragColour;
 
 void main() {
     FragColour = vertColour;

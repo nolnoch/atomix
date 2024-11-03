@@ -58,6 +58,8 @@ VKRenderer* VKWindow::createRenderer() {
 void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     atomixProg = new ProgramVK();
     atomixProg->setInstance(atomixDevice);
+    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
+    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
     atomixProg->init();
 
     vw_renderer->setProgram(atomixProg);
@@ -175,12 +177,6 @@ void VKWindow::initCrystalProgram() {
     }
     this->crystalRingCount = crystalRingIndices.size() - gw_faces;
     this->crystalRingOffset = gw_faces * sizeof(uint);
-
-    // Add shaders to program
-    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
-    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
-    atomixProg->init();
-    
     
     // Define VBO for Crystal Diamond & Ring
     BufferCreateInfo crystalVert{};
@@ -206,6 +202,7 @@ void VKWindow::initCrystalProgram() {
     crystalModel.name = "crystal";
     crystalModel.vbos = { &crystalVert, &crystalInd };
     crystalModel.ibo = &crystalInd;
+    crystalModel.uboSize = sizeof(WaveState);
     crystalModel.vertShaders = { vertName };
     crystalModel.fragShaders = { fragName };
     crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
@@ -637,6 +634,18 @@ void VKWindow::updateBuffersAndShaders() {
     flGraphState.clear(eUpdateFlags);
 }
 
+void VKWindow::updateWorldState() {
+    this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_renderer->vr_world), &this->vw_renderer->vr_world);
+}
+
+void VKWindow::vkwDraw(VkCommandBuffer &commandBuffer) {
+    this->atomixProg->render(commandBuffer);
+    
+    // Prepare for next frame
+    this->frameReady();
+    this->requestUpdate();
+}
+
 void VKWindow::setBGColour(float colour) {
     gw_bg = colour;
 }
@@ -767,6 +776,10 @@ VKRenderer::VKRenderer(VKWindow *vkWin)
 
 VKRenderer::~VKRenderer() {
     // TODO Destructor
+}
+
+void VKRenderer::preInitResources() {
+    std::cout << "preInitResources" << std::endl;
 }
 
 void VKRenderer::initResources() {
@@ -962,8 +975,8 @@ void VKRenderer::releaseResources() {
 
 void VKRenderer::startNextFrame() {
     VkResult err;
-    VkCommandBuffer commandBuffer = vr_vkw->currentCommandBuffer();
-    const QSize vkwSize = vr_vkw->swapChainImageSize();
+    VkCommandBuffer commandBuffer = this->vr_vkw->currentCommandBuffer();
+    const QSize vkwSize = this->vr_vkw->swapChainImageSize();
     VkExtent2D renderExtent = {static_cast<uint32_t>(vkwSize.width()), static_cast<uint32_t>(vkwSize.height())};
 
     // Re-calculate world-state matrices
@@ -974,7 +987,10 @@ void VKRenderer::startNextFrame() {
     vr_world.m4_proj[1][1] *= -1.0f;
 
     // Update uniform buffer
-    this->atomixProg->updateUniformBuffer(vr_vkw->currentSwapChainImageIndex(), sizeof(vr_world), &vr_world);
+    this->vr_vkw->updateWorldState();
 
     // Call Program to render
+    this->vr_vkw->vkwDraw(commandBuffer);
+
+    
 }

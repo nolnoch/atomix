@@ -25,7 +25,8 @@
 #ifndef VKWINDOW_H
 #define VKWINDOW_H
 
-#include <QtGui/qvulkanwindow.h>
+#include <QVulkanWindow>
+#include <QWindow>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
@@ -170,8 +171,14 @@ public:
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
 
 signals:
+    void detailsChanged(AtomixInfo *info);
+    void toggleLoading (bool loading);
 
 public slots:
+    void cleanup();
+    void newWaveConfig(AtomixConfig *cfg);
+    void selectRenderedWaves(int id, bool checked);
+    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes, bool canCreate = true);
 
 protected:
     /* void initializeGL() override;

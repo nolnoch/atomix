@@ -200,7 +200,7 @@ void VKWindow::initCrystalProgram() {
     // Define Crystal Model with above buffers
     ModelCreateInfo crystalModel{};
     crystalModel.name = "crystal";
-    crystalModel.vbos = { &crystalVert, &crystalInd };
+    crystalModel.vbos = { &crystalVert };
     crystalModel.ibo = &crystalInd;
     crystalModel.uboSize = sizeof(WaveState);
     crystalModel.vertShaders = { vertName };
@@ -213,6 +213,9 @@ void VKWindow::initCrystalProgram() {
 
     // Add Crystal Model to program
     atomixProg->addModel(crystalModel);
+
+    // Activate Crystal Model
+    atomixProg->activateModel("crystal");
 }
 
 void VKWindow::initWaveProgram() {
@@ -343,102 +346,102 @@ void VKWindow::initVecsAndMatrices() {
     emit detailsChanged(&gw_info);
 }
 
-// void VKWindow::initializeGL() {
-//     /* Init -- OpenGL Context and Functions */
-//     if (!context()) {
-//         gw_context = new QOpenGLContext(this);
-//         if (!gw_context->create())
-//             std::cout << "Failed to create OpenGL context" << std::endl;
-//     } else {
-//         gw_context = context();
-//     }
-//     makeCurrent();
-//     if (!gw_init) {
-//         if (!initializeOpenGLFunctions())
-//             std::cout << "Failed to initialize OpenGL functions" << std::endl;
-//         else
-//             gw_init = true;
-//     }
+/* void VKWindow::initializeGL() {
+    // Init -- OpenGL Context and Functions
+    if (!context()) {
+        gw_context = new QOpenGLContext(this);
+        if (!gw_context->create())
+            std::cout << "Failed to create OpenGL context" << std::endl;
+    } else {
+        gw_context = context();
+    }
+    makeCurrent();
+    if (!gw_init) {
+        if (!initializeOpenGLFunctions())
+            std::cout << "Failed to initialize OpenGL functions" << std::endl;
+        else
+            gw_init = true;
+    }
 
-//     /* Init -- Camera and OpenGL State */
-//     glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
-//     glEnable(GL_DEPTH_TEST);
-//     glEnable(GL_BLEND);
+    // Init -- Camera and OpenGL State
+    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
 
-//     /* Init -- Matrices */
-//     initVecsAndMatrices();
+    // Init -- Matrices
+    initVecsAndMatrices();
 
-//     /* Init -- ProgramVKs and Shaders */
-//     initCrystalProgram();
+    // Init -- ProgramVKs and Shaders
+    initCrystalProgram();
 
-//     /* Init -- Time */
-//     gw_timeStart = QDateTime::currentMSecsSinceEpoch();
-//     gw_timer = new QTimer(this);
-//     connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&VKWindow::update));
-//     gw_timer->start(33);
+    // Init -- Time
+    gw_timeStart = QDateTime::currentMSecsSinceEpoch();
+    gw_timer = new QTimer(this);
+    connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&VKWindow::update));
+    gw_timer->start(33);
 
-//     /* Init -- Threading */
-//     fwModel = new QFutureWatcher<void>;
-//     connect(fwModel, &QFutureWatcher<void>::finished, this, &VKWindow::threadFinished);
-// }
+    // Init -- Threading
+    fwModel = new QFutureWatcher<void>;
+    connect(fwModel, &QFutureWatcher<void>::finished, this, &VKWindow::threadFinished);
+}
 
-// void VKWindow::paintGL() {
-//     assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
+void VKWindow::paintGL() {
+    assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
 
-//     if (!gw_pause)
-//         gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-//     float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
+    if (!gw_pause)
+        gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+    float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
 
-//     /* Pre-empt painting for new or updated model configuration */
-//     if (flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
-//         updateBuffersAndShaders();
-//     }
+    // Pre-empt painting for new or updated model configuration
+    if (flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
+        updateBuffersAndShaders();
+    }
 
-//     /* Per-frame Setup */
-//     const qreal retinaScale = devicePixelRatio();
-//     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-//     glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
-//     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    // Per-frame Setup
+    const qreal retinaScale = devicePixelRatio();
+    glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-//     /* Re-calculate world state matrices */
-//     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
-//     m4_world = m4_translation * m4_rotation;
-//     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    // Re-calculate world state matrices
+    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
+    m4_world = m4_translation * m4_rotation;
+    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
 
-//     /* Render -- Crystal */
-//     atomixProg->beginRender();
-//     atomixProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-//     atomixProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-//     atomixProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-//     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
-//     glDrawElements(GL_LINE_LOOP, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
-//     atomixProg->endRender();
+    // Render -- Crystal
+    atomixProg->beginRender();
+    atomixProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+    atomixProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+    atomixProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+    glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINE_LOOP, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
+    atomixProg->endRender();
 
-//     /* Render -- Waves */
-//     if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_RENDER) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_RENDER)) {
-//         currentProg->beginRender();
-//         if (flGraphState.hasAny(egs::WAVE_MODE)) {
-//             if (currentManager->isCPU()) {
-//                 currentManager->update(time);
-//                 currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
-//             }
-//         }
-//         currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-//         currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-//         currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-//         currentProg->setUniform(GL_FLOAT, "time", time);
-//         glDrawElements(GL_POINTS, currentProg->getSize("indices"), GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(cloudOffset));
-//         currentProg->endRender();
-//     }
-//     q_TotalRot.normalize();
-// }
+    // Render -- Waves
+    if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_RENDER) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_RENDER)) {
+        currentProg->beginRender();
+        if (flGraphState.hasAny(egs::WAVE_MODE)) {
+            if (currentManager->isCPU()) {
+                currentManager->update(time);
+                currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
+            }
+        }
+        currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+        currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+        currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        currentProg->setUniform(GL_FLOAT, "time", time);
+        glDrawElements(GL_POINTS, currentProg->getSize("indices"), GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(cloudOffset));
+        currentProg->endRender();
+    }
+    q_TotalRot.normalize();
+}
 
-// void VKWindow::resizeGL(int w, int h) {
-//     gw_scrHeight = height();
-//     gw_scrWidth = width();
-//     // m4_proj = glm::mat4(1.0f);
-//     m4_proj = glm::perspective(RADN(45.0f), VKfloat(w) / h, gw_nearDist, gw_farDist);
-// }
+void VKWindow::resizeGL(int w, int h) {
+    gw_scrHeight = height();
+    gw_scrWidth = width();
+    // m4_proj = glm::mat4(1.0f);
+    m4_proj = glm::perspective(RADN(45.0f), VKfloat(w) / h, gw_nearDist, gw_farDist);
+} */
 
 void VKWindow::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
@@ -639,11 +642,7 @@ void VKWindow::updateWorldState() {
 }
 
 void VKWindow::vkwDraw(VkCommandBuffer &commandBuffer) {
-    this->atomixProg->render(commandBuffer);
-    
-    // Prepare for next frame
-    this->frameReady();
-    this->requestUpdate();
+    atomixProg->render(commandBuffer);
 }
 
 void VKWindow::setBGColour(float colour) {
@@ -987,10 +986,13 @@ void VKRenderer::startNextFrame() {
     vr_world.m4_proj[1][1] *= -1.0f;
 
     // Update uniform buffer
-    this->vr_vkw->updateWorldState();
+    vr_vkw->updateWorldState();
 
     // Call Program to render
-    this->vr_vkw->vkwDraw(commandBuffer);
-
+    vr_vkw->vkwDraw(commandBuffer);
+    
+    // Prepare for next frame
+    vr_vkw->frameReady();
+    vr_vkw->requestUpdate();
     
 }

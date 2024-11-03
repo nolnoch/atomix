@@ -66,8 +66,8 @@ void MainWindow::onAddNew() {
     refreshOrbits();
     setupDetails();
 
-    connect(graph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
-    connect(graph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
+    connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
+    connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
 #ifdef USING_QVULKAN

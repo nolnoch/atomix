@@ -45,16 +45,25 @@ void MainWindow::onAddNew() {
     addDockWidget(Qt::RightDockWidgetArea, dockTabs);
 
 #ifdef USING_QVULKAN
-    vkGraph = new VKWindow(this, cfgParser);
-    vkInst.setLayers({ "VK_LAYER_KHRONOS_validation" });
+    // Vulkan-specific setup
+    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
+    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2" };
+    QVersionNumber version(1, 0, 0);
+
+    vkInst.setApiVersion(version);
+    vkInst.setLayers(layers);
+    vkInst.setExtensions(extensions);
     if (!vkInst.create()) {
         qFatal("Failed to create Vulkan Instance: %d", vkInst.errorCode());
     }
+    
+    vkGraph = new VKWindow(this, cfgParser);
     vkGraph->setVulkanInstance(&vkInst);
     vkWinWidWrapper = QWidget::createWindowContainer(vkGraph);
     setCentralWidget(vkWinWidWrapper);
     graph = vkWinWidWrapper;
 #elifdef USING_QOPENGL
+    // OpenGL-specific setup
     glGraph = new GWidget(this, cfgParser);
     setCentralWidget(glGraph);
     graph = glGraph;
@@ -66,8 +75,8 @@ void MainWindow::onAddNew() {
     refreshOrbits();
     setupDetails();
 
-    connect(graph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
-    connect(graph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
+    connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
+    connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
 #ifdef USING_QVULKAN

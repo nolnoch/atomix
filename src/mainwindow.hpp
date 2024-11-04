@@ -47,6 +47,7 @@
 #include <QSignalBlocker>
 #include <QThread>
 #include "slideswitch.hpp"
+#include "configparser.hpp"
 
 #ifdef USING_QVULKAN
     #include "vkwindow.hpp"

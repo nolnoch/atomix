@@ -26,6 +26,7 @@
 #include <ranges>
 
 #include <QTimer>
+#include <QObject>
 
 #include "vkwindow.hpp"
 
@@ -37,7 +38,7 @@ static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : cfgParser(configParser) {
     setSurfaceType(QVulkanWindow::VulkanSurface);
-    this->vw_renderer = createRenderer();
+    std::cout << "Window has been created!" << std::endl;
 }
 
 VKWindow::~VKWindow() {
@@ -51,13 +52,20 @@ void VKWindow::cleanup() {
     delete atomixProg;
 }
 
-VKRenderer* VKWindow::createRenderer() {
-    return new VKRenderer(this);
+QVulkanWindowRenderer* VKWindow::createRenderer() {
+    std::cout << "Renderer has been created!" << std::endl;
+
+    vw_renderer = new VKRenderer(this);
+    vw_renderer->setWindow(this);
+    
+    return vw_renderer;
 }
 
 void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     atomixProg = new ProgramVK();
     atomixProg->setInstance(atomixDevice);
+    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
+    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
     atomixProg->init();
 
     vw_renderer->setProgram(atomixProg);
@@ -175,12 +183,6 @@ void VKWindow::initCrystalProgram() {
     }
     this->crystalRingCount = crystalRingIndices.size() - gw_faces;
     this->crystalRingOffset = gw_faces * sizeof(uint);
-
-    // Add shaders to program
-    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
-    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
-    atomixProg->init();
-    
     
     // Define VBO for Crystal Diamond & Ring
     BufferCreateInfo crystalVert{};
@@ -204,8 +206,9 @@ void VKWindow::initCrystalProgram() {
     // Define Crystal Model with above buffers
     ModelCreateInfo crystalModel{};
     crystalModel.name = "crystal";
-    crystalModel.vbos = { &crystalVert, &crystalInd };
+    crystalModel.vbos = { &crystalVert };
     crystalModel.ibo = &crystalInd;
+    crystalModel.uboSize = sizeof(WaveState);
     crystalModel.vertShaders = { vertName };
     crystalModel.fragShaders = { fragName };
     crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
@@ -216,6 +219,9 @@ void VKWindow::initCrystalProgram() {
 
     // Add Crystal Model to program
     atomixProg->addModel(crystalModel);
+
+    // Activate Crystal Model
+    atomixProg->activateModel("crystal");
 }
 
 void VKWindow::initWaveProgram() {
@@ -346,102 +352,102 @@ void VKWindow::initVecsAndMatrices() {
     emit detailsChanged(&gw_info);
 }
 
-// void VKWindow::initializeGL() {
-//     /* Init -- OpenGL Context and Functions */
-//     if (!context()) {
-//         gw_context = new QOpenGLContext(this);
-//         if (!gw_context->create())
-//             std::cout << "Failed to create OpenGL context" << std::endl;
-//     } else {
-//         gw_context = context();
-//     }
-//     makeCurrent();
-//     if (!gw_init) {
-//         if (!initializeOpenGLFunctions())
-//             std::cout << "Failed to initialize OpenGL functions" << std::endl;
-//         else
-//             gw_init = true;
-//     }
+/* void VKWindow::initializeGL() {
+    // Init -- OpenGL Context and Functions
+    if (!context()) {
+        gw_context = new QOpenGLContext(this);
+        if (!gw_context->create())
+            std::cout << "Failed to create OpenGL context" << std::endl;
+    } else {
+        gw_context = context();
+    }
+    makeCurrent();
+    if (!gw_init) {
+        if (!initializeOpenGLFunctions())
+            std::cout << "Failed to initialize OpenGL functions" << std::endl;
+        else
+            gw_init = true;
+    }
 
-//     /* Init -- Camera and OpenGL State */
-//     glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
-//     glEnable(GL_DEPTH_TEST);
-//     glEnable(GL_BLEND);
+    // Init -- Camera and OpenGL State
+    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
 
-//     /* Init -- Matrices */
-//     initVecsAndMatrices();
+    // Init -- Matrices
+    initVecsAndMatrices();
 
-//     /* Init -- ProgramVKs and Shaders */
-//     initCrystalProgram();
+    // Init -- ProgramVKs and Shaders
+    initCrystalProgram();
 
-//     /* Init -- Time */
-//     gw_timeStart = QDateTime::currentMSecsSinceEpoch();
-//     gw_timer = new QTimer(this);
-//     connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&VKWindow::update));
-//     gw_timer->start(33);
+    // Init -- Time
+    gw_timeStart = QDateTime::currentMSecsSinceEpoch();
+    gw_timer = new QTimer(this);
+    connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&VKWindow::update));
+    gw_timer->start(33);
 
-//     /* Init -- Threading */
-//     fwModel = new QFutureWatcher<void>;
-//     connect(fwModel, &QFutureWatcher<void>::finished, this, &VKWindow::threadFinished);
-// }
+    // Init -- Threading
+    fwModel = new QFutureWatcher<void>;
+    connect(fwModel, &QFutureWatcher<void>::finished, this, &VKWindow::threadFinished);
+}
 
-// void VKWindow::paintGL() {
-//     assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
+void VKWindow::paintGL() {
+    assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
 
-//     if (!gw_pause)
-//         gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-//     float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
+    if (!gw_pause)
+        gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+    float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
 
-//     /* Pre-empt painting for new or updated model configuration */
-//     if (flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
-//         updateBuffersAndShaders();
-//     }
+    // Pre-empt painting for new or updated model configuration
+    if (flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
+        updateBuffersAndShaders();
+    }
 
-//     /* Per-frame Setup */
-//     const qreal retinaScale = devicePixelRatio();
-//     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-//     glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
-//     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    // Per-frame Setup
+    const qreal retinaScale = devicePixelRatio();
+    glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-//     /* Re-calculate world state matrices */
-//     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
-//     m4_world = m4_translation * m4_rotation;
-//     m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    // Re-calculate world state matrices
+    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
+    m4_world = m4_translation * m4_rotation;
+    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
 
-//     /* Render -- Crystal */
-//     atomixProg->beginRender();
-//     atomixProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-//     atomixProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-//     atomixProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-//     glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
-//     glDrawElements(GL_LINE_LOOP, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
-//     atomixProg->endRender();
+    // Render -- Crystal
+    atomixProg->beginRender();
+    atomixProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+    atomixProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+    atomixProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+    glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINE_LOOP, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
+    atomixProg->endRender();
 
-//     /* Render -- Waves */
-//     if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_RENDER) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_RENDER)) {
-//         currentProg->beginRender();
-//         if (flGraphState.hasAny(egs::WAVE_MODE)) {
-//             if (currentManager->isCPU()) {
-//                 currentManager->update(time);
-//                 currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
-//             }
-//         }
-//         currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-//         currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-//         currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-//         currentProg->setUniform(GL_FLOAT, "time", time);
-//         glDrawElements(GL_POINTS, currentProg->getSize("indices"), GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(cloudOffset));
-//         currentProg->endRender();
-//     }
-//     q_TotalRot.normalize();
-// }
+    // Render -- Waves
+    if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_RENDER) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_RENDER)) {
+        currentProg->beginRender();
+        if (flGraphState.hasAny(egs::WAVE_MODE)) {
+            if (currentManager->isCPU()) {
+                currentManager->update(time);
+                currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
+            }
+        }
+        currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
+        currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
+        currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
+        currentProg->setUniform(GL_FLOAT, "time", time);
+        glDrawElements(GL_POINTS, currentProg->getSize("indices"), GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(cloudOffset));
+        currentProg->endRender();
+    }
+    q_TotalRot.normalize();
+}
 
-// void VKWindow::resizeGL(int w, int h) {
-//     gw_scrHeight = height();
-//     gw_scrWidth = width();
-//     // m4_proj = glm::mat4(1.0f);
-//     m4_proj = glm::perspective(RADN(45.0f), VKfloat(w) / h, gw_nearDist, gw_farDist);
-// }
+void VKWindow::resizeGL(int w, int h) {
+    gw_scrHeight = height();
+    gw_scrWidth = width();
+    // m4_proj = glm::mat4(1.0f);
+    m4_proj = glm::perspective(RADN(45.0f), VKfloat(w) / h, gw_nearDist, gw_farDist);
+} */
 
 void VKWindow::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
@@ -637,6 +643,14 @@ void VKWindow::updateBuffersAndShaders() {
     flGraphState.clear(eUpdateFlags);
 }
 
+void VKWindow::updateWorldState() {
+    this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_renderer->vr_world), &this->vw_renderer->vr_world);
+}
+
+void VKWindow::vkwDraw(VkCommandBuffer &commandBuffer, VkExtent2D &renderExtent) {
+    atomixProg->render(commandBuffer, renderExtent);
+}
+
 void VKWindow::setBGColour(float colour) {
     gw_bg = colour;
 }
@@ -756,30 +770,66 @@ void VKWindow::printConfig(AtomixConfig *cfg) {
     std::cout << "Frag Shader: " << cfg->frag << std::endl;
 }
 
+/**
+ * @brief Returns the smallest value that is greater than or equal to v and a multiple of byteAlign.
+ * 
+ * This is a utility function for aligning a VkDeviceSize to a particular byte boundary.
+ * 
+ * @param v A VkDeviceSize object.
+ * @param byteAlign The byte boundary to align to.
+ * 
+ * This function returns the smallest value that is greater than or equal to v and a multiple of byteAlign.
+ * 
+ * The implementation is based on the formula:
+ * 
+ *   (v + byteAlign - 1) & ~(byteAlign - 1)
+ * 
+ * This works by adding the byteAlign to v, subtracting 1, and then using the bitwise and operator to zero out any bits that are not part of the byteAlign.
+ * 
+ * @return The aligned VkDeviceSize.
+ */
 static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
 {
     return (v + byteAlign - 1) & ~(byteAlign - 1);
 }
 
-VKRenderer::VKRenderer(VKWindow *vkWin)
-    : vr_vkw(vkWin) {
+/*
+ * VKRenderer
+ * 
+ * This class is responsible for the Vulkan rendering of the window.
+ * 
+ * The class is designed to be used with the QVulkanWindow class.
+ * 
+ * The class is not thread-safe.
+ * 
+ */
+
+VKRenderer::VKRenderer(QVulkanWindow *vkWin)
+    : vr_qvw(vkWin) {
 }
 
 VKRenderer::~VKRenderer() {
     // TODO Destructor
 }
 
+void VKRenderer::preInitResources() {
+    std::cout << "preInitResources" << std::endl;
+}
+
 void VKRenderer::initResources() {
+    // Set Window pointer
+    // vr_qvw->setRenderer(this);
+
     // Define instance, device, and function pointers
-    vr_dev = vr_vkw->device();
-    vr_phydev = vr_vkw->physicalDevice();
-    vr_vi = vr_vkw->vulkanInstance();
+    vr_dev = vr_qvw->device();
+    vr_phydev = vr_qvw->physicalDevice();
+    vr_vi = vr_qvw->vulkanInstance();
     vr_vdf = vr_vi->deviceFunctions(vr_dev);
     vr_vf = vr_vi->functions();
 
     // Retrieve physical device constraints
     QString dev_info;
-    dev_info += QString::asprintf("Number of physical devices: %d\n", int(vr_vkw->availablePhysicalDevices().count()));
+    dev_info += QString::asprintf("Number of physical devices: %d\n", int(vr_qvw->availablePhysicalDevices().count()));
 
     VkPhysicalDeviceProperties vr_props;
     vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
@@ -806,27 +856,26 @@ void VKRenderer::initResources() {
         dev_info += QString::asprintf("    %s\n", ext.constData());
 
     dev_info += QString::asprintf("Color format: %u\nDepth-stencil format: %u\n",
-                              vr_vkw->colorFormat(), vr_vkw->depthStencilFormat());
+                              vr_qvw->colorFormat(), vr_qvw->depthStencilFormat());
 
     dev_info += QStringLiteral("Supported sample counts:");
-    const QList<int> sampleCounts = vr_vkw->supportedSampleCounts();
+    const QList<int> sampleCounts = vr_qvw->supportedSampleCounts();
     for (int count : sampleCounts)
         dev_info += QLatin1Char(' ') + QString::number(count);
     dev_info += QLatin1Char('\n');
 
     std::cout << dev_info.toStdString() << std::endl;
 
-    const int concFrameCount = vr_vkw->concurrentFrameCount();
+    const int concFrameCount = vr_qvw->concurrentFrameCount();
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
     const VkDeviceSize uniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();
-    progDev->window = vr_vkw;
+    progDev->window = vr_qvw;
     progDev->physicalDevice = vr_phydev;
     progDev->device = vr_dev;
     this->vr_vkw->initProgram(progDev);
-
     this->vr_vkw->initWindow();
 }
 
@@ -853,34 +902,34 @@ void VKRenderer::initResources() {
 /* SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportInfo info;
     
-    this->vr_vf->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->vr_vkw->vw_surface, &info.capabilities);
+    this->vr_vf->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->vr_qvw->vw_surface, &info.capabilities);
     
     VKuint formatCount = 0;
-    this->vr_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_vkw->vw_surface, &formatCount, nullptr);
+    this->vr_qvw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_qvw->vw_surface, &formatCount, nullptr);
     if (formatCount) {
         info.formats.resize(formatCount);
-        this->vr_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_vkw->vw_surface, &formatCount, info.formats.data());
+        this->vr_qvw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_qvw->vw_surface, &formatCount, info.formats.data());
     }
 
     VKuint presentModeCount = 0;
-    this->vr_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_vkw->vw_surface, &presentModeCount, nullptr);
+    this->vr_qvw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_qvw->vw_surface, &presentModeCount, nullptr);
     if (presentModeCount) {
         info.presentModes.resize(presentModeCount);
-        this->vr_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_vkw->vw_surface, &presentModeCount, info.presentModes.data());
+        this->vr_qvw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_qvw->vw_surface, &presentModeCount, info.presentModes.data());
     }
     
     return info;
 } */
 
 void VKRenderer::initSwapChainResources() {
-    /* QSize swapChainImageSize = this->vr_vkw->swapChainImageSize();
+    /* QSize swapChainImageSize = this->vr_qvw->swapChainImageSize();
     VkExtent2D extent = {swapChainImageSize.width(), swapChainImageSize.height()};
-    this->vr_vkw->vw_surface = QVulkanInstance::surfaceForWindow(this->vr_vkw);
+    this->vr_qvw->vw_surface = QVulkanInstance::surfaceForWindow(this->vr_qvw);
     SwapChainSupportInfo swapChainSupport = querySwapChainSupport(this->vr_phydev);
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = this->vr_vkw->vw_surface;
+    createInfo.surface = this->vr_qvw->vw_surface;
     createInfo.minImageCount = 2;
     createInfo.imageFormat = swapChainSupport.formats[0].format;
     createInfo.imageColorSpace = swapChainSupport.formats[0].colorSpace;
@@ -912,11 +961,11 @@ void VKRenderer::initSwapChainResources() {
         throw std::runtime_error("Failed to create swap chain!");
     }
 
-    this->vr_vkw->setSwapChain(swapchain); */
+    this->vr_qvw->setSwapChain(swapchain); */
     QVulkanWindowRenderer::initSwapChainResources();
 
-    vm4_proj = vr_vkw->clipCorrectionMatrix();
-    const QSize vkwSize = vr_vkw->swapChainImageSize();
+    vm4_proj = vr_qvw->clipCorrectionMatrix();
+    const QSize vkwSize = vr_qvw->swapChainImageSize();
     vm4_proj.perspective(45.0f, (float)vkwSize.width() / (float)vkwSize.height(), 0.1f, 100.0f);
     // m4_proj = glm::mat4(vm4_proj.transposed().constData());
 }
@@ -962,8 +1011,8 @@ void VKRenderer::releaseResources() {
 
 void VKRenderer::startNextFrame() {
     VkResult err;
-    VkCommandBuffer commandBuffer = vr_vkw->currentCommandBuffer();
-    const QSize vkwSize = vr_vkw->swapChainImageSize();
+    VkCommandBuffer commandBuffer = this->vr_qvw->currentCommandBuffer();
+    const QSize vkwSize = this->vr_qvw->swapChainImageSize();
     VkExtent2D renderExtent = {static_cast<uint32_t>(vkwSize.width()), static_cast<uint32_t>(vkwSize.height())};
 
     // Re-calculate world-state matrices
@@ -974,7 +1023,15 @@ void VKRenderer::startNextFrame() {
     vr_world.m4_proj[1][1] *= -1.0f;
 
     // Update uniform buffer
-    this->atomixProg->updateUniformBuffer(vr_vkw->currentSwapChainImageIndex(), sizeof(vr_world), &vr_world);
+    atomixProg->updateUniformBuffer(this->vr_qvw->currentFrame(), sizeof(vr_world), &vr_world);
+    // vr_vkw->updateWorldState();
 
     // Call Program to render
+    atomixProg->render(commandBuffer, renderExtent);
+    // vr_vkw->vkwDraw(commandBuffer, renderExtent);
+    
+    // Prepare for next frame
+    vr_qvw->frameReady();
+    vr_qvw->requestUpdate();
+    
 }

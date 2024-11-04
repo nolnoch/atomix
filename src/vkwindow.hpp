@@ -26,6 +26,9 @@
 #define VKWINDOW_H
 
 #include <QVulkanWindow>
+#include <QVulkanWindowRenderer>
+#include <QVulkanInstance>
+#include <QVulkanFunctions>
 #include <QWindow>
 #include <QMouseEvent>
 #include <QWheelEvent>
@@ -63,6 +66,13 @@ struct AtomixInfo {
 };
 Q_DECLARE_METATYPE(AtomixInfo);
 
+struct WorldState {
+        glm::mat4 m4_world;
+        glm::mat4 m4_view;
+        glm::mat4 m4_proj;
+};
+Q_DECLARE_METATYPE(WorldState);
+
 enum egs {
     WAVE_MODE =         1 << 0,     // Button from Wave tab clicked, only making Waves
     WAVE_RENDER =       1 << 1,     // Wave EBO has been loaded
@@ -74,7 +84,7 @@ enum egs {
     UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated
     UPD_DATA =          1 << 8,     // Cloud RDPs need to be loaded into VBO #2
     UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
-    UPD_UNI_COLOUR =    1 << 10,     // [Wave] Colour Uniforms need to be updated
+    UPD_UNI_COLOUR =    1 << 10,    // [Wave] Colour Uniforms need to be updated
     UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
     UPD_MATRICES =      1 << 12,    // Needs initVecsAndMatrices() to reset position and view
     UPDATE_REQUIRED =   1 << 13,    // An update must execute on next render
@@ -90,15 +100,15 @@ class VKWindow;
 
 class VKRenderer : public QVulkanWindowRenderer {
 public:
-    VKRenderer(VKWindow *vkWin);
+    VKRenderer(QVulkanWindow *vkWin);
     ~VKRenderer();
 
     // SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
     void setProgram(ProgramVK *prog) { atomixProg = prog; }
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    void setWindow(VKWindow *win) { vr_vkw = win; }
+    // QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
-
-    // void preInitResources() override;
+    void preInitResources() override;
     void initResources() override;
     void initSwapChainResources() override;
     // void logicalDeviceLost() override;
@@ -108,12 +118,15 @@ public:
 
     void startNextFrame() override;
 
+    WorldState vr_world;
+
 private:
     ProgramVK *atomixProg = nullptr;
 
     QVulkanInstance *vr_vi = nullptr;
     QVulkanFunctions *vr_vf = nullptr;
     QVulkanDeviceFunctions *vr_vdf = nullptr;
+    QVulkanWindow *vr_qvw = nullptr;
 
     VKWindow *vr_vkw = nullptr;
     VkDevice vr_dev;
@@ -132,12 +145,6 @@ private:
     VkPipelineLayout vr_pipelineLayout = VK_NULL_HANDLE;
     VkPipeline vr_pipeline = VK_NULL_HANDLE;
 
-    struct WorldState {
-        glm::mat4 m4_world;
-        glm::mat4 m4_view;
-        glm::mat4 m4_proj;
-    } vr_world;
-    
     glm::mat4 m4_rotation;
     glm::mat4 m4_translation;
     glm::vec3 v3_cameraPosition;
@@ -158,12 +165,14 @@ public:
     VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~VKWindow();
 
-    VKRenderer* createRenderer() override;
+    QVulkanWindowRenderer* createRenderer() override;
     void initProgram(AtomixDevice *dev);
     void initWindow();
 
     void setColorsWaves(int id, uint colorChoice);
     void updateBuffersAndShaders();
+    void updateWorldState();
+    void vkwDraw(VkCommandBuffer &commandBuffer, VkExtent2D &renderExtent);
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);

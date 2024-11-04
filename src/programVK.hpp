@@ -278,11 +278,11 @@ public:
 
     void updateRender(const std::string& modelName, OffsetInfo &info);
     void updateBuffer(BufferUpdateInfo &info);
-    void updateUniformBuffer(uint32_t currentImage, uint32_t uboSize, void *uboData);
+    void updateUniformBuffer(uint32_t currentImage, uint32_t uboSize, const void *uboData);
     void updateClearColor(float r, float g, float b, float a);
     void updateSwapExtent(int x, int y);
 
-    void recordCommandBuffer();
+    void render(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
 
     Shader* getShaderFromName(const std::string& fileName);
     ModelInfo* getModelFromName(const std::string& modelName);
@@ -333,14 +333,14 @@ private:
     std::vector<VkDeviceMemory> p_uniformMemory;
     std::vector<void *> uniformMappings;
 
-    VkBuffer p_stagingBuffer;
-    VkDeviceMemory p_stagingMemory;
+    VkBuffer p_stagingBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory p_stagingMemory = VK_NULL_HANDLE;
 
     std::vector<VkPipeline> p_pipelines;
     GlobalPipelineInfo p_pipeInfo{};
-    VkPipeline p_fragmentOutput;
+    VkPipeline p_fragmentOutput = VK_NULL_HANDLE;
     
-    VkResult err;
+    VkResult err = VK_SUCCESS;
     
     bool enabled = false;
     int stage = 0;

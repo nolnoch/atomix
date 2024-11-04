@@ -1,15 +1,17 @@
 #version 450 core
 
-layout(location = 0) in vec3 svPos;
-layout(location = 1) in vec3 svCol;
+layout(location = 0) in vec3 pos;
+layout(location = 1) in vec3 colour;
     
-out vec3 verColour;
+layout(location = 0) out vec3 vertColour;
 
-uniform mat4 worldMat;
-uniform mat4 viewMat;
-uniform mat4 projMat;
+layout(binding = 0) uniform UniformBuffer {
+    mat4 worldMat;
+    mat4 viewMat;
+    mat4 projMat;
+} ubo;
     
 void main() {
-   gl_Position = projMat * viewMat * worldMat * vec4(svPos, 1.0f);
-   verColour = svCol;
+   gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(pos, 1.0f);
+   vertColour = colour;
 }

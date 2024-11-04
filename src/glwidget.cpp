@@ -132,7 +132,7 @@ void GWidget::initCrystalProgram() {
     int crystalRes = 80;
     double crystalDegFac = PI_TWO / crystalRes;
     double crystalRadius = 0.4f;
-    size_t vs = vertices.size() / 6;
+    uint64_t vs = vertices.size() / 6;
 
     std::copy(vertices.cbegin(), vertices.cend(), std::back_inserter(crystalRingVertices));
     std::copy(indices.cbegin(), indices.cend(), std::back_inserter(crystalRingIndices));

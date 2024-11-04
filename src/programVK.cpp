@@ -24,6 +24,8 @@
 
 #include "programVK.hpp"
 
+#define MACOS
+
 
 /**
  * Default Constructor.
@@ -217,7 +219,6 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
 }
 
 VKuint ProgramVK::addModel(ModelCreateInfo &info) {
-    assert(this->p_pipeInfo.init);
     ModelInfo *model;
     VKuint idx = p_models.size();
 
@@ -266,7 +267,14 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     // Attributes -- Bindings/Locations
     model->attributes = defineModelAttributes(&info);
     this->pipelineModelSetup(&info, model);
+
+    // Pipeline Global Setup
+    if (!this->p_pipeInfo.init) {
+        this->p_pipeInfo.init = true;
+        this->pipelineGlobalSetup();
+    }
     
+#ifdef WINNIX
     // Pipeline Libraries
     model->pipeInfo->pipeLib = new PipelineLibrary{};
     for (auto &ia : model->pipeInfo->iaCreates) {
@@ -284,7 +292,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         this->genFragmentOutputPipeLib();
     }
 
-    // Final Pipelines for Renders
+    // Final Pipelines for Renders (Linux & Windows)
     for (auto &off : info.offsets) {
         model->renders.push_back(new RenderInfo{});
         RenderInfo *render = model->renders.back();
@@ -299,6 +307,20 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
                                       model->pipeInfo->pipeLib->preRasterization[preIndex],
                                       model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
     }
+#elifdef MACOS
+    // Final Pipelines for Renders (MacOS)
+    for (auto &off : info.offsets) {
+        model->renders.push_back(new RenderInfo{});
+        RenderInfo *render = model->renders.back();
+        render->firstVbo = model->vbos.data();
+        render->ibo = &model->ibo;
+        render->vboOffsets.resize(model->vbos.size(), 0);
+        render->iboOffset = off.offset;
+        render->indexCount = info.ibo->count - off.offset;
+        int preIndex = off.vertShaderIndex * model->pipeInfo->rsCreates.size() + off.topologyIndex;
+        this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex, off.topologyIndex);
+    }
+#endif
 
     return model->id;
 }
@@ -373,7 +395,6 @@ bool ProgramVK::init() {
 
     // Init pipeline cache and global setup
     createPipelineCache();
-    pipelineGlobalSetup();
 
     this->stage = 2;
 
@@ -562,8 +583,8 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.init = true;
 }
 
-void ProgramVK::createPipeline(ModelInfo *m) {
-    std::vector<VkPipelineShaderStageCreateInfo> shaderModules = { m->pipeInfo->vsCreates[0], m->pipeInfo->fsCreates[0] };
+void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia, int rs) {
+    std::vector<VkPipelineShaderStageCreateInfo> shaderModules = { m->pipeInfo->vsCreates[vs], m->pipeInfo->fsCreates[fs] };
 
     // Global pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -583,14 +604,12 @@ void ProgramVK::createPipeline(ModelInfo *m) {
 
     // Model-specific pipeline
     pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreate;
-    pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[0];
-    pipelineInfo.pRasterizationState = &m->pipeInfo->rsCreates[0];
+    pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[ia];
+    pipelineInfo.pRasterizationState = &m->pipeInfo->rsCreates[rs];
 
-    VkPipeline pipe = VK_NULL_HANDLE;
-    if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &pipe)) != VK_SUCCESS) {
+    if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &render->pipeline)) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
     }
-    m->renders[0]->pipeline = pipe;
 }
 
 void ProgramVK::genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia) {
@@ -615,6 +634,7 @@ void ProgramVK::genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputSta
         throw std::runtime_error("Failed to create Vertex Input pipeline library!");
     }
     model->pipeInfo->pipeLib->vertexInput.push_back(pipe);
+    // TODO : Make this use direct assignment to the vector
 }
 
 void ProgramVK::genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs) {

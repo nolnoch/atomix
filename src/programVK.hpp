@@ -256,7 +256,7 @@ public:
 
     void pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m);
     void pipelineGlobalSetup();
-    void createPipeline(ModelInfo *model);
+    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia, int rs);
     void genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia);
     void genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs);
     void genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag);
@@ -283,6 +283,7 @@ public:
     void updateSwapExtent(int x, int y);
 
     void render(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
+    void renderMacOS(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
 
     Shader* getShaderFromName(const std::string& fileName);
     ModelInfo* getModelFromName(const std::string& modelName);

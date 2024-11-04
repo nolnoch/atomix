@@ -2,6 +2,7 @@ set(CMAKE_AUTOMOC ON)
 set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
 
 set(USING_QVULKAN 1)
+set(MACOS 1)
 
 find_package(TBB REQUIRED COMPONENTS tbb)
 # set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")

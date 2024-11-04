@@ -5,7 +5,9 @@
         ],
         "myDefines": [
             "USING_QVULKAN=1",
-            "USING_QOPENGL=0"
+            "USING_QOPENGL=0",
+            "WINNIX=0",
+            "MACOS=1"
         ]
     },
     "configurations": [

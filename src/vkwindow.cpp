@@ -26,6 +26,7 @@
 #include <ranges>
 
 #include <QTimer>
+#include <QObject>
 
 #include "vkwindow.hpp"
 
@@ -37,7 +38,7 @@ static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : cfgParser(configParser) {
     setSurfaceType(QVulkanWindow::VulkanSurface);
-    this->vw_renderer = createRenderer();
+    std::cout << "Window has been created!" << std::endl;
 }
 
 VKWindow::~VKWindow() {
@@ -51,8 +52,13 @@ void VKWindow::cleanup() {
     delete atomixProg;
 }
 
-VKRenderer* VKWindow::createRenderer() {
-    return new VKRenderer(this);
+QVulkanWindowRenderer* VKWindow::createRenderer() {
+    std::cout << "Renderer has been created!" << std::endl;
+
+    vw_renderer = new VKRenderer(this);
+    vw_renderer->setWindow(this);
+    
+    return vw_renderer;
 }
 
 void VKWindow::initProgram(AtomixDevice *atomixDevice) {
@@ -641,8 +647,8 @@ void VKWindow::updateWorldState() {
     this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_renderer->vr_world), &this->vw_renderer->vr_world);
 }
 
-void VKWindow::vkwDraw(VkCommandBuffer &commandBuffer) {
-    atomixProg->render(commandBuffer);
+void VKWindow::vkwDraw(VkCommandBuffer &commandBuffer, VkExtent2D &renderExtent) {
+    atomixProg->render(commandBuffer, renderExtent);
 }
 
 void VKWindow::setBGColour(float colour) {
@@ -764,13 +770,42 @@ void VKWindow::printConfig(AtomixConfig *cfg) {
     std::cout << "Frag Shader: " << cfg->frag << std::endl;
 }
 
+/**
+ * @brief Returns the smallest value that is greater than or equal to v and a multiple of byteAlign.
+ * 
+ * This is a utility function for aligning a VkDeviceSize to a particular byte boundary.
+ * 
+ * @param v A VkDeviceSize object.
+ * @param byteAlign The byte boundary to align to.
+ * 
+ * This function returns the smallest value that is greater than or equal to v and a multiple of byteAlign.
+ * 
+ * The implementation is based on the formula:
+ * 
+ *   (v + byteAlign - 1) & ~(byteAlign - 1)
+ * 
+ * This works by adding the byteAlign to v, subtracting 1, and then using the bitwise and operator to zero out any bits that are not part of the byteAlign.
+ * 
+ * @return The aligned VkDeviceSize.
+ */
 static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
 {
     return (v + byteAlign - 1) & ~(byteAlign - 1);
 }
 
-VKRenderer::VKRenderer(VKWindow *vkWin)
-    : vr_vkw(vkWin) {
+/*
+ * VKRenderer
+ * 
+ * This class is responsible for the Vulkan rendering of the window.
+ * 
+ * The class is designed to be used with the QVulkanWindow class.
+ * 
+ * The class is not thread-safe.
+ * 
+ */
+
+VKRenderer::VKRenderer(QVulkanWindow *vkWin)
+    : vr_qvw(vkWin) {
 }
 
 VKRenderer::~VKRenderer() {
@@ -782,16 +817,19 @@ void VKRenderer::preInitResources() {
 }
 
 void VKRenderer::initResources() {
+    // Set Window pointer
+    // vr_qvw->setRenderer(this);
+
     // Define instance, device, and function pointers
-    vr_dev = vr_vkw->device();
-    vr_phydev = vr_vkw->physicalDevice();
-    vr_vi = vr_vkw->vulkanInstance();
+    vr_dev = vr_qvw->device();
+    vr_phydev = vr_qvw->physicalDevice();
+    vr_vi = vr_qvw->vulkanInstance();
     vr_vdf = vr_vi->deviceFunctions(vr_dev);
     vr_vf = vr_vi->functions();
 
     // Retrieve physical device constraints
     QString dev_info;
-    dev_info += QString::asprintf("Number of physical devices: %d\n", int(vr_vkw->availablePhysicalDevices().count()));
+    dev_info += QString::asprintf("Number of physical devices: %d\n", int(vr_qvw->availablePhysicalDevices().count()));
 
     VkPhysicalDeviceProperties vr_props;
     vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
@@ -818,27 +856,26 @@ void VKRenderer::initResources() {
         dev_info += QString::asprintf("    %s\n", ext.constData());
 
     dev_info += QString::asprintf("Color format: %u\nDepth-stencil format: %u\n",
-                              vr_vkw->colorFormat(), vr_vkw->depthStencilFormat());
+                              vr_qvw->colorFormat(), vr_qvw->depthStencilFormat());
 
     dev_info += QStringLiteral("Supported sample counts:");
-    const QList<int> sampleCounts = vr_vkw->supportedSampleCounts();
+    const QList<int> sampleCounts = vr_qvw->supportedSampleCounts();
     for (int count : sampleCounts)
         dev_info += QLatin1Char(' ') + QString::number(count);
     dev_info += QLatin1Char('\n');
 
     std::cout << dev_info.toStdString() << std::endl;
 
-    const int concFrameCount = vr_vkw->concurrentFrameCount();
+    const int concFrameCount = vr_qvw->concurrentFrameCount();
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
     const VkDeviceSize uniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();
-    progDev->window = vr_vkw;
+    progDev->window = vr_qvw;
     progDev->physicalDevice = vr_phydev;
     progDev->device = vr_dev;
     this->vr_vkw->initProgram(progDev);
-
     this->vr_vkw->initWindow();
 }
 
@@ -865,34 +902,34 @@ void VKRenderer::initResources() {
 /* SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportInfo info;
     
-    this->vr_vf->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->vr_vkw->vw_surface, &info.capabilities);
+    this->vr_vf->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->vr_qvw->vw_surface, &info.capabilities);
     
     VKuint formatCount = 0;
-    this->vr_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_vkw->vw_surface, &formatCount, nullptr);
+    this->vr_qvw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_qvw->vw_surface, &formatCount, nullptr);
     if (formatCount) {
         info.formats.resize(formatCount);
-        this->vr_vkw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_vkw->vw_surface, &formatCount, info.formats.data());
+        this->vr_qvw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_qvw->vw_surface, &formatCount, info.formats.data());
     }
 
     VKuint presentModeCount = 0;
-    this->vr_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_vkw->vw_surface, &presentModeCount, nullptr);
+    this->vr_qvw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_qvw->vw_surface, &presentModeCount, nullptr);
     if (presentModeCount) {
         info.presentModes.resize(presentModeCount);
-        this->vr_vkw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_vkw->vw_surface, &presentModeCount, info.presentModes.data());
+        this->vr_qvw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_qvw->vw_surface, &presentModeCount, info.presentModes.data());
     }
     
     return info;
 } */
 
 void VKRenderer::initSwapChainResources() {
-    /* QSize swapChainImageSize = this->vr_vkw->swapChainImageSize();
+    /* QSize swapChainImageSize = this->vr_qvw->swapChainImageSize();
     VkExtent2D extent = {swapChainImageSize.width(), swapChainImageSize.height()};
-    this->vr_vkw->vw_surface = QVulkanInstance::surfaceForWindow(this->vr_vkw);
+    this->vr_qvw->vw_surface = QVulkanInstance::surfaceForWindow(this->vr_qvw);
     SwapChainSupportInfo swapChainSupport = querySwapChainSupport(this->vr_phydev);
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = this->vr_vkw->vw_surface;
+    createInfo.surface = this->vr_qvw->vw_surface;
     createInfo.minImageCount = 2;
     createInfo.imageFormat = swapChainSupport.formats[0].format;
     createInfo.imageColorSpace = swapChainSupport.formats[0].colorSpace;
@@ -924,11 +961,11 @@ void VKRenderer::initSwapChainResources() {
         throw std::runtime_error("Failed to create swap chain!");
     }
 
-    this->vr_vkw->setSwapChain(swapchain); */
+    this->vr_qvw->setSwapChain(swapchain); */
     QVulkanWindowRenderer::initSwapChainResources();
 
-    vm4_proj = vr_vkw->clipCorrectionMatrix();
-    const QSize vkwSize = vr_vkw->swapChainImageSize();
+    vm4_proj = vr_qvw->clipCorrectionMatrix();
+    const QSize vkwSize = vr_qvw->swapChainImageSize();
     vm4_proj.perspective(45.0f, (float)vkwSize.width() / (float)vkwSize.height(), 0.1f, 100.0f);
     // m4_proj = glm::mat4(vm4_proj.transposed().constData());
 }
@@ -974,8 +1011,8 @@ void VKRenderer::releaseResources() {
 
 void VKRenderer::startNextFrame() {
     VkResult err;
-    VkCommandBuffer commandBuffer = this->vr_vkw->currentCommandBuffer();
-    const QSize vkwSize = this->vr_vkw->swapChainImageSize();
+    VkCommandBuffer commandBuffer = this->vr_qvw->currentCommandBuffer();
+    const QSize vkwSize = this->vr_qvw->swapChainImageSize();
     VkExtent2D renderExtent = {static_cast<uint32_t>(vkwSize.width()), static_cast<uint32_t>(vkwSize.height())};
 
     // Re-calculate world-state matrices
@@ -986,13 +1023,15 @@ void VKRenderer::startNextFrame() {
     vr_world.m4_proj[1][1] *= -1.0f;
 
     // Update uniform buffer
-    vr_vkw->updateWorldState();
+    atomixProg->updateUniformBuffer(this->vr_qvw->currentFrame(), sizeof(vr_world), &vr_world);
+    // vr_vkw->updateWorldState();
 
     // Call Program to render
-    vr_vkw->vkwDraw(commandBuffer);
+    atomixProg->render(commandBuffer, renderExtent);
+    // vr_vkw->vkwDraw(commandBuffer, renderExtent);
     
     // Prepare for next frame
-    vr_vkw->frameReady();
-    vr_vkw->requestUpdate();
+    vr_qvw->frameReady();
+    vr_qvw->requestUpdate();
     
 }

@@ -26,6 +26,9 @@
 #define VKWINDOW_H
 
 #include <QVulkanWindow>
+#include <QVulkanWindowRenderer>
+#include <QVulkanInstance>
+#include <QVulkanFunctions>
 #include <QWindow>
 #include <QMouseEvent>
 #include <QWheelEvent>
@@ -97,13 +100,13 @@ class VKWindow;
 
 class VKRenderer : public QVulkanWindowRenderer {
 public:
-    VKRenderer(VKWindow *vkWin);
+    VKRenderer(QVulkanWindow *vkWin);
     ~VKRenderer();
 
     // SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
     void setProgram(ProgramVK *prog) { atomixProg = prog; }
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-
+    void setWindow(VKWindow *win) { vr_vkw = win; }
+    // QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
     void preInitResources() override;
     void initResources() override;
@@ -123,6 +126,7 @@ private:
     QVulkanInstance *vr_vi = nullptr;
     QVulkanFunctions *vr_vf = nullptr;
     QVulkanDeviceFunctions *vr_vdf = nullptr;
+    QVulkanWindow *vr_qvw = nullptr;
 
     VKWindow *vr_vkw = nullptr;
     VkDevice vr_dev;
@@ -161,14 +165,14 @@ public:
     VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~VKWindow();
 
-    VKRenderer* createRenderer() override;
+    QVulkanWindowRenderer* createRenderer() override;
     void initProgram(AtomixDevice *dev);
     void initWindow();
 
     void setColorsWaves(int id, uint colorChoice);
     void updateBuffersAndShaders();
     void updateWorldState();
-    void vkwDraw(VkCommandBuffer &commandBuffer);
+    void vkwDraw(VkCommandBuffer &commandBuffer, VkExtent2D &renderExtent);
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);

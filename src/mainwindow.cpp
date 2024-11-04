@@ -45,21 +45,25 @@ void MainWindow::onAddNew() {
     addDockWidget(Qt::RightDockWidgetArea, dockTabs);
 
 #ifdef USING_QVULKAN
+    // Vulkan-specific setup
     QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
     QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2" };
     QVersionNumber version(1, 0, 0);
+
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);
     vkInst.setExtensions(extensions);
     if (!vkInst.create()) {
         qFatal("Failed to create Vulkan Instance: %d", vkInst.errorCode());
     }
+    
     vkGraph = new VKWindow(this, cfgParser);
     vkGraph->setVulkanInstance(&vkInst);
     vkWinWidWrapper = QWidget::createWindowContainer(vkGraph);
     setCentralWidget(vkWinWidWrapper);
     graph = vkWinWidWrapper;
 #elifdef USING_QOPENGL
+    // OpenGL-specific setup
     glGraph = new GWidget(this, cfgParser);
     setCentralWidget(glGraph);
     graph = glGraph;

@@ -84,7 +84,7 @@ bool Shader::compile() {
     glslang::TShader shader(stage);
     shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, 450);
     shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
-    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
+    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
     shader.setStringsWithLengths(&shaderSource, &shaderLength, 1);
     shader.setEntryPoint("main");
     shader.setSourceEntryPoint("main");

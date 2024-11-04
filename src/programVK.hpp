@@ -57,6 +57,7 @@
 #include <QVulkanFunctions>
 #include <QVulkanInstance>
 #include <QVulkanWindow>
+#include <vulkan/vulkan.hpp>
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -311,7 +312,7 @@ private:
     VkDescriptorPool p_descPool = VK_NULL_HANDLE;
     VkRenderPass p_renderPass = VK_NULL_HANDLE;
     VkExtent2D p_swapExtent = { 0, 0 };
-    VkClearValue p_clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    float p_clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     VkViewport p_viewport = { 0, 0, 0, 0 };
     VkRect2D p_scissor = { {0, 0}, {0, 0} };
@@ -340,9 +341,10 @@ private:
     std::vector<VkPipeline> p_pipelines;
     GlobalPipelineInfo p_pipeInfo{};
     VkPipeline p_fragmentOutput = VK_NULL_HANDLE;
-    
+
     VkResult err = VK_SUCCESS;
     
+    bool p_libEnabled = false;
     bool enabled = false;
     int stage = 0;
 

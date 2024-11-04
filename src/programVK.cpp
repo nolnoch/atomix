@@ -1044,15 +1044,17 @@ void ProgramVK::updateSwapExtent(int x, int y) {
     this->p_swapExtent.height = y;
 }
 
-void ProgramVK::render(VkCommandBuffer &cmdBuff) {
+void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
+    VKuint frame = this->p_vkw->currentFrame();
+
     p_viewport.x = 0.0f;
     p_viewport.y = 0.0f;
-    p_viewport.width = static_cast<float>(this->p_swapExtent.width);
-    p_viewport.height = static_cast<float>(this->p_swapExtent.height);
+    p_viewport.width = static_cast<float>(renderExtent.width);
+    p_viewport.height = static_cast<float>(renderExtent.height);
     p_viewport.minDepth = 0.0f;
     p_viewport.maxDepth = 1.0f;
     p_scissor.offset = {0, 0};
-    p_scissor.extent = this->p_swapExtent;
+    p_scissor.extent = renderExtent;
 
     VkCommandBufferBeginInfo cmdBeginInfo{};
     cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1060,9 +1062,9 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff) {
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = this->p_renderPass;
+    renderPassInfo.renderPass = this->p_vkw->defaultRenderPass();
     renderPassInfo.framebuffer = this->p_vkw->currentFramebuffer();
-    renderPassInfo.renderArea.extent = this->p_swapExtent;
+    renderPassInfo.renderArea.extent = renderExtent;
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.clearValueCount = 1;                                 // Optional
     renderPassInfo.pClearValues = &this->p_clearColor;                  // Optional
@@ -1078,7 +1080,7 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff) {
 
         for (auto &render : model->renders) {
             this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
-            this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayout, 0, 1, &p_descSets[p_vkw->currentFrame()], 0, nullptr);
+            this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayout, 0, 1, &p_descSets[frame], 0, nullptr);
             this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
             this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, model->vbos.size(), render->firstVbo, render->vboOffsets.data());

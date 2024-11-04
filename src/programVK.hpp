@@ -282,7 +282,7 @@ public:
     void updateClearColor(float r, float g, float b, float a);
     void updateSwapExtent(int x, int y);
 
-    void render(VkCommandBuffer& cmdBuff);
+    void render(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
 
     Shader* getShaderFromName(const std::string& fileName);
     ModelInfo* getModelFromName(const std::string& modelName);

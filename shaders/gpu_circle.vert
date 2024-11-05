@@ -1,7 +1,6 @@
 #version 450 core
 
 layout(location = 0) in vec3 factorsA;
-layout(location = 1) in vec3 factorsB;
 
 layout(location = 0) out vec4 vertColour;
 
@@ -16,6 +15,7 @@ layout(binding = 0) uniform UniformBuffer {
     uint base;
     uint peak;
     uint trough;
+    uint mode;
 } ubo;
 
 void main() {
@@ -26,17 +26,26 @@ void main() {
     float cos_th = cos(theta);
     float sin_th = sin(theta);
    
-    //                         sin(2pi / L * x) - (2pi / T * t)
+    /* Circular Wavefunction */
+    //                             sin(2pi / L * x) - (2pi / T * t)
     float wavefunc = cos((ubo.two_pi_L * r * theta) - (ubo.two_pi_T * ubo.time) + phase_const);
     float displacement = ubo.amp * wavefunc;
 
-    float x_coord = r * cos_th;
-    float z_coord = r * sin_th;
+    /* Assign vertices */
+    float x_coord, y_coord, z_coord;
+    if (ubo.mode == 1) {
+        // Orthogonal waves
+        x_coord = r * cos_th;
+        y_coord = clamp(displacement, 0.0f, 1.0f);
+        z_coord = r * sin_th;
+    } else if (ubo.mode == 2) {
+        // Parallel waves
+        x_coord = (r + displacement) * cos_th;
+        y_coord = 0.0f;
+        z_coord = (r + displacement) * sin_th;
+    }
 
-    //vertColour = vec3(wavefunc, 1 - wavefunc, 1.0f);
-    //vertColour = uvec3(base, peak, trough);
-    //uvec3 vertTest = uvec3(255);
-
+    /* Assign colours */
     uint mask = 0xFF;
     float fMask = float(mask);
     vec4 final = vec4(0.0f);
@@ -70,5 +79,5 @@ void main() {
     }
 
     vertColour = final;
-    gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(x_coord, displacement, z_coord, 1.0f);
+    gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
 }

@@ -56,8 +56,8 @@ struct AtomixConfig {
     bool cpu = false;                               // GPU rendering as Bool
     bool parallel = false;                          // Parallel waves as Bool
     bool sphere = false;                            // Spherical waves as Bool
-    std::string vert = "gpu_ortho_circle.vert";     // Vertex shader as String
-    std::string frag = "wave.frag";                 // Fragment shader as String
+    std::string vert = "gpu_circle.vert";     // Vertex shader as String
+    std::string frag = "default.frag";                 // Fragment shader as String
 };
 Q_DECLARE_METATYPE(AtomixConfig);
 

@@ -97,7 +97,7 @@ void GWidget::initCrystalProgram() {
     fvec crystalRingVertices;
     uvec crystalRingIndices;
     std::string vertName = "crystal.vert";
-    std::string fragName = "crystal.frag";
+    std::string fragName = "default.frag";
 
     float zero, peak, edge, back, forX, forZ, root;
     edge = 0.3f;  // <-- Change this to scale diamond

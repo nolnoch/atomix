@@ -35,18 +35,6 @@ void main() {
 
     float alpha = clamp(1.0f - (radius / 150.0f), 0.0f, 1.0f);
 
-    /* if (pdv > 0.8f) {
-        vertColour = vec4(pdv, 0.0f, 0.0f, alpha);
-    } else if (pdv > 0.6f) {
-        vertColour = vec4(pdv, pdv, 0.0f, alpha);
-    } else if (pdv > 0.4f) {
-        vertColour = vec4(0.0f, pdv, 0.0f, alpha);
-    } else if (pdv > 0.2f) {
-        vertColour = vec4(0.0f, 0.0f, pdv, alpha);
-    } else {
-        vertColour = vec4(pdv, 0.0f, pdv, alpha);
-    } */
-
     if (pdv > 0.90f) {          // 90% - 100% -- White
         vertColour = vec4(pdv, pdv, pdv, alpha);
     } else if (pdv > 0.70f) {   // 70% - 90%  -- Red
@@ -65,6 +53,5 @@ void main() {
         vertColour = vec4(pdv_adj, 0.0f, pdv_adj, 0.0f);
     }
 
-    // vertColour = vec4(1.0f);
     gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(posX, posY, posZ, 1.0f);
 }

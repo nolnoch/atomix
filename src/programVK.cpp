@@ -929,9 +929,9 @@ AttribInfo* ProgramVK::defineModelAttributes(ModelCreateInfo *info) {
             attributeDescription.offset = thisOffset;
             attribInfo->attributes.push_back(attributeDescription);
 
-            offsets.push_back(thisOffset);
             locations += ((thisFormat == VK_FORMAT_R64G64B64_SFLOAT) || (thisFormat == VK_FORMAT_R64G64B64A64_SFLOAT)) ? 2 : 1;
             thisOffset = dataSizes[static_cast<uint>(attrib)];
+            offsets.push_back(thisOffset);
         }
         bindingDescription.stride = std::accumulate(offsets.cbegin(), offsets.cend(), 0);
         attribInfo->bindings.push_back(bindingDescription);
@@ -1130,6 +1130,7 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     for (auto &clear : clearValues) {
         clear.color = {{ p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] }};
         clear.depthStencil = {1.0f, 0};
+        clear.color = {{ p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] }};
     }
 
     // Set viewport and scissor
@@ -1141,15 +1142,6 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     p_viewport.maxDepth = 1.0f;
     p_scissor.offset = {0, 0};
     p_scissor.extent = renderExtent;
-
-    /* // Begin command buffer
-    VkCommandBufferBeginInfo cmdBeginInfo{};
-    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    
-    if ((err = this->p_vdf->vkBeginCommandBuffer(cmdBuff, &cmdBeginInfo)) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to begin recording command buffer: " + std::to_string(err));
-    } */
 
     // Begin render pass
     VkRenderPassBeginInfo renderPassInfo{};
@@ -1258,7 +1250,7 @@ void ProgramVK::printModel(ModelInfo *model) {
             for (int j = 0; j < model->attributes->attributes.size(); j++) {
                 if (model->attributes->attributes[j].binding == i) {
                     std::cout << "      Attribute " << j << ": " << model->attributes->attributes[j].location << std::endl;
-                    std::cout << "        Type: " << model->attributes->attributes[j].format << std::endl;
+                    std::cout << "        Format: " << model->attributes->attributes[j].format << std::endl;
                     std::cout << "        Offset: " << model->attributes->attributes[j].offset << std::endl;
                 }
             }

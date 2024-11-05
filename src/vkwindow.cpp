@@ -138,8 +138,7 @@ void VKWindow::selectRenderedWaves(int id, bool checked) {
 }
 
 void VKWindow::initCrystalProgram() {
-    fvec crystalRingVertices;
-    uvec crystalRingIndices;
+    
     std::string vertName = "default.vert";
     std::string fragName = "default.frag";
 
@@ -176,12 +175,12 @@ void VKWindow::initCrystalProgram() {
     int crystalRes = 80;
     double crystalDegFac = PI_TWO / crystalRes;
     double crystalRadius = 0.4f;
-    size_t vs = vertices.size() / 6;
+    uint32_t vs = vertices.size() / 6;
 
     std::copy(vertices.cbegin(), vertices.cend(), std::back_inserter(crystalRingVertices));
     std::copy(indices.cbegin(), indices.cend(), std::back_inserter(crystalRingIndices));
 
-    for (int i = 0; i < crystalRes; i++) {
+    for (uint32_t i = 0; i < crystalRes; i++) {
         double cos_t = cos(i * crystalDegFac);
         double sin_t = sin(i * crystalDegFac);
         crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos_t));
@@ -193,11 +192,12 @@ void VKWindow::initCrystalProgram() {
         crystalRingIndices.push_back(vs + i);
     }
     this->crystalRingCount = crystalRingIndices.size() - vw_faces;
-    this->crystalRingOffset = vw_faces * sizeof(uint);
+    this->crystalRingOffset = vw_faces;
     
     // Define VBO for Crystal Diamond & Ring
     BufferCreateInfo crystalVert{};
     crystalVert.type = BufferType::VERTEX;
+    crystalVert.count = crystalRingVertices.size() / 6;
     crystalVert.size = crystalRingVertices.size() * sizeof(float);
     crystalVert.data = &crystalRingVertices[0];
     crystalVert.name = "crystalVertices";
@@ -207,7 +207,7 @@ void VKWindow::initCrystalProgram() {
     BufferCreateInfo crystalInd{};
     crystalInd.type = BufferType::INDEX;
     crystalInd.count = crystalRingIndices.size();
-    crystalInd.size = crystalRingIndices.size() * sizeof(uint);
+    crystalInd.size = crystalRingIndices.size() * sizeof(uint32_t);
     crystalInd.data = &crystalRingIndices[0];
     crystalInd.name = "crystalIndices";
     crystalInd.dataTypes = {DataType::UINT};
@@ -217,10 +217,10 @@ void VKWindow::initCrystalProgram() {
     crystalModel.name = "crystal";
     crystalModel.vbos = { &crystalVert };
     crystalModel.ibo = &crystalInd;
-    crystalModel.uboSize = sizeof(WaveState);
+    crystalModel.uboSize = sizeof(WorldState);
     crystalModel.vertShaders = { vertName };
     crystalModel.fragShaders = { fragName };
-    crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
+    crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP };
     crystalModel.offsets = {
         { 0, 0, 0, 0 },
         { crystalRingOffset, 0, 0, 1 }
@@ -556,7 +556,7 @@ void VKWindow::updateWorldState(float time) {
     vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     this->q_TotalRot.normalize();
 
-    atomixProg->updateUniformBuffer(this->currentFrame(), sizeof(this->vw_world), &this->vw_world);
+    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_world), &this->vw_world);
 }
 
 float VKWindow::updateTime() {
@@ -785,6 +785,9 @@ void VKRenderer::initResources() {
     const int concFrameCount = vr_qvw->concurrentFrameCount();
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
     const VkDeviceSize uniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
+    const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
+
+    std::cout << "uniAlignment: " << uniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();
@@ -794,26 +797,6 @@ void VKRenderer::initResources() {
     this->vr_vkw->initProgram(progDev);
     this->vr_vkw->initWindow();
 }
-
-/* QueueFamilyIndices VKRenderer::findQueueFamilies(VkPhysicalDevice device) {
-    QueueFamilyIndices indices;
-
-    uint32_t queueFamilyCount = 0;
-    this->vr_vf->vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    this->vr_vf->vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-    int i = 0;
-    for (const auto &queueFamily : queueFamilies) {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphicsFamily = i;
-            break;
-        }
-        i++;
-    }
-
-    return indices;
-} */
 
 /* SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportInfo info;
@@ -878,7 +861,7 @@ void VKRenderer::initSwapChainResources() {
     }
 
     this->vr_qvw->setSwapChain(swapchain); */
-    QVulkanWindowRenderer::initSwapChainResources();
+    // QVulkanWindowRenderer::initSwapChainResources();
 
     // Update render extent
     const QSize vkwSize = vr_qvw->swapChainImageSize();

@@ -91,7 +91,10 @@
 			"typeindex": "cpp",
 			"valarray": "cpp",
 			"qvulkanwindow": "cpp",
-			"qvulkandevicefunctions": "cpp"
+			"qvulkandevicefunctions": "cpp",
+			"qvulkanfunctions": "cpp",
+			"qvulkaninstance": "cpp",
+			"*.ipp": "cpp"
 		}
 	}
 }

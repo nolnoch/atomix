@@ -252,6 +252,8 @@ VkShaderModule ProgramVK::createShaderModule(Shader *shader) {
 }
 
 void ProgramVK::createShaderStages(ModelInfo *m) {
+    VKuint i = 0;
+
     for (auto &module : m->shaders->vertModules) {
         VkPipelineShaderStageCreateInfo shaderStage{};
         shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -259,6 +261,7 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
         shaderStage.module = module;
         shaderStage.pName = "main";
         m->pipeInfo->vsCreates.push_back(shaderStage);
+        m->shaders->vertModulesToCreates[i] = i++;
     }
 
     for (auto &module : m->shaders->fragModules) {
@@ -274,6 +277,8 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
 VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     ModelInfo *model;
     VKuint idx = p_models.size();
+
+    printInfo(&info);
 
     const auto [it, success] = p_mapModels.insert({info.name, idx});
 
@@ -295,10 +300,14 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     // Shaders: Modules
     model->shaders = new ShaderInfo{};
     for (auto &vert : info.vertShaders) {
-        model->shaders->vertModules.push_back(createShaderModule(getShaderFromName(vert)));
+        Shader *v = getShaderFromName(vert);
+        model->shaders->vertModules.push_back(createShaderModule(v));
+        model->shaders->vertShaders.push_back(v);
     }
     for (auto &frag : info.fragShaders) {
-        model->shaders->fragModules.push_back(createShaderModule(getShaderFromName(frag)));
+        Shader *f = getShaderFromName(frag);
+        model->shaders->fragModules.push_back(createShaderModule(f));
+        model->shaders->fragShaders.push_back(f);
     }
     // Shaders: Stages
     model->pipeInfo = new ModelPipelineInfo{};
@@ -334,9 +343,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
             this->genVertexInputPipeLib(model, model->pipeInfo->vboCreate, ia);
         }
         for (auto &vert : model->pipeInfo->vsCreates) {
-            for (auto &rs : model->pipeInfo->rsCreates) {
-                this->genPreRasterizationPipeLib(model, vert, rs);
-            }
+            this->genPreRasterizationPipeLib(model, vert, model->pipeInfo->rsCreate);
         }
         for (auto &frag : model->pipeInfo->fsCreates) {
             this->genFragmentShaderPipeLib(model, frag);
@@ -367,17 +374,17 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         render->vboOffsets.resize(model->vbos.size(), 0);
         render->iboOffset = off.offset;
         render->indexCount = indexCount[i++];
-        int preIndex = off.vertShaderIndex * model->pipeInfo->rsCreates.size() + off.topologyIndex;
         
+        // Not all platforms support libraries
         if (p_libEnabled) {
             // Final Pipelines for Renders (Libraries)
             this->createPipeFromLibraries(render,
                                             model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
-                                            model->pipeInfo->pipeLib->preRasterization[preIndex],
+                                            model->pipeInfo->pipeLib->preRasterization[off.vertShaderIndex],
                                             model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
         } else {
             // Final Pipelines for Renders (Full PSO)
-            this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex, off.topologyIndex);
+            this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex);
         }
     }
 
@@ -518,49 +525,36 @@ void ProgramVK::createRenderPass() {
 void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
     // For each topology
     for (auto &topology : info->topologies) {
-        VkPolygonMode polyMode;
-        if (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-            polyMode = VK_POLYGON_MODE_POINT;
-        } else if (topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST) {
-            polyMode = VK_POLYGON_MODE_LINE;
-        } else {
-            polyMode = VK_POLYGON_MODE_FILL;
-        }
-
         // Input Assembly
-        VkPipelineInputAssemblyStateCreateInfo ia{};
-        ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        ia.topology = topology;
-        ia.primitiveRestartEnable = VK_FALSE;
-        ia.flags = 0;
-        ia.pNext = nullptr;
-        m->pipeInfo->iaCreates.push_back(ia);
-
-        // Rasterization
-        VkPipelineRasterizationStateCreateInfo rs{};
-        rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rs.polygonMode = polyMode;
-        rs.cullMode = VK_CULL_MODE_NONE;
-        rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rs.lineWidth = 1.0f;
-        rs.depthClampEnable = VK_FALSE;
-        rs.depthBiasEnable = VK_FALSE;
-        rs.depthBiasConstantFactor = 0.0f;
-        rs.depthBiasClamp = 0.0f;
-        rs.depthBiasSlopeFactor = 0.0f;
-        m->pipeInfo->rsCreates.push_back(rs);
+        m->pipeInfo->iaCreates.push_back({});
+        VkPipelineInputAssemblyStateCreateInfo *ia = &m->pipeInfo->iaCreates.back();
+        ia->sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        ia->topology = topology;
+        ia->primitiveRestartEnable = VK_FALSE;
+        ia->flags = 0;
+        ia->pNext = nullptr;
     }
 
+    // Rasterization
+    m->pipeInfo->rsCreate.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    m->pipeInfo->rsCreate.polygonMode = VK_POLYGON_MODE_FILL;
+    m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_BACK_BIT;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
+    m->pipeInfo->rsCreate.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    m->pipeInfo->rsCreate.lineWidth = 1.0f;
+    m->pipeInfo->rsCreate.depthClampEnable = VK_FALSE;
+    m->pipeInfo->rsCreate.depthBiasEnable = VK_FALSE;
+    m->pipeInfo->rsCreate.depthBiasConstantFactor = 0.0f;
+    m->pipeInfo->rsCreate.depthBiasClamp = 0.0f;
+    m->pipeInfo->rsCreate.depthBiasSlopeFactor = 0.0f;
+
     // Vertex Input State
-    VkPipelineVertexInputStateCreateInfo vbo{};
-    vbo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vbo.vertexBindingDescriptionCount = m->attributes->bindings.size();
-    vbo.vertexAttributeDescriptionCount = m->attributes->attributes.size();
-    vbo.pVertexBindingDescriptions = m->attributes->bindings.data();
-    vbo.pVertexAttributeDescriptions = m->attributes->attributes.data();
-    vbo.flags = 0;
-    vbo.pNext = nullptr;
-    m->pipeInfo->vboCreate = vbo;
+    m->pipeInfo->vboCreate.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    m->pipeInfo->vboCreate.vertexBindingDescriptionCount = m->attributes->bindings.size();
+    m->pipeInfo->vboCreate.vertexAttributeDescriptionCount = m->attributes->attributes.size();
+    m->pipeInfo->vboCreate.pVertexBindingDescriptions = m->attributes->bindings.data();
+    m->pipeInfo->vboCreate.pVertexAttributeDescriptions = m->attributes->attributes.data();
+    m->pipeInfo->vboCreate.flags = 0;
+    m->pipeInfo->vboCreate.pNext = nullptr;
 }
 
 void ProgramVK::pipelineGlobalSetup() {
@@ -642,7 +636,7 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.init = true;
 }
 
-void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia, int rs) {
+void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderModules = { m->pipeInfo->vsCreates[vs], m->pipeInfo->fsCreates[fs] };
 
     // Global pipeline
@@ -664,7 +658,7 @@ void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs,
     // Model-specific pipeline
     pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreate;
     pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[ia];
-    pipelineInfo.pRasterizationState = &m->pipeInfo->rsCreates[rs];
+    pipelineInfo.pRasterizationState = &m->pipeInfo->rsCreate;
 
     if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &render->pipeline)) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
@@ -1076,10 +1070,9 @@ void ProgramVK::updateRender(const std::string &modelName, OffsetInfo &off) {
     // Recreate pipeline to use new shader
     for (auto &render : model->renders) {
         if (render->iboOffset == off.offset) {
-            int preIndex = off.vertShaderIndex * model->pipeInfo->rsCreates.size() + off.topologyIndex;
             this->createPipeFromLibraries(render,
                                           model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
-                                          model->pipeInfo->pipeLib->preRasterization[preIndex],
+                                          model->pipeInfo->pipeLib->preRasterization[off.vertShaderIndex],
                                           model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
         }
     }
@@ -1123,7 +1116,7 @@ void ProgramVK::updateSwapExtent(int x, int y) {
 }
 
 void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
-    VKuint frame = this->p_vkw->currentFrame();
+    VKuint image = this->p_vkw->currentSwapChainImageIndex();
 
     // Set clear color and depth stencil
     std::array<VkClearValue, 3> clearValues{};
@@ -1150,8 +1143,8 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     renderPassInfo.framebuffer = this->p_vkw->currentFramebuffer();
     renderPassInfo.renderArea.extent = renderExtent;
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.clearValueCount = this->p_vkw->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT ? 3 : 2;                                 // Optional
-    renderPassInfo.pClearValues = clearValues.data();                  // Optional
+    renderPassInfo.clearValueCount = this->p_vkw->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT ? 3 : 2;
+    renderPassInfo.pClearValues = clearValues.data();
     
     this->p_vdf->vkCmdBeginRenderPass(cmdBuff, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     
@@ -1161,7 +1154,7 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
 
         for (auto &render : model->renders) {
             this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
-            this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayout, 0, 1, &p_descSets[frame], 0, nullptr);
+            this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayout, 0, 1, &p_descSets[image], 0, nullptr);
             this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
             this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, model->vbos.size(), render->firstVbo, render->vboOffsets.data());
@@ -1172,7 +1165,6 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     
     // Cleanup
     this->p_vdf->vkCmdEndRenderPass(cmdBuff);
-    // err = this->p_vdf->vkEndCommandBuffer(cmdBuff);
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to end command buffer: " + std::to_string(err));
     }
@@ -1239,43 +1231,90 @@ bool ProgramVK::isActive(const std::string &modelName) {
 }
 
 void ProgramVK::printModel(ModelInfo *model) {
-    std::cout << "Model: " << model->id << std::endl;
+    std::cout << "Model: " << model->id << "\n";
     
     if (!model->attributes) {
-        std::cout << "    No attributes." << std::endl;
+        std::cout << "    No attributes." << "\n";
     } else {
         for (int i = 0; i < model->attributes->bindings.size(); i++) {
-            std::cout << "    Binding " << i << ": " << model->attributes->bindings[i].binding << std::endl;
+            std::cout << "    Binding " << i << ": " << model->attributes->bindings[i].binding << "\n";
 
             for (int j = 0; j < model->attributes->attributes.size(); j++) {
                 if (model->attributes->attributes[j].binding == i) {
-                    std::cout << "      Attribute " << j << ": " << model->attributes->attributes[j].location << std::endl;
-                    std::cout << "        Format: " << model->attributes->attributes[j].format << std::endl;
-                    std::cout << "        Offset: " << model->attributes->attributes[j].offset << std::endl;
+                    std::cout << "        Attribute " << j << ": " << model->attributes->attributes[j].location << "\n";
+                    std::cout << "            Offset: " << model->attributes->attributes[j].offset << "\n";
+                    std::cout << "            Format: " << dataFormatNames[dataFormatIdx[model->attributes->attributes[j].format]] << "\n";
+                    std::cout << "            Size  : " << dataSizes[dataFormatIdx[model->attributes->attributes[j].format]] << "\n";
                 }
             }
         }
     }
     
     if (!model->shaders) {
-        std::cout << "    No shaders." << std::endl;
+        std::cout << "    No shaders." << "\n";
     } else {
         for (int i = 0; i < model->shaders->vertModules.size(); i++) {
-            std::cout << "    Vertex Shader " << i << ": " << model->shaders->vertModulesToCreates[i] << std::endl;
+            std::cout << "    Vertex Shader   " << i << ": " << model->shaders->vertShaders[i]->getName() << "\n";
         }
         for (int i = 0; i < model->shaders->fragModules.size(); i++) {
-            std::cout << "    Fragment Shader " << i << ": " << model->shaders->fragModulesToCreates[i] << std::endl;
+            std::cout << "    Fragment Shader " << i << ": " << model->shaders->fragShaders[i]->getName() << "\n";
         }
     }
 
     if (!model->renders.size()) {
-        std::cout << "    No renders." << std::endl;
+        std::cout << "    No renders." << "\n";
     } else {
         for (int i = 0; i < model->renders.size(); i++) {
-            std::cout << "    Render " << i << ": " << std::endl;
-            std::cout << "        IBO Offset: " << model->renders[i]->iboOffset << std::endl;
-            std::cout << "        Index Count: " << model->renders[i]->indexCount << std::endl;
+            std::cout << "    Render " << i << ": " << "\n";
+            std::cout << "        IBO Offset : " << model->renders[i]->iboOffset << "\n";
+            std::cout << "        Index Count: " << model->renders[i]->indexCount << "\n";
         }
+    }
+
+    std::cout << std::endl;
+}
+
+void ProgramVK::printInfo(ModelCreateInfo *info) {
+    std::cout << "Model: " << info->name << "\n";
+    
+    for (auto &vbo : info->vbos) {
+        std::cout << "    VBO: " << vbo->name << "\n";
+        std::cout << "        Type        : " << bufferTypeNames[uint(vbo->type)] << "\n";
+        std::cout << "        Vertex Count: " << vbo->count << "\n";
+        std::cout << "        Vertex Size : " << vbo->size << "\n";
+        std::cout << "        Data Types  : " << "\n";
+        for (auto &dt : vbo->dataTypes) {
+            std::cout << "            " << dataTypeNames[uint(dt)] << "\n";
+        }
+    }
+    
+    auto &ibo = info->ibo;
+    std::cout << "    IBO: " << ibo->name << "\n";
+    std::cout << "        Type       : " << bufferTypeNames[uint(ibo->type)] << "\n";
+    std::cout << "        Index Count: " << ibo->count << "\n";
+    std::cout << "        Index Size : " << ibo->size << "\n";
+    std::cout << "        Data Types : " << "\n";
+    for (auto &dt : ibo->dataTypes) {
+        std::cout << "            " << dataTypeNames[uint(dt)] << "\n";
+    }
+
+    std::cout << "    UBO Size: " << info->uboSize << "\n";
+
+    std::cout << "    Shaders: " <<  "\n";
+    for (auto &s : info->vertShaders) {
+        std::cout << "        " << s << "\n";
+    }
+    for (auto &s : info->fragShaders) {
+        std::cout << "        " << s << "\n";
+    }
+
+    std::cout << "    Offsets: " << "\n";
+    for (int i = 0; i < info->offsets.size(); i++) {
+        auto &offset = info->offsets[i];
+        std::cout << "        [" << i << "]: " << offset.offset << "\n";
+        std::cout << "            Vertex Shader  : " << info->vertShaders[offset.vertShaderIndex] << "\n";
+        std::cout << "            Fragment Shader: " << info->fragShaders[offset.fragShaderIndex] << "\n";
+        std::cout << "            Topology       : " << topologyNames[info->topologies[offset.topologyIndex]] << "\n";
     }
 
     std::cout << std::endl;

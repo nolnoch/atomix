@@ -41,19 +41,74 @@ ProgramVK::~ProgramVK() {
 void ProgramVK::cleanup() {
     // destruct models
     for (auto &model : p_models) {
+        // vbos
+        for (auto &buf : model->vbos) {
+            this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
+        }
+        for (auto &buf : model->vboMemory) {
+            this->p_vdf->vkFreeMemory(this->p_dev, buf, nullptr);
+        }
+        
+        // ibo
+        this->p_vdf->vkDestroyBuffer(this->p_dev, model->ibo, nullptr);
+        this->p_vdf->vkFreeMemory(this->p_dev, model->iboMemory, nullptr);
+        
+        // shaders
+        for (auto &shader : model->shaders->vertModules) {
+            this->p_vdf->vkDestroyShaderModule(this->p_dev, shader, nullptr);
+        }
+        for (auto &shader : model->shaders->fragModules) {
+            this->p_vdf->vkDestroyShaderModule(this->p_dev, shader, nullptr);
+        }
+        delete model->shaders;
+
+        // attributes
+        delete model->attributes;
+
+        // pipeline libraries
+        if (p_libEnabled) {
+            for (auto &pipe : model->pipeInfo->pipeLib->vertexInput) {
+                this->p_vdf->vkDestroyPipeline(this->p_dev, pipe, nullptr);
+            }
+            for (auto &pipe : model->pipeInfo->pipeLib->preRasterization) {
+                this->p_vdf->vkDestroyPipeline(this->p_dev, pipe, nullptr);
+            }
+            for (auto &pipe : model->pipeInfo->pipeLib->fragmentShader) {
+                this->p_vdf->vkDestroyPipeline(this->p_dev, pipe, nullptr);
+            }
+            delete model->pipeInfo->pipeLib;
+        }
+        delete model->pipeInfo;
+        
+        // pipelines
+        for (auto &render : model->renders) {
+            this->p_vdf->vkDestroyPipeline(this->p_dev, render->pipeline, nullptr);
+            delete render;
+        }
+        
         delete model;
     }
 
-    // destruct shaders
-    for (auto &shader : p_registeredShaders) {
-        delete shader;
-    }
-    
+    // descriptor sets
+    this->p_vdf->vkDestroyDescriptorSetLayout(this->p_dev, p_descSetLayout, nullptr);
+    this->p_vdf->vkDestroyDescriptorPool(this->p_dev, p_descPool, nullptr);
+
     // destruct uniform buffers
     for (int i = 0; i < p_uniformBuffers.size(); i++) {
         this->p_vdf->vkDestroyBuffer(this->p_dev, p_uniformBuffers[i], nullptr);
         this->p_vdf->vkFreeMemory(this->p_dev, p_uniformMemory[i], nullptr);
     }
+    uniformMappings.clear();
+
+    // global pipeline objects
+    this->p_vdf->vkDestroyPipeline(this->p_dev, p_fragmentOutput, nullptr);
+    this->p_vdf->vkDestroyPipelineCache(this->p_dev, p_pipeCache, nullptr);
+    this->p_vdf->vkDestroyPipelineLayout(this->p_dev, p_pipeLayout, nullptr);
+
+    // shader objects
+    for (auto &shader : p_registeredShaders) {
+        delete shader;
+    }  
 }
 
 void ProgramVK::setInstance(AtomixDevice *atomixDevice) {
@@ -389,11 +444,9 @@ bool ProgramVK::init() {
         return false;
     }
 
-    // Link Command Pool and Queue
+    // Link Command Pool, Queue, and Render Pass to Qt defaults
     this->p_cmdpool = this->p_vkw->graphicsCommandPool();
     this->p_queue = this->p_vkw->graphicsQueue();
-
-    // Instantiate render pass
     this->p_renderPass = this->p_vkw->defaultRenderPass();
 
     // Process registered shaders
@@ -1075,7 +1128,7 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     // Set clear color and depth stencil
     std::array<VkClearValue, 3> clearValues{};
     for (auto &clear : clearValues) {
-        clear.color = {{p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3]}};
+        clear.color = {{ p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] }};
         clear.depthStencil = {1.0f, 0};
     }
 

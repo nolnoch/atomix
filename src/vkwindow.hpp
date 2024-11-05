@@ -73,6 +73,16 @@ struct WorldState {
 };
 Q_DECLARE_METATYPE(WorldState);
 
+struct WaveState {
+    float two_pi_L = 0.0f;
+    float two_pi_T = 0.0f;
+    float amp = 0.0f;
+    float peak = 0.0f;
+    float base = 0.0f;
+    float trough = 0.0f;
+};
+Q_DECLARE_METATYPE(WaveState);
+
 enum egs {
     WAVE_MODE =         1 << 0,     // Button from Wave tab clicked, only making Waves
     WAVE_RENDER =       1 << 1,     // Wave EBO has been loaded
@@ -118,8 +128,6 @@ public:
 
     void startNextFrame() override;
 
-    WorldState vr_world;
-
 private:
     ProgramVK *atomixProg = nullptr;
 
@@ -131,19 +139,8 @@ private:
     VKWindow *vr_vkw = nullptr;
     VkDevice vr_dev;
     VkPhysicalDevice vr_phydev;
-    VkBuffer vr_bufVert = VK_NULL_HANDLE;
-    VkDeviceMemory vr_bufMemVert = VK_NULL_HANDLE;
-    VkBuffer vr_bufIdx = VK_NULL_HANDLE;
-    VkDeviceMemory vr_bufMemIdx = VK_NULL_HANDLE;
-    VkDescriptorBufferInfo vr_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
 
-    VkDescriptorPool vr_descPool = VK_NULL_HANDLE;
-    VkDescriptorSetLayout vr_descSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSet vr_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
-
-    VkPipelineCache vr_pipelineCache = VK_NULL_HANDLE;
-    VkPipelineLayout vr_pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline vr_pipeline = VK_NULL_HANDLE;
+    VkExtent2D vr_extent = {0, 0};
 
     glm::mat4 m4_rotation;
     glm::mat4 m4_translation;
@@ -170,9 +167,10 @@ public:
     void initWindow();
 
     void setColorsWaves(int id, uint colorChoice);
+    void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
-    void updateWorldState();
-    void vkwDraw(VkCommandBuffer &commandBuffer, VkExtent2D &renderExtent);
+    void updateWorldState(float time);
+    float updateTime();
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
@@ -218,25 +216,20 @@ private:
     void printConfig(AtomixConfig *cfg);
 
     VKRenderer *vw_renderer = nullptr;
-    std::string gw_currentModel = "";
+    std::string vw_currentModel = "";
 
-    QOpenGLContext *gw_context = nullptr;
+    AtomixInfo vw_info;
+    QOpenGLContext *vw_context = nullptr;
     ProgramVK *atomixProg = nullptr;
     ConfigParser *cfgParser = nullptr;
+    Manager *currentManager = nullptr;
     WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;
-    QTimer *gw_timer = nullptr;
+    QTimer *vw_timer = nullptr;
 
     QFutureWatcher<void> *fwModel;
     QFuture<void> futureModel;
 
-    ProgramVK *currentProg = nullptr;
-    Manager *currentManager = nullptr;
-
-    AtomixInfo gw_info;
-    glm::mat4 m4_proj;
-    glm::mat4 m4_view;
-    glm::mat4 m4_world;
     glm::mat4 m4_rotation;
     glm::mat4 m4_translation;
     glm::vec3 v3_cameraPosition;
@@ -246,27 +239,24 @@ private:
     glm::vec3 v3_mouseEnd;
     Quaternion q_TotalRot;
     
-    int64_t gw_timeStart;
-    int64_t gw_timeEnd;
-    int64_t gw_timePaused;
-    float gw_startDist = 0.0f;
-    float gw_farDist = 0.0f;
-    float gw_nearDist = 0.0f;
-    float gw_bg = 0.0f;
-    float gw_nearScale = 0.05f;
-    float gw_farScale = 2.20f;
+    int64_t vw_timeStart;
+    int64_t vw_timeEnd;
+    int64_t vw_timePaused;
+    float vw_startDist = 0.0f;
+    float vw_farDist = 0.0f;
+    float vw_nearDist = 0.0f;
+    float vw_bg = 0.0f;
+    float vw_nearScale = 0.05f;
+    float vw_farScale = 2.20f;
+    float vw_aspect = 1.0f;
     
-    uint gw_faces = 0;
-    uint gw_lines = 0;
-    int gw_scrHeight = 0;
-    int gw_scrWidth = 0;
-    uint gw_movement = 0;
-    uint gw_vertexCount = 0;
-    bool gw_pause = false;
-    bool gw_init = false;
+    VkExtent2D vw_extent = {0, 0};
+    uint vw_movement = 0;
+    uint vw_vertexCount = 0;
+    bool vw_pause = false;
+    bool vw_init = false;
     
     QMutex modifyingModel;
-    bool isFinal = false;
 
     int max_n = 1;
     
@@ -277,14 +267,10 @@ private:
     uint crystalRingOffset = 0;
     uint cloudOffset = 0;
 
-    struct WaveState {
-        float two_pi_L = 0.0f;
-        float two_pi_T = 0.0f;
-        float amp = 0.0f;
-        float peak = 0.0f;
-        float base = 0.0f;
-        float trough = 0.0f;
-    } vw_wave;
+    WorldState vw_world;
+    WaveState vw_wave;
+
+    
 };
 
 #endif

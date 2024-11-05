@@ -29,12 +29,12 @@ processor: cpu
 sphere: false
 
 # (vertex shader: filename) Vertex shader file name for this render
-# [default = "gpu_ortho_circle.vert"]
+# [default = "gpu_circle.vert"]
 vertex: cpu_circle.vert
 
 # (fragment shader: filename) Fragment shader file name for this render
-# [default = "wave.frag"]
-fragment: wave.frag
+# [default = "default.frag"]
+fragment: default.frag
 
 # (tolerance: double) Minimum probability for orbital cloud rendering
 # [default = 0.05]

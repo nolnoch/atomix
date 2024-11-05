@@ -1,5 +1,7 @@
 set(CMAKE_AUTOMOC ON)
 set(Qt6_DIR "/home/braer/Qt/6.5.3/gcc_64/lib/cmake/Qt6")
+set(VK_LAYER_PATH "/home/braer/atomix/build/src/layersvt")
+set(VK_LOADER_DEBUG "error,warn,layer,info")
 
 set(USING_QVULKAN 1)
 set(MACOS 0)

@@ -53,7 +53,6 @@
 #ifndef PROGRAMVK_HPP_
 #define PROGRAMVK_HPP_
 
-#include <QVulkanDeviceFunctions>
 #include <QVulkanFunctions>
 #include <QVulkanInstance>
 #include <QVulkanWindow>
@@ -126,7 +125,6 @@ struct BufferCreateInfo {
     uint64_t count = 0;
     uint64_t size = 0;
     const void *data = nullptr;
-    bool storeData = false;
     std::vector<DataType> dataTypes;
 };
 
@@ -182,7 +180,6 @@ struct GlobalPipelineInfo {
     VkPipelineColorBlendStateCreateInfo cb{};
     VkPipelineColorBlendAttachmentState cbAtt{};
     VkPipelineLayoutCreateInfo pipeLayInfo{};
-    VkPipelineLayout pipeLayout;
     bool init = false;
 };
 
@@ -328,7 +325,6 @@ private:
     std::vector<VKuint> p_activeModels;
     std::map<std::string, VKuint> p_mapModels;
     std::map<std::string, VKuint> p_mapBuffers;
-    std::vector<const void *> p_allocatedBuffers;
 
     std::vector<VkDescriptorSet> p_descSets;
     std::vector<VkBuffer> p_uniformBuffers;
@@ -338,7 +334,6 @@ private:
     VkBuffer p_stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory p_stagingMemory = VK_NULL_HANDLE;
 
-    std::vector<VkPipeline> p_pipelines;
     GlobalPipelineInfo p_pipeInfo{};
     VkPipeline p_fragmentOutput = VK_NULL_HANDLE;
 

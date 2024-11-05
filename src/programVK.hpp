@@ -53,10 +53,10 @@
 #ifndef PROGRAMVK_HPP_
 #define PROGRAMVK_HPP_
 
-#include <QVulkanDeviceFunctions>
 #include <QVulkanFunctions>
 #include <QVulkanInstance>
 #include <QVulkanWindow>
+#include <vulkan/vulkan.hpp>
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -125,7 +125,6 @@ struct BufferCreateInfo {
     uint64_t count = 0;
     uint64_t size = 0;
     const void *data = nullptr;
-    bool storeData = false;
     std::vector<DataType> dataTypes;
 };
 
@@ -181,7 +180,6 @@ struct GlobalPipelineInfo {
     VkPipelineColorBlendStateCreateInfo cb{};
     VkPipelineColorBlendAttachmentState cbAtt{};
     VkPipelineLayoutCreateInfo pipeLayInfo{};
-    VkPipelineLayout pipeLayout;
     bool init = false;
 };
 
@@ -256,7 +254,7 @@ public:
 
     void pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m);
     void pipelineGlobalSetup();
-    void createPipeline(ModelInfo *model);
+    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia, int rs);
     void genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia);
     void genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs);
     void genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag);
@@ -283,6 +281,7 @@ public:
     void updateSwapExtent(int x, int y);
 
     void render(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
+    void renderMacOS(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
 
     Shader* getShaderFromName(const std::string& fileName);
     ModelInfo* getModelFromName(const std::string& modelName);
@@ -310,7 +309,7 @@ private:
     VkDescriptorPool p_descPool = VK_NULL_HANDLE;
     VkRenderPass p_renderPass = VK_NULL_HANDLE;
     VkExtent2D p_swapExtent = { 0, 0 };
-    VkClearValue p_clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    float p_clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     VkViewport p_viewport = { 0, 0, 0, 0 };
     VkRect2D p_scissor = { {0, 0}, {0, 0} };
@@ -326,7 +325,6 @@ private:
     std::vector<VKuint> p_activeModels;
     std::map<std::string, VKuint> p_mapModels;
     std::map<std::string, VKuint> p_mapBuffers;
-    std::vector<const void *> p_allocatedBuffers;
 
     std::vector<VkDescriptorSet> p_descSets;
     std::vector<VkBuffer> p_uniformBuffers;
@@ -336,12 +334,12 @@ private:
     VkBuffer p_stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory p_stagingMemory = VK_NULL_HANDLE;
 
-    std::vector<VkPipeline> p_pipelines;
     GlobalPipelineInfo p_pipeInfo{};
     VkPipeline p_fragmentOutput = VK_NULL_HANDLE;
-    
+
     VkResult err = VK_SUCCESS;
     
+    bool p_libEnabled = false;
     bool enabled = false;
     int stage = 0;
 

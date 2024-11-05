@@ -30,6 +30,7 @@
 #include <QDockWidget>
 #include <QMessageBox>
 #include <QColorDialog>
+#include <QFileDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>

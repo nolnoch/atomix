@@ -46,8 +46,8 @@ void MainWindow::onAddNew() {
 
 #ifdef USING_QVULKAN
     // Vulkan-specific setup
-    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
-    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2" };
+    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_api_dump", "VK_LAYER_LUNARG_crash_diagnostic" };
+    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     QVersionNumber version(1, 0, 0);
 
     vkInst.setApiVersion(version);
@@ -1035,6 +1035,19 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
             labelDetails->hide();
         } else {
             labelDetails->show();
+        }
+    } else if (e->key() == Qt::Key_P) {
+        if (!vkGraph->supportsGrab()) {
+            std::cout << "Grabbing not supported." << std::endl;
+            return;
+        }
+        QImage image = vkGraph->grab();
+        QFileDialog fd(this, "Save Image");
+        fd.setAcceptMode(QFileDialog::AcceptSave);
+        fd.setDefaultSuffix("png");
+        fd.selectFile("filename.png");
+        if (fd.exec() == QDialog::Accepted) {
+            image.save(fd.selectedFiles().first());
         }
     } else {
         QWidget::keyPressEvent(e);

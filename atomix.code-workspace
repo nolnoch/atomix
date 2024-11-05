@@ -90,7 +90,8 @@
 			"bitset": "cpp",
 			"typeindex": "cpp",
 			"valarray": "cpp",
-			"qvulkanwindow": "cpp"
+			"qvulkanwindow": "cpp",
+			"qvulkandevicefunctions": "cpp"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

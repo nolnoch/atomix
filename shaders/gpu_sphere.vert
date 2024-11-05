@@ -1,7 +1,7 @@
 #version 450 core
 
 layout(location = 0) in vec3 factorsA;
-layout(location = 1) in vec3 factorsB;
+layout(location = 1) in float phase;
 
 layout(location = 0) out vec4 vertColour;
 
@@ -22,7 +22,6 @@ void main() {
     float theta = factorsA.x;
     float phi = factorsA.y;
     float r = factorsA.z;
-    float phase_const = factorsB.x;
 
     float sin_theta = sin(theta);
     float cos_theta = cos(theta);
@@ -32,20 +31,18 @@ void main() {
     float r_theta = r * theta;
     float r_phi = r * phi;
    
-    //              sin((2pi / L * x)            - (2pi / T * t))
-    // sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
-    float wavefunc = cos((ubo.two_pi_L * r_theta) - (ubo.two_pi_T * ubo.time) + phase_const);
-    //float wavefunc = cos((two_pi_L * r * cos_phi) + (two_pi_L * r * sin_phi) - (two_pi_T * time) + phase_const);
-    //float wavefunc = abs(sin_theta * cos_theta);
+    /* Spherical Wavefunction */
+    //                             sin((2pi / L * x) - (2pi / T * t)) + phase
+    //                         sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
+    float wavefunc = cos((ubo.two_pi_L * r_theta) - (ubo.two_pi_T * ubo.time) + phase);
     float displacement = ubo.amp * wavefunc;
 
+    /* Assign vertices */
     float x_coord = (r + displacement) * sin_phi * sin_theta;
     float z_coord = (r + displacement) * sin_phi * cos_theta;
     float y_coord = (r + displacement) * cos_phi;
 
-    //vertColour = vec3(wavefunc, 1 - wavefunc, 1.0f);
-    //vertColour = factorsB;
-
+    /* Assign colours */
     uint mask = 0xFF;
     float fMask = float(mask);
     vec4 final = vec4(0.0f);

@@ -382,8 +382,8 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
     if (changes < 14)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
-    string ortho = "gpu_ortho_circle.vert";
-    string para = "gpu_para_circle.vert";
+    string ortho = "gpu_circle.vert";
+    string para = "gpu_circle.vert";
     string super = "cpu_circle.vert";
     string gpu_sphere = "gpu_sphere.vert";
     string cpu_sphere = "cpu_sphere.vert";

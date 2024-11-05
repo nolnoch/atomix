@@ -11,8 +11,11 @@ set(DYLD_LIBRARY_PATH ${VULKAN_SDK}/lib ${DYLD_LIBRARY_PATH})
 set(VK_ADD_LAYER_PATH ${VULKAN_SDK}/share/vulkan/explicit_layer.d)
 set(VK_ICD_FILENAMES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
 set(VK_DRIVER_FILES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
+set(VK_LAYER_PATH "/home/braer/atomix/build/src/layersvt")
+set(VK_LOADER_DEBUG "error,warn,layer,info")
 
 set(USING_QVULKAN 1)
+set(MACOS 0)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets Concurrent Gui)
 find_package(oneDPL REQUIRED oneDPL)

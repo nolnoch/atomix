@@ -3,7 +3,7 @@
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 colour;
     
-layout(location = 0) out vec3 vertColour;
+layout(location = 0) out vec4 vertColour;
 
 layout(binding = 0) uniform UniformBuffer {
     mat4 worldMat;
@@ -12,6 +12,6 @@ layout(binding = 0) uniform UniformBuffer {
 } ubo;
     
 void main() {
-   gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(pos, 1.0f);
-   vertColour = colour;
+    vertColour = vec4(colour, 1.0f);
+    gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(pos, 1.0f);
 }

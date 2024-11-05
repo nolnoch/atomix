@@ -46,10 +46,11 @@ VKWindow::~VKWindow() {
 }
 
 void VKWindow::cleanup() {
-    fwModel->waitForFinished();
+    if (cloudManager || waveManager) {
+        fwModel->waitForFinished();
+    }
     changeModes(true);
-    delete gw_timer;
-    delete atomixProg;
+    delete vw_timer;
 }
 
 QVulkanWindowRenderer* VKWindow::createRenderer() {
@@ -72,11 +73,20 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
 }
 
 void VKWindow::initWindow() {
-    /* Init -- Matrices */
+    // Init -- Matrices
     initVecsAndMatrices();
 
-    /* Init -- ProgramGLs and Shaders */
+    // Init -- ProgramGLs and Shaders
     initCrystalProgram();
+
+    // Init -- Time
+    vw_timeStart = QDateTime::currentMSecsSinceEpoch();
+
+    // Init -- Threading
+    fwModel = new QFutureWatcher<void>;
+    connect(fwModel, &QFutureWatcher<void>::finished, this, &VKWindow::threadFinished);
+
+    this->vw_init = true;
 }
 
 void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
@@ -129,8 +139,8 @@ void VKWindow::selectRenderedWaves(int id, bool checked) {
 void VKWindow::initCrystalProgram() {
     fvec crystalRingVertices;
     uvec crystalRingIndices;
-    std::string vertName = "crystal.vert";
-    std::string fragName = "crystal.frag";
+    std::string vertName = "default.vert";
+    std::string fragName = "default.frag";
 
     // Crystal Diamond setup
     float zero, peak, edge, back, forX, forZ, root;
@@ -159,7 +169,7 @@ void VKWindow::initCrystalProgram() {
         2, 3, 4,
         3, 4, 1
     };
-    this->gw_faces = indices.size();
+    uint vw_faces = indices.size();
 
     // Crystal Ring setup
     int crystalRes = 80;
@@ -181,8 +191,8 @@ void VKWindow::initCrystalProgram() {
         crystalRingVertices.push_back(0.85f);
         crystalRingIndices.push_back(vs + i);
     }
-    this->crystalRingCount = crystalRingIndices.size() - gw_faces;
-    this->crystalRingOffset = gw_faces * sizeof(uint);
+    this->crystalRingCount = crystalRingIndices.size() - vw_faces;
+    this->crystalRingOffset = vw_faces * sizeof(uint);
     
     // Define VBO for Crystal Diamond & Ring
     BufferCreateInfo crystalVert{};
@@ -191,7 +201,6 @@ void VKWindow::initCrystalProgram() {
     crystalVert.data = &crystalRingVertices[0];
     crystalVert.name = "crystalVertices";
     crystalVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
-    crystalVert.storeData = true;
 
     // Define IBO for Crystal Diamond & Ring
     BufferCreateInfo crystalInd{};
@@ -201,7 +210,6 @@ void VKWindow::initCrystalProgram() {
     crystalInd.data = &crystalRingIndices[0];
     crystalInd.name = "crystalIndices";
     crystalInd.dataTypes = {DataType::UINT};
-    crystalInd.storeData = true;
 
     // Define Crystal Model with above buffers
     ModelCreateInfo crystalModel{};
@@ -234,7 +242,6 @@ void VKWindow::initWaveProgram() {
     waveVert.data = waveManager->getVertexData();
     waveVert.name = "waveVertices";
     waveVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
-    waveVert.storeData = false;
 
     // Define IBO for Atomix Wave
     BufferCreateInfo waveInd{};
@@ -243,7 +250,6 @@ void VKWindow::initWaveProgram() {
     waveInd.data = waveManager->getIndexData();
     waveInd.name = "waveIndices";
     waveInd.dataTypes = {DataType::UINT};
-    waveInd.storeData = false;
 
     // Define Atomix Wave Model with above buffers
     ModelCreateInfo waveModel{};
@@ -269,7 +275,6 @@ void VKWindow::initCloudProgram() {
     cloudVert.data = cloudManager->getVertexData();
     cloudVert.name = "cloudVertices";
     cloudVert.dataTypes = { DataType::FLOAT_VEC3 };
-    cloudVert.storeData = false;
 
     // Define VBO::Data for Atomix Cloud
     BufferCreateInfo cloudData{};
@@ -278,7 +283,6 @@ void VKWindow::initCloudProgram() {
     cloudData.data = cloudManager->getDataData();
     cloudData.name = "cloudData";
     cloudData.dataTypes = { DataType::FLOAT };
-    cloudData.storeData = false;
 
     // Define IBO for Atomix Cloud
     BufferCreateInfo cloudInd{};
@@ -287,7 +291,6 @@ void VKWindow::initCloudProgram() {
     cloudInd.data = cloudManager->getIndexData();
     cloudInd.name = "cloudIndices";
     cloudInd.dataTypes = {DataType::UINT};
-    cloudInd.storeData = false;
 
     // Define Atomix Cloud Model with above buffers
     ModelCreateInfo cloudModel{};
@@ -306,158 +309,67 @@ void VKWindow::initCloudProgram() {
 void VKWindow::changeModes(bool force) {
     if (!waveManager || force) {
         delete cloudManager;
-        delete atomixProg;
         cloudManager = 0;
         atomixProg = 0;
         flGraphState.clear(eCloudFlags);
     } else if (!cloudManager || force) {
         delete waveManager;
-        delete atomixProg;
         waveManager = 0;
         atomixProg = 0;
         flGraphState.clear(eWaveFlags);
     }
     currentManager = 0;
-    currentProg = 0;
 }
 
 void VKWindow::initVecsAndMatrices() {
-    gw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
-    gw_nearDist = 0.1f;
-    gw_farDist = gw_startDist * 2.0f;
+    vw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
+    vw_nearDist = 0.1f;
+    vw_farDist = vw_startDist * 2.0f;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
     m4_translation = glm::mat4(1.0f);
-    m4_proj = glm::mat4(1.0f);
-    m4_view = glm::mat4(1.0f);
-    m4_world = glm::mat4(1.0f);
-    v3_cameraPosition = glm::vec3(0.0f, 0.0f, gw_startDist);
+    vw_world.m4_proj = glm::mat4(1.0f);
+    vw_world.m4_view = glm::mat4(1.0f);
+    vw_world.m4_world = glm::mat4(1.0f);
+
+    v3_cameraPosition = glm::vec3(0.0f, 0.0f, vw_startDist);
     v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     v3_mouseBegin = glm::vec3(0);
     v3_mouseEnd = glm::vec3(0);
 
-    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    float width = static_cast<float>(this->width());
-    float height = static_cast<float>(this->height());
-    float aspect = width / height;
-
-    m4_proj = glm::perspective(RADN(45.0f), aspect, gw_nearDist, gw_farDist);
-
-    gw_info.pos = gw_startDist;
-    gw_info.start = gw_startDist;
-    gw_info.near = gw_nearDist;
-    gw_info.far = gw_farDist;
-    emit detailsChanged(&gw_info);
-}
-
-/* void VKWindow::initializeGL() {
-    // Init -- OpenGL Context and Functions
-    if (!context()) {
-        gw_context = new QOpenGLContext(this);
-        if (!gw_context->create())
-            std::cout << "Failed to create OpenGL context" << std::endl;
+    vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    
+    float width, height;
+    if (vw_init) {
+        width = static_cast<float>(vw_extent.width);
+        height = static_cast<float>(vw_extent.height);
     } else {
-        gw_context = context();
+        width = this->width();
+        height = this->height();
     }
-    makeCurrent();
-    if (!gw_init) {
-        if (!initializeOpenGLFunctions())
-            std::cout << "Failed to initialize OpenGL functions" << std::endl;
-        else
-            gw_init = true;
-    }
+    vw_aspect = width / height;
+    vw_world.m4_proj = glm::perspective(RADN(45.0f), vw_aspect, vw_nearDist, vw_farDist);
+    vw_world.m4_proj[1][1] *= -1.0f;
 
-    // Init -- Camera and OpenGL State
-    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-
-    // Init -- Matrices
-    initVecsAndMatrices();
-
-    // Init -- ProgramVKs and Shaders
-    initCrystalProgram();
-
-    // Init -- Time
-    gw_timeStart = QDateTime::currentMSecsSinceEpoch();
-    gw_timer = new QTimer(this);
-    connect(gw_timer, &QTimer::timeout, this, QOverload<>::of(&VKWindow::update));
-    gw_timer->start(33);
-
-    // Init -- Threading
-    fwModel = new QFutureWatcher<void>;
-    connect(fwModel, &QFutureWatcher<void>::finished, this, &VKWindow::threadFinished);
+    vw_info.pos = vw_startDist;
+    vw_info.start = vw_startDist;
+    vw_info.near = vw_nearDist;
+    vw_info.far = vw_farDist;
+    emit detailsChanged(&vw_info);
 }
-
-void VKWindow::paintGL() {
-    assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
-
-    if (!gw_pause)
-        gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-    float time = (gw_timeEnd - gw_timeStart) / 1000.0f;
-
-    // Pre-empt painting for new or updated model configuration
-    if (flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
-        updateBuffersAndShaders();
-    }
-
-    // Per-frame Setup
-    const qreal retinaScale = devicePixelRatio();
-    glViewport(0, 0, width() * retinaScale, height() * retinaScale);
-    glClearColor(gw_bg, gw_bg, gw_bg, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    // Re-calculate world state matrices
-    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
-    m4_world = m4_translation * m4_rotation;
-    m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-
-    // Render -- Crystal
-    atomixProg->beginRender();
-    atomixProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-    atomixProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-    atomixProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-    glDrawElements(GL_TRIANGLES, gw_faces, GL_UNSIGNED_INT, 0);
-    glDrawElements(GL_LINE_LOOP, crystalRingCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(crystalRingOffset));
-    atomixProg->endRender();
-
-    // Render -- Waves
-    if (flGraphState.hasAll(egs::WAVE_MODE | egs::WAVE_RENDER) || flGraphState.hasAll(egs::CLOUD_MODE | egs::CLOUD_RENDER)) {
-        currentProg->beginRender();
-        if (flGraphState.hasAny(egs::WAVE_MODE)) {
-            if (currentManager->isCPU()) {
-                currentManager->update(time);
-                currentProg->updateVBONamed("vertices", currentManager->getVertexCount(), 0, currentManager->getVertexSize(), currentManager->getVertexData());
-            }
-        }
-        currentProg->setUniformMatrix(4, "worldMat", glm::value_ptr(m4_world));
-        currentProg->setUniformMatrix(4, "viewMat", glm::value_ptr(m4_view));
-        currentProg->setUniformMatrix(4, "projMat", glm::value_ptr(m4_proj));
-        currentProg->setUniform(GL_FLOAT, "time", time);
-        glDrawElements(GL_POINTS, currentProg->getSize("indices"), GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(cloudOffset));
-        currentProg->endRender();
-    }
-    q_TotalRot.normalize();
-}
-
-void VKWindow::resizeGL(int w, int h) {
-    gw_scrHeight = height();
-    gw_scrWidth = width();
-    // m4_proj = glm::mat4(1.0f);
-    m4_proj = glm::perspective(RADN(45.0f), VKfloat(w) / h, gw_nearDist, gw_farDist);
-} */
 
 void VKWindow::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
     float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
     
-    gw_info.pos = v3_cameraPosition.z;
-    gw_info.far = v3_cameraPosition.z + gw_info.start;
-    m4_proj = glm::perspective(RADN(45.0f), VKfloat(width()) / height(), gw_nearDist, gw_info.far);
-    emit detailsChanged(&gw_info);
+    vw_info.pos = v3_cameraPosition.z;
+    vw_info.far = v3_cameraPosition.z + vw_info.start;
+    vw_world.m4_proj = glm::perspective(RADN(45.0f), VKfloat(width()) / height(), vw_nearDist, vw_info.far);
+    vw_world.m4_proj[1][1] *= -1.0f;
+    emit detailsChanged(&vw_info);
     requestUpdate();
 }
 
@@ -466,24 +378,24 @@ void VKWindow::mousePressEvent(QMouseEvent *e) {
     v3_mouseBegin = mouseVec;
     v3_mouseEnd = mouseVec;
 
-    if (!gw_movement && (e->button() & (Qt::LeftButton | Qt::RightButton | Qt::MiddleButton)))
-        gw_movement |= e->button();
+    if (!vw_movement && (e->button() & (Qt::LeftButton | Qt::RightButton | Qt::MiddleButton)))
+        vw_movement |= e->button();
     else
         QWindow::mousePressEvent(e);
 }
 
 void VKWindow::mouseMoveEvent(QMouseEvent *e) {
-    glm::vec3 mouseVec = glm::vec3(e->pos().x(), gw_scrHeight - e->pos().y(), v3_cameraPosition.z);
+    glm::vec3 mouseVec = glm::vec3(e->pos().x(), vw_extent.height - e->pos().y(), v3_cameraPosition.z);
     glm::vec3 cameraVec = v3_cameraPosition - v3_cameraTarget;
     v3_mouseBegin = v3_mouseEnd;
     v3_mouseEnd = mouseVec;
 
     //VKfloat currentAngle = atanf(cameraVec.y / hypot(cameraVec.x, cameraVec.z));
 
-    if (gw_movement & Qt::RightButton) {
+    if (vw_movement & Qt::RightButton) {
         /* Right-click-drag HORIZONTAL movement will rotate about Y axis */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
-            float dragRatio = (v3_mouseEnd.x - v3_mouseBegin.x) / gw_scrWidth;
+            float dragRatio = (v3_mouseEnd.x - v3_mouseBegin.x) / vw_extent.width;
             VKfloat waveAngleH = TWO_PI * dragRatio;
             glm::vec3 waveAxisH = glm::vec3(0.0, 1.0f, 0.0);
             Quaternion qWaveRotH = Quaternion(waveAngleH, waveAxisH, RAD);
@@ -491,14 +403,14 @@ void VKWindow::mouseMoveEvent(QMouseEvent *e) {
         }
         /* Right-click-drag VERTICAL movement will rotate about X and Z axes */
         if (v3_mouseBegin.y != v3_mouseEnd.y) {
-            float dragRatio = (v3_mouseBegin.y - v3_mouseEnd.y) / gw_scrHeight;
+            float dragRatio = (v3_mouseBegin.y - v3_mouseEnd.y) / vw_extent.height;
             VKfloat waveAngleV = TWO_PI * dragRatio;
             glm::vec3 cameraUnit = glm::normalize(glm::vec3(cameraVec.x, 0.0f, cameraVec.z));
             glm::vec3 waveAxisV = glm::vec3(cameraUnit.z, 0.0f, -cameraUnit.x);
             Quaternion qWaveRotV = Quaternion(waveAngleV, waveAxisV, RAD);
             q_TotalRot = qWaveRotV * q_TotalRot;
         }
-    } else if (gw_movement & Qt::LeftButton) {
+    } else if (vw_movement & Qt::LeftButton) {
         /* Left-click drag will grab and slide world */
         if (v3_mouseBegin != v3_mouseEnd) {
             glm::vec3 deltaSlide = 0.02f * (v3_mouseEnd - v3_mouseBegin);
@@ -506,10 +418,10 @@ void VKWindow::mouseMoveEvent(QMouseEvent *e) {
             m4_translation = glm::translate(m4_translation, cameraSlide);
         }
 
-    } else if (gw_movement & Qt::MiddleButton) {
+    } else if (vw_movement & Qt::MiddleButton) {
         /* Middle-click-drag will rotate about camera look vector */
         if (v3_mouseBegin.x != v3_mouseEnd.x) {
-            float dragRatio = (v3_mouseBegin.x - v3_mouseEnd.x) / gw_scrWidth;
+            float dragRatio = (v3_mouseBegin.x - v3_mouseEnd.x) / vw_extent.width;
             VKfloat waveAngleL = TWO_PI * dragRatio;
             glm::vec3 waveAxisL = glm::normalize(cameraVec);
             Quaternion qWaveRotL = Quaternion(waveAngleL, waveAxisL, RAD);
@@ -521,7 +433,7 @@ void VKWindow::mouseMoveEvent(QMouseEvent *e) {
 
 void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
     if (e->button() & (Qt::RightButton | Qt::LeftButton | Qt::MiddleButton))
-        gw_movement = false;
+        vw_movement = false;
     else
         QWindow::mouseReleaseEvent(e);
 }
@@ -531,33 +443,17 @@ void VKWindow::keyPressEvent(QKeyEvent * e) {
         initVecsAndMatrices();
         requestUpdate();
     } else if (e->key() == Qt::Key_Space) {
-        gw_pause = !gw_pause;
-        if (gw_pause) {
-            gw_timePaused = QDateTime::currentMSecsSinceEpoch();
+        vw_pause = !vw_pause;
+        if (vw_pause) {
+            vw_timePaused = QDateTime::currentMSecsSinceEpoch();
         } else {
-            gw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-            gw_timeStart += gw_timeEnd - gw_timePaused;
+            vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+            vw_timeStart += vw_timeEnd - vw_timePaused;
         }
         requestUpdate();
     } else {
         QWindow::keyPressEvent(e);
     }
-}
-
-void VKWindow::onGrabRequested() {
-    if (!this->supportsGrab()) {
-        std::cout << "Grabbing not supported" << std::endl;
-        return;
-    }
-
-    /* QImage image = this->grab();
-
-    QFileDialog fd(this, "Save Image");             // Needs to be a MainWindow
-    fd.setAcceptMode(QFileDialog::AcceptSave);
-    fd.setDefaultSuffix("png");
-    fd.selectFile("test.png");
-    if (fd.exec() == QDialog::Accepted)
-        image.save(fd.selectedFiles().first()); */
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -577,15 +473,22 @@ void VKWindow::setColorsWaves(int id, uint colorChoice) {
     flGraphState.set(egs::UPD_UNI_COLOUR | egs::UPDATE_REQUIRED);
 }
 
+void VKWindow::updateExtent(VkExtent2D &renderExtent) {
+    vw_extent = renderExtent;
+}
+
 void VKWindow::updateBuffersAndShaders() {
+    if (flGraphState.hasNone(egs::UPDATE_REQUIRED)) {
+        return;
+    }
     /* Set up ProgramVK with buffers for the first time */
-    if (!atomixProg->isActive("wave") || !atomixProg->isActive("cloud")) {
+    /* if (!atomixProg->isActive("wave") || !atomixProg->isActive("cloud")) {
         (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
         initVecsAndMatrices();
     } else {
         uint flags = currentManager->clearUpdates(); // TODO Broken
         flGraphState.set(flags);
-    }
+    } */
     this->updateSize();
 
     /* Continue with ProgramVK update */
@@ -599,36 +502,36 @@ void VKWindow::updateBuffersAndShaders() {
         atomixProg->updateRender("wave", off);
     }
     BufferUpdateInfo updBuf{};
-    updBuf.modelName = gw_currentModel;
+    updBuf.modelName = vw_currentModel;
 
     /* VBO 1: Vertices */
     if (flGraphState.hasAny(egs::UPD_VBO)) {
-        updBuf.bufferName = gw_currentModel + "Vertices";
+        updBuf.bufferName = vw_currentModel + "Vertices";
         updBuf.type = BufferType::VERTEX;
         updBuf.count = currentManager->getVertexCount();
         updBuf.size = currentManager->getVertexSize();
         updBuf.data = currentManager->getVertexData();
-        currentProg->updateBuffer(updBuf);
+        atomixProg->updateBuffer(updBuf);
     }
 
     /* VBO 2: Data */
     if (flGraphState.hasAny(egs::UPD_DATA)) {
-        updBuf.bufferName = gw_currentModel + "Data";
+        updBuf.bufferName = vw_currentModel + "Data";
         updBuf.type = BufferType::DATA;
         updBuf.count = currentManager->getDataCount();
         updBuf.size = currentManager->getDataSize();
         updBuf.data = currentManager->getDataData();
-        currentProg->updateBuffer(updBuf);
+        atomixProg->updateBuffer(updBuf);
     }
 
     /* EBO: Indices */
     if (flGraphState.hasAny(egs::UPD_EBO)) {
-        updBuf.bufferName = gw_currentModel + "Indices";
+        updBuf.bufferName = vw_currentModel + "Indices";
         updBuf.type = BufferType::INDEX;
         updBuf.count = currentManager->getIndexCount();
         updBuf.size = currentManager->getIndexSize();
         updBuf.data = currentManager->getIndexData();
-        currentProg->updateBuffer(updBuf);
+        atomixProg->updateBuffer(updBuf);
     }
 
     /* Uniforms */
@@ -643,16 +546,27 @@ void VKWindow::updateBuffersAndShaders() {
     flGraphState.clear(eUpdateFlags);
 }
 
-void VKWindow::updateWorldState() {
-    this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_renderer->vr_world), &this->vw_renderer->vr_world);
+void VKWindow::updateWorldState(float time) {
+    // Re-calculate world-state matrices
+    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
+    vw_world.m4_world = m4_translation * m4_rotation;
+    vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    this->q_TotalRot.normalize();
+
+    atomixProg->updateUniformBuffer(this->currentFrame(), sizeof(this->vw_world), &this->vw_world);
 }
 
-void VKWindow::vkwDraw(VkCommandBuffer &commandBuffer, VkExtent2D &renderExtent) {
-    atomixProg->render(commandBuffer, renderExtent);
+float VKWindow::updateTime() {
+    if (!vw_pause) {
+        vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+    }
+    float time = (vw_timeEnd - vw_timeStart) / 1000.0f;
+
+    return time;
 }
 
 void VKWindow::setBGColour(float colour) {
-    gw_bg = colour;
+    vw_bg = colour;
 }
 
 void VKWindow::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
@@ -683,9 +597,9 @@ std::string VKWindow::withCommas(int64_t value) {
 
 void VKWindow::updateSize() {
     uint64_t VSize = 0, DSize = 0, ISize = 0;
-    gw_info.vertex = 0;
-    gw_info.data = 0;
-    gw_info.index = 0;
+    vw_info.vertex = 0;
+    vw_info.data = 0;
+    vw_info.index = 0;
 
     if (flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
         VSize = currentManager->getVertexSize();            // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices
@@ -695,17 +609,17 @@ void VKWindow::updateSize() {
         }
     }
 
-    gw_info.vertex = VSize;
-    gw_info.data = DSize;
-    gw_info.index = ISize;
+    vw_info.vertex = VSize;
+    vw_info.data = DSize;
+    vw_info.index = ISize;
 
-    emit detailsChanged(&gw_info);
+    emit detailsChanged(&vw_info);
 }
 
 void VKWindow::printSize() {
     updateSize();
     
-    std::array<double, 4> bufs = { static_cast<double>(gw_info.vertex), static_cast<double>(gw_info.data), static_cast<double>(gw_info.index), 0 };
+    std::array<double, 4> bufs = { static_cast<double>(vw_info.vertex), static_cast<double>(vw_info.data), static_cast<double>(vw_info.index), 0 };
     std::array<std::string, 4> labels = { "Vertex:  ", "Data:    ", "Index:   ", "TOTAL:   " };
     std::array<std::string, 4> units = { " B", "KB", "MB", "GB" };
     std::array<int, 4> uIdx = { 0, 0, 0, 0 };
@@ -809,7 +723,6 @@ VKRenderer::VKRenderer(QVulkanWindow *vkWin)
 }
 
 VKRenderer::~VKRenderer() {
-    // TODO Destructor
 }
 
 void VKRenderer::preInitResources() {
@@ -964,10 +877,11 @@ void VKRenderer::initSwapChainResources() {
     this->vr_qvw->setSwapChain(swapchain); */
     QVulkanWindowRenderer::initSwapChainResources();
 
-    vm4_proj = vr_qvw->clipCorrectionMatrix();
+    // Update render extent
     const QSize vkwSize = vr_qvw->swapChainImageSize();
-    vm4_proj.perspective(45.0f, (float)vkwSize.width() / (float)vkwSize.height(), 0.1f, 100.0f);
-    // m4_proj = glm::mat4(vm4_proj.transposed().constData());
+    VkExtent2D renderExtent = {static_cast<uint32_t>(vkwSize.width()), static_cast<uint32_t>(vkwSize.height())};
+    this->vr_vkw->updateExtent(renderExtent);
+    this->vr_extent = renderExtent;
 }
 
 void VKRenderer::releaseSwapChainResources() {
@@ -986,52 +900,27 @@ void VKRenderer::releaseSwapChainResources() {
  * physical device, as these are owned by the QVulkanWindow.
  */
 void VKRenderer::releaseResources() {
-    if (vr_pipeline) {
-        vr_vdf->vkDestroyPipeline(vr_dev, vr_pipeline, nullptr);
-    }
-    if (vr_pipelineLayout) {
-        vr_vdf->vkDestroyPipelineLayout(vr_dev, vr_pipelineLayout, nullptr);
-    }
-    if (vr_pipelineCache) {
-        vr_vdf->vkDestroyPipelineCache(vr_dev, vr_pipelineCache, nullptr);
-    }
-    if (vr_descSetLayout) {
-        vr_vdf->vkDestroyDescriptorSetLayout(vr_dev, vr_descSetLayout, nullptr);
-    }
-    if (vr_descPool) {
-        vr_vdf->vkDestroyDescriptorPool(vr_dev, vr_descPool, nullptr);
-    }
-    if (vr_bufVert) {
-        vr_vdf->vkDestroyBuffer(vr_dev, vr_bufVert, nullptr);
-    }
-    if (vr_bufMemVert) {
-        vr_vdf->vkFreeMemory(vr_dev, vr_bufMemVert, nullptr);
-    }
+    delete atomixProg;
+    atomixProg = 0;
 }
 
 void VKRenderer::startNextFrame() {
-    VkResult err;
+    // assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
     VkCommandBuffer commandBuffer = this->vr_qvw->currentCommandBuffer();
-    const QSize vkwSize = this->vr_qvw->swapChainImageSize();
-    VkExtent2D renderExtent = {static_cast<uint32_t>(vkwSize.width()), static_cast<uint32_t>(vkwSize.height())};
 
-    // Re-calculate world-state matrices
-    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
-    vr_world.m4_world = m4_translation * m4_rotation;
-    vr_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    // Adjust Y sign for Vulkan coordinate system
-    vr_world.m4_proj[1][1] *= -1.0f;
+    // Update time
+    float time = this->vr_vkw->updateTime();
 
-    // Update uniform buffer
-    atomixProg->updateUniformBuffer(this->vr_qvw->currentFrame(), sizeof(vr_world), &vr_world);
-    // vr_vkw->updateWorldState();
+    // Update buffers and shaders if necessary
+    this->vr_vkw->updateBuffersAndShaders();
+
+    // Update world state (per-frame)
+    this->vr_vkw->updateWorldState(time);
 
     // Call Program to render
-    atomixProg->render(commandBuffer, renderExtent);
-    // vr_vkw->vkwDraw(commandBuffer, renderExtent);
+    atomixProg->render(commandBuffer, vr_extent);
     
     // Prepare for next frame
     vr_qvw->frameReady();
     vr_qvw->requestUpdate();
-    
 }

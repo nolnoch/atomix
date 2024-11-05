@@ -40,13 +40,13 @@ void MainWindow::onAddNew() {
     valDoubleLarge = new QDoubleValidator();
     valDoubleLarge->setRange(0.001, 999.999, 3);
 
-    /* Setup Dock GUI */
+    // Setup Dock GUI
     setupTabs();
     addDockWidget(Qt::RightDockWidgetArea, dockTabs);
 
 #ifdef USING_QVULKAN
     // Vulkan-specific setup
-    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_crash_diagnostic" };
+    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
     QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     QVersionNumber version(1, 0, 0);
 

@@ -46,7 +46,7 @@ void MainWindow::onAddNew() {
 
 #ifdef USING_QVULKAN
     // Vulkan-specific setup
-    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_api_dump", "VK_LAYER_LUNARG_crash_diagnostic" };
+    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_crash_diagnostic" };
     QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     QVersionNumber version(1, 0, 0);
 
@@ -58,7 +58,9 @@ void MainWindow::onAddNew() {
     }
     
     vkGraph = new VKWindow(this, cfgParser);
+    std::cout << "VKWindow variable created" << std::endl;
     vkGraph->setVulkanInstance(&vkInst);
+    std::cout << "Vulkan instance set" << std::endl;
     vkWinWidWrapper = QWidget::createWindowContainer(vkGraph);
     setCentralWidget(vkWinWidWrapper);
     graph = vkWinWidWrapper;

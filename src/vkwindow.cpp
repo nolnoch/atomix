@@ -38,6 +38,7 @@ static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : cfgParser(configParser) {
     setSurfaceType(QVulkanWindow::VulkanSurface);
+    this->setDeviceExtensions({ "VK_KHR_portability_subset" });
     std::cout << "Window has been created!" << std::endl;
 }
 
@@ -352,6 +353,8 @@ void VKWindow::initVecsAndMatrices() {
     vw_aspect = width / height;
     vw_world.m4_proj = glm::perspective(RADN(45.0f), vw_aspect, vw_nearDist, vw_farDist);
     vw_world.m4_proj[1][1] *= -1.0f;
+
+    atomixProg->updateClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     vw_info.pos = vw_startDist;
     vw_info.start = vw_startDist;

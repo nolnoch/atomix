@@ -193,7 +193,7 @@ int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
 }
 
 bool ProgramVK::compileShader(Shader *shader) {
-    bool compiled = shader->compile();
+    bool compiled = shader->compile(VK_SPIRV_VERSION);
 
     if (compiled) {
         this->p_compiledShaders.push_back(shader);
@@ -332,7 +332,6 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
 
     // Pipeline Global Setup
     if (!this->p_pipeInfo.init) {
-        this->p_pipeInfo.init = true;
         this->pipelineGlobalSetup();
     }
     
@@ -532,7 +531,7 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
         ia->topology = topology;
         if (isMacOS) {
             ia->primitiveRestartEnable = VK_TRUE;
-        }else {
+        } else {
             ia->primitiveRestartEnable = VK_FALSE;
         }
         ia->flags = 0;
@@ -584,8 +583,8 @@ void ProgramVK::pipelineGlobalSetup() {
     memset(&this->p_pipeInfo.ms, 0, sizeof(this->p_pipeInfo.ms));
     this->p_pipeInfo.ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     this->p_pipeInfo.ms.rasterizationSamples = this->p_vkw->sampleCountFlagBits();
-    this->p_pipeInfo.ms.sampleShadingEnable = VK_FALSE;
-    this->p_pipeInfo.ms.minSampleShading = 1.0f;
+    this->p_pipeInfo.ms.sampleShadingEnable = VK_TRUE;
+    this->p_pipeInfo.ms.minSampleShading = 0.3f;
     this->p_pipeInfo.ms.pSampleMask = nullptr;
     this->p_pipeInfo.ms.alphaToCoverageEnable = VK_FALSE;
     this->p_pipeInfo.ms.alphaToOneEnable = VK_FALSE;
@@ -595,7 +594,7 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     this->p_pipeInfo.ds.depthTestEnable = VK_TRUE;
     this->p_pipeInfo.ds.depthWriteEnable = VK_TRUE;
-    this->p_pipeInfo.ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    this->p_pipeInfo.ds.depthCompareOp = VK_COMPARE_OP_LESS;
     this->p_pipeInfo.ds.depthBoundsTestEnable = VK_FALSE;
     this->p_pipeInfo.ds.stencilTestEnable = VK_FALSE;
     this->p_pipeInfo.ds.front = {};
@@ -1169,9 +1168,6 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     
     // Cleanup
     this->p_vdf->vkCmdEndRenderPass(cmdBuff);
-    if (err != VK_SUCCESS) {
-        throw std::runtime_error("Failed to end command buffer: " + std::to_string(err));
-    }
 }
 
 Shader* ProgramVK::getShaderFromName(const std::string& fileName) {

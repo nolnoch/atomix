@@ -54,10 +54,21 @@ void MainWindow::onAddNew() {
 
 #ifdef USING_QVULKAN
     // Vulkan-specific setup
-    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
+    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_api_dump" };
     QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
-    QVersionNumber version(1, 0, 0);
-
+    
+    QVersionNumber version = vkInst.supportedApiVersion();
+    VK_MINOR_VERSION = version.minorVersion();
+    if (VK_MINOR_VERSION >= 3) {
+        VK_SPIRV_VERSION = 6;
+    } else if (VK_MINOR_VERSION == 2) {
+        VK_SPIRV_VERSION = 5;
+    } else if (VK_MINOR_VERSION == 1) {
+        VK_SPIRV_VERSION = 3;
+    } else {
+        VK_SPIRV_VERSION = 0;
+    }
+    
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);
     vkInst.setExtensions(extensions);

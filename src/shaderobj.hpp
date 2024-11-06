@@ -51,7 +51,7 @@ public:
     Shader(std::string fName, uint type);
     virtual ~Shader();
 
-    bool compile();
+    bool compile(uint version);
     void setId(unsigned int idAssigned);
 
     unsigned int getId();

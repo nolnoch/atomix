@@ -179,14 +179,15 @@ private:
 
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;
-
-    int intTabMinWidth = 500;
-    int intTabLabelHeight = 200;
-    int intSliderLen = 20;
-    float lastSliderSentX = 0.0f;
-    float lastSliderSentY = 0.0f;
-
     bool recipeLoaded = false;
+
+    int intTabMinWidth;
+    int intTabLabelHeight;
+    int intSliderLen;
+    int lineWidth;
+    int intMaxWidth;
+    float lastSliderSentX;
+    float lastSliderSentY;
 
     AtomixInfo dInfo;
 };

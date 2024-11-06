@@ -27,6 +27,13 @@
 
 #include <string>
 
+#define MACOS
+#ifdef MACOS
+    constexpr bool isMacOS = true;
+#else
+    constexpr bool isMacOS = false;
+#endif
+
 
 /* Custom BitFlag struct */
 struct BitFlag {

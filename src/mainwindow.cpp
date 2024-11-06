@@ -40,6 +40,14 @@ void MainWindow::onAddNew() {
     valDoubleLarge = new QDoubleValidator();
     valDoubleLarge->setRange(0.001, 999.999, 3);
 
+    intTabMinWidth = this->width() / 3;
+    intTabLabelHeight = this->height() / 12;
+    intSliderLen = 20;
+    intMaxWidth = (intTabMinWidth - 30) >> 1;
+    lastSliderSentX = 0.0f;
+    lastSliderSentY = 0.0f;
+    lineWidth = (isMacOS) ? 1 : 3;
+
     // Setup Dock GUI
     setupTabs();
     addDockWidget(Qt::RightDockWidgetArea, dockTabs);
@@ -345,7 +353,7 @@ void MainWindow::setupDockWaves() {
     labelWaves->setMinimumHeight(intTabLabelHeight);
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
-    labelWaves->setLineWidth(3);
+    labelWaves->setLineWidth(lineWidth);
     labelWaves->setMargin(12);
     labelWaves->setAlignment(Qt::AlignCenter);
 
@@ -519,7 +527,7 @@ void MainWindow::setupDockHarmonics() {
     labelHarmonics->setMinimumHeight(intTabLabelHeight);
     labelHarmonics->setWordWrap(true);
     labelHarmonics->setFrameStyle(QFrame::Panel | QFrame::Raised);
-    labelHarmonics->setLineWidth(3);
+    labelHarmonics->setLineWidth(lineWidth);
     labelHarmonics->setMargin(12);
     labelHarmonics->setAlignment(Qt::AlignCenter);
 
@@ -644,9 +652,9 @@ void MainWindow::setupDockHarmonics() {
 
     groupRecipeReporter->setAlignment(Qt::AlignRight);
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
-    groupRecipeReporter->setMaximumWidth(235);
-    groupRecipeBuilder->setMaximumWidth(235);
-    groupRecipeLocked->setMaximumWidth(235);
+    groupRecipeReporter->setMaximumWidth(intMaxWidth);
+    groupRecipeBuilder->setMaximumWidth(intMaxWidth);
+    groupRecipeLocked->setMaximumWidth(intMaxWidth);
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->setAlignment(Qt::AlignRight);
 

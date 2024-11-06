@@ -97,9 +97,9 @@ enum class DataType : uint32_t {
 
 enum class BufferType : unsigned int {
     VERTEX = 0,
-    INDEX  = 1,
-    UNIFORM = 2,
-    DATA = 3
+    DATA  = 1,
+    INDEX = 2,
+    UNIFORM = 3
 };
 
 struct AtomixDevice {
@@ -166,7 +166,7 @@ struct ModelPipelineInfo {
     std::vector<VkPipelineShaderStageCreateInfo> fsCreates;
     VkPipelineVertexInputStateCreateInfo vboCreate;
     std::vector<VkPipelineInputAssemblyStateCreateInfo> iaCreates;
-    std::vector<VkPipelineRasterizationStateCreateInfo> rsCreates;
+    VkPipelineRasterizationStateCreateInfo rsCreate;
     PipelineLibrary *pipeLib = nullptr;
 };
 
@@ -202,6 +202,8 @@ struct ShaderInfo {
     std::map<VKuint, VKuint> fragModulesToCreates;
     std::vector<VkShaderModule> vertModules;
     std::vector<VkShaderModule> fragModules;
+    std::vector<Shader *> vertShaders;
+    std::vector<Shader *> fragShaders;
 };
 
 struct ModelInfo {
@@ -254,7 +256,7 @@ public:
 
     void pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m);
     void pipelineGlobalSetup();
-    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia, int rs);
+    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia);
     void genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia);
     void genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineRasterizationStateCreateInfo &rs);
     void genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag);
@@ -292,6 +294,7 @@ public:
     bool isActive(const std::string& modelName);
 
     void printModel(ModelInfo *model);
+    void printInfo(ModelCreateInfo *info);
 
 
 private:
@@ -379,6 +382,84 @@ private:
         VK_FORMAT_R64G64_SFLOAT,
         VK_FORMAT_R64G64B64_SFLOAT,
         VK_FORMAT_R64G64B64A64_SFLOAT
+    };
+
+    std::map<VkFormat, VKuint> dataFormatIdx = {
+        { VK_FORMAT_R32_SFLOAT, 0 },
+        { VK_FORMAT_R32G32_SFLOAT, 1 },
+        { VK_FORMAT_R32G32B32_SFLOAT, 2 },
+        { VK_FORMAT_R32G32B32A32_SFLOAT, 3 },
+        { VK_FORMAT_R32_SINT, 4 },
+        { VK_FORMAT_R32G32_SINT, 5 },
+        { VK_FORMAT_R32G32B32_SINT, 6 },
+        { VK_FORMAT_R32G32B32A32_SINT, 7 },
+        { VK_FORMAT_R32_UINT, 8 },
+        { VK_FORMAT_R32G32_UINT, 9 },
+        { VK_FORMAT_R32G32B32_UINT, 10 },
+        { VK_FORMAT_R32G32B32A32_UINT, 11 },
+        { VK_FORMAT_R64_SFLOAT, 12 },
+        { VK_FORMAT_R64G64_SFLOAT, 13 },
+        { VK_FORMAT_R64G64B64_SFLOAT, 14 },
+        { VK_FORMAT_R64G64B64A64_SFLOAT, 15}
+    };
+
+    std::array<std::string, 16> dataTypeNames = {
+        "float",
+        "fvec2",
+        "fvec3",
+        "fvec4",
+        "int",
+        "ivec2",
+        "ivec3",
+        "ivec4",
+        "uint",
+        "uvec2",
+        "uvec3",
+        "uvec4",
+        "double",
+        "dvec2",
+        "dvec3",
+        "dvec4"
+    };
+
+    std::array<std::string, 4> bufferTypeNames = {
+        "Vertex",
+        "Data",
+        "Index",
+        "Uniform"
+    };
+
+    std::array<std::string, 16> dataFormatNames = {
+        "R32_SFLOAT",
+        "R32G32_SFLOAT",
+        "R32G32B32_SFLOAT",
+        "R32G32B32A32_SFLOAT",
+        "R32_SINT",
+        "R32G32_SINT",
+        "R32G32B32_SINT",
+        "R32G32B32A32_SINT",
+        "R32_UINT",
+        "R32G32_UINT",
+        "R32G32B32_UINT",
+        "R32G32B32A32_UINT",
+        "R64_SFLOAT",
+        "R64G64_SFLOAT",
+        "R64G64B64_SFLOAT",
+        "R64G64B64A64_SFLOAT"
+    };
+
+    std::array<std::string, 11> topologyNames = {
+        "PointList",
+        "LineList",
+        "LineStrip",
+        "TriangleList",
+        "TriangleStrip",
+        "TriangleFan",
+        "LineList_Adj",
+        "LineStrip_Adj",
+        "TriangleList_Adj",
+        "TriangleStrip_Adj",
+        "PatchList"
     };
 };
 

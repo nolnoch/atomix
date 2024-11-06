@@ -215,6 +215,10 @@ private:
     void printFlags(std::string);
     void printConfig(AtomixConfig *cfg);
 
+
+    fvec crystalRingVertices;
+    uvec crystalRingIndices;
+
     VKRenderer *vw_renderer = nullptr;
     std::string vw_currentModel = "";
 

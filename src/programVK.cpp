@@ -530,7 +530,11 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
         VkPipelineInputAssemblyStateCreateInfo *ia = &m->pipeInfo->iaCreates.back();
         ia->sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         ia->topology = topology;
-        ia->primitiveRestartEnable = VK_FALSE;
+        if (isMacOS) {
+            ia->primitiveRestartEnable = VK_TRUE;
+        }else {
+            ia->primitiveRestartEnable = VK_FALSE;
+        }
         ia->flags = 0;
         ia->pNext = nullptr;
     }

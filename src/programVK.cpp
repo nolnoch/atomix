@@ -539,7 +539,7 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
     m->pipeInfo->rsCreate.pNext = nullptr;
     m->pipeInfo->rsCreate.flags = 0;
     m->pipeInfo->rsCreate.polygonMode = VK_POLYGON_MODE_FILL;
-    m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_BACK_BIT;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
+    m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_NONE;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
     m->pipeInfo->rsCreate.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     m->pipeInfo->rsCreate.lineWidth = 1.0f;
     m->pipeInfo->rsCreate.rasterizerDiscardEnable = VK_FALSE;
@@ -591,8 +591,8 @@ void ProgramVK::pipelineGlobalSetup() {
     // Depth Stencil
     memset(&this->p_pipeInfo.ds, 0, sizeof(this->p_pipeInfo.ds));
     this->p_pipeInfo.ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    this->p_pipeInfo.ds.depthTestEnable = VK_TRUE;
-    this->p_pipeInfo.ds.depthWriteEnable = VK_TRUE;
+    this->p_pipeInfo.ds.depthTestEnable = VK_FALSE;
+    this->p_pipeInfo.ds.depthWriteEnable = VK_FALSE;
     this->p_pipeInfo.ds.depthCompareOp = VK_COMPARE_OP_LESS;
     this->p_pipeInfo.ds.depthBoundsTestEnable = VK_FALSE;
     this->p_pipeInfo.ds.stencilTestEnable = VK_FALSE;

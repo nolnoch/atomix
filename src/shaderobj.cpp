@@ -126,7 +126,10 @@ bool Shader::compile(uint version) {
     }
 
     // Generate SPIR-V
-    glslang::GlslangToSpv(*program.getIntermediate(stage), this->sourceBufferCompiled);
+    glslang::SpvOptions options{};
+    options.generateDebugInfo = true;
+    options.validate = true;
+    glslang::GlslangToSpv(*program.getIntermediate(stage), this->sourceBufferCompiled, &options);
     
     // Close the glslang library
     glslang::FinalizeProcess();

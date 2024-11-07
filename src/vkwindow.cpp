@@ -162,12 +162,12 @@ void VKWindow::initCrystalProgram() {
     };
 
     const std::array<VKuint, 18> indices = {
-        0, 1, 2,
-        2, 3, 0,
-        3, 1, 0,
-        1, 2, 4,
-        2, 3, 4,
-        3, 4, 1
+        1, 0, 2,
+        2, 0, 3,
+        3, 0, 1,
+        1, 4, 3,
+        3, 4, 2,
+        2, 4, 1
     };
     uint vw_faces = indices.size();
 

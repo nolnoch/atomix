@@ -71,12 +71,29 @@ void Shader::setId(unsigned int idAssigned) {
  * 
  * @return true if the shader compiles and links successfully, false otherwise
  */
-bool Shader::compile() {
+bool Shader::compile(uint version) {
     const char *shaderSource = this->getSourceRaw();
     int shaderLength = this->getLengthRaw();
     EShLanguage stage = (this->shaderType == GL_VERTEX_SHADER) ? EShLangVertex : EShLangFragment;
     EShMessages messages = EShMsgDefault;
-    
+
+    glslang::EShTargetLanguageVersion targetVersion;
+    if (version == 1) {
+        targetVersion = glslang::EShTargetLanguageVersion::EShTargetSpv_1_1;
+    } else if (version == 2) {
+        targetVersion = glslang::EShTargetLanguageVersion::EShTargetSpv_1_2;
+    } else if (version == 3) {
+        targetVersion = glslang::EShTargetLanguageVersion::EShTargetSpv_1_3;
+    } else if (version == 4) {
+        targetVersion = glslang::EShTargetLanguageVersion::EShTargetSpv_1_4;
+    } else if (version == 5) {
+        targetVersion = glslang::EShTargetLanguageVersion::EShTargetSpv_1_5;
+    } else if (version == 6) {
+        targetVersion = glslang::EShTargetLanguageVersion::EShTargetSpv_1_6;
+    } else {
+        targetVersion = glslang::EShTargetLanguageVersion::EShTargetSpv_1_0;
+    }
+
     // Open the glslang library
     glslang::InitializeProcess();
 
@@ -84,7 +101,7 @@ bool Shader::compile() {
     glslang::TShader shader(stage);
     shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, 450);
     shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
-    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+    shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
     shader.setStringsWithLengths(&shaderSource, &shaderLength, 1);
     shader.setEntryPoint("main");
     shader.setSourceEntryPoint("main");
@@ -109,7 +126,10 @@ bool Shader::compile() {
     }
 
     // Generate SPIR-V
-    glslang::GlslangToSpv(*program.getIntermediate(stage), this->sourceBufferCompiled);
+    glslang::SpvOptions options{};
+    options.generateDebugInfo = true;
+    options.validate = true;
+    glslang::GlslangToSpv(*program.getIntermediate(stage), this->sourceBufferCompiled, &options);
     
     // Close the glslang library
     glslang::FinalizeProcess();

@@ -27,6 +27,16 @@
 
 #include <string>
 
+// #define MACOS
+#ifdef MACOS
+    constexpr bool isMacOS = true;
+#else
+    constexpr bool isMacOS = false;
+#endif
+
+
+static uint VK_MINOR_VERSION = 0;
+static uint VK_SPIRV_VERSION = 0;
 
 /* Custom BitFlag struct */
 struct BitFlag {

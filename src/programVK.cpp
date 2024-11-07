@@ -193,7 +193,7 @@ int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
 }
 
 bool ProgramVK::compileShader(Shader *shader) {
-    bool compiled = shader->compile();
+    bool compiled = shader->compile(VK_SPIRV_VERSION);
 
     if (compiled) {
         this->p_compiledShaders.push_back(shader);
@@ -332,7 +332,6 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
 
     // Pipeline Global Setup
     if (!this->p_pipeInfo.init) {
-        this->p_pipeInfo.init = true;
         this->pipelineGlobalSetup();
     }
     
@@ -530,17 +529,20 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
         VkPipelineInputAssemblyStateCreateInfo *ia = &m->pipeInfo->iaCreates.back();
         ia->sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         ia->topology = topology;
-        ia->primitiveRestartEnable = VK_FALSE;
+        ia->primitiveRestartEnable = isMacOS ? VK_TRUE : VK_FALSE;
         ia->flags = 0;
         ia->pNext = nullptr;
     }
 
     // Rasterization
     m->pipeInfo->rsCreate.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    m->pipeInfo->rsCreate.pNext = nullptr;
+    m->pipeInfo->rsCreate.flags = 0;
     m->pipeInfo->rsCreate.polygonMode = VK_POLYGON_MODE_FILL;
-    m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_BACK_BIT;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
+    m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_NONE;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
     m->pipeInfo->rsCreate.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     m->pipeInfo->rsCreate.lineWidth = 1.0f;
+    m->pipeInfo->rsCreate.rasterizerDiscardEnable = VK_FALSE;
     m->pipeInfo->rsCreate.depthClampEnable = VK_FALSE;
     m->pipeInfo->rsCreate.depthBiasEnable = VK_FALSE;
     m->pipeInfo->rsCreate.depthBiasConstantFactor = 0.0f;
@@ -580,8 +582,8 @@ void ProgramVK::pipelineGlobalSetup() {
     memset(&this->p_pipeInfo.ms, 0, sizeof(this->p_pipeInfo.ms));
     this->p_pipeInfo.ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     this->p_pipeInfo.ms.rasterizationSamples = this->p_vkw->sampleCountFlagBits();
-    this->p_pipeInfo.ms.sampleShadingEnable = VK_FALSE;
-    this->p_pipeInfo.ms.minSampleShading = 1.0f;
+    this->p_pipeInfo.ms.sampleShadingEnable = VK_TRUE;
+    this->p_pipeInfo.ms.minSampleShading = 0.3f;
     this->p_pipeInfo.ms.pSampleMask = nullptr;
     this->p_pipeInfo.ms.alphaToCoverageEnable = VK_FALSE;
     this->p_pipeInfo.ms.alphaToOneEnable = VK_FALSE;
@@ -589,27 +591,28 @@ void ProgramVK::pipelineGlobalSetup() {
     // Depth Stencil
     memset(&this->p_pipeInfo.ds, 0, sizeof(this->p_pipeInfo.ds));
     this->p_pipeInfo.ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    this->p_pipeInfo.ds.depthTestEnable = VK_TRUE;
-    this->p_pipeInfo.ds.depthWriteEnable = VK_TRUE;
-    this->p_pipeInfo.ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    this->p_pipeInfo.ds.depthTestEnable = VK_FALSE;
+    this->p_pipeInfo.ds.depthWriteEnable = VK_FALSE;
+    this->p_pipeInfo.ds.depthCompareOp = VK_COMPARE_OP_LESS;
     this->p_pipeInfo.ds.depthBoundsTestEnable = VK_FALSE;
     this->p_pipeInfo.ds.stencilTestEnable = VK_FALSE;
     this->p_pipeInfo.ds.front = {};
     this->p_pipeInfo.ds.back = {};
     this->p_pipeInfo.ds.minDepthBounds = 0.0f;
     this->p_pipeInfo.ds.maxDepthBounds = 1.0f;
+    this->p_pipeInfo.ds.flags = 0;
 
     // Color Blending
     memset(&this->p_pipeInfo.cb, 0, sizeof(this->p_pipeInfo.cb));
     memset(&this->p_pipeInfo.cbAtt, 0, sizeof(this->p_pipeInfo.cbAtt));
     this->p_pipeInfo.cbAtt.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    this->p_pipeInfo.cbAtt.blendEnable = VK_FALSE;                      // VK_TRUE
-    this->p_pipeInfo.cbAtt.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_SRC_ALPHA
-    this->p_pipeInfo.cbAtt.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-    this->p_pipeInfo.cbAtt.colorBlendOp = VK_BLEND_OP_ADD;              // VK_BLEND_OP_ADD
-    this->p_pipeInfo.cbAtt.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_ONE
-    this->p_pipeInfo.cbAtt.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_ZERO
-    this->p_pipeInfo.cbAtt.alphaBlendOp = VK_BLEND_OP_ADD;              // VK_BLEND_OP_ADD
+    this->p_pipeInfo.cbAtt.blendEnable = VK_TRUE;                                           // VK_TRUE                                  VK_FALSE
+    this->p_pipeInfo.cbAtt.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;                 // VK_BLEND_FACTOR_SRC_ALPHA                VK_BLEND_FACTOR_ONE
+    this->p_pipeInfo.cbAtt.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;       // VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA      VK_BLEND_FACTOR_ZERO
+    this->p_pipeInfo.cbAtt.colorBlendOp = VK_BLEND_OP_ADD;                                  // VK_BLEND_OP_ADD                          VK_BLEND_OP_ADD
+    this->p_pipeInfo.cbAtt.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;                       // VK_BLEND_FACTOR_ONE                      VK_BLEND_FACTOR_ONE
+    this->p_pipeInfo.cbAtt.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;                      // VK_BLEND_FACTOR_ZERO                     VK_BLEND_FACTOR_ZERO
+    this->p_pipeInfo.cbAtt.alphaBlendOp = VK_BLEND_OP_ADD;                                  // VK_BLEND_OP_ADD                          VK_BLEND_OP_ADD
 
     this->p_pipeInfo.cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     this->p_pipeInfo.cb.attachmentCount = 1;
@@ -1165,9 +1168,6 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     
     // Cleanup
     this->p_vdf->vkCmdEndRenderPass(cmdBuff);
-    if (err != VK_SUCCESS) {
-        throw std::runtime_error("Failed to end command buffer: " + std::to_string(err));
-    }
 }
 
 Shader* ProgramVK::getShaderFromName(const std::string& fileName) {

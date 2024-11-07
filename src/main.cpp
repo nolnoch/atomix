@@ -32,7 +32,7 @@
 
 #define SWIDTH 1280
 #define SHEIGHT 720
-#define SRATIO 0.6
+#define SRATIO 0.75
 
 
 int main(int argc, char* argv[]) {
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
     MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
-    float ratio = SRATIO;
+    double ratio = SRATIO;
     int dispX = dispXY.width() * ratio ?: SWIDTH;
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);

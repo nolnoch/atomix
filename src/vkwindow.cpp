@@ -220,7 +220,7 @@ void VKWindow::initCrystalProgram() {
     crystalModel.uboSize = sizeof(WorldState);
     crystalModel.vertShaders = { vertName };
     crystalModel.fragShaders = { fragName };
-    crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP };
+    crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP };
     crystalModel.offsets = {
         { 0, 0, 0, 0 },
         { crystalRingOffset, 0, 0, 1 }

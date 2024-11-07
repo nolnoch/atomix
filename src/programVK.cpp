@@ -529,7 +529,7 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
         VkPipelineInputAssemblyStateCreateInfo *ia = &m->pipeInfo->iaCreates.back();
         ia->sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         ia->topology = topology;
-        ia->primitiveRestartEnable = isMacOS ? VK_TRUE : VK_FALSE;
+        ia->primitiveRestartEnable = (isMacOS) ? VK_TRUE : VK_FALSE;
         ia->flags = 0;
         ia->pNext = nullptr;
     }
@@ -539,7 +539,7 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
     m->pipeInfo->rsCreate.pNext = nullptr;
     m->pipeInfo->rsCreate.flags = 0;
     m->pipeInfo->rsCreate.polygonMode = VK_POLYGON_MODE_FILL;
-    m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_NONE;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
+    m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_BACK_BIT;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
     m->pipeInfo->rsCreate.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     m->pipeInfo->rsCreate.lineWidth = 1.0f;
     m->pipeInfo->rsCreate.rasterizerDiscardEnable = VK_FALSE;

@@ -27,7 +27,7 @@
 
 #include <string>
 
-// #define MACOS
+#define MACOS
 #ifdef MACOS
     constexpr bool isMacOS = true;
 #else

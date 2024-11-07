@@ -54,7 +54,7 @@ void MainWindow::onAddNew() {
 
 #ifdef USING_QVULKAN
     // Vulkan-specific setup
-    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_api_dump" };
+    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
     QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     
     QVersionNumber version = vkInst.supportedApiVersion();

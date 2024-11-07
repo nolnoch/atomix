@@ -529,21 +529,20 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
         VkPipelineInputAssemblyStateCreateInfo *ia = &m->pipeInfo->iaCreates.back();
         ia->sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         ia->topology = topology;
-        if (isMacOS) {
-            ia->primitiveRestartEnable = VK_TRUE;
-        } else {
-            ia->primitiveRestartEnable = VK_FALSE;
-        }
+        ia->primitiveRestartEnable = isMacOS ? VK_TRUE : VK_FALSE;
         ia->flags = 0;
         ia->pNext = nullptr;
     }
 
     // Rasterization
     m->pipeInfo->rsCreate.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    m->pipeInfo->rsCreate.pNext = nullptr;
+    m->pipeInfo->rsCreate.flags = 0;
     m->pipeInfo->rsCreate.polygonMode = VK_POLYGON_MODE_FILL;
     m->pipeInfo->rsCreate.cullMode = VK_CULL_MODE_BACK_BIT;  // VK_CULL_MODE_BACK_BIT or VK_CULL_MODE_NONE
     m->pipeInfo->rsCreate.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     m->pipeInfo->rsCreate.lineWidth = 1.0f;
+    m->pipeInfo->rsCreate.rasterizerDiscardEnable = VK_FALSE;
     m->pipeInfo->rsCreate.depthClampEnable = VK_FALSE;
     m->pipeInfo->rsCreate.depthBiasEnable = VK_FALSE;
     m->pipeInfo->rsCreate.depthBiasConstantFactor = 0.0f;
@@ -601,18 +600,19 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.ds.back = {};
     this->p_pipeInfo.ds.minDepthBounds = 0.0f;
     this->p_pipeInfo.ds.maxDepthBounds = 1.0f;
+    this->p_pipeInfo.ds.flags = 0;
 
     // Color Blending
     memset(&this->p_pipeInfo.cb, 0, sizeof(this->p_pipeInfo.cb));
     memset(&this->p_pipeInfo.cbAtt, 0, sizeof(this->p_pipeInfo.cbAtt));
     this->p_pipeInfo.cbAtt.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    this->p_pipeInfo.cbAtt.blendEnable = VK_FALSE;                      // VK_TRUE
-    this->p_pipeInfo.cbAtt.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_SRC_ALPHA
-    this->p_pipeInfo.cbAtt.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-    this->p_pipeInfo.cbAtt.colorBlendOp = VK_BLEND_OP_ADD;              // VK_BLEND_OP_ADD
-    this->p_pipeInfo.cbAtt.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_ONE
-    this->p_pipeInfo.cbAtt.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // VK_BLEND_FACTOR_ZERO
-    this->p_pipeInfo.cbAtt.alphaBlendOp = VK_BLEND_OP_ADD;              // VK_BLEND_OP_ADD
+    this->p_pipeInfo.cbAtt.blendEnable = VK_TRUE;                                           // VK_TRUE                                  VK_FALSE
+    this->p_pipeInfo.cbAtt.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;                 // VK_BLEND_FACTOR_SRC_ALPHA                VK_BLEND_FACTOR_ONE
+    this->p_pipeInfo.cbAtt.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;       // VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA      VK_BLEND_FACTOR_ZERO
+    this->p_pipeInfo.cbAtt.colorBlendOp = VK_BLEND_OP_ADD;                                  // VK_BLEND_OP_ADD                          VK_BLEND_OP_ADD
+    this->p_pipeInfo.cbAtt.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;                       // VK_BLEND_FACTOR_ONE                      VK_BLEND_FACTOR_ONE
+    this->p_pipeInfo.cbAtt.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;                      // VK_BLEND_FACTOR_ZERO                     VK_BLEND_FACTOR_ZERO
+    this->p_pipeInfo.cbAtt.alphaBlendOp = VK_BLEND_OP_ADD;                                  // VK_BLEND_OP_ADD                          VK_BLEND_OP_ADD
 
     this->p_pipeInfo.cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     this->p_pipeInfo.cb.attachmentCount = 1;

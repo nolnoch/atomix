@@ -58,7 +58,9 @@ void MainWindow::init(QRect &windowSize) {
 #ifdef USING_QVULKAN
     // Vulkan-specific setup
     QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
-    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
+    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2",
+                                  "VK_EXT_graphics_pipeline_library",
+                                  "VK_EXT_metal_surface" };
     
     QVersionNumber version = vkInst.supportedApiVersion();
     VK_MINOR_VERSION = version.minorVersion();
@@ -205,7 +207,6 @@ void MainWindow::refreshOrbits() {
 void MainWindow::setupDetails() {
     fontDebug.setStyleHint(QFont::Monospace);
     fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
-    fontDebug.setFamily("Monospace");
     QString strDetails = QString("Position:      %1\n"\
                                  "View|Near:     %2\n"\
                                  "View|Far:      %3\n\n"\

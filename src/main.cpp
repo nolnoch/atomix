@@ -30,26 +30,31 @@
 #include <QFont>
 #include "mainwindow.hpp"
 
+AtomixFiles atomixFiles;
+
 
 int main(int argc, char* argv[]) {
-    /* Application */
+    // Application
     QApplication app (argc, argv);
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+    std::cout << QT_VERSION_STR << std::endl;
 
-    const QDir atomixDir = QDir(QCoreApplication::applicationDirPath());
-    QIcon icoAtomix(atomixDir.relativeFilePath("../../resources/icons/favicon.ico"));
+    QDir execDir = QDir(QCoreApplication::applicationDirPath());
+    const QDir atomixDir = QDir(execDir.relativeFilePath("../../"));
+    atomixFiles.setRoot(atomixDir.absolutePath().toStdString());
+    QIcon icoAtomix(atomixDir.relativeFilePath("resources/icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
 
-    /* Exe and CLI Parsing */
+    // Exe and CLI Parsing
     QCommandLineParser qParser;
     qParser.setApplicationDescription(QCoreApplication::applicationName());
     qParser.addHelpOption();
     qParser.addVersionOption();
     qParser.process(app);
     
-    /* Surface Format */
+    // Surface Format
     QSurfaceFormat qFmt;
     qFmt.setDepthBufferSize(24);
     qFmt.setStencilBufferSize(8);
@@ -58,7 +63,7 @@ int main(int argc, char* argv[]) {
     qFmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(qFmt);
 
-    /* Windows */
+    // Windows
     MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
@@ -71,7 +76,7 @@ int main(int argc, char* argv[]) {
     QRect winSize = QRect(0, 0, dispX, dispY);
     mainWindow.init(winSize);
 
-    /* Engage */
+    // Engage
     app.processEvents();
     mainWindow.show();
     mainWindow.setupLoading();

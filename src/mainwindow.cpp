@@ -136,10 +136,11 @@ void MainWindow::init(QRect &windowSize) {
 
 void MainWindow::refreshConfigs() {
     int files = cfgParser->cfgFiles.size();
-    int rootLength = ROOT_DIR.length() + CONFIGS.length();
+    std::string configPath = atomixFiles.configs();
+    int rootLength = configPath.length();
 
     if (!files)
-        files = cfgParser->findFiles(std::string(ROOT_DIR) + std::string(CONFIGS), CFGEXT, &cfgParser->cfgFiles);
+        files = cfgParser->findFiles(configPath, CFGEXT, &cfgParser->cfgFiles);
     assert(files);
 
     comboConfigFile->clear();
@@ -151,13 +152,14 @@ void MainWindow::refreshConfigs() {
 }
 
 void MainWindow::refreshShaders() {
-    int rootLength = ROOT_DIR.length() + SHADERS.length();
+    std::string shaderPath = atomixFiles.shaders();
+    int rootLength = shaderPath.length();
     int files = 0;
 
     /* Vertex Shaders */
     files = cfgParser->vshFiles.size();
     if (!files)
-        files = cfgParser->findFiles(std::string(ROOT_DIR) + std::string(SHADERS), VSHEXT, &cfgParser->vshFiles);
+        files = cfgParser->findFiles(shaderPath, VSHEXT, &cfgParser->vshFiles);
     assert(files);
 
     entryVertex->clear();
@@ -171,7 +173,7 @@ void MainWindow::refreshShaders() {
     /* Fragment Shaders */
     files = cfgParser->fshFiles.size();
     if (!files)
-        files = cfgParser->findFiles(std::string(ROOT_DIR) + std::string(SHADERS), FSHEXT, &cfgParser->fshFiles);
+        files = cfgParser->findFiles(shaderPath, FSHEXT, &cfgParser->fshFiles);
     assert(files);
 
     entryFrag->clear();
@@ -201,8 +203,9 @@ void MainWindow::refreshOrbits() {
 }
 
 void MainWindow::setupDetails() {
+    fontDebug.setStyleHint(QFont::Monospace);
+    fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
     fontDebug.setFamily("Monospace");
-    fontDebug.setStyleHint(QFont::Courier);
     QString strDetails = QString("Position:      %1\n"\
                                  "View|Near:     %2\n"\
                                  "View|Far:      %3\n\n"\

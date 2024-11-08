@@ -45,9 +45,26 @@
 #define SHEIGHT 720
 #define SRATIO 0.75
 
-
 static uint VK_MINOR_VERSION = 0;
 static uint VK_SPIRV_VERSION = 0;
+
+struct AtomixFiles {
+    std::string rootDir;
+    std::string shadersDir;
+    std::string configsDir;
+
+    void setRoot(const std::string &_root) {
+        rootDir = _root + "/";
+        shadersDir = rootDir + "shaders/";
+        configsDir = rootDir + "configs/";
+    }
+
+    constexpr std::string& root() { return rootDir; }
+    constexpr std::string& shaders() { return shadersDir; }
+    constexpr std::string& configs() { return configsDir; }
+};
+
+extern AtomixFiles atomixFiles;
 
 /* Custom BitFlag struct */
 struct BitFlag {
@@ -104,10 +121,6 @@ struct BitFlag {
 
     uint32_t bf = 0;
 };
-
-inline constexpr std::string_view ROOT_DIR = "/home/braer/dev/atomix/";
-inline constexpr std::string_view SHADERS = "shaders/";
-inline constexpr std::string_view CONFIGS = "configs/";
 
 /* Math constants */
 const double TWO_PI = 2.0 * M_PI;   // 2pi is used a lot

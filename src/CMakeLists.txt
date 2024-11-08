@@ -1,6 +1,6 @@
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_BUILD_TYPE Debug)
-set(Qt6_DIR "/home/braer/Qt/6.8.0/gcc_64/lib/cmake/Qt6")
+set(Qt6_DIR "/home/braer/Qt/6.8.0/gcc_64")
 set(ENV{VULKAN_SDK} "/home/braer/VulkanSDK/1.3.296.0")
 set(ENV{VK_LOADER_DEBUG} "error,warn,layer,info")
 

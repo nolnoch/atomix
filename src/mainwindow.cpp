@@ -25,11 +25,17 @@
 #include "mainwindow.hpp"
 
 MainWindow::MainWindow() {
-    onAddNew();
+    // onAddNew();
 }
 
 void MainWindow::onAddNew() {
     cfgParser = new ConfigParser;
+    
+    /* QRect dispXY = QApplication::primaryScreen()->geometry();
+    if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
+    double ratio = SRATIO;
+    int dispX = dispXY.width() * ratio ?: SWIDTH;
+    int dispY = dispXY.height() * ratio ?: SHEIGHT; */
 
     valIntSmall = new QIntValidator();
     valIntSmall->setRange(1, 8);
@@ -40,8 +46,10 @@ void MainWindow::onAddNew() {
     valDoubleLarge = new QDoubleValidator();
     valDoubleLarge->setRange(0.001, 999.999, 3);
 
-    intTabMinWidth = this->width() / 3;
-    intTabLabelHeight = this->height() / 12;
+    uint tabwidth = this->sizeHint().width();
+    uint tabheight = this->sizeHint().height();
+    intTabMinWidth = tabwidth / 3;
+    intTabLabelHeight = tabheight / 12;
     intSliderLen = 20;
     intMaxWidth = (intTabMinWidth - 30) >> 1;
     lastSliderSentX = 0.0f;
@@ -231,7 +239,6 @@ void MainWindow::setupLoading() {
     pbLoading->move(0, gh - lh);
 
     pbLoading->raise();
-    // pbLoading->show();
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -360,7 +367,7 @@ void MainWindow::setupDockWaves() {
 
     QLabel *labelWaves = new QLabel("<p>Explore stable wave patterns in circular or spherical forms in this configuration</p>");
     labelWaves->setObjectName("tabTitle");
-    labelWaves->setMaximumHeight(intTabLabelHeight);
+    // labelWaves->setMaximumHeight(intTabLabelHeight);
     labelWaves->setMinimumHeight(intTabLabelHeight);
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);

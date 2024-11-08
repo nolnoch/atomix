@@ -29,9 +29,7 @@
 #include <QMutexLocker>
 #include <vector>
 #include <algorithm>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
+
 #include "configparser.hpp"
 
 using vVec3 = std::vector<glm::vec3>;

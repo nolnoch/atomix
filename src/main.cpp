@@ -30,10 +30,6 @@
 #include <QFont>
 #include "mainwindow.hpp"
 
-#define SWIDTH 1280
-#define SHEIGHT 720
-#define SRATIO 0.75
-
 
 int main(int argc, char* argv[]) {
     /* Application */

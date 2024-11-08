@@ -28,7 +28,7 @@
 #define QUATERNION_HPP_
 
 #include <vector>
-#include <glm/glm.hpp>
+#include "global.hpp"
 
 enum { EULER = 2, EXPLICIT = 4, ANGLE_AXIS = 8, MATRIX = 16 };
 enum { DEG = 1, RAD = 0 };

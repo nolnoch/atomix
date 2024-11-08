@@ -382,6 +382,9 @@ void VKWindow::initVecsAndMatrices() {
 
 void VKWindow::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
+    if (!scrollClicks) {
+        return;
+    }
     float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
     

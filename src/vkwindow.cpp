@@ -138,7 +138,8 @@ void VKWindow::selectRenderedWaves(int id, bool checked) {
 }
 
 void VKWindow::initCrystalProgram() {
-    
+    fvec crystalRingVertices;
+    uvec crystalRingIndices;
     std::string vertName = "default.vert";
     std::string fragName = "default.frag";
 
@@ -162,12 +163,12 @@ void VKWindow::initCrystalProgram() {
     };
 
     const std::array<VKuint, 18> indices = {
-        0, 1, 2,
-        2, 3, 0,
-        3, 1, 0,
-        1, 2, 4,
-        2, 3, 4,
-        3, 4, 1
+        1, 0, 2,
+        2, 0, 3,
+        3, 0, 1,
+        1, 4, 3,
+        3, 4, 2,
+        2, 4, 1
     };
     uint vw_faces = indices.size();
 
@@ -191,6 +192,17 @@ void VKWindow::initCrystalProgram() {
         crystalRingVertices.push_back(0.85f);
         crystalRingIndices.push_back(vs + i);
     }
+    // Close the ring because Vulkan does not support GL_LINE_LOOP
+    uint i = 0;
+    double cos_t = cos(i * crystalDegFac);
+    double sin_t = sin(i * crystalDegFac);
+    crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos_t));
+    crystalRingVertices.push_back(0.0f);
+    crystalRingVertices.push_back(static_cast<float>(crystalRadius * sin_t));
+    crystalRingVertices.push_back(0.85f);
+    crystalRingVertices.push_back(0.85f);
+    crystalRingVertices.push_back(0.85f);
+    crystalRingIndices.push_back(vs + crystalRes);
     this->crystalRingCount = crystalRingIndices.size() - vw_faces;
     this->crystalRingOffset = vw_faces;
     
@@ -239,6 +251,7 @@ void VKWindow::initWaveProgram() {
     // Define VBO for Atomix Wave
     BufferCreateInfo waveVert{};
     waveVert.type = BufferType::VERTEX;
+    waveVert.count = waveManager->getVertexCount();
     waveVert.size = waveManager->getVertexSize();
     waveVert.data = waveManager->getVertexData();
     waveVert.name = "waveVertices";
@@ -247,6 +260,7 @@ void VKWindow::initWaveProgram() {
     // Define IBO for Atomix Wave
     BufferCreateInfo waveInd{};
     waveInd.type = BufferType::INDEX;
+    waveInd.count = waveManager->getIndexCount();
     waveInd.size = waveManager->getIndexSize();
     waveInd.data = waveManager->getIndexData();
     waveInd.name = "waveIndices";
@@ -255,7 +269,7 @@ void VKWindow::initWaveProgram() {
     // Define Atomix Wave Model with above buffers
     ModelCreateInfo waveModel{};
     waveModel.name = "wave";
-    waveModel.vbos = { &waveVert, &waveInd };
+    waveModel.vbos = { &waveVert };
     waveModel.ibo = &waveInd;
     waveModel.vertShaders = { waveManager->getShaderVert() };
     waveModel.fragShaders = { waveManager->getShaderFrag() };
@@ -272,6 +286,7 @@ void VKWindow::initCloudProgram() {
     // Define VBO::Vertex for Atomix Cloud
     BufferCreateInfo cloudVert{};
     cloudVert.type = BufferType::VERTEX;
+    cloudVert.count = cloudManager->getVertexCount();
     cloudVert.size = cloudManager->getVertexSize();
     cloudVert.data = cloudManager->getVertexData();
     cloudVert.name = "cloudVertices";
@@ -280,6 +295,7 @@ void VKWindow::initCloudProgram() {
     // Define VBO::Data for Atomix Cloud
     BufferCreateInfo cloudData{};
     cloudData.type = BufferType::DATA;
+    cloudData.count = cloudManager->getDataCount();
     cloudData.size = cloudManager->getDataSize();
     cloudData.data = cloudManager->getDataData();
     cloudData.name = "cloudData";
@@ -288,6 +304,7 @@ void VKWindow::initCloudProgram() {
     // Define IBO for Atomix Cloud
     BufferCreateInfo cloudInd{};
     cloudInd.type = BufferType::INDEX;
+    cloudInd.count = cloudManager->getIndexCount();
     cloudInd.size = cloudManager->getIndexSize();
     cloudInd.data = cloudManager->getIndexData();
     cloudInd.name = "cloudIndices";
@@ -485,19 +502,19 @@ void VKWindow::updateBuffersAndShaders() {
         return;
     }
     /* Set up ProgramVK with buffers for the first time */
-    /* if (!atomixProg->isActive("wave") || !atomixProg->isActive("cloud")) {
+    if (!atomixProg->isActive("wave") || !atomixProg->isActive("cloud")) {
         (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
         initVecsAndMatrices();
     } else {
         uint flags = currentManager->clearUpdates(); // TODO Broken
         flGraphState.set(flags);
-    } */
+    }
     this->updateSize();
 
-    /* Continue with ProgramVK update */
+    // Continue with ProgramVK update
     assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
     
-    /* Shaders */
+    // Shaders
     if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
         OffsetInfo off{};
         off.vertShaderIndex = 1;
@@ -507,7 +524,7 @@ void VKWindow::updateBuffersAndShaders() {
     BufferUpdateInfo updBuf{};
     updBuf.modelName = vw_currentModel;
 
-    /* VBO 1: Vertices */
+    // VBO 1: Vertices
     if (flGraphState.hasAny(egs::UPD_VBO)) {
         updBuf.bufferName = vw_currentModel + "Vertices";
         updBuf.type = BufferType::VERTEX;
@@ -517,7 +534,7 @@ void VKWindow::updateBuffersAndShaders() {
         atomixProg->updateBuffer(updBuf);
     }
 
-    /* VBO 2: Data */
+    // VBO 2: Data
     if (flGraphState.hasAny(egs::UPD_DATA)) {
         updBuf.bufferName = vw_currentModel + "Data";
         updBuf.type = BufferType::DATA;
@@ -527,7 +544,7 @@ void VKWindow::updateBuffersAndShaders() {
         atomixProg->updateBuffer(updBuf);
     }
 
-    /* EBO: Indices */
+    // EBO: Indices
     if (flGraphState.hasAny(egs::UPD_EBO)) {
         updBuf.bufferName = vw_currentModel + "Indices";
         updBuf.type = BufferType::INDEX;
@@ -537,7 +554,7 @@ void VKWindow::updateBuffersAndShaders() {
         atomixProg->updateBuffer(updBuf);
     }
 
-    /* Uniforms */
+    // Uniforms
     if (flGraphState.hasAny(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR)) {
         this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_wave), &this->vw_wave);
     }

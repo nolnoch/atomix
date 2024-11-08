@@ -30,10 +30,6 @@
 #include <QFont>
 #include "mainwindow.hpp"
 
-#define SWIDTH 1280
-#define SHEIGHT 720
-#define SRATIO 0.75
-
 
 int main(int argc, char* argv[]) {
     /* Application */
@@ -41,6 +37,10 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+
+    const QDir atomixDir = QDir(QCoreApplication::applicationDirPath());
+    QIcon icoAtomix(atomixDir.relativeFilePath("../../resources/icons/favicon.ico"));
+    app.setWindowIcon(icoAtomix);
 
     /* Exe and CLI Parsing */
     QCommandLineParser qParser;
@@ -67,8 +67,9 @@ int main(int argc, char* argv[]) {
     int dispY = dispXY.height() * ratio ?: SHEIGHT;
     mainWindow.resize(dispX, dispY);
     mainWindow.move(dispXY.center() - mainWindow.frameGeometry().center());
-    QIcon icoAtomix("~/dev/atomix/resources/icons/favicon.ico");
-    app.setWindowIcon(icoAtomix);
+    mainWindow.setWindowTitle(QCoreApplication::applicationName());
+    QRect winSize = QRect(0, 0, dispX, dispY);
+    mainWindow.init(winSize);
 
     /* Engage */
     app.processEvents();

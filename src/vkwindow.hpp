@@ -38,8 +38,6 @@
 #include <QFuture>
 #include <QPromise>
 #include <QtConcurrent/QtConcurrent>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <iomanip>
 #include <string>
 #include <sstream>
@@ -214,10 +212,6 @@ private:
     void printSize();
     void printFlags(std::string);
     void printConfig(AtomixConfig *cfg);
-
-
-    fvec crystalRingVertices;
-    uvec crystalRingIndices;
 
     VKRenderer *vw_renderer = nullptr;
     std::string vw_currentModel = "";

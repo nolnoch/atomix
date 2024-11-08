@@ -64,6 +64,7 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow();
+    void init(QRect &windowSize);
     void setupLoading();
 
 public slots:
@@ -74,11 +75,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 signals:
-    // void sendConfig(AtomixConfig *cfg);
     void changeRenderedOrbits(uint selectedOrbits);
-
-private slots:
-    void onAddNew();
 
 private:
     void loadConfig();
@@ -181,11 +178,12 @@ private:
     int numRecipes = 0;
     bool recipeLoaded = false;
 
+    int intTabsWidth;
     int intTabMinWidth;
     int intTabLabelHeight;
     int intSliderLen;
     int lineWidth;
-    int intMaxWidth;
+    int intHarmonicsGroupMaxWidth;
     float lastSliderSentX;
     float lastSliderSentY;
 

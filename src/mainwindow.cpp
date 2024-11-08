@@ -25,13 +25,16 @@
 #include "mainwindow.hpp"
 
 MainWindow::MainWindow() {
-    onAddNew();
+    // onAddNew();
 }
 
-void MainWindow::onAddNew() {
+void MainWindow::init(QRect &windowSize) {
     cfgParser = new ConfigParser;
+    
+    int windowWidth = windowSize.width();
+    int windowHeight = windowSize.height();
 
-    valIntSmall = new QIntValidator();
+    valIntSmall = new QIntValidator();  
     valIntSmall->setRange(1, 8);
     valIntLarge = new QIntValidator();
     valIntLarge->setRange(1, 999);
@@ -40,10 +43,10 @@ void MainWindow::onAddNew() {
     valDoubleLarge = new QDoubleValidator();
     valDoubleLarge->setRange(0.001, 999.999, 3);
 
-    intTabMinWidth = this->width() / 3;
-    intTabLabelHeight = this->height() / 12;
+    intTabMinWidth = windowWidth / 6;
+    intTabLabelHeight = windowHeight / 12;
     intSliderLen = 20;
-    intMaxWidth = (intTabMinWidth - 30) >> 1;
+    intHarmonicsGroupMaxWidth = (intTabMinWidth - 30) >> 1;
     lastSliderSentX = 0.0f;
     lastSliderSentY = 0.0f;
     lineWidth = (isMacOS) ? 1 : 3;
@@ -231,7 +234,6 @@ void MainWindow::setupLoading() {
     pbLoading->move(0, gh - lh);
 
     pbLoading->raise();
-    // pbLoading->show();
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -360,7 +362,7 @@ void MainWindow::setupDockWaves() {
 
     QLabel *labelWaves = new QLabel("<p>Explore stable wave patterns in circular or spherical forms in this configuration</p>");
     labelWaves->setObjectName("tabTitle");
-    labelWaves->setMaximumHeight(intTabLabelHeight);
+    // labelWaves->setMaximumHeight(intTabLabelHeight);
     labelWaves->setMinimumHeight(intTabLabelHeight);
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
@@ -663,9 +665,9 @@ void MainWindow::setupDockHarmonics() {
 
     groupRecipeReporter->setAlignment(Qt::AlignRight);
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
-    groupRecipeReporter->setMaximumWidth(intMaxWidth);
-    groupRecipeBuilder->setMaximumWidth(intMaxWidth);
-    groupRecipeLocked->setMaximumWidth(intMaxWidth);
+    groupRecipeReporter->setMaximumWidth(intHarmonicsGroupMaxWidth);
+    groupRecipeBuilder->setMaximumWidth(intHarmonicsGroupMaxWidth);
+    groupRecipeLocked->setMaximumWidth(intHarmonicsGroupMaxWidth);
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->setAlignment(Qt::AlignRight);
 

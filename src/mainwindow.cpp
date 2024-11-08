@@ -201,7 +201,8 @@ void MainWindow::refreshOrbits() {
 }
 
 void MainWindow::setupDetails() {
-    fontDebug.setFamily("Monospace");
+    fontDebug.setStyleHint(QFont::Monospace);
+    fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
     fontDebug.setStyleHint(QFont::Courier);
     QString strDetails = QString("Position:      %1\n"\
                                  "View|Near:     %2\n"\

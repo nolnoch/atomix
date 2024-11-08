@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+    std::cout << QT_VERSION_STR << std::endl;
 
     const QDir atomixDir = QDir(QCoreApplication::applicationDirPath());
     QIcon icoAtomix(atomixDir.relativeFilePath("../../resources/icons/favicon.ico"));

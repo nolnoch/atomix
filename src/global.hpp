@@ -26,6 +26,7 @@
 #define GLOBAL_H
 
 #define GLM_FORCE_RADIANS
+#define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
@@ -34,7 +35,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <string>
 
-// #define MACOS
+#define MACOS
 #ifdef MACOS
     constexpr bool isMacOS = true;
 #else

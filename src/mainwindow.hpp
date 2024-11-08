@@ -59,6 +59,25 @@
 const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;
 
+struct AtomixFonts {
+    uint main, tabSelected, tabUnselected, large, small, tiny, label, label2, label3, label4, label5;
+
+    void setDPI(int dpi) {
+        main = 24 * dpi / 96;
+        tabSelected = 20 * dpi / 96;
+        tabUnselected = 16 * dpi / 96;
+        large = 14 * dpi / 96;
+        small = 12 * dpi / 96;
+        tiny = 10 * dpi / 96;
+        label = 10 * dpi / 96;
+        label2 = 8 * dpi / 96;
+        label3 = 6 * dpi / 96;
+        label4 = 4 * dpi / 96;
+        label5 = 2 * dpi / 96;
+    }
+};
+
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 

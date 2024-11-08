@@ -25,14 +25,25 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <string>
 
-#define MACOS
+// #define MACOS
 #ifdef MACOS
     constexpr bool isMacOS = true;
 #else
     constexpr bool isMacOS = false;
 #endif
+
+#define SWIDTH 1280
+#define SHEIGHT 720
+#define SRATIO 0.75
 
 
 static uint VK_MINOR_VERSION = 0;

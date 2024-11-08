@@ -591,15 +591,15 @@ void ProgramVK::pipelineGlobalSetup() {
     // Depth Stencil
     memset(&this->p_pipeInfo.ds, 0, sizeof(this->p_pipeInfo.ds));
     this->p_pipeInfo.ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    this->p_pipeInfo.ds.depthTestEnable = VK_FALSE;
-    this->p_pipeInfo.ds.depthWriteEnable = VK_FALSE;
+    this->p_pipeInfo.ds.depthTestEnable = VK_TRUE;
+    this->p_pipeInfo.ds.depthWriteEnable = VK_TRUE;
     this->p_pipeInfo.ds.depthCompareOp = VK_COMPARE_OP_LESS;
     this->p_pipeInfo.ds.depthBoundsTestEnable = VK_FALSE;
+    this->p_pipeInfo.ds.minDepthBounds = 0.0f;
+    this->p_pipeInfo.ds.maxDepthBounds = 1.0f;
     this->p_pipeInfo.ds.stencilTestEnable = VK_FALSE;
     this->p_pipeInfo.ds.front = {};
     this->p_pipeInfo.ds.back = {};
-    this->p_pipeInfo.ds.minDepthBounds = 0.0f;
-    this->p_pipeInfo.ds.maxDepthBounds = 1.0f;
     this->p_pipeInfo.ds.flags = 0;
 
     // Color Blending
@@ -1122,12 +1122,18 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     VKuint image = this->p_vkw->currentSwapChainImageIndex();
 
     // Set clear color and depth stencil
-    std::array<VkClearValue, 3> clearValues{};
+    /* std::array<VkClearValue, 3> clearValues{};
     for (auto &clear : clearValues) {
         clear.color = {{ p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] }};
         clear.depthStencil = {1.0f, 0};
         clear.color = {{ p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] }};
-    }
+    } */
+    VkClearColorValue clearColor = { p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] };
+    VkClearDepthStencilValue clearDepth = { 1.0f, 0 };
+    VkClearValue clearValues[3];
+    memset(clearValues, 0, sizeof(clearValues));
+    clearValues[0].color = clearValues[2].color = clearColor;
+    clearValues[1].depthStencil = clearDepth;
 
     // Set viewport and scissor
     p_viewport.x = 0.0f;
@@ -1147,7 +1153,7 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
     renderPassInfo.renderArea.extent = renderExtent;
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.clearValueCount = this->p_vkw->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT ? 3 : 2;
-    renderPassInfo.pClearValues = clearValues.data();
+    renderPassInfo.pClearValues = clearValues;
     
     this->p_vdf->vkCmdBeginRenderPass(cmdBuff, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     

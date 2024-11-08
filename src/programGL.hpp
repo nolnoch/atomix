@@ -58,8 +58,6 @@
 #include <vector>
 #include <deque>
 #include <map>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include "shaderobj.hpp"
 #include "global.hpp"
 

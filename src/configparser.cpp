@@ -387,9 +387,9 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
     string super = "cpu_circle.vert";
     string gpu_sphere = "gpu_sphere.vert";
     string cpu_sphere = "cpu_sphere.vert";
-    string lpath = std::string(ROOT_DIR) + std::string(SHADERS);
-    string vshad = lpath + inCfg->vert;
-    string fshad = lpath + inCfg->frag;
+    string path = atomixFiles.shaders();
+    string vshad = path + inCfg->vert;
+    string fshad = path + inCfg->frag;
     if (custom_shader) {
         /* Here we check for valid shader files */
         if (std::find(vshFiles.begin(), vshFiles.end(), vshad) == vshFiles.end()) {
@@ -431,7 +431,7 @@ label_abort:
 int ConfigParser::populateConfig() {
     int status = 0;
 
-    if (!findFiles(std::string(ROOT_DIR) + std::string(CONFIGS), CFGEXT, &cfgFiles)) {
+    if (!findFiles(atomixFiles.configs(), CFGEXT, &cfgFiles)) {
         cout << "Using default configuration." << endl;
     } else {
         int choice = chooseConfigFile();

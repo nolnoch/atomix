@@ -52,16 +52,19 @@ struct AtomixFiles {
     std::string rootDir;
     std::string shadersDir;
     std::string configsDir;
+    std::string resourcesDir;
 
     void setRoot(const std::string &_root) {
         rootDir = _root + "/";
         shadersDir = rootDir + "shaders/";
         configsDir = rootDir + "configs/";
+        resourcesDir = rootDir + "resources/";
     }
 
     constexpr std::string& root() { return rootDir; }
     constexpr std::string& shaders() { return shadersDir; }
     constexpr std::string& configs() { return configsDir; }
+    constexpr std::string& resources() { return resourcesDir; }
 };
 
 extern AtomixFiles atomixFiles;

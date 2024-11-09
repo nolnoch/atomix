@@ -387,9 +387,9 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
     string super = "cpu_circle.vert";
     string gpu_sphere = "gpu_sphere.vert";
     string cpu_sphere = "cpu_sphere.vert";
-    string shadPath = atomixFiles.shaders();
-    string vshad = shadPath + inCfg->vert;
-    string fshad = shadPath + inCfg->frag;
+    string shaderPath = atomixFiles.shaders();
+    string vshad = shaderPath + inCfg->vert;
+    string fshad = shaderPath + inCfg->frag;
     if (custom_shader) {
         /* Here we check for valid shader files */
         if (std::find(vshFiles.begin(), vshFiles.end(), vshad) == vshFiles.end()) {

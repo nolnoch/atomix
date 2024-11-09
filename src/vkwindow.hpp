@@ -81,6 +81,16 @@ struct WaveState {
 };
 Q_DECLARE_METATYPE(WaveState);
 
+struct WaveUBO {
+    WorldState world;
+    WaveState wave;
+};
+Q_DECLARE_METATYPE(WaveUBO);
+
+struct PushConstants {
+    float time = 0.0f;
+};
+
 enum egs {
     WAVE_MODE =         1 << 0,     // Button from Wave tab clicked, only making Waves
     WAVE_RENDER =       1 << 1,     // Wave EBO has been loaded
@@ -126,6 +136,8 @@ public:
 
     void startNextFrame() override;
 
+    PushConstants pconst = {0.0f};
+
 private:
     ProgramVK *atomixProg = nullptr;
 
@@ -167,13 +179,14 @@ public:
     void setColorsWaves(int id, uint colorChoice);
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
-    void updateWorldState(float time);
+    void updateWorldState();
     float updateTime();
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
+    BitFlag flGraphState;
 
 signals:
     void detailsChanged(AtomixInfo *info);
@@ -259,7 +272,6 @@ private:
     int max_n = 1;
     
     BitFlag flWaveCfg;
-    BitFlag flGraphState;
 
     uint crystalRingCount = 0;
     uint crystalRingOffset = 0;
@@ -267,7 +279,7 @@ private:
 
     WorldState vw_world;
     WaveState vw_wave;
-
+    WaveUBO vw_waveUBO;
     
 };
 

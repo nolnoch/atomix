@@ -320,6 +320,18 @@ void MainWindow::loadConfig() {
 }
 
 void MainWindow::setupTabs() {
+    int baseFontSize, descFontSize, tabUnselectedFontSize, tabSelectedFontSize, tabWidth;
+
+    qreal dpr = this->devicePixelRatio();
+    double dpiFontFactor = dpr * 1.333333;
+    std::cout << "DPR: " << dpr << std::endl;
+    std::cout << "DPI: " << dpiFontFactor << std::endl;
+
+    baseFontSize = 17;              // 17
+    descFontSize = 23;              // 23
+    tabUnselectedFontSize = 15;     // 15
+    tabSelectedFontSize = 19;       // 19
+
     dockTabs = new QDockWidget(this);
     wTabs = new QTabWidget(this);
 
@@ -327,15 +339,18 @@ void MainWindow::setupTabs() {
     setupDockHarmonics();
     wTabs->addTab(wTabWaves, tr("Waves"));
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
-    // wTabs->setTabShape(QTabWidget::TabShape::Triangular);
-    int intTabWidth = wTabWaves->width() / wTabs->count();
-    QString strTabStyle = QString("QWidget { font-size: 17px; }"\
+    tabWidth = wTabWaves->width() / wTabs->count();
+    QString strTabStyle = QString("QWidget { font-size: %1 px; }"\
                                   /* "QLabel { font-size: 17px; }"\ */
-                                  "QLabel#tabTitle { font-size: 23px; }"\
-                                  "QTabBar::tab { height: 40px; width: %1 px; font-size: 15px; }"\
-                                  "QTabBar::tab::selected { color: #9999FF; font-size: 19px; }"\
+                                  "QLabel#tabDesc { font-size: %2 px; }"\
+                                  "QTabBar::tab { height: 40px; width: %5 px; font-size: %3 px; }"\
+                                  "QTabBar::tab::selected { color: #9999FF; font-size: %4 px; }"\
                                   "QTabBar::tab::!selected { color: #999999; background: #222222; }")\
-                                  .arg(intTabWidth);
+                                  .arg(baseFontSize)
+                                  .arg(descFontSize)
+                                  .arg(tabUnselectedFontSize)
+                                  .arg(tabSelectedFontSize)
+                                  .arg(tabWidth);
     wTabs->setStyleSheet(strTabStyle);
 
     dockTabs->setWidget(wTabs);
@@ -364,7 +379,7 @@ void MainWindow::setupDockWaves() {
     groupOrbits->setEnabled(false);
 
     QLabel *labelWaves = new QLabel("<p>Explore stable wave patterns in circular or spherical forms in this configuration</p>");
-    labelWaves->setObjectName("tabTitle");
+    labelWaves->setObjectName("tabDesc");
     // labelWaves->setMaximumHeight(intTabLabelHeight);
     labelWaves->setMinimumHeight(intTabLabelHeight);
     labelWaves->setWordWrap(true);
@@ -538,7 +553,7 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeLocked = new QGroupBox("Locked Orbitals");
 
     QLabel *labelHarmonics = new QLabel("Generate accurate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)");
-    labelHarmonics->setObjectName("tabTitle");
+    labelHarmonics->setObjectName("tabDesc");
     labelHarmonics->setMaximumHeight(intTabLabelHeight);
     labelHarmonics->setMinimumHeight(intTabLabelHeight);
     labelHarmonics->setWordWrap(true);

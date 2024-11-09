@@ -146,6 +146,8 @@ struct ModelCreateInfo {
     std::vector<BufferCreateInfo *> vbos;
     BufferCreateInfo *ibo = nullptr;
     VkDeviceSize uboSize = 0;
+    uint32_t pushConstantsSize = 0;
+    void *pushConstantsData = nullptr;
     std::vector<std::string> vertShaders;
     std::vector<std::string> fragShaders;
     std::vector<VkPrimitiveTopology> topologies;
@@ -164,6 +166,7 @@ struct ModelPipelineInfo {
     VkPipelineVertexInputStateCreateInfo vboCreate;
     std::vector<VkPipelineInputAssemblyStateCreateInfo> iaCreates;
     VkPipelineRasterizationStateCreateInfo rsCreate;
+    VkPushConstantRange pushConstants;
     PipelineLibrary *pipeLib = nullptr;
 };
 
@@ -185,6 +188,7 @@ struct RenderInfo {
     VkBuffer *firstVbo;
     VkBuffer *ibo;
     std::vector<VkDeviceSize> vboOffsets;
+    std::pair<VKuint, void *> pushConst = {0, nullptr};
     VkDeviceSize iboOffset;
     uint64_t indexCount;
 };

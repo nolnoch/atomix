@@ -371,6 +371,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         render->firstVbo = model->vbos.data();
         render->ibo = &model->ibo;
         render->vboOffsets.resize(model->vbos.size(), 0);
+        render->pushConst = { info.pushConstantsSize, info.pushConstantsData };
         render->iboOffset = off.offset;
         render->indexCount = indexCount[i++];
         
@@ -557,6 +558,26 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo *info, ModelInfo *m) {
     m->pipeInfo->vboCreate.pVertexAttributeDescriptions = m->attributes->attributes.data();
     m->pipeInfo->vboCreate.flags = 0;
     m->pipeInfo->vboCreate.pNext = nullptr;
+
+    // Push Constants
+    bool hasPushConstants = info->pushConstantsSize >= 0;
+    if (hasPushConstants) {
+        m->pipeInfo->pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        m->pipeInfo->pushConstants.offset = 0;
+        m->pipeInfo->pushConstants.size = info->pushConstantsSize;
+    }
+
+    // Dscription Set Layout
+    memset(&this->p_pipeInfo.pipeLayInfo, 0, sizeof(this->p_pipeInfo.pipeLayInfo));
+    this->p_pipeInfo.pipeLayInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    this->p_pipeInfo.pipeLayInfo.setLayoutCount = 1;
+    this->p_pipeInfo.pipeLayInfo.pSetLayouts = &p_descSetLayout;
+    this->p_pipeInfo.pipeLayInfo.pushConstantRangeCount = hasPushConstants ? 1 : 0;
+    this->p_pipeInfo.pipeLayInfo.pPushConstantRanges = hasPushConstants ? &m->pipeInfo->pushConstants : nullptr;
+
+    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &this->p_pipeInfo.pipeLayInfo, nullptr, &this->p_pipeLayout) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create pipeline layout!");
+    }
 }
 
 void ProgramVK::pipelineGlobalSetup() {
@@ -623,18 +644,6 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.cb.blendConstants[1] = 0.0f;
     this->p_pipeInfo.cb.blendConstants[2] = 0.0f;
     this->p_pipeInfo.cb.blendConstants[3] = 0.0f;
-
-    // Dscription Set Layout
-    memset(&this->p_pipeInfo.pipeLayInfo, 0, sizeof(this->p_pipeInfo.pipeLayInfo));
-    this->p_pipeInfo.pipeLayInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    this->p_pipeInfo.pipeLayInfo.setLayoutCount = 1;
-    this->p_pipeInfo.pipeLayInfo.pSetLayouts = &p_descSetLayout;
-    this->p_pipeInfo.pipeLayInfo.pushConstantRangeCount = 0;
-    this->p_pipeInfo.pipeLayInfo.pPushConstantRanges = nullptr;
-
-    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &this->p_pipeInfo.pipeLayInfo, nullptr, &this->p_pipeLayout) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create pipeline layout!");
-    }
 
     this->p_pipeInfo.init = true;
 }
@@ -1168,6 +1177,9 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
             this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, model->vbos.size(), render->firstVbo, render->vboOffsets.data());
             this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, *render->ibo, 0, VK_INDEX_TYPE_UINT32);
+            if (render->pushConst.first != 0) {
+                this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, render->pushConst.first, render->pushConst.second);
+            }
             this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->iboOffset, 0, 0);
         }
     }
@@ -1208,12 +1220,25 @@ ModelInfo* ProgramVK::getModelFromName(const std::string& name) {
 }
 
 VKuint ProgramVK::getModelIdFromName(const std::string& name) {
+    VKuint id = -1;
+    
+    if (p_mapModels.find(name) == p_mapModels.end()) {
+        std::cout << "Model not found: " << name << std::endl;
+        return id;
+    }
+    
+    // None of these are catching, fml.
     try {
-        return p_mapModels.at(name);
+        id = p_mapModels.at(name);
     } catch (const std::out_of_range &e) {
         std::cout << "Model not found: " << name << std::endl;
-        return -1;
+    } catch (const std::exception &e) {
+        std::cout << e.what() << std::endl;
+    } catch (...) {
+        std::cout << "Unknown exception" << std::endl;
     }
+
+    return id;
 }
 
 std::vector<VKuint> ProgramVK::getActiveModelsById() {
@@ -1231,9 +1256,15 @@ std::vector<std::string> ProgramVK::getActiveModelsByName() {
 }
 
 bool ProgramVK::isActive(const std::string &modelName) {
+    bool active = false;
     VKuint id = getModelIdFromName(modelName);
 
-    return (p_activeModels.end() != std::find(p_activeModels.cbegin(), p_activeModels.cend(), id));
+    bool found = id >= 0;
+    if (found) {
+        active = (p_activeModels.end() != std::find(p_activeModels.cbegin(), p_activeModels.cend(), id));
+    }
+
+    return active;
 }
 
 void ProgramVK::printModel(ModelInfo *model) {

@@ -255,7 +255,7 @@ void VKWindow::initWaveProgram() {
     waveVert.size = waveManager->getVertexSize();
     waveVert.data = waveManager->getVertexData();
     waveVert.name = "waveVertices";
-    waveVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
+    waveVert.dataTypes = {DataType::FLOAT_VEC3};
 
     // Define IBO for Atomix Wave
     BufferCreateInfo waveInd{};
@@ -271,9 +271,12 @@ void VKWindow::initWaveProgram() {
     waveModel.name = "wave";
     waveModel.vbos = { &waveVert };
     waveModel.ibo = &waveInd;
+    waveModel.uboSize = sizeof(WaveUBO);
+    waveModel.pushConstantsSize = sizeof(PushConstants);
+    waveModel.pushConstantsData = &this->vw_renderer->pconst;
     waveModel.vertShaders = { waveManager->getShaderVert() };
     waveModel.fragShaders = { waveManager->getShaderFrag() };
-    waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
+    waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
     waveModel.offsets = { { 0, 0, 0, 0 } };
 
     // Add Atomix Wave Model to program
@@ -569,7 +572,7 @@ void VKWindow::updateBuffersAndShaders() {
     flGraphState.clear(eUpdateFlags);
 }
 
-void VKWindow::updateWorldState(float time) {
+void VKWindow::updateWorldState() {
     // Re-calculate world-state matrices
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     vw_world.m4_world = m4_translation * m4_rotation;
@@ -911,17 +914,18 @@ void VKRenderer::releaseResources() {
 }
 
 void VKRenderer::startNextFrame() {
-    // assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
     VkCommandBuffer commandBuffer = this->vr_qvw->currentCommandBuffer();
-
-    // Update time
-    float time = this->vr_vkw->updateTime();
 
     // Update buffers and shaders if necessary
     this->vr_vkw->updateBuffersAndShaders();
 
     // Update world state (per-frame)
-    this->vr_vkw->updateWorldState(time);
+    this->vr_vkw->updateWorldState();
+
+    // Update time (per-frame)
+    if (this->vr_vkw->flGraphState.hasAny(egs::WAVE_RENDER)) {
+        this->pconst.time = this->vr_vkw->updateTime();
+    }
 
     // Call Program to render
     atomixProg->render(commandBuffer, vr_extent);

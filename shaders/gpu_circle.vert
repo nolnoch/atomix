@@ -11,12 +11,15 @@ layout(binding = 0) uniform UniformBuffer {
     float two_pi_L;
     float two_pi_T;
     float amp;
-    float time;
     uint base;
     uint peak;
     uint trough;
     uint mode;
 } ubo;
+
+layout(push_constant) uniform constants {
+    float time;
+} Pconst;
 
 void main() {
     float theta = factorsA.x;
@@ -28,7 +31,7 @@ void main() {
    
     /* Circular Wavefunction */
     //                             sin(2pi / L * x) - (2pi / T * t)
-    float wavefunc = cos((ubo.two_pi_L * r * theta) - (ubo.two_pi_T * ubo.time) + phase_const);
+    float wavefunc = cos((ubo.two_pi_L * r * theta) - (ubo.two_pi_T * Pconst.time) + phase_const);
     float displacement = ubo.amp * wavefunc;
 
     /* Assign vertices */

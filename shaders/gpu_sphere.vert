@@ -1,30 +1,38 @@
 #version 450 core
 
 layout(location = 0) in vec3 factorsA;
-layout(location = 1) in float phase;
 
 layout(location = 0) out vec4 vertColour;
 
-layout(binding = 0) uniform UniformBuffer {
+layout(set = 0, binding = 0) uniform MatrixUBO {
     mat4 worldMat;
     mat4 viewMat;
     mat4 projMat;
-    float two_pi_L;
-    float two_pi_T;
-    float amp;
-    uint base;
-    uint peak;
-    uint trough;
-} ubo;
+} worldState;
+
+layout(set = 1, binding = 0) uniform WaveUBO {
+    vec3 waveMaths;
+    uvec3 waveColours;
+} waveState;
 
 layout(push_constant) uniform constants {
     float time;
-} Pconst;
+    float phase;
+} pConst;
+
 
 void main() {
     float theta = factorsA.x;
     float phi = factorsA.y;
     float r = factorsA.z;
+
+    float two_pi_L = waveState.waveMaths.x;
+    float two_pi_T = waveState.waveMaths.y;
+    float amp = waveState.waveMaths.z;
+
+    uint peak = waveState.waveColours.x;
+    uint base = waveState.waveColours.y;
+    uint trough = waveState.waveColours.z;
 
     float sin_theta = sin(theta);
     float cos_theta = cos(theta);
@@ -37,8 +45,8 @@ void main() {
     /* Spherical Wavefunction */
     //                             sin((2pi / L * x) - (2pi / T * t)) + phase
     //                         sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
-    float wavefunc = cos((ubo.two_pi_L * r_theta) - (ubo.two_pi_T * Pconst.time) + phase);
-    float displacement = ubo.amp * wavefunc;
+    float wavefunc = cos((two_pi_L * r_theta) - (two_pi_T * pConst.time) + pConst.phase);
+    float displacement = amp * wavefunc;
 
     /* Assign vertices */
     float x_coord = (r + displacement) * sin_phi * sin_theta;
@@ -51,26 +59,26 @@ void main() {
     vec4 final = vec4(0.0f);
     float scale = abs(wavefunc);
 
-    float baseA = (ubo.base & mask) / fMask;
-    float baseB = ((ubo.base >> 8) & mask) / fMask;
-    float baseG = ((ubo.base >> 16) & mask) / fMask;
-    float baseR = ((ubo.base >> 24) & mask) / fMask;
+    float baseA = (base & mask) / fMask;
+    float baseB = ((base >> 8) & mask) / fMask;
+    float baseG = ((base >> 16) & mask) / fMask;
+    float baseR = ((base >> 24) & mask) / fMask;
 
     if (wavefunc >= 0) {
-        float peakA = (ubo.peak & mask) / fMask;
-        float peakB = ((ubo.peak >> 8) & mask) / fMask;
-        float peakG = ((ubo.peak >> 16) & mask) / fMask;
-        float peakR = ((ubo.peak >> 24) & mask) / fMask;
+        float peakA = (peak & mask) / fMask;
+        float peakB = ((peak >> 8) & mask) / fMask;
+        float peakG = ((peak >> 16) & mask) / fMask;
+        float peakR = ((peak >> 24) & mask) / fMask;
 
         final.r = (scale * peakR) + ((1 - scale) * baseR);
         final.g = (scale * peakG) + ((1 - scale) * baseG);
         final.b = (scale * peakB) + ((1 - scale) * baseB);
         final.a = (scale * peakA) + ((1 - scale) * baseA);
     } else {
-        float trghA = (ubo.trough & mask) / fMask;
-        float trghB = ((ubo.trough >> 8) & mask) / fMask;
-        float trghG = ((ubo.trough >> 16) & mask) / fMask;
-        float trghR = ((ubo.trough >> 24) & mask) / fMask;
+        float trghA = (trough & mask) / fMask;
+        float trghB = ((trough >> 8) & mask) / fMask;
+        float trghG = ((trough >> 16) & mask) / fMask;
+        float trghR = ((trough >> 24) & mask) / fMask;
 
         final.r = (scale * trghR) + ((1 - scale) * baseR);
         final.g = (scale * trghG) + ((1 - scale) * baseG);
@@ -79,5 +87,6 @@ void main() {
     }
 
     vertColour = final;
-    gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
+    gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
+    gl_PointSize = 2.0f;
 }

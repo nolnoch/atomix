@@ -72,19 +72,15 @@ struct WorldState {
 Q_DECLARE_METATYPE(WorldState);
 
 struct WaveState {
-    glm::vec3 waveMaths = glm::vec3(0.0f);
-    glm::uvec3 waveColours = glm::uvec3(0);
+    alignas(16) glm::vec3 waveMaths = glm::vec3(0.0f);
+    alignas(16) glm::uvec3 waveColours = glm::uvec3(0);
 };
 Q_DECLARE_METATYPE(WaveState);
 
-struct WaveUBO {
-    WorldState world;
-    WaveState wave;
-};
-Q_DECLARE_METATYPE(WaveUBO);
-
 struct PushConstants {
     float time = 0.0f;
+    uint mode = 0;
+    float phase = 0.0f;
 };
 
 enum egs {
@@ -175,7 +171,8 @@ public:
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
     void updateWorldState();
-    float updateTime();
+    void updateTime(PushConstants &pConst);
+    void updatePhaseMode(PushConstants &pConst);
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
@@ -273,7 +270,6 @@ private:
 
     WorldState vw_world;
     WaveState vw_wave;
-    WaveUBO vw_waveUBO;
     
 };
 

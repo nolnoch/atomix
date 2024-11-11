@@ -90,29 +90,28 @@ void ProgramVK::cleanup() {
             this->p_vdf->vkDestroyPipeline(this->p_dev, render->pipeline, nullptr);
             delete render;
         }
-
-        // desc sets
-        for (auto &descLayout : model->descSets->layouts) {
-            this->p_vdf->vkDestroyDescriptorSetLayout(this->p_dev, descLayout, nullptr);
-        }
-        for (auto &buf : model->descSets->uniformBuffers) {
-            this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
-        }
-        for (auto &mem : model->descSets->uniformBuffersMemory) {
-            this->p_vdf->vkFreeMemory(this->p_dev, mem, nullptr);
-        }
-        model->descSets->uniformBufferMappings.clear();
-        delete model->descSets;
         
         delete model;
     }
 
+    // desc sets
+    for (auto &descLayout : this->p_layouts) {
+        this->p_vdf->vkDestroyDescriptorSetLayout(this->p_dev, descLayout, nullptr);
+    }
+    for (auto &buf : this->p_uniformBuffers) {
+        this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
+    }
+    for (auto &mem : this->p_uniformBuffersMemory) {
+        this->p_vdf->vkFreeMemory(this->p_dev, mem, nullptr);
+    }
+    this->p_uniformBufferMappings.clear();
+
     // descriptor pool
-    this->p_vdf->vkDestroyDescriptorPool(this->p_dev, p_descPool, nullptr);
+    this->p_vdf->vkDestroyDescriptorPool(this->p_dev, this->p_descPool, nullptr);
 
     // global pipeline objects
-    this->p_vdf->vkDestroyPipeline(this->p_dev, p_fragmentOutput, nullptr);
-    this->p_vdf->vkDestroyPipelineCache(this->p_dev, p_pipeCache, nullptr);
+    this->p_vdf->vkDestroyPipeline(this->p_dev, this->p_fragmentOutput, nullptr);
+    this->p_vdf->vkDestroyPipelineCache(this->p_dev, this->p_pipeCache, nullptr);
 
     // shader objects
     for (auto &shader : p_registeredShaders) {
@@ -285,10 +284,13 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
 
 void ProgramVK::addUniforms(UniformInfo &info) {
     createPersistentUniformBuffers(info);
+    for (auto &ubo : info.ubos) {
+        this->p_mapUBOInfos[ubo->set] = new BufferCreateInfo(*ubo);
+    }
 }
 
 VKuint ProgramVK::addModel(ModelCreateInfo &info) {
-    assert(this->p_mapBuffers.size());
+    assert(this->p_mapUBOs.size());
     ModelInfo *model;
     VKuint idx = p_models.size();
 
@@ -334,14 +336,13 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         this->stageAndCopyVertexBuffer(model, model->vbos.size() - 1, false, vbo->size, vbo->data);
         p_mapBuffers[vbo->name] = model->vbos.size() - 1;
     }
+    // Attributes -- Bindings/Locations
+    model->attributes = defineModelAttributes(info);
+    this->pipelineModelSetup(info, model);
 
     // Buffers: IBO
     this->stageAndCopyIndexBuffer(model, false, info.ibo->size, info.ibo->data);
     p_mapBuffers[info.ibo->name] = model->id;
-    
-    // Attributes -- Bindings/Locations
-    model->attributes = defineModelAttributes(info);
-    this->pipelineModelSetup(info, model);
 
     // Pipeline Global Setup
     if (!this->p_pipeInfo.init) {
@@ -386,14 +387,16 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         render->firstVbo = model->vbos.data();
         render->ibo = &model->ibo;
         render->vboOffsets.resize(model->vbos.size(), 0);
-        render->pushConst.first = info.pushConstants[off.pushConstIndex]->size;
-        render->pushConst.second = info.pushConstants[off.pushConstIndex]->data;
+        for (auto &uboIdx : off.uboIndices) {
+            render->uboIndices.push_back(this->p_mapUBOs[info.ubos[uboIdx]]);
+        }
+        if (off.pushConstIndex != -1) {
+            render->pushConst.first = info.pushConstants[off.pushConstIndex]->size;
+            render->pushConst.second = info.pushConstants[off.pushConstIndex]->data;
+        }
         render->iboOffset = off.offset;
         render->pipeLayoutIndex = i;
-        render->indexCount = indexCount[i++];
-        for (auto &idx : off.uboIndices) {
-            render->uboIndices.push_back(idx);
-        }
+        render->indexCount = indexCount[i];
         
         // Not all platforms support libraries
         if (p_libEnabled) {
@@ -404,7 +407,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
                                             model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
         } else {
             // Final Pipelines for Renders (Full PSO)
-            this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex, i);
+            this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex, i++);
         }
     }
 
@@ -612,8 +615,8 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m) {
     int layoutIdx = 0;
     for (auto &off : info.offsets) {
         std::vector<VkDescriptorSetLayout> layouts;
-        for (int i = 0; i < off.uboIndices.size(); i++) {
-            layouts.push_back(m->descSets->layouts[off.uboIndices[i]]);
+        for (auto &idx : off.uboIndices) {
+            layouts.push_back(this->p_layouts[this->p_mapUBOs[info.ubos[idx]]]);
         }
 
         m->pipeInfo->layCreates.push_back({});
@@ -1050,7 +1053,7 @@ void ProgramVK::createPersistentUniformBuffers(UniformInfo &info) {
     this->p_uniformBufferMappings.resize(globalMappings);
 
     for (auto &ubo : info.ubos) {
-        int i = ubo->binding;
+        int i = ubo->set;
         for (int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
             int idx = UBOIDX(i, j);
             createBuffer(ubo->size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[idx], this->p_uniformBuffersMemory[idx]);
@@ -1063,18 +1066,18 @@ void ProgramVK::createPersistentUniformBuffers(UniformInfo &info) {
 }
 
 void ProgramVK::defineDescriptorSets(UniformInfo &info) {
-    VKuint bindings = info.ubos.size();
-    this->p_layouts.resize(bindings, VK_NULL_HANDLE);
+    VKuint sets = info.ubos.size();
+    this->p_layouts.resize(sets, VK_NULL_HANDLE);
     for (auto &ubo : info.ubos) {
-        createDescriptorSetLayout(ubo->binding, *ubo);
+        createDescriptorSetLayout(ubo->set, *ubo);
     }
-    createDescriptorPool(bindings);
+    createDescriptorPool(sets);
     createDescriptorSets(info);
 }
 
 void ProgramVK::createDescriptorSets(UniformInfo &info) {
     for (auto &ubo : info.ubos) {
-        int i = ubo->binding;
+        int i = ubo->set;
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, this->p_layouts[i]);
 
         VkDescriptorSetAllocateInfo allocInfo{};
@@ -1098,7 +1101,7 @@ void ProgramVK::createDescriptorSets(UniformInfo &info) {
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrite.dstSet = this->p_sets[idx];
-            descriptorWrite.dstBinding = i;
+            descriptorWrite.dstBinding = ubo->binding;
             descriptorWrite.dstArrayElement = 0;
             descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptorWrite.descriptorCount = 1;
@@ -1126,9 +1129,9 @@ void ProgramVK::createDescriptorPool(VKuint bindings) {
     }
 }
 
-void ProgramVK::createDescriptorSetLayout(VKuint binding, BufferCreateInfo &info) {
+void ProgramVK::createDescriptorSetLayout(VKuint set, BufferCreateInfo &info) {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = binding;
+    uboLayoutBinding.binding = info.binding;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1139,7 +1142,7 @@ void ProgramVK::createDescriptorSetLayout(VKuint binding, BufferCreateInfo &info
     layoutInfo.bindingCount = 1;
     layoutInfo.pBindings = &uboLayoutBinding;
 
-    if (this->p_vdf->vkCreateDescriptorSetLayout(this->p_dev, &layoutInfo, nullptr, &this->p_layouts[binding]) != VK_SUCCESS) {
+    if (this->p_vdf->vkCreateDescriptorSetLayout(this->p_dev, &layoutInfo, nullptr, &this->p_layouts[set]) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
 }
@@ -1178,11 +1181,10 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &buf) {
     }
 }
 
-void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string modelName, VKuint uboIndex, uint32_t uboSize, const void *uboData) {
-    ModelInfo *model = getModelFromName(modelName);
-    VKuint idx = uboIndex * MAX_FRAMES_IN_FLIGHT + currentImage;
+void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string uboName, uint32_t uboSize, const void *uboData) {
+    VKuint set = UBOIDX(this->p_mapUBOs[uboName], currentImage);
 
-    void *dest = model->descSets->uniformBufferMappings[idx];
+    void *dest = this->p_uniformBufferMappings[set];
     memcpy(dest, uboData, uboSize);
 }
 
@@ -1198,8 +1200,9 @@ void ProgramVK::updateSwapExtent(int x, int y) {
     this->p_swapExtent.height = y;
 }
 
-void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
+void ProgramVK::render(VkExtent2D &renderExtent) {
     VKuint image = this->p_vkw->currentSwapChainImageIndex();
+    VkCommandBuffer cmdBuff = this->p_vkw->currentCommandBuffer();
 
     // Set clear color and depth stencil
     /* std::array<VkClearValue, 3> clearValues{};
@@ -1243,10 +1246,11 @@ void ProgramVK::render(VkCommandBuffer &cmdBuff, VkExtent2D &renderExtent) {
 
         for (auto &render : model->renders) {
             VkPipelineLayout *layout = &model->pipeInfo->pipeLayouts[render->pipeLayoutIndex];
+            
             std::vector<VkDescriptorSet> descSets;
             for (auto &ubo : render->uboIndices) {
-                VKuint idx = ubo * MAX_FRAMES_IN_FLIGHT + image;
-                descSets.push_back(model->descSets->sets[idx]);
+                VKuint idx = UBOIDX(ubo, image);
+                descSets.push_back(this->p_sets[idx]);
             }
 
             this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
@@ -1403,12 +1407,14 @@ void ProgramVK::printInfo(ModelCreateInfo *info) {
     }
 
     for (auto &ubo : info->ubos) {
-        std::cout << "    UBO: " << ubo->name << "\n";
-        std::cout << "        Type        : " << bufferTypeNames[uint(ubo->type)] << "\n";
-        std::cout << "        Vertex Count: " << ubo->count << "\n";
-        std::cout << "        Vertex Size : " << ubo->size << "\n";
+        VKuint binding = this->p_mapUBOs[ubo];
+        BufferCreateInfo *unifo = this->p_mapUBOInfos[binding];
+        std::cout << "    UBO: " << ubo << "\n";
+        std::cout << "        Type        : " << bufferTypeNames[static_cast<uint>(unifo->type)] << "\n";
+        std::cout << "        Vertex Count: " << unifo->count << "\n";
+        std::cout << "        Vertex Size : " << unifo->size << "\n";
         std::cout << "        Data Types  : " << "\n";
-        for (auto &dt : ubo->dataTypes) {
+        for (auto &dt : unifo->dataTypes) {
             std::cout << "            " << dataTypeNames[uint(dt)] << "\n";
         }
     }

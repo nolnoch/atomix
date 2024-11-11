@@ -77,15 +77,19 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     // Define UBO for World State
     BufferCreateInfo worldState{};
     worldState.name = "worldState";
+    worldState.set = 0;
+    worldState.binding = 0;
     worldState.type = BufferType::UNIFORM;
     worldState.count = 1;
     worldState.size = sizeof(WorldState);
     worldState.data = &this->vw_world;
-    worldState.dataTypes = {DataType::FLOAT_MAT4};
+    worldState.dataTypes = {DataType::FLOAT_MAT4, DataType::FLOAT_MAT4, DataType::FLOAT_MAT4};
 
     // Define UBO for Wave State
     BufferCreateInfo waveState{};
     waveState.name = "waveState";
+    waveState.set = 1;
+    waveState.binding = 0;
     waveState.type = BufferType::UNIFORM;
     waveState.count = 1;
     waveState.size = sizeof(WaveState);
@@ -261,8 +265,20 @@ void VKWindow::initCrystalProgram() {
     crystalModel.fragShaders = { fragName };
     crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP };
     crystalModel.offsets = {
-        { 0, 0, 0, 0 },
-        { crystalRingOffset, 0, 0, 1 }
+        {   .offset = 0,
+            .vertShaderIndex = 0,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0,
+            .uboIndices = { 0 },
+            .pushConstIndex = -1
+        },
+        {   .offset = crystalRingOffset,
+            .vertShaderIndex = 0,
+            .fragShaderIndex = 0,
+            .topologyIndex = 1,
+            .uboIndices = { 0 },
+            .pushConstIndex = -1
+        }
     };
 
     // Add Crystal Model to program
@@ -300,7 +316,7 @@ void VKWindow::initWaveProgram() {
     wavePush.count = 1;
     wavePush.size = sizeof(PushConstants);
     wavePush.data = &this->vw_renderer->pConst;
-    wavePush.dataTypes = { DataType::UINT };
+    wavePush.dataTypes = { DataType::FLOAT, DataType::UINT, DataType::FLOAT };
 
     // Define Atomix Wave Model with above buffers
     ModelCreateInfo waveModel{};
@@ -312,10 +328,20 @@ void VKWindow::initWaveProgram() {
     waveModel.vertShaders = { waveManager->getShaderVert() };
     waveModel.fragShaders = { waveManager->getShaderFrag() };
     waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
-    waveModel.offsets = { { 0, 0, 0, 0 } };
+    waveModel.offsets = {
+        {   .offset = 0,
+            .vertShaderIndex = 0,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0,
+            .uboIndices = { 0, 1 },
+            .pushConstIndex = 0
+        }
+    };
 
     // Add Atomix Wave Model to program
     atomixProg->addModel(waveModel);
+
+    this->updatePhaseMode(vw_renderer->pConst);
 
     // Activate Atomix Wave Model
     atomixProg->activateModel("wave");
@@ -525,13 +551,13 @@ void VKWindow::keyPressEvent(QKeyEvent * e) {
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
     switch (id) {
     case 1:
-        waveManager->peak = colorChoice;
+        waveManager->waveColours.r = colorChoice;
         break;
     case 2:
-        waveManager->base = colorChoice;
+        waveManager->waveColours.g = colorChoice;
         break;
     case 3:
-        waveManager->trough = colorChoice;
+        waveManager->waveColours.b = colorChoice;
         break;
     default:
         break;
@@ -605,7 +631,14 @@ void VKWindow::updateBuffersAndShaders() {
 
     // Uniforms
     if (flGraphState.hasAny(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR)) {
-        this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "wave", 1, sizeof(this->vw_wave), &this->vw_wave);
+        if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
+            this->waveManager->getMaths(this->vw_wave.waveMaths);
+        }
+        if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
+            this->waveManager->getColours(this->vw_wave.waveColours);
+        }
+
+        this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "waveState", sizeof(this->vw_wave), &this->vw_wave);
     }
 
     if (flGraphState.hasAny(egs::UPD_MATRICES)) {
@@ -622,17 +655,21 @@ void VKWindow::updateWorldState() {
     vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     this->q_TotalRot.normalize();
 
-    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "crystal", 0, sizeof(this->vw_world), &this->vw_world);
-    // TODO : Unbind this UBO from models :|
+    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "worldState", sizeof(this->vw_world), &this->vw_world);
 }
 
-float VKWindow::updateTime() {
+void VKWindow::updateTime(PushConstants &pConst) {
     if (!vw_pause) {
         vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
     float time = (vw_timeEnd - vw_timeStart) / 1000.0f;
 
-    return time;
+    pConst.time = time;
+}
+
+void VKWindow::updatePhaseMode(PushConstants &pConst) {
+    pConst.phase = waveManager->getPhase();
+    pConst.mode = waveManager->getMode();
 }
 
 void VKWindow::setBGColour(float colour) {
@@ -958,8 +995,6 @@ void VKRenderer::releaseResources() {
 }
 
 void VKRenderer::startNextFrame() {
-    VkCommandBuffer commandBuffer = this->vr_qvw->currentCommandBuffer();
-
     // Update buffers and shaders if necessary
     this->vr_vkw->updateBuffersAndShaders();
 
@@ -968,11 +1003,11 @@ void VKRenderer::startNextFrame() {
 
     // Update time (per-frame)
     if (this->vr_vkw->flGraphState.hasAny(egs::WAVE_RENDER)) {
-        this->pConst.time = this->vr_vkw->updateTime();
+        this->vr_vkw->updateTime(this->pConst);
     }
 
     // Call Program to render
-    atomixProg->render(commandBuffer, vr_extent);
+    atomixProg->render(vr_extent);
     
     // Prepare for next frame
     vr_qvw->frameReady();

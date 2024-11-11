@@ -18,6 +18,7 @@ layout(set = 1, binding = 0) uniform WaveUBO {
 layout(push_constant) uniform constants {
     float time;
     uint mode;
+    float phase;
 } pConst;
 
 
@@ -26,14 +27,13 @@ void main() {
     float phase_const = factorsA.y;
     float r = factorsA.z;
 
-    float two_pi_T = waveState.waveMaths.x;
-    float two_pi_L = waveState.waveMaths.y;
+    float two_pi_L = waveState.waveMaths.x;
+    float two_pi_T = waveState.waveMaths.y;
     float amp = waveState.waveMaths.z;
 
     uint peak = waveState.waveColours.x;
     uint base = waveState.waveColours.y;
     uint trough = waveState.waveColours.z;
-
 
     float cos_th = cos(theta);
     float sin_th = sin(theta);
@@ -45,12 +45,12 @@ void main() {
 
     /* Assign vertices */
     float x_coord, y_coord, z_coord;
-    if (pConst.mode == 1) {
+    if (pConst.mode == 0) {
         // Orthogonal waves
         x_coord = r * cos_th;
         y_coord = clamp(displacement, 0.0f, 1.0f);
         z_coord = r * sin_th;
-    } else if (pConst.mode == 2) {
+    } else if (pConst.mode == 1) {
         // Parallel waves
         x_coord = (r + displacement) * cos_th;
         y_coord = 0.0f;

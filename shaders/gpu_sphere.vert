@@ -17,6 +17,7 @@ layout(set = 1, binding = 0) uniform WaveUBO {
 
 layout(push_constant) uniform constants {
     float time;
+    uint mode;
     float phase;
 } pConst;
 

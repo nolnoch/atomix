@@ -125,6 +125,7 @@ struct QueueFamilyIndices {
 struct BufferCreateInfo {
     std::string name;
     BufferType type = BufferType::VERTEX;
+    VKuint set = 0;
     VKuint binding = 0;
     uint64_t count = 0;
     uint64_t size = 0;
@@ -151,7 +152,7 @@ struct OffsetInfo {
     VKuint fragShaderIndex = 0;
     VKuint topologyIndex = 0;
     std::vector<VKuint> uboIndices;
-    VKuint pushConstIndex = 0;
+    VKint pushConstIndex = 0;
 };
 
 struct ModelCreateInfo {
@@ -208,14 +209,6 @@ struct RenderInfo {
     uint64_t indexCount = 0;
 };
 
-struct DescSetInfo {
-    std::vector<VkDescriptorSetLayout> layouts;
-    std::vector<VkDescriptorSet> sets;
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-    std::vector<void *> uniformBufferMappings;
-};
-
 struct AttribInfo {
     std::vector<VkVertexInputBindingDescription> bindings;
 	std::vector<VkVertexInputAttributeDescription> attributes;
@@ -239,7 +232,6 @@ struct ModelInfo {
     VkDeviceMemory iboMemory = nullptr;
     ShaderInfo *shaders = nullptr;
     AttribInfo *attributes = nullptr;
-    DescSetInfo *descSets = nullptr;
     ModelPipelineInfo *pipeInfo = nullptr;
     std::vector<RenderInfo *> renders;
 };
@@ -305,11 +297,11 @@ public:
 
     void updateRender(const std::string& modelName, OffsetInfo &info);
     void updateBuffer(BufferUpdateInfo &info);
-    void updateUniformBuffer(uint32_t currentImage, std::string modelName, VKuint uboIndex, uint32_t uboSize, const void *uboData);
+    void updateUniformBuffer(uint32_t currentImage, std::string uboName, uint32_t uboSize, const void *uboData);
     void updateClearColor(float r, float g, float b, float a);
     void updateSwapExtent(int x, int y);
 
-    void render(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
+    void render(VkExtent2D &extent);
     void renderMacOS(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
 
     Shader* getShaderFromName(const std::string& fileName);
@@ -365,6 +357,7 @@ private:
     std::vector<VkDeviceMemory> p_uniformBuffersMemory;
     std::vector<void *> p_uniformBufferMappings;
     std::map<std::string, VKuint> p_mapUBOs;
+    std::map<VKuint, BufferCreateInfo *> p_mapUBOInfos;
 
     GlobalPipelineInfo p_pipeInfo{};
     VkPipeline p_fragmentOutput = VK_NULL_HANDLE;

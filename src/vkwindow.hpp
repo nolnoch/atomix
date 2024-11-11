@@ -65,19 +65,15 @@ struct AtomixInfo {
 Q_DECLARE_METATYPE(AtomixInfo);
 
 struct WorldState {
-        glm::mat4 m4_world;
-        glm::mat4 m4_view;
-        glm::mat4 m4_proj;
+    glm::mat4 m4_world;
+    glm::mat4 m4_view;
+    glm::mat4 m4_proj;
 };
 Q_DECLARE_METATYPE(WorldState);
 
 struct WaveState {
-    float two_pi_L = 0.0f;
-    float two_pi_T = 0.0f;
-    float amp = 0.0f;
-    float peak = 0.0f;
-    float base = 0.0f;
-    float trough = 0.0f;
+    glm::vec3 waveMaths = glm::vec3(0.0f);
+    glm::uvec3 waveColours = glm::uvec3(0);
 };
 Q_DECLARE_METATYPE(WaveState);
 
@@ -136,7 +132,7 @@ public:
 
     void startNextFrame() override;
 
-    PushConstants pconst = {0.0f};
+    PushConstants pConst = {0.0f};
 
 private:
     ProgramVK *atomixProg = nullptr;
@@ -161,8 +157,7 @@ private:
     glm::vec3 v3_mouseEnd;
     Quaternion q_TotalRot;
 
-    QMatrix4x4 vm4_proj;
-    QMatrix4x4 vm4_rot;
+    VkDeviceSize vr_minUniAlignment = 0;
 };
 
 
@@ -208,7 +203,6 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
-    void onGrabRequested();
 
 private:
     void threadFinished();

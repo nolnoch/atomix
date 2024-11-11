@@ -410,6 +410,7 @@ void WaveManager::genIndexBuffer() {
     for (int i = 0; i < cfg.waves; i++) {
         if (renderedWaves & (1 << i)) {
             std::copy(waveIndices[i]->begin(), waveIndices[i]->end(), std::back_inserter(this->allIndices));
+            // If we choose to use lines, then we need primitive restart (0xFFFFFFFF)
         }
     }
 

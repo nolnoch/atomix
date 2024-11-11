@@ -5,11 +5,12 @@ layout(location = 1) in float pdv;
 
 layout(location = 0) out vec4 vertColour;
 
-layout(binding = 0) uniform UniformBuffer {
+layout(set = 0, binding = 0) uniform MatrixUBO {
     mat4 worldMat;
     mat4 viewMat;
     mat4 projMat;
-} ubo;
+} worldState;
+
 
 void main() {
     /* VBO Variables */
@@ -53,5 +54,6 @@ void main() {
         vertColour = vec4(pdv_adj, 0.0f, pdv_adj, 0.0f);
     }
 
-    gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(posX, posY, posZ, 1.0f);
+    gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(posX, posY, posZ, 1.0f);
+    gl_PointSize = 2.0f;
 }

@@ -144,6 +144,7 @@ struct BufferUpdateInfo {
 
 struct UniformInfo {
     std::vector<BufferCreateInfo *> ubos;
+    std::vector<BufferCreateInfo *> pushConstants;
 };
 
 struct OffsetInfo {
@@ -152,7 +153,7 @@ struct OffsetInfo {
     VKuint fragShaderIndex = 0;
     VKuint topologyIndex = 0;
     std::vector<VKuint> uboIndices;
-    VKint pushConstIndex = 0;
+    VKint pushConst = 0;
 };
 
 struct ModelCreateInfo {
@@ -160,9 +161,9 @@ struct ModelCreateInfo {
     std::vector<BufferCreateInfo *> vbos;
     BufferCreateInfo *ibo = nullptr;
     std::vector<std::string> ubos;
-    std::vector<BufferCreateInfo *> pushConstants;
     std::vector<std::string> vertShaders;
     std::vector<std::string> fragShaders;
+    std::vector<std::string> pushConstants;
     std::vector<VkPrimitiveTopology> topologies;
     std::vector<OffsetInfo> offsets;
 };
@@ -203,7 +204,7 @@ struct RenderInfo {
     VkBuffer *ibo = nullptr;
     std::vector<VkDeviceSize> vboOffsets;
     std::vector<VKuint> uboIndices;
-    std::pair<VKuint, const void *> pushConst = {0, nullptr};
+    VKuint pushConst = 0;
     VKuint pipeLayoutIndex = 0;
     VkDeviceSize iboOffset = 0;
     uint64_t indexCount = 0;
@@ -257,7 +258,7 @@ public:
     void createShaderStages(ModelInfo *model);
     AttribInfo* defineModelAttributes(ModelCreateInfo &info);
 
-    void addUniforms(UniformInfo &info);
+    void addUniformsandPushConstants(UniformInfo &info);
     VKuint addModel(ModelCreateInfo &info);
     bool validateModel(const std::string &name);
     VKuint activateModel(const std::string &name);
@@ -275,7 +276,7 @@ public:
 
     void pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m);
     void pipelineGlobalSetup();
-    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia, int lay);
+    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia);
     void genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia);
     void genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineLayout &lay, VkPipelineRasterizationStateCreateInfo &rs);
     void genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag);
@@ -351,13 +352,18 @@ private:
     VkDeviceMemory p_stagingMemory = VK_NULL_HANDLE;
 
     std::vector<std::string> p_globalUBOs;
-    std::vector<VkDescriptorSetLayout> p_layouts;
-    std::vector<VkDescriptorSet> p_sets;
-    std::vector<VkBuffer> p_uniformBuffers;
-    std::vector<VkDeviceMemory> p_uniformBuffersMemory;
-    std::vector<void *> p_uniformBufferMappings;
+    std::vector<VkDescriptorSetLayout> p_setLayouts;
+    std::vector<std::vector<VkDescriptorSet>> p_descSets;
+    std::vector<std::vector<VkBuffer>> p_uniformBuffers;
+    std::vector<std::vector<VkDeviceMemory>> p_uniformBuffersMemory;
+    std::vector<std::vector<void *>> p_uniformBufferMappings;
     std::map<std::string, VKuint> p_mapUBOs;
     std::map<VKuint, BufferCreateInfo *> p_mapUBOInfos;
+
+    std::vector<VkPushConstantRange> p_pushConstRanges;
+    std::vector<VkPipelineLayout> p_pipeLayouts;
+    std::map<std::string, VKuint> p_mapPushConsts;
+    std::vector<std::pair<uint64_t, const void *>> p_pushConsts;
 
     GlobalPipelineInfo p_pipeInfo{};
     VkPipeline p_fragmentOutput = VK_NULL_HANDLE;

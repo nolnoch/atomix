@@ -95,14 +95,16 @@ void ProgramVK::cleanup() {
     }
 
     // desc sets
-    for (auto &descLayout : this->p_layouts) {
+    for (auto &descLayout : this->p_setLayouts) {
         this->p_vdf->vkDestroyDescriptorSetLayout(this->p_dev, descLayout, nullptr);
     }
-    for (auto &buf : this->p_uniformBuffers) {
-        this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
-    }
-    for (auto &mem : this->p_uniformBuffersMemory) {
-        this->p_vdf->vkFreeMemory(this->p_dev, mem, nullptr);
+    for (int i = 0; i < this->p_descSets.size(); i++) {
+        for (auto &buf : this->p_uniformBuffers[i]) {
+            this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
+        }
+        for (auto &mem : this->p_uniformBuffersMemory[i]) {
+            this->p_vdf->vkFreeMemory(this->p_dev, mem, nullptr);
+        }
     }
     this->p_uniformBufferMappings.clear();
 
@@ -116,7 +118,11 @@ void ProgramVK::cleanup() {
     // shader objects
     for (auto &shader : p_registeredShaders) {
         delete shader;
-    }  
+    }
+
+    for (auto &pipeLayout : p_pipeLayouts) {
+        this->p_vdf->vkDestroyPipelineLayout(this->p_dev, pipeLayout, nullptr);
+    }
 }
 
 void ProgramVK::setInstance(AtomixDevice *atomixDevice) {
@@ -282,10 +288,35 @@ void ProgramVK::createShaderStages(ModelInfo *m) {
     }
 }
 
-void ProgramVK::addUniforms(UniformInfo &info) {
+void ProgramVK::addUniformsandPushConstants(UniformInfo &info) {
     createPersistentUniformBuffers(info);
     for (auto &ubo : info.ubos) {
+        this->p_mapUBOs[ubo->name] = ubo->set;
         this->p_mapUBOInfos[ubo->set] = new BufferCreateInfo(*ubo);
+    }
+
+    // Push Constants
+    for (auto &push : info.pushConstants) {
+        this->p_pushConstRanges.push_back({});
+        VkPushConstantRange *pcr = &this->p_pushConstRanges.back();
+        pcr->stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        pcr->offset = 0;
+        pcr->size = push->size;
+        this->p_pushConsts.push_back(std::pair<uint64_t, const void *>(push->size, push->data));
+        this->p_mapPushConsts[push->name] = this->p_pushConsts.size() - 1;
+    }
+
+    // Pipeline Layouts
+    VkPipelineLayoutCreateInfo lay{};
+    lay.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    lay.setLayoutCount = this->p_setLayouts.size();
+    lay.pSetLayouts = this->p_setLayouts.data();
+    lay.pushConstantRangeCount = this->p_pushConstRanges.size();
+    lay.pPushConstantRanges = this->p_pushConstRanges.data();
+
+    this->p_pipeLayouts.push_back({});
+    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &lay, nullptr, &this->p_pipeLayouts.back()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create pipeline layout!");
     }
 }
 
@@ -380,23 +411,16 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     }
 
     // Populate Renders
-    int i = 0;
-    for (auto &off : info.offsets) {
+    for (int i = 0; i < info.offsets.size(); i++) {
+        OffsetInfo &off = info.offsets[i];
         model->renders.push_back(new RenderInfo{});
         RenderInfo *render = model->renders.back();
         render->firstVbo = model->vbos.data();
         render->ibo = &model->ibo;
         render->vboOffsets.resize(model->vbos.size(), 0);
-        for (auto &uboIdx : off.uboIndices) {
-            render->uboIndices.push_back(this->p_mapUBOs[info.ubos[uboIdx]]);
-        }
-        if (off.pushConstIndex != -1) {
-            render->pushConst.first = info.pushConstants[off.pushConstIndex]->size;
-            render->pushConst.second = info.pushConstants[off.pushConstIndex]->data;
-        }
         render->iboOffset = off.offset;
-        render->pipeLayoutIndex = i;
         render->indexCount = indexCount[i];
+        render->pushConst = off.pushConst;
         
         // Not all platforms support libraries
         if (p_libEnabled) {
@@ -407,7 +431,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
                                             model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
         } else {
             // Final Pipelines for Renders (Full PSO)
-            this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex, i++);
+            this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex);
         }
     }
 
@@ -581,59 +605,6 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m) {
     m->pipeInfo->vboCreate.pVertexAttributeDescriptions = m->attributes->attributes.data();
     m->pipeInfo->vboCreate.flags = 0;
     m->pipeInfo->vboCreate.pNext = nullptr;
-
-    // Push Constants
-    /* std::vector<VKuint> uniquePushConstantSizes;
-    uniquePushConstantSizes.push_back(0);
-    for (int i = 0; i < info.pushConstants.size(); i++) {
-        if (info.pushConstants[i]->size > 0) {
-            m->pipeInfo->pushConstRanges.push_back({});
-            VkPushConstantRange *pcr = &m->pipeInfo->pushConstRanges.back();
-            pcr->stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-            pcr->offset = (i == 0) ? 0 : info.pushConstants[i - 1]->size;
-            pcr->size = info.pushConstants[i]->size;
-            if (std::count(uniquePushConstantSizes.cbegin(), uniquePushConstantSizes.cend(), pcr->size) == 0) {
-                uniquePushConstantSizes.push_back(pcr->size);
-                m->pushConstantMappings.push_back(uniquePushConstantSizes.size() - 1);
-            } else {
-                m->pushConstantMappings.push_back(std::find(uniquePushConstantSizes.cbegin(), uniquePushConstantSizes.cend(), pcr->size) - uniquePushConstantSizes.cbegin());
-            }
-        } else {
-            m->pushConstantMappings.push_back(0);
-        }
-    }
-    bool hasPushConstants = uniquePushConstantSizes.size() > 1; */
-    for (auto &push : info.pushConstants) {
-        m->pipeInfo->pushConstRanges.push_back({});
-        VkPushConstantRange *pcr = &m->pipeInfo->pushConstRanges.back();
-        pcr->stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        pcr->offset = 0;
-        pcr->size = push->size;
-    }
-
-    // Pipeline Layouts
-    int layoutIdx = 0;
-    for (auto &off : info.offsets) {
-        std::vector<VkDescriptorSetLayout> layouts;
-        for (auto &idx : off.uboIndices) {
-            layouts.push_back(this->p_layouts[this->p_mapUBOs[info.ubos[idx]]]);
-        }
-
-        m->pipeInfo->layCreates.push_back({});
-        VkPipelineLayoutCreateInfo *lay = &m->pipeInfo->layCreates.back();
-        lay->sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        lay->setLayoutCount = layouts.size();
-        lay->pSetLayouts = layouts.data();
-        if (off.pushConstIndex >= 0) {
-            lay->pushConstantRangeCount = 1;
-            lay->pPushConstantRanges = &m->pipeInfo->pushConstRanges[off.pushConstIndex];
-        }
-
-        m->pipeInfo->pipeLayouts.push_back(VK_NULL_HANDLE);
-        if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, lay, nullptr, &m->pipeInfo->pipeLayouts[layoutIdx++]) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create pipeline layout!");
-        }
-    }
 }
 
 void ProgramVK::pipelineGlobalSetup() {
@@ -704,7 +675,7 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.init = true;
 }
 
-void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia, int lay) {
+void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderModules = { m->pipeInfo->vsCreates[vs], m->pipeInfo->fsCreates[fs] };
 
     // Global pipeline
@@ -726,7 +697,7 @@ void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs,
     pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreate;
     pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[ia];
     pipelineInfo.pRasterizationState = &m->pipeInfo->rsCreate;
-    pipelineInfo.layout = m->pipeInfo->pipeLayouts[lay];
+    pipelineInfo.layout = this->p_pipeLayouts.back();
 
     if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &render->pipeline)) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
@@ -1046,20 +1017,24 @@ void ProgramVK::stageAndCopyIndexBuffer(ModelInfo *model, bool update, VKuint64 
 }
 
 void ProgramVK::createPersistentUniformBuffers(UniformInfo &info) {
-    VKuint globalMappings = MAX_FRAMES_IN_FLIGHT * info.ubos.size();
-    this->p_sets.resize(globalMappings);
-    this->p_uniformBuffers.resize(globalMappings);
-    this->p_uniformBuffersMemory.resize(globalMappings);
-    this->p_uniformBufferMappings.resize(globalMappings);
+    VKuint uboCount = info.ubos.size();
+    this->p_descSets.resize(MAX_FRAMES_IN_FLIGHT);
+    this->p_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    this->p_uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+    this->p_uniformBufferMappings.resize(MAX_FRAMES_IN_FLIGHT);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        this->p_descSets[i].resize(uboCount, {});
+        this->p_uniformBuffers[i].resize(uboCount, {});
+        this->p_uniformBuffersMemory[i].resize(uboCount, {});
+        this->p_uniformBufferMappings[i].resize(uboCount, {});
+    }
 
-    for (auto &ubo : info.ubos) {
-        int i = ubo->set;
-        for (int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
-            int idx = UBOIDX(i, j);
-            createBuffer(ubo->size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[idx], this->p_uniformBuffersMemory[idx]);
-            this->p_vdf->vkMapMemory(this->p_dev, this->p_uniformBuffersMemory[idx], 0, ubo->size, 0, &this->p_uniformBufferMappings[idx]);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        for (auto &ubo : info.ubos) {
+            int j = ubo->set;
+            createBuffer(ubo->size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[i][j], this->p_uniformBuffersMemory[i][j]);
+            this->p_vdf->vkMapMemory(this->p_dev, this->p_uniformBuffersMemory[i][j], 0, ubo->size, 0, &this->p_uniformBufferMappings[i][j]);
         }
-        this->p_mapUBOs[ubo->name] = i;
     }
 
     defineDescriptorSets(info);
@@ -1067,7 +1042,7 @@ void ProgramVK::createPersistentUniformBuffers(UniformInfo &info) {
 
 void ProgramVK::defineDescriptorSets(UniformInfo &info) {
     VKuint sets = info.ubos.size();
-    this->p_layouts.resize(sets, VK_NULL_HANDLE);
+    this->p_setLayouts.resize(sets, VK_NULL_HANDLE);
     for (auto &ubo : info.ubos) {
         createDescriptorSetLayout(ubo->set, *ubo);
     }
@@ -1078,29 +1053,26 @@ void ProgramVK::defineDescriptorSets(UniformInfo &info) {
 void ProgramVK::createDescriptorSets(UniformInfo &info) {
     for (auto &ubo : info.ubos) {
         int i = ubo->set;
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, this->p_layouts[i]);
+        for (size_t j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
 
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = this->p_descPool;
-        allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-        allocInfo.pSetLayouts = layouts.data();
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = this->p_descPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &this->p_setLayouts[i];
 
-        if (this->p_vdf->vkAllocateDescriptorSets(this->p_dev, &allocInfo, this->p_sets.data() + (i * MAX_FRAMES_IN_FLIGHT)) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to allocate descriptor sets!");
-        }
-
-        for (int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
-            VKuint idx = UBOIDX(i, j);
+            if (this->p_vdf->vkAllocateDescriptorSets(this->p_dev, &allocInfo, &this->p_descSets[j][i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to allocate descriptor sets!");
+            }
 
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = this->p_uniformBuffers[idx];
+            bufferInfo.buffer = this->p_uniformBuffers[j][i];
             bufferInfo.offset = 0;
             bufferInfo.range = VK_WHOLE_SIZE;
 
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = this->p_sets[idx];
+            descriptorWrite.dstSet = this->p_descSets[j][i];
             descriptorWrite.dstBinding = ubo->binding;
             descriptorWrite.dstArrayElement = 0;
             descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1142,7 +1114,7 @@ void ProgramVK::createDescriptorSetLayout(VKuint set, BufferCreateInfo &info) {
     layoutInfo.bindingCount = 1;
     layoutInfo.pBindings = &uboLayoutBinding;
 
-    if (this->p_vdf->vkCreateDescriptorSetLayout(this->p_dev, &layoutInfo, nullptr, &this->p_layouts[set]) != VK_SUCCESS) {
+    if (this->p_vdf->vkCreateDescriptorSetLayout(this->p_dev, &layoutInfo, nullptr, &this->p_setLayouts[set]) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
 }
@@ -1182,9 +1154,9 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &buf) {
 }
 
 void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string uboName, uint32_t uboSize, const void *uboData) {
-    VKuint set = UBOIDX(this->p_mapUBOs[uboName], currentImage);
+    VKuint uboIdx = this->p_mapUBOs[uboName];
 
-    void *dest = this->p_uniformBufferMappings[set];
+    void *dest = this->p_uniformBufferMappings[currentImage][uboIdx];
     memcpy(dest, uboData, uboSize);
 }
 
@@ -1205,12 +1177,6 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     VkCommandBuffer cmdBuff = this->p_vkw->currentCommandBuffer();
 
     // Set clear color and depth stencil
-    /* std::array<VkClearValue, 3> clearValues{};
-    for (auto &clear : clearValues) {
-        clear.color = {{ p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] }};
-        clear.depthStencil = {1.0f, 0};
-        clear.color = {{ p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] }};
-    } */
     VkClearColorValue clearColor = { p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] };
     VkClearDepthStencilValue clearDepth = { 1.0f, 0 };
     VkClearValue clearValues[3];
@@ -1241,26 +1207,20 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     this->p_vdf->vkCmdBeginRenderPass(cmdBuff, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     
     // For each active model, bind and draw for all render targets
-    for (auto &actMod : this->p_activeModels) {
-        ModelInfo *model = this->p_models[actMod];
+    for (int i = 0; i < this->p_activeModels.size(); i++) {
+        ModelInfo *model = this->p_models[i];
 
         for (auto &render : model->renders) {
-            VkPipelineLayout *layout = &model->pipeInfo->pipeLayouts[render->pipeLayoutIndex];
-            
-            std::vector<VkDescriptorSet> descSets;
-            for (auto &ubo : render->uboIndices) {
-                VKuint idx = UBOIDX(ubo, image);
-                descSets.push_back(this->p_sets[idx]);
-            }
-
             this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
-            this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, *layout, 0, descSets.size(), descSets.data(), 0, nullptr);
+            if (!i) {
+                this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayouts.back(), 0, this->p_descSets[image].size(), this->p_descSets[image].data(), 0, nullptr);                
+            }
             this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
             this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, model->vbos.size(), render->firstVbo, render->vboOffsets.data());
             this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, *render->ibo, 0, VK_INDEX_TYPE_UINT32);
-            if (render->pushConst.first != 0) {
-                this->p_vdf->vkCmdPushConstants(cmdBuff, *layout, VK_SHADER_STAGE_VERTEX_BIT, 0, render->pushConst.first, render->pushConst.second);
+            if (render->pushConst) {
+                this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts.back(), VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[0].first, this->p_pushConsts[0].second);
             }
             this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->iboOffset, 0, 0);
         }

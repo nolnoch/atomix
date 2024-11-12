@@ -92,5 +92,5 @@ void main() {
 
     vertColour = final;
     gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
-    gl_PointSize = 2.0f;
+    gl_PointSize = 1.3f;
 }

@@ -113,7 +113,7 @@ class Manager {
             VERT_READY =        1 << 1,     // Vertices generated and ready for VBO load
             DATA_READY =        1 << 2,     // Special data generated and ready for VBO load
             INDEX_READY =       1 << 3,     // Indices generated and ready for EBO load
-            INDEX_GEN =          1 << 4,     // Data generated but not processed
+            INDEX_GEN =         1 << 4,     // Data generated but not processed
             UPD_SHAD_V =        1 << 5,     // Update Vertex Shader
             UPD_SHAD_F =        1 << 6,     // Update Fragment Shader
             UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated
@@ -121,11 +121,12 @@ class Manager {
             UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
             UPD_UNI_COLOUR =    1 << 10,    // [Wave] Colour Uniforms need to be updated
             UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
-            UPD_MATRICES =      1 << 12,    // Needs initVecsAndMatrices() to reset position and view
-            UPDATE_REQUIRED =   1 << 13,    // An update must execute on next render
+            UPD_PUSH_CONST =    1 << 12,    // Push Constants need to be updated
+            UPD_MATRICES =      1 << 13,    // Needs initVecsAndMatrices() to reset position and view
+            UPDATE_REQUIRED =   1 << 14,    // An update must execute on next render
         };
 
-        const uint eUpdateFlags = em::UPD_SHAD_V | em::UPD_SHAD_F | em::UPD_VBO | em::UPD_DATA | em::UPD_EBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS | em::UPD_MATRICES;
+        const uint eUpdateFlags = -1 << 5;
 };
 
 #endif

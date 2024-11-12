@@ -96,10 +96,17 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     waveState.data = &this->vw_wave;
     waveState.dataTypes = { DataType::FLOAT_VEC3, DataType::UINT_VEC3 };
 
+    // Push Constants
+    BufferCreateInfo pushConstants{};
+    pushConstants.name = "pushConstants";
+    pushConstants.size = sizeof(PushConstants);
+    pushConstants.data = &this->vw_renderer->pConst;
+
     UniformInfo info{};
     info.ubos = { &worldState, &waveState };
+    info.pushConstants = { &pushConstants };
 
-    atomixProg->addUniforms(info);
+    atomixProg->addUniformsandPushConstants(info);
 
     std::cout << "Program has been updated with uniforms!" << std::endl;
 }
@@ -270,14 +277,14 @@ void VKWindow::initCrystalProgram() {
             .fragShaderIndex = 0,
             .topologyIndex = 0,
             .uboIndices = { 0 },
-            .pushConstIndex = -1
+            .pushConst = 0
         },
         {   .offset = crystalRingOffset,
             .vertShaderIndex = 0,
             .fragShaderIndex = 0,
             .topologyIndex = 1,
             .uboIndices = { 0 },
-            .pushConstIndex = -1
+            .pushConst = 0
         }
     };
 
@@ -324,7 +331,6 @@ void VKWindow::initWaveProgram() {
     waveModel.vbos = { &waveVert };
     waveModel.ibo = &waveInd;
     waveModel.ubos = { "worldState", "waveState" };
-    waveModel.pushConstants = { &wavePush };
     waveModel.vertShaders = { waveManager->getShaderVert() };
     waveModel.fragShaders = { waveManager->getShaderFrag() };
     waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
@@ -334,7 +340,7 @@ void VKWindow::initWaveProgram() {
             .fragShaderIndex = 0,
             .topologyIndex = 0,
             .uboIndices = { 0, 1 },
-            .pushConstIndex = 0
+            .pushConst = 1
         }
     };
 
@@ -638,7 +644,9 @@ void VKWindow::updateBuffersAndShaders() {
             this->waveManager->getColours(this->vw_wave.waveColours);
         }
 
-        this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "waveState", sizeof(this->vw_wave), &this->vw_wave);
+        for (int i = 0; i < MAX_CONCURRENT_FRAME_COUNT; i++) {
+            this->atomixProg->updateUniformBuffer(i, "waveState", sizeof(this->vw_wave), &this->vw_wave);
+        }
     }
 
     if (flGraphState.hasAny(egs::UPD_MATRICES)) {

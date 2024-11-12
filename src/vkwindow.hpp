@@ -96,8 +96,9 @@ enum egs {
     UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
     UPD_UNI_COLOUR =    1 << 10,    // [Wave] Colour Uniforms need to be updated
     UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
-    UPD_MATRICES =      1 << 12,    // Needs initVecsAndMatrices() to reset position and view
-    UPDATE_REQUIRED =   1 << 13,    // An update must execute on next render
+    UPD_PUSH_CONST =    1 << 12,    // Push Constants need to be updated
+    UPD_MATRICES =      1 << 13,    // Needs initVecsAndMatrices() to reset position and view
+    UPDATE_REQUIRED =   1 << 14,    // An update must execute on next render
 };
 
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;

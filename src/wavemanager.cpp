@@ -100,6 +100,10 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
         mStatus.set(em::UPD_UNI_MATHS);
     }
 
+    if (flWaveCfg.hasAny(ewc::PARALLEL)) {
+        mStatus.set(em::UPD_PUSH_CONST);
+    }
+
     if (flWaveCfg.hasAny(ewc::VERTSHADER)) {
         mStatus.set(em::UPD_SHAD_V);
         mStatus.set(em::UPD_UNI_MATHS | em::UPD_UNI_COLOUR);

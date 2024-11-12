@@ -593,6 +593,8 @@ void VKWindow::updateBuffersAndShaders() {
     // Continue with ProgramVK update
     if (flGraphState.hasAny(egs::WAVE_RENDER)) {
         vw_currentModel = "wave";
+    } else if (flGraphState.hasAny(egs::CLOUD_RENDER)) {
+        vw_currentModel = "cloud";
     }
     
     // Shaders
@@ -647,6 +649,10 @@ void VKWindow::updateBuffersAndShaders() {
         for (int i = 0; i < MAX_CONCURRENT_FRAME_COUNT; i++) {
             this->atomixProg->updateUniformBuffer(i, "waveState", sizeof(this->vw_wave), &this->vw_wave);
         }
+    }
+
+    if (flGraphState.hasAny(egs::UPD_PUSH_CONST)) {
+        this->updatePhaseMode(this->vw_renderer->pConst);
     }
 
     if (flGraphState.hasAny(egs::UPD_MATRICES)) {

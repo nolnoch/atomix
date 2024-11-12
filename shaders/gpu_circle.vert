@@ -48,7 +48,7 @@ void main() {
     if (pConst.mode == 0) {
         // Orthogonal waves
         x_coord = r * cos_th;
-        y_coord = clamp(displacement, 0.0f, 1.0f);
+        y_coord = displacement;
         z_coord = r * sin_th;
     } else if (pConst.mode == 1) {
         // Parallel waves

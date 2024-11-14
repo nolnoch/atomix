@@ -80,7 +80,6 @@ Q_DECLARE_METATYPE(WaveState);
 struct PushConstants {
     float time = 0.0f;
     uint mode = 0;
-    float phase = 0.0f;
 };
 
 enum egs {
@@ -173,7 +172,7 @@ public:
     void updateBuffersAndShaders();
     void updateWorldState();
     void updateTime(PushConstants &pConst);
-    void updatePhaseMode(PushConstants &pConst);
+    void updateWaveMode(PushConstants &pConst);
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
@@ -207,9 +206,10 @@ private:
     void threadFinishedWithResult(uint result);
 
     void initVecsAndMatrices();
-    void initCrystalProgram();
-    void initWaveProgram();
-    void initCloudProgram();
+    void initCrystalModel();
+    void initWaveModel();
+    void initCloudModel();
+    void initModels();
     void changeModes(bool force);
     
     std::string withCommas(int64_t value);

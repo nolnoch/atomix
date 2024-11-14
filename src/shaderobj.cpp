@@ -29,6 +29,8 @@
     #include <glslang/Public/ShaderLang.h>
     #include <glslang/Public/ResourceLimits.h>
     #include <glslang/SPIRV/GlslangToSpv.h>
+
+    #include <spirv_cross/spirv_cross.hpp>
 #endif
 
 
@@ -135,6 +137,38 @@ bool Shader::compile(uint version) {
     glslang::FinalizeProcess();
     
     this->validCompile = true;
+    return true;
+}
+
+bool Shader::reflect() {
+    std::vector<uint32_t> spirvCode = this->sourceBufferCompiled;
+    spirv_cross::Compiler comp(move(spirvCode));
+    spirv_cross::ShaderResources res = comp.get_shader_resources();
+
+    // Uniform Buffers
+    for (const auto &set : res.uniform_buffers) {
+        this->uniforms.push_back({});
+        Uniform &uni = this->uniforms.back();
+        uni.set = comp.get_decoration(set.id, spv::DecorationDescriptorSet);
+        uni.binding = comp.get_decoration(set.id, spv::DecorationBinding);
+        uni.size = comp.get_declared_struct_size(comp.get_type(set.type_id));
+        std::cout << "Uniform Buffer " << set.name << " -- set: " << uni.set << ", binding: " << uni.binding << ", size: " << uni.size << std::endl;
+    }
+
+    // Push Constants
+    for (const auto &push : res.push_constant_buffers) {
+        this->pushConstants.push_back({});
+        PushConstant &pConst = this->pushConstants.back();
+        pConst.name = push.name;
+        pConst.size = comp.get_declared_struct_size(comp.get_type(push.type_id));
+        std::cout << "Push Constant Buffer " << pConst.name << " -- size: " << pConst.size << std::endl;
+    }
+
+    for (const auto &sampler : res.stage_inputs) {
+        
+    }
+
+    this->validReflect = true;
     return true;
 }
 #endif

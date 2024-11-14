@@ -5,13 +5,13 @@ layout(location = 1) in vec3 colour;
     
 layout(location = 0) out vec4 vertColour;
 
-layout(binding = 0) uniform UniformBuffer {
+layout(set = 0,binding = 0) uniform WorldState {
     mat4 worldMat;
     mat4 viewMat;
     mat4 projMat;
-} ubo;
+} worldState;
     
 void main() {
     vertColour = vec4(colour, 1.0f);
-    gl_Position = ubo.projMat * ubo.viewMat * ubo.worldMat * vec4(pos, 1.0f);
+    gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(pos, 1.0f);
 }

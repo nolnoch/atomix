@@ -94,7 +94,8 @@
 			"qvulkandevicefunctions": "cpp",
 			"qvulkanfunctions": "cpp",
 			"qvulkaninstance": "cpp",
-			"*.ipp": "cpp"
+			"*.ipp": "cpp",
+			"expected": "cpp"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

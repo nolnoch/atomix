@@ -545,7 +545,7 @@ void GWidget::updateBuffersAndShaders() {
         (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
         initVecsAndMatrices();
     } else {
-        uint flags = currentManager->clearUpdates(); // TODO Broken
+        uint flags = currentManager->clearUpdates();
         flGraphState.set(flags);
     }
     this->updateSize();

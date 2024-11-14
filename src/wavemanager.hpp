@@ -46,14 +46,14 @@ class WaveManager : public Manager {
         
         void newWaves();
         uint selectWaves(int id, bool checked);
-        
-        uint peak = 0xFF00FFFF;
-        uint base = 0x0000FFFF;
-        uint trough = 0x00FFFFFF;
-        
-        double waveAmplitude = 0;
-        double two_pi_L = 0;
-        double two_pi_T = 0;
+
+        uint getMode() { return this->cfg.parallel; }
+        float getPhase() { return this->phase_base; }
+        void getMaths(glm::vec3 &maths) { maths = this->waveMaths; }
+        void getColours(glm::uvec3 &colours) { colours = this->waveColours; }
+
+        glm::vec3 waveMaths = glm::vec3(0, 0, 0);
+        glm::uvec3 waveColours = glm::uvec3(0xFF00FFFF, 0x0000FFFF, 0x00FFFFFF);
 
     private:
         void resetManager() override;

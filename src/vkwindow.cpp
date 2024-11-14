@@ -71,6 +71,10 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     atomixProg->init();
 
     vw_renderer->setProgram(atomixProg);
+
+    std::cout << "Program has been initialized!" << std::endl;
+
+    std::cout << "Program has been updated with uniforms!" << std::endl;
 }
 
 void VKWindow::initWindow() {
@@ -78,7 +82,7 @@ void VKWindow::initWindow() {
     initVecsAndMatrices();
 
     // Init -- ProgramGLs and Shaders
-    initCrystalProgram();
+    initCrystalModel();
 
     // Init -- Time
     vw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -137,11 +141,9 @@ void VKWindow::selectRenderedWaves(int id, bool checked) {
     flGraphState.set(waveManager->selectWaves(id, checked) | egs::UPDATE_REQUIRED);
 }
 
-void VKWindow::initCrystalProgram() {
+void VKWindow::initCrystalModel() {
     fvec crystalRingVertices;
     uvec crystalRingIndices;
-    std::string vertName = "default.vert";
-    std::string fragName = "default.frag";
 
     // Crystal Diamond setup
     float zero, peak, edge, back, forX, forZ, root;
@@ -178,6 +180,7 @@ void VKWindow::initCrystalProgram() {
     double crystalRadius = 0.4f;
     uint32_t vs = vertices.size() / 6;
 
+    // Copy Diamond into vector, then append Ring
     std::copy(vertices.cbegin(), vertices.cend(), std::back_inserter(crystalRingVertices));
     std::copy(indices.cbegin(), indices.cend(), std::back_inserter(crystalRingIndices));
 
@@ -192,6 +195,7 @@ void VKWindow::initCrystalProgram() {
         crystalRingVertices.push_back(0.85f);
         crystalRingIndices.push_back(vs + i);
     }
+    
     // Close the ring because Vulkan does not support GL_LINE_LOOP
     uint i = 0;
     double cos_t = cos(i * crystalDegFac);
@@ -208,20 +212,21 @@ void VKWindow::initCrystalProgram() {
     
     // Define VBO for Crystal Diamond & Ring
     BufferCreateInfo crystalVert{};
+    crystalVert.binding = 0;
+    crystalVert.name = "crystalVertices";
     crystalVert.type = BufferType::VERTEX;
     crystalVert.count = crystalRingVertices.size() / 6;
     crystalVert.size = crystalRingVertices.size() * sizeof(float);
     crystalVert.data = &crystalRingVertices[0];
-    crystalVert.name = "crystalVertices";
-    crystalVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
+    crystalVert.dataTypes = { DataType::FLOAT_VEC3, DataType::FLOAT_VEC3 };
 
     // Define IBO for Crystal Diamond & Ring
     BufferCreateInfo crystalInd{};
+    crystalInd.name = "crystalIndices";
     crystalInd.type = BufferType::INDEX;
     crystalInd.count = crystalRingIndices.size();
     crystalInd.size = crystalRingIndices.size() * sizeof(uint32_t);
     crystalInd.data = &crystalRingIndices[0];
-    crystalInd.name = "crystalIndices";
     crystalInd.dataTypes = {DataType::UINT};
 
     // Define Crystal Model with above buffers
@@ -229,84 +234,85 @@ void VKWindow::initCrystalProgram() {
     crystalModel.name = "crystal";
     crystalModel.vbos = { &crystalVert };
     crystalModel.ibo = &crystalInd;
-    crystalModel.uboSize = sizeof(WorldState);
-    crystalModel.vertShaders = { vertName };
-    crystalModel.fragShaders = { fragName };
+    crystalModel.ubos = { "worldState" };
+    crystalModel.vertShaders = { "default.vert" };
+    crystalModel.fragShaders = { "default.frag" };
     crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP };
     crystalModel.offsets = {
-        { 0, 0, 0, 0 },
-        { crystalRingOffset, 0, 0, 1 }
+        {   .offset = 0,
+            .vertShaderIndex = 0,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0
+        },
+        {   .offset = crystalRingOffset,
+            .vertShaderIndex = 0,
+            .fragShaderIndex = 0,
+            .topologyIndex = 1
+        }
     };
 
     // Add Crystal Model to program
     atomixProg->addModel(crystalModel);
-
-    // Activate Crystal Model
-    atomixProg->activateModel("crystal");
 }
 
-void VKWindow::initWaveProgram() {
-    assert(waveManager);
-
+void VKWindow::initWaveModel() {
     // Define VBO for Atomix Wave
     BufferCreateInfo waveVert{};
-    waveVert.type = BufferType::VERTEX;
-    waveVert.count = waveManager->getVertexCount();
-    waveVert.size = waveManager->getVertexSize();
-    waveVert.data = waveManager->getVertexData();
+    waveVert.binding = 0;
     waveVert.name = "waveVertices";
-    waveVert.dataTypes = {DataType::FLOAT_VEC3, DataType::FLOAT_VEC3};
+    waveVert.type = BufferType::VERTEX;
+    waveVert.dataTypes = { DataType::FLOAT_VEC3 };
 
     // Define IBO for Atomix Wave
     BufferCreateInfo waveInd{};
-    waveInd.type = BufferType::INDEX;
-    waveInd.count = waveManager->getIndexCount();
-    waveInd.size = waveManager->getIndexSize();
-    waveInd.data = waveManager->getIndexData();
     waveInd.name = "waveIndices";
-    waveInd.dataTypes = {DataType::UINT};
+    waveInd.type = BufferType::INDEX;
+    waveInd.dataTypes = { DataType::UINT };
 
     // Define Atomix Wave Model with above buffers
     ModelCreateInfo waveModel{};
     waveModel.name = "wave";
     waveModel.vbos = { &waveVert };
     waveModel.ibo = &waveInd;
-    waveModel.vertShaders = { waveManager->getShaderVert() };
-    waveModel.fragShaders = { waveManager->getShaderFrag() };
-    waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_LINE_LIST };
-    waveModel.offsets = { { 0, 0, 0, 0 } };
+    waveModel.ubos = { "worldState", "waveState" };
+    waveModel.vertShaders = { "gpu_circle.vert", "gpu_sphere.vert" };
+    waveModel.fragShaders = { "default.frag" };
+    waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
+    waveModel.offsets = {
+        {   .offset = 0,
+            .vertShaderIndex = 0,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0
+        }
+    };
 
     // Add Atomix Wave Model to program
     atomixProg->addModel(waveModel);
+
+    // Activate Atomix Wave Model
+    /* atomixProg->activateModel("wave");
+    flGraphState.set(egs::WAVE_RENDER);
+    flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR); */
 }
 
-void VKWindow::initCloudProgram() {
-    assert(cloudManager);
-
+void VKWindow::initCloudModel() {
     // Define VBO::Vertex for Atomix Cloud
     BufferCreateInfo cloudVert{};
+    cloudVert.binding = 0;
     cloudVert.type = BufferType::VERTEX;
-    cloudVert.count = cloudManager->getVertexCount();
-    cloudVert.size = cloudManager->getVertexSize();
-    cloudVert.data = cloudManager->getVertexData();
     cloudVert.name = "cloudVertices";
     cloudVert.dataTypes = { DataType::FLOAT_VEC3 };
 
     // Define VBO::Data for Atomix Cloud
     BufferCreateInfo cloudData{};
+    cloudData.binding = 1;
     cloudData.type = BufferType::DATA;
-    cloudData.count = cloudManager->getDataCount();
-    cloudData.size = cloudManager->getDataSize();
-    cloudData.data = cloudManager->getDataData();
     cloudData.name = "cloudData";
     cloudData.dataTypes = { DataType::FLOAT };
 
     // Define IBO for Atomix Cloud
     BufferCreateInfo cloudInd{};
     cloudInd.type = BufferType::INDEX;
-    cloudInd.count = cloudManager->getIndexCount();
-    cloudInd.size = cloudManager->getIndexSize();
-    cloudInd.data = cloudManager->getIndexData();
     cloudInd.name = "cloudIndices";
     cloudInd.dataTypes = {DataType::UINT};
 
@@ -315,13 +321,20 @@ void VKWindow::initCloudProgram() {
     cloudModel.name = "cloud";
     cloudModel.vbos = { &cloudVert, &cloudData };
     cloudModel.ibo = &cloudInd;
-    cloudModel.vertShaders = { cloudManager->getShaderVert() };
-    cloudModel.fragShaders = { cloudManager->getShaderFrag() };
+    cloudModel.ubos = { "worldState" };
+    cloudModel.vertShaders = { "gpu_harmonics.vert" };
+    cloudModel.fragShaders = { "default.frag" };
     cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
     cloudModel.offsets = { { 0, 0, 0, 0 } };
 
     // Add Atomix Cloud Model to program
     atomixProg->addModel(cloudModel);
+}
+
+void VKWindow::initModels() {
+    initCrystalModel();
+    initWaveModel();
+    initCloudModel();
 }
 
 void VKWindow::changeModes(bool force) {
@@ -382,6 +395,9 @@ void VKWindow::initVecsAndMatrices() {
 
 void VKWindow::wheelEvent(QWheelEvent *e) {
     int scrollClicks = e->angleDelta().y() / -120;
+    if (!scrollClicks) {
+        return;
+    }
     float scrollScale = 1.0f + ((float) scrollClicks / 6);
     v3_cameraPosition = scrollScale * v3_cameraPosition;
     
@@ -479,13 +495,13 @@ void VKWindow::keyPressEvent(QKeyEvent * e) {
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
     switch (id) {
     case 1:
-        waveManager->peak = colorChoice;
+        waveManager->waveColours.r = colorChoice;
         break;
     case 2:
-        waveManager->base = colorChoice;
+        waveManager->waveColours.g = colorChoice;
         break;
     case 3:
-        waveManager->trough = colorChoice;
+        waveManager->waveColours.b = colorChoice;
         break;
     default:
         break;
@@ -501,9 +517,10 @@ void VKWindow::updateBuffersAndShaders() {
     if (flGraphState.hasNone(egs::UPDATE_REQUIRED)) {
         return;
     }
-    /* Set up ProgramVK with buffers for the first time */
-    if (!atomixProg->isActive("wave") || !atomixProg->isActive("cloud")) {
-        (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudProgram() : initWaveProgram();
+
+    // Set up ProgramVK with buffers for the first time OR capture updates from currentManager
+    if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
+        (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudModel() : initWaveModel();
         initVecsAndMatrices();
     } else {
         uint flags = currentManager->clearUpdates(); // TODO Broken
@@ -512,7 +529,11 @@ void VKWindow::updateBuffersAndShaders() {
     this->updateSize();
 
     // Continue with ProgramVK update
-    assert(flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER));
+    if (flGraphState.hasAny(egs::WAVE_RENDER)) {
+        vw_currentModel = "wave";
+    } else if (flGraphState.hasAny(egs::CLOUD_RENDER)) {
+        vw_currentModel = "cloud";
+    }
     
     // Shaders
     if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
@@ -556,7 +577,20 @@ void VKWindow::updateBuffersAndShaders() {
 
     // Uniforms
     if (flGraphState.hasAny(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR)) {
-        this->atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_wave), &this->vw_wave);
+        if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
+            this->waveManager->getMaths(this->vw_wave.waveMaths);
+        }
+        if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
+            this->waveManager->getColours(this->vw_wave.waveColours);
+        }
+
+        for (int i = 0; i < MAX_CONCURRENT_FRAME_COUNT; i++) {
+            this->atomixProg->updateUniformBuffer(i, "waveState", sizeof(this->vw_wave), &this->vw_wave);
+        }
+    }
+
+    if (flGraphState.hasAny(egs::UPD_PUSH_CONST)) {
+        this->updateWaveMode(this->vw_renderer->pConst);
     }
 
     if (flGraphState.hasAny(egs::UPD_MATRICES)) {
@@ -566,23 +600,27 @@ void VKWindow::updateBuffersAndShaders() {
     flGraphState.clear(eUpdateFlags);
 }
 
-void VKWindow::updateWorldState(float time) {
+void VKWindow::updateWorldState() {
     // Re-calculate world-state matrices
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     vw_world.m4_world = m4_translation * m4_rotation;
     vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     this->q_TotalRot.normalize();
 
-    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), sizeof(this->vw_world), &this->vw_world);
+    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "worldState", sizeof(this->vw_world), &this->vw_world);
 }
 
-float VKWindow::updateTime() {
+void VKWindow::updateTime(PushConstants &pConst) {
     if (!vw_pause) {
         vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
     float time = (vw_timeEnd - vw_timeStart) / 1000.0f;
 
-    return time;
+    pConst.time = time;
+}
+
+void VKWindow::updateWaveMode(PushConstants &pConst) {
+    pConst.mode = waveManager->getMode();
 }
 
 void VKWindow::setBGColour(float colour) {
@@ -801,10 +839,10 @@ void VKRenderer::initResources() {
 
     const int concFrameCount = vr_qvw->concurrentFrameCount();
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
-    const VkDeviceSize uniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
+    this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
     const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
 
-    std::cout << "uniAlignment: " << uniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
+    std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();
@@ -908,20 +946,19 @@ void VKRenderer::releaseResources() {
 }
 
 void VKRenderer::startNextFrame() {
-    // assert(flGraphState.hasSomeOrNone(egs::WAVE_MODE | egs::CLOUD_MODE));
-    VkCommandBuffer commandBuffer = this->vr_qvw->currentCommandBuffer();
-
-    // Update time
-    float time = this->vr_vkw->updateTime();
-
     // Update buffers and shaders if necessary
     this->vr_vkw->updateBuffersAndShaders();
 
     // Update world state (per-frame)
-    this->vr_vkw->updateWorldState(time);
+    this->vr_vkw->updateWorldState();
+
+    // Update time (per-frame)
+    if (this->vr_vkw->flGraphState.hasAny(egs::WAVE_RENDER)) {
+        this->vr_vkw->updateTime(this->pConst);
+    }
 
     // Call Program to render
-    atomixProg->render(commandBuffer, vr_extent);
+    atomixProg->render(vr_extent);
     
     // Prepare for next frame
     vr_qvw->frameReady();

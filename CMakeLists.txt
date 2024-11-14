@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2.0...3.5)
+cmake_minimum_required(VERSION 3.10.0...3.30.0)
 project(atomix VERSION 0.1.0 LANGUAGES CXX)
 add_subdirectory(src)
 set (ENV{CMAKE_BUILD_PARALLEL_LEVEL} 8)

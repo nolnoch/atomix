@@ -65,21 +65,22 @@ struct AtomixInfo {
 Q_DECLARE_METATYPE(AtomixInfo);
 
 struct WorldState {
-        glm::mat4 m4_world;
-        glm::mat4 m4_view;
-        glm::mat4 m4_proj;
+    glm::mat4 m4_world;
+    glm::mat4 m4_view;
+    glm::mat4 m4_proj;
 };
 Q_DECLARE_METATYPE(WorldState);
 
 struct WaveState {
-    float two_pi_L = 0.0f;
-    float two_pi_T = 0.0f;
-    float amp = 0.0f;
-    float peak = 0.0f;
-    float base = 0.0f;
-    float trough = 0.0f;
+    alignas(16) glm::vec3 waveMaths = glm::vec3(0.0f);
+    alignas(16) glm::uvec3 waveColours = glm::uvec3(0);
 };
 Q_DECLARE_METATYPE(WaveState);
+
+struct PushConstants {
+    float time = 0.0f;
+    uint mode = 0;
+};
 
 enum egs {
     WAVE_MODE =         1 << 0,     // Button from Wave tab clicked, only making Waves
@@ -94,8 +95,9 @@ enum egs {
     UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
     UPD_UNI_COLOUR =    1 << 10,    // [Wave] Colour Uniforms need to be updated
     UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
-    UPD_MATRICES =      1 << 12,    // Needs initVecsAndMatrices() to reset position and view
-    UPDATE_REQUIRED =   1 << 13,    // An update must execute on next render
+    UPD_PUSH_CONST =    1 << 12,    // Push Constants need to be updated
+    UPD_MATRICES =      1 << 13,    // Needs initVecsAndMatrices() to reset position and view
+    UPDATE_REQUIRED =   1 << 14,    // An update must execute on next render
 };
 
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
@@ -126,6 +128,8 @@ public:
 
     void startNextFrame() override;
 
+    PushConstants pConst = {0.0f};
+
 private:
     ProgramVK *atomixProg = nullptr;
 
@@ -149,8 +153,7 @@ private:
     glm::vec3 v3_mouseEnd;
     Quaternion q_TotalRot;
 
-    QMatrix4x4 vm4_proj;
-    QMatrix4x4 vm4_rot;
+    VkDeviceSize vr_minUniAlignment = 0;
 };
 
 
@@ -167,13 +170,15 @@ public:
     void setColorsWaves(int id, uint colorChoice);
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
-    void updateWorldState(float time);
-    float updateTime();
+    void updateWorldState();
+    void updateTime(PushConstants &pConst);
+    void updateWaveMode(PushConstants &pConst);
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
+    BitFlag flGraphState;
 
 signals:
     void detailsChanged(AtomixInfo *info);
@@ -202,9 +207,10 @@ private:
     void threadFinishedWithResult(uint result);
 
     void initVecsAndMatrices();
-    void initCrystalProgram();
-    void initWaveProgram();
-    void initCloudProgram();
+    void initCrystalModel();
+    void initWaveModel();
+    void initCloudModel();
+    void initModels();
     void changeModes(bool force);
     
     std::string withCommas(int64_t value);
@@ -259,7 +265,6 @@ private:
     int max_n = 1;
     
     BitFlag flWaveCfg;
-    BitFlag flGraphState;
 
     uint crystalRingCount = 0;
     uint crystalRingOffset = 0;
@@ -267,7 +272,6 @@ private:
 
     WorldState vw_world;
     WaveState vw_wave;
-
     
 };
 

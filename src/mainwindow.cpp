@@ -73,6 +73,7 @@ void MainWindow::init(QRect &windowSize) {
     } else {
         VK_SPIRV_VERSION = 0;
     }
+    std::cout << version.toString().toStdString() << std::endl;
     
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);

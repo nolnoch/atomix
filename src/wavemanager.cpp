@@ -38,9 +38,9 @@ void WaveManager::newConfig(AtomixConfig *config) {
     Manager::newConfig(config);
 
     this->waveResolution = cfg.resolution;
-    this->waveAmplitude = cfg.amplitude;
-    this->two_pi_L = TWO_PI / this->cfg.wavelength;
-    this->two_pi_T = TWO_PI / this->cfg.period;
+    this->waveMaths.z = cfg.amplitude;
+    this->waveMaths.x = TWO_PI / this->cfg.wavelength;
+    this->waveMaths.y = TWO_PI / this->cfg.period;
     this->deg_fac = TWO_PI / this->waveResolution;
 }
 
@@ -98,6 +98,10 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     
     if (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH)) {
         mStatus.set(em::UPD_UNI_MATHS);
+    }
+
+    if (flWaveCfg.hasAny(ewc::PARALLEL)) {
+        mStatus.set(em::UPD_PUSH_CONST);
     }
 
     if (flWaveCfg.hasAny(ewc::VERTSHADER)) {
@@ -176,7 +180,7 @@ void WaveManager::circleWaveGPU(int idx) {
     // int l = idx * this->waveResolution;
     uint pixelCount = idx * this->waveResolution;
 
-    /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
+    /* y = A * sin((this->waveMaths.x * r * theta) - (this->waveMaths.y * t) + (p = 0)) */
     /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
@@ -187,15 +191,10 @@ void WaveManager::circleWaveGPU(int idx) {
         float h = (float) theta;
         float p = (float) phase_const[idx];
         float d = (float) radius;
-        float r = 1.0f;
-        float g = 1.0f;
-        float b = 1.0f;
 
         vec3 factorsA = vec3(h, p, d);
-        vec3 factorsB = vec3(r, g, b);
         
         waveVertices[idx]->push_back(factorsA);
-        waveVertices[idx]->push_back(factorsB);
 
         // waveIndices[idx]->push_back(l + i);
         waveIndices[idx]->push_back(pixelCount++);
@@ -216,15 +215,10 @@ void WaveManager::sphereWaveGPU(int idx) {
             float h = (float) theta;
             float p = (float) phi;
             float d = (float) radius;
-            float r = (float) phase_const[idx];
-            float g = 0;
-            float b = 0;
 
             vec3 factorsA = vec3(h, p, d);
-            vec3 factorsB = vec3(r, g, b);
             
             waveVertices[idx]->push_back(factorsA);
-            waveVertices[idx]->push_back(factorsB);
 
             // waveIndices[idx]->push_back(l + m + j);
             waveIndices[idx]->push_back(pixelCount++);
@@ -236,8 +230,11 @@ void WaveManager::sphereWaveGPU(int idx) {
 void WaveManager::updateWaveCPUCircle(int idx, double t) {
     double radius = (double) (idx + 1);
     uint pixelCount = idx * this->waveResolution;
+    uint peak = this->waveColours.r;
+    uint base = this->waveColours.b;
+    uint trough = this->waveColours.g;
 
-    /* y = A * sin((two_pi_L * r * theta) - (two_pi_T * t) + (p = 0)) */
+    /* y = A * sin((this->waveMaths.x * r * theta) - (this->waveMaths.y * t) + (p = 0)) */
     /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
     /* y = A * sin(  ( p/h  *   x )    -    (  1/f  *  t )   +   p    */
     /* y = A * sin(  ( E/hc  *  x )    -    (  h/E  *  t )   +   p    */
@@ -246,8 +243,8 @@ void WaveManager::updateWaveCPUCircle(int idx, double t) {
         double theta = i * deg_fac;
         float x, y, z;
 
-        double wavefunc = cos((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const[idx]);
-        double displacement = this->waveAmplitude * wavefunc;
+        double wavefunc = cos((this->waveMaths.x * radius * theta) - (this->waveMaths.y * t) + phase_const[idx]);
+        double displacement = this->waveMaths.z * wavefunc;
 
         if (cfg.parallel) {
             x = (displacement + radius) * cos(theta);
@@ -292,6 +289,9 @@ void WaveManager::updateWaveCPUCircle(int idx, double t) {
 void WaveManager::updateWaveCPUSphere(int idx, double t) {
     double radius = (double) (idx + 1);
     uint pixelCount = idx * this->waveResolution * this->waveResolution;
+    uint peak = this->waveColours.r;
+    uint base = this->waveColours.b;
+    uint trough = this->waveColours.g;
 
     for (int i = 0; i < this->waveResolution; i++) {
         int m = i * this->waveResolution;
@@ -299,8 +299,8 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
             double theta = i * deg_fac;
             double phi = j * deg_fac;
 
-            float wavefunc = cos((two_pi_L * radius * theta) - (two_pi_T * t) + phase_const[idx]);
-            float displacement = this->waveAmplitude * wavefunc;
+            float wavefunc = cos((this->waveMaths.x * radius * theta) - (this->waveMaths.y * t) + phase_const[idx]);
+            float displacement = this->waveMaths.z * wavefunc;
 
             float x = (float) (radius + displacement) * (sin(phi) * sin(theta));
             float y = (float) cos(phi);
@@ -382,10 +382,10 @@ void WaveManager::resetManager() {
     this->indexCount = 0;
     this->indexSize = 0;
 
-    this->waveAmplitude = 0.0;
+    this->waveMaths.z = 0.0;
     this->waveResolution = 0;
-    this->two_pi_L = 0.0;
-    this->two_pi_T = 0.0;
+    this->waveMaths.x = 0.0;
+    this->waveMaths.y = 0.0;
 
     this->renderedWaves = 255;
     this->deg_fac = 0.0;
@@ -410,6 +410,7 @@ void WaveManager::genIndexBuffer() {
     for (int i = 0; i < cfg.waves; i++) {
         if (renderedWaves & (1 << i)) {
             std::copy(waveIndices[i]->begin(), waveIndices[i]->end(), std::back_inserter(this->allIndices));
+            // If we choose to use lines, then we need primitive restart (0xFFFFFFFF)
         }
     }
 

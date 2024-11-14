@@ -24,6 +24,7 @@
 
 #include "programVK.hpp"
 
+#include <set>
 
 /**
  * Default Constructor.
@@ -286,21 +287,20 @@ void ProgramVK::addUniformsAndPushConstants() {
     std::vector<VKuint> sets;
     std::vector<VKuint> bindings;
     std::vector<VKuint> sizes;
+    std::set<std::string> names;
 
     for (const auto &s : this->p_compiledShaders) {
         if (s->getType() == GL_VERTEX_SHADER) {
             for (const auto &uni : s->getUniforms()) {
                 if (this->p_mapDescriptors.find(uni.name) == this->p_mapDescriptors.end()) {
-                    sets.push_back(uni.set);
-                    bindings.push_back(uni.binding);
-                    sizes.push_back(uni.size);
+                    names.insert(uni.name);
                 }
             }
         }
     }
     
     // Descriptor Pool
-    VKuint setCount = sets.size();
+    VKuint setCount = names.size();
     createDescriptorPool(setCount);
     this->p_descSets.resize(MAX_FRAMES_IN_FLIGHT);
     this->p_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -411,7 +411,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         if (vbo->data) {
             this->stageAndCopyBuffer(this->p_buffers.back(), this->p_buffersMemory.back(), BufferType::VERTEX, vbo->size, vbo->data);
         }
-        this->defineBufferAttributes(vbo);
+        model->attributes = this->defineBufferAttributes(vbo);
     }
 
     // Buffers: IBO
@@ -423,7 +423,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         this->stageAndCopyBuffer(this->p_buffers.back(), this->p_buffersMemory.back(), BufferType::INDEX, info.ibo->size, info.ibo->data);
     }
 
-    // Pipeline Model Setup    
+    // Pipeline Model Setup
     this->pipelineModelSetup(info, model);
 
     std::vector<VKuint> indexCount;
@@ -664,6 +664,8 @@ void ProgramVK::createRenderPass() {
 }
 
 void ProgramVK::pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m) {
+    m->pipeInfo = new ModelPipelineInfo{};
+
     // For each topology
     for (auto &topology : info.topologies) {
         // Input Assembly

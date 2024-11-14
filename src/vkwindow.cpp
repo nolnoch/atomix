@@ -334,7 +334,7 @@ void VKWindow::initCloudModel() {
 void VKWindow::initModels() {
     initCrystalModel();
     initWaveModel();
-    initCloudModel();
+    // initCloudModel();
 }
 
 void VKWindow::changeModes(bool force) {

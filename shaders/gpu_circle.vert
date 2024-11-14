@@ -4,22 +4,21 @@ layout(location = 0) in vec3 factorsA;
 
 layout(location = 0) out vec4 vertColour;
 
-layout(set = 0, binding = 0) uniform MatrixUBO {
+layout(set = 0, binding = 0) uniform WorldState {
     mat4 worldMat;
     mat4 viewMat;
     mat4 projMat;
 } worldState;
 
-layout(set = 1, binding = 0) uniform WaveUBO {
+layout(set = 1, binding = 0) uniform WaveState {
     vec3 waveMaths;
     uvec3 waveColours;
 } waveState;
 
-layout(push_constant) uniform constants {
+layout(push_constant) uniform PushConstants {
     float time;
     uint mode;
-    float phase;
-} pConst;
+} pushConst;
 
 
 void main() {
@@ -40,17 +39,17 @@ void main() {
    
     /* Circular Wavefunction */
     //                             sin(2pi / L * x) - (2pi / T * t)
-    float wavefunc = cos((two_pi_L * r * theta) - (two_pi_T * pConst.time) + phase_const);
+    float wavefunc = cos((two_pi_L * r * theta) - (two_pi_T * pushConst.time) + phase_const);
     float displacement = amp * wavefunc;
 
     /* Assign vertices */
     float x_coord, y_coord, z_coord;
-    if (pConst.mode == 0) {
+    if (pushConst.mode == 0) {
         // Orthogonal waves
         x_coord = r * cos_th;
         y_coord = displacement;
         z_coord = r * sin_th;
-    } else if (pConst.mode == 1) {
+    } else if (pushConst.mode == 1) {
         // Parallel waves
         x_coord = (r + displacement) * cos_th;
         y_coord = 0.0f;

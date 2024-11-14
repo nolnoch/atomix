@@ -46,13 +46,31 @@
 #endif
 
 
+struct Uniform {
+    std::string name;
+    uint set = 0;
+    uint binding = 0;
+    uint size = 0;
+};
+
+struct PushConstant {
+    std::string name;
+    uint size = 0;
+};
+
+
 class Shader {
 public:
     Shader(std::string fName, uint type);
     virtual ~Shader();
 
     bool compile(uint version);
+    bool reflect();
+
     void setId(unsigned int idAssigned);
+    void setStageIdx(uint idx) { vkStageIdx = idx; };
+    void setPushIdx(uint idx) { vkPushIdx = idx; };
+    void addDescIdx(uint idx) { vkDescIdx.push_back(idx); };
 
     unsigned int getId();
     unsigned int getType();
@@ -62,9 +80,18 @@ public:
     const uint* getSourceCompiled();
     size_t getLengthRaw();
     size_t getLengthCompiled();
+
+    std::vector<Uniform>& getUniforms() { return uniforms; };
+    std::vector<PushConstant>& getPushConstants() { return pushConstants; };
+
+    uint getStageIdx() { return vkStageIdx; };
+    uint getPushIdx() { return vkPushIdx; };
+    uint getDescIdx(uint idx) { return vkDescIdx[idx]; };
+    uint getDescCount() { return vkDescIdx.size(); };
     
     bool isValidFile();
     bool isValidCompile();
+    bool isValidReflect() { return validReflect; };
 
 private:
     bool fileToString();
@@ -75,9 +102,17 @@ private:
     std::string fileName;
     std::string sourceStringRaw;
     std::vector<uint32_t> sourceBufferCompiled;
+
+    std::vector<Uniform> uniforms;
+    std::vector<PushConstant> pushConstants;
+
+    uint vkStageIdx = 0;
+    uint vkPushIdx = 0;
+    std::vector<uint> vkDescIdx;
     
     bool validFile = false;
     bool validCompile = false;
+    bool validReflect = false;
 };
 
 #endif /* SHADER_HPP_ */

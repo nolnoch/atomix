@@ -5,7 +5,7 @@ layout(location = 1) in vec3 colour;
     
 layout(location = 0) out vec4 vertColour;
 
-layout(set = 0,binding = 0) uniform WorldState {
+layout(set = 0, binding = 0) uniform WorldState {
     mat4 worldMat;
     mat4 viewMat;
     mat4 projMat;

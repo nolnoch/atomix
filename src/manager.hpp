@@ -127,6 +127,7 @@ class Manager {
         };
 
         const uint eUpdateFlags = -1 << 5;
+        const uint eInitFlags = em::UPD_VBO | em::UPD_EBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS | em::UPD_PUSH_CONST | em::UPD_MATRICES;
 };
 
 #endif

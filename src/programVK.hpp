@@ -122,8 +122,14 @@ struct QueueFamilyIndices {
     std::optional<uint32_t> presentFamily;
 };
 
+struct AttribInfo {
+    std::vector<VkVertexInputBindingDescription> bindings;
+	std::vector<VkVertexInputAttributeDescription> attributes;
+};
+
 struct BufferCreateInfo {
     std::string name;
+    VKuint id = 0;
     BufferType type = BufferType::VERTEX;
     VKuint set = 0;
     VKuint binding = 0;
@@ -156,6 +162,7 @@ struct OffsetInfo {
     VKuint vertShaderIndex = 0;
     VKuint fragShaderIndex = 0;
     VKuint topologyIndex = 0;
+    VKuint bufferComboIndex = 0;
 };
 
 struct ModelCreateInfo {
@@ -167,6 +174,7 @@ struct ModelCreateInfo {
     std::vector<std::string> fragShaders;
     std::vector<std::string> pushConstants;
     std::vector<VkPrimitiveTopology> topologies;
+    std::vector<std::vector<VKuint>> bufferCombos;
     std::vector<OffsetInfo> offsets;
 };
 
@@ -177,9 +185,8 @@ struct PipelineLibrary {
 };
 
 struct ModelPipelineInfo {
-    VkPipelineVertexInputStateCreateInfo vboCreate{};
+    std::vector<VkPipelineVertexInputStateCreateInfo> vboCreates{};
     std::vector<VkPipelineInputAssemblyStateCreateInfo> iaCreates;
-    PipelineLibrary *pipeLib = nullptr;
 };
 
 struct GlobalPipelineInfo {
@@ -197,8 +204,8 @@ struct GlobalPipelineInfo {
 
 struct RenderInfo {
     VkPipeline pipeline = VK_NULL_HANDLE;
-    VkBuffer *firstVbo = nullptr;
-    VkBuffer *ibo = nullptr;
+    std::vector<VkBuffer> vbos;
+    VkBuffer ibo = VK_NULL_HANDLE;
     std::vector<VkDeviceSize> vboOffsets;
     std::vector<VKuint> uboIndices;
     VKuint pushConst = 0;
@@ -207,23 +214,30 @@ struct RenderInfo {
     uint64_t indexCount = 0;
 };
 
-struct AttribInfo {
-    std::vector<VkVertexInputBindingDescription> bindings;
-	std::vector<VkVertexInputAttributeDescription> attributes;
+struct ValidityInfo {
+    bool shaders = false;
+    bool vbo = false;
+    bool ibo = false;
+    bool uniforms = false;
+    bool pipelines = false;
+    bool renders = false;
+
+    bool validate() {
+        return shaders && vbo && ibo && uniforms && pipelines && renders;
+    }
 };
 
 struct ModelInfo {
     uint id = 0;
     std::string name;
-    std::vector<VkBuffer> vbos;
-    std::vector<VkDeviceMemory> vboMemory;
-    VkBuffer ibo = nullptr;
-    VkDeviceMemory iboMemory = nullptr;
+    std::vector<VKuint> vbos;
+    VKuint ibo = 0;
     std::vector<VKuint> vertShaders;
     std::vector<VKuint> fragShaders;
-    AttribInfo *attributes = nullptr;
+    std::vector<AttribInfo *> attributes;
     ModelPipelineInfo *pipeInfo = nullptr;
     std::vector<RenderInfo *> renders;
+    ValidityInfo valid;
 };
 
 
@@ -245,13 +259,10 @@ public:
     int compileAllShaders();
     VkShaderModule& createShaderModule(Shader *shader);
     VKuint createShaderStage(Shader *shader);
-    AttribInfo* defineBufferAttributes(BufferCreateInfo *vbo);
+    void defineBufferAttributes(ModelCreateInfo &info, ModelInfo *m);
 
     void addUniformsAndPushConstants();
     VKuint addModel(ModelCreateInfo &info);
-    void updateBuffer(BufferUpdateInfo &info);
-    VKuint validateModel(ModelCreateInfo &info);
-    bool validateModel(const std::string &name);
     VKuint activateModel(const std::string &name);
     VKuint deactivateModel(const std::string &name);
 
@@ -266,7 +277,7 @@ public:
 
     void pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m);
     void pipelineGlobalSetup();
-    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia);
+    void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int vbo, int ia);
     void genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia);
     void genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineLayout &lay, VkPipelineRasterizationStateCreateInfo &rs);
     void genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag);
@@ -276,9 +287,7 @@ public:
 
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size);
-    void stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData);
-    void stageAndCopyVertexBuffer(ModelInfo *model, VKuint idx, bool update, VKuint64 size, const void *data);
-    void stageAndCopyIndexBuffer(ModelInfo *model, bool update, VKuint64 size, const void *data);
+    void stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData, bool createBuffer = true);
     void createPersistentUniformBuffers();
     void createDescriptorSetLayout(VKuint set, VKuint binding);
     void createDescriptorPool(VKuint bindings);
@@ -287,8 +296,10 @@ public:
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
 
-    void updateRender(const std::string& modelName, OffsetInfo &info);
-    void updateUniformBuffer(uint32_t currentImage, std::string uboName, uint32_t uboSize, const void *uboData);
+    void updateBuffer(std::string bufferName, VKuint64 count, VKuint64 size, const void *data);
+    void updateBuffer(BufferUpdateInfo &info);
+    void updateUniformBuffer(uint32_t currentImage, std::string uboName, VKuint uboSize, const void *uboData);
+    void updatePushConstant(std::string name, const void *data, VKuint size = 0);
     void updateClearColor(float r, float g, float b, float a);
     void updateSwapExtent(int x, int y);
 
@@ -347,6 +358,7 @@ private:
     std::vector<VkDeviceMemory> p_buffersMemory;
     std::vector<BufferCreateInfo *> p_buffersInfo;
     std::map<std::string, VKuint> p_mapBuffers;
+    std::map<std::string, VKuint> p_mapBufferToModel;
 
     VkBuffer p_stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory p_stagingMemory = VK_NULL_HANDLE;

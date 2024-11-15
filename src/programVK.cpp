@@ -42,53 +42,24 @@ ProgramVK::~ProgramVK() {
 void ProgramVK::cleanup() {
     // destruct models
     for (auto &model : p_models) {
-        // vbos
-        for (auto &buf : model->vbos) {
-            this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
-        }
-        for (auto &buf : model->vboMemory) {
-            this->p_vdf->vkFreeMemory(this->p_dev, buf, nullptr);
-        }
-        
-        // ibo
-        this->p_vdf->vkDestroyBuffer(this->p_dev, model->ibo, nullptr);
-        this->p_vdf->vkFreeMemory(this->p_dev, model->iboMemory, nullptr);
-        
-        // shaders
-        for (auto &shader : this->p_shaderModules) {
-            this->p_vdf->vkDestroyShaderModule(this->p_dev, shader, nullptr);
-        }
-
-        // attributes
-        delete model->attributes;
-
-        // pipeline libraries
-        if (p_libEnabled) {
-            for (auto &pipe : model->pipeInfo->pipeLib->vertexInput) {
-                this->p_vdf->vkDestroyPipeline(this->p_dev, pipe, nullptr);
-            }
-            for (auto &pipe : model->pipeInfo->pipeLib->preRasterization) {
-                this->p_vdf->vkDestroyPipeline(this->p_dev, pipe, nullptr);
-            }
-            for (auto &pipe : model->pipeInfo->pipeLib->fragmentShader) {
-                this->p_vdf->vkDestroyPipeline(this->p_dev, pipe, nullptr);
-            }
-            delete model->pipeInfo->pipeLib;
-        }
-        
-        // pipeline layouts
-        /* for (auto &layout : model->pipeInfo->pipeLayouts) {
-            this->p_vdf->vkDestroyPipelineLayout(this->p_dev, layout, nullptr);
-        } */
-        delete model->pipeInfo;
-        
-        // pipelines
+        // renders
         for (auto &render : model->renders) {
             this->p_vdf->vkDestroyPipeline(this->p_dev, render->pipeline, nullptr);
             delete render;
         }
         
+        // pipeline layouts
+        delete model->pipeInfo;
+        
         delete model;
+    }
+
+    // shaders
+    for (auto &shader : this->p_shaderModules) {
+        this->p_vdf->vkDestroyShaderModule(this->p_dev, shader, nullptr);
+    }
+    for (auto &shader : this->p_registeredShaders) {
+        delete shader;
     }
 
     // desc sets
@@ -105,6 +76,17 @@ void ProgramVK::cleanup() {
     }
     this->p_uniformBufferMappings.clear();
 
+    // buffers
+    for (auto &buf : this->p_buffers) {
+        this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
+    }
+    for (auto &mem : this->p_buffersMemory) {
+        this->p_vdf->vkFreeMemory(this->p_dev, mem, nullptr);
+    }
+    for (auto &info : this->p_buffersInfo) {
+        delete info;
+    }
+
     // descriptor pool
     this->p_vdf->vkDestroyDescriptorPool(this->p_dev, this->p_descPool, nullptr);
 
@@ -112,11 +94,7 @@ void ProgramVK::cleanup() {
     this->p_vdf->vkDestroyPipeline(this->p_dev, this->p_fragmentOutput, nullptr);
     this->p_vdf->vkDestroyPipelineCache(this->p_dev, this->p_pipeCache, nullptr);
 
-    // shader objects
-    for (auto &shader : p_registeredShaders) {
-        delete shader;
-    }
-
+    // pipeline layouts
     for (auto &pipeLayout : p_pipeLayouts) {
         this->p_vdf->vkDestroyPipelineLayout(this->p_dev, pipeLayout, nullptr);
     }
@@ -336,8 +314,10 @@ void ProgramVK::addUniformsAndPushConstants() {
                         createBuffer(uni.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[i][j], this->p_uniformBuffersMemory[i][j]);
                         this->p_vdf->vkMapMemory(this->p_dev, this->p_uniformBuffersMemory[i][j], 0, uni.size, 0, &this->p_uniformBufferMappings[i][j]);
                     }
+
+                    std::cout << "Uniform '" << uni.name << "' [" << "set: " << uni.set << ", binding: " << uni.binding << ", size: " << uni.size << "] added to program.\n";
                 } else {
-                    std::cout << "Uniform " << uni.name << " already exists in program.\n";
+                    // std::cout << "Uniform " << uni.name << " already exists in program.\n";
                 }
             }
             for (const auto &push : s->getPushConstants()) {
@@ -353,8 +333,10 @@ void ProgramVK::addUniformsAndPushConstants() {
                     pcr->offset = 0;
                     pcr->size = push.size;
                     this->p_pushConsts.push_back(std::pair<uint64_t, void *>(push.size, nullptr));
+
+                    std::cout << "Push constant '" << push.name << "' [" << "size: " << push.size << "] added to program.\n";
                 } else {
-                    std::cout << "Push constant " << push.name << " already exists in program.\n";
+                    // std::cout << "Push constant " << push.name << " already exists in program.\n";
                 }
             }
         }
@@ -402,25 +384,45 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         p_mapModels[info.name] = model->id;
     }
 
+    // Shaders
+    for (auto &shader : info.vertShaders) {
+        model->vertShaders.push_back(getShaderFromName(shader)->getId());
+    }
+    for (auto &shader : info.fragShaders) {
+        model->fragShaders.push_back(getShaderFromName(shader)->getId());
+    }
+    model->valid.shaders = true;
+    model->valid.uniforms = true;
+
     // Buffers: VBO
     for (auto &vbo : info.vbos) {
-        p_mapBuffers[vbo->name] = this->p_buffers.size();
+        idx = this->p_buffers.size();
+        p_mapBuffers[vbo->name] = idx;
+        p_mapBufferToModel[vbo->name] = model->id;
         this->p_buffers.push_back(VkBuffer{});
         this->p_buffersMemory.push_back(VkDeviceMemory{});
         this->p_buffersInfo.push_back(new BufferCreateInfo(*vbo));
+        this->p_buffersInfo[idx]->id = idx;
+        model->vbos.push_back(idx);
         if (vbo->data) {
             this->stageAndCopyBuffer(this->p_buffers.back(), this->p_buffersMemory.back(), BufferType::VERTEX, vbo->size, vbo->data);
+            model->valid.vbo = true;
         }
-        model->attributes = this->defineBufferAttributes(vbo);
     }
+    this->defineBufferAttributes(info, model);
 
     // Buffers: IBO
-    p_mapBuffers[info.ibo->name] = this->p_buffers.size();
+    idx = this->p_buffers.size();
+    p_mapBuffers[info.ibo->name] = idx;
+    p_mapBufferToModel[info.ibo->name] = model->id;
     this->p_buffers.push_back(VkBuffer{});
     this->p_buffersMemory.push_back(VkDeviceMemory{});
     this->p_buffersInfo.push_back(new BufferCreateInfo(*info.ibo));
+    this->p_buffersInfo[idx]->id = idx;
+    model->ibo = idx;
     if (info.ibo->data) {
         this->stageAndCopyBuffer(this->p_buffers.back(), this->p_buffersMemory.back(), BufferType::INDEX, info.ibo->size, info.ibo->data);
+        model->valid.ibo = true;
     }
 
     // Pipeline Model Setup
@@ -442,99 +444,50 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         OffsetInfo &off = info.offsets[i];
         model->renders.push_back(new RenderInfo{});
         RenderInfo *render = model->renders.back();
-        render->firstVbo = model->vbos.data();
-        render->ibo = &model->ibo;
+        for (auto &vIdx : info.bufferCombos[off.bufferComboIndex]) {
+            render->vbos.push_back(this->p_buffers[model->vbos[vIdx]]);
+        }
+        render->ibo = this->p_buffers[model->ibo];
         render->vboOffsets.resize(model->vbos.size(), 0);
         render->iboOffset = off.offset;
         render->indexCount = indexCount[i];
         
         // Not all platforms support libraries
         if (p_libEnabled) {
-            // Final Pipelines for Renders (Libraries)
+            /* // Final Pipelines for Renders (Libraries)
             this->createPipeFromLibraries(render,
                                             model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
                                             model->pipeInfo->pipeLib->preRasterization[off.vertShaderIndex],
-                                            model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
+                                            model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]); */
         } else {
             // Final Pipelines for Renders (Full PSO)
             VKuint vs = this->getShaderFromName(info.vertShaders[off.vertShaderIndex])->getStageIdx();
             VKuint fs = this->getShaderFromName(info.fragShaders[off.fragShaderIndex])->getStageIdx();
-            this->createPipeline(render, model, vs, fs, off.topologyIndex);
+            this->createPipeline(render, model, vs, fs, off.bufferComboIndex, off.topologyIndex);
         }
     }
+    model->valid.renders = true;
 
     printModel(model);
+
+    if (model->valid.validate()) {
+        std::cout << "Model validated: " << info.name << std::endl;
+    } else {
+        std::cout << "Model not validated: " << info.name << std::endl;
+    }
 
     return model->id;
 }
 
-bool ProgramVK::validateModel(const std::string &name) {
-    /* assert(this->p_mapDescriptors.size());
-    ModelInfo *model = getModelFromName(name);
-    
-    if (p_libEnabled) {
-        // Pipeline Libraries
-        model->pipeInfo->pipeLib = new PipelineLibrary{};
-        for (auto &ia : model->pipeInfo->iaCreates) {
-            this->genVertexInputPipeLib(model, model->pipeInfo->vboCreate, ia);
-        }
-        for (auto &vert : model->pipeInfo->vsCreates) {
-            for (auto &lay : model->pipeInfo->pipeLayouts) {
-                this->genPreRasterizationPipeLib(model, vert, lay, model->pipeInfo->rsCreate);
-            }
-        }
-        for (auto &frag : model->pipeInfo->fsCreates) {
-            this->genFragmentShaderPipeLib(model, frag);
-        }
-        if (!this->p_fragmentOutput) {
-            this->genFragmentOutputPipeLib();
-        }
-    }
-
-    std::vector<VKuint> indexCount;
-    for (int i = 0; i < info.offsets.size(); i++) {
-        VKuint end = 0;
-        if (i < info.offsets.size() - 1) {
-            end = info.offsets[i+1].offset;
-        } else {
-            end = info.ibo->count;
-        }
-        indexCount.push_back(end - info.offsets[i].offset);
-    }
-
-    // Populate Renders
-    for (int i = 0; i < info.offsets.size(); i++) {
-        OffsetInfo &off = info.offsets[i];
-        model->renders.push_back(new RenderInfo{});
-        RenderInfo *render = model->renders.back();
-        render->firstVbo = model->vbos.data();
-        render->ibo = &model->ibo;
-        render->vboOffsets.resize(model->vbos.size(), 0);
-        render->iboOffset = off.offset;
-        render->indexCount = indexCount[i];
-        
-        // Not all platforms support libraries
-        if (p_libEnabled) {
-            // Final Pipelines for Renders (Libraries)
-            this->createPipeFromLibraries(render,
-                                            model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
-                                            model->pipeInfo->pipeLib->preRasterization[off.vertShaderIndex],
-                                            model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
-        } else {
-            // Final Pipelines for Renders (Full PSO)
-            this->createPipeline(render, model, off.vertShaderIndex, off.fragShaderIndex, off.topologyIndex);
-        }
-    }
-
-    printModel(model);
-
-    return model->id; */
-    return true;
-}
-
 VKuint ProgramVK::activateModel(const std::string &name) {
     VKuint id = getModelIdFromName(name);
-    p_activeModels.push_back(id);
+
+    if (this->p_models[id]->valid.validate()) {
+        p_activeModels.push_back(id);
+    } else {
+        std::cout << "Model not validated and not added to active models: " << name << std::endl;
+        id = -1;
+    }
     
     return id;
 }
@@ -678,14 +631,18 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m) {
         ia->pNext = nullptr;
     }
 
-    // Vertex Input State
-    m->pipeInfo->vboCreate.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    m->pipeInfo->vboCreate.vertexBindingDescriptionCount = m->attributes->bindings.size();
-    m->pipeInfo->vboCreate.vertexAttributeDescriptionCount = m->attributes->attributes.size();
-    m->pipeInfo->vboCreate.pVertexBindingDescriptions = m->attributes->bindings.data();
-    m->pipeInfo->vboCreate.pVertexAttributeDescriptions = m->attributes->attributes.data();
-    m->pipeInfo->vboCreate.flags = 0;
-    m->pipeInfo->vboCreate.pNext = nullptr;
+    // Vertex Input Info
+    for (const auto &attr : m->attributes) {
+        m->pipeInfo->vboCreates.push_back({});
+        VkPipelineVertexInputStateCreateInfo *vboCreate = &m->pipeInfo->vboCreates.back();
+        vboCreate->sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vboCreate->vertexBindingDescriptionCount = attr->bindings.size();
+        vboCreate->vertexAttributeDescriptionCount = attr->attributes.size();
+        vboCreate->pVertexBindingDescriptions = attr->bindings.data();
+        vboCreate->pVertexAttributeDescriptions = attr->attributes.data();
+        vboCreate->flags = 0;
+        vboCreate->pNext = nullptr;
+    }
 }
 
 void ProgramVK::pipelineGlobalSetup() {
@@ -771,7 +728,7 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.init = true;
 }
 
-void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int ia) {
+void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int vbo, int ia) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderModules = { this->p_shaderStages[vs], this->p_shaderStages[fs] };
 
     // Global pipeline
@@ -791,13 +748,15 @@ void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs,
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     // Model-specific pipeline
-    pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreate;
+    pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreates[vbo];
     pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[ia];
     pipelineInfo.layout = this->p_pipeLayouts.back();
 
     if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &render->pipeline)) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
     }
+
+    m->valid.pipelines = true;
 }
 
 void ProgramVK::genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia) {
@@ -821,7 +780,7 @@ void ProgramVK::genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputSta
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vertex Input pipeline library!");
     }
-    model->pipeInfo->pipeLib->vertexInput.push_back(pipe);
+    // model->pipeInfo->pipeLib->vertexInput.push_back(pipe);
     // TODO : Make this use direct assignment to the vector
 }
 
@@ -851,7 +810,7 @@ void ProgramVK::genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderSta
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Pre-Rasterization pipeline library!");
     }
-    model->pipeInfo->pipeLib->preRasterization.push_back(pipe);
+    // model->pipeInfo->pipeLib->preRasterization.push_back(pipe);
 }
 
 void ProgramVK::genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag) {
@@ -878,7 +837,7 @@ void ProgramVK::genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStage
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Fragment Shader pipeline library!");
     }
-    model->pipeInfo->pipeLib->fragmentShader.push_back(pipe);
+    // model->pipeInfo->pipeLib->fragmentShader.push_back(pipe);
 }
 
 void ProgramVK::genFragmentOutputPipeLib() {
@@ -1032,42 +991,49 @@ void ProgramVK::copyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size) {
     this->p_vdf->vkFreeCommandBuffers(this->p_dev, this->p_cmdpool, 1, &this->p_cmdbuff);
 }
 
-AttribInfo* ProgramVK::defineBufferAttributes(BufferCreateInfo *vbo) {
-    AttribInfo *attribInfo = new AttribInfo{};
-    int locations = 0;
+void ProgramVK::defineBufferAttributes(ModelCreateInfo &info, ModelInfo *m) {
+    for (auto &combo : info.bufferCombos) {
+        m->attributes.push_back(new AttribInfo{});
+        AttribInfo *attrib = m->attributes.back();
+        int bindings = 0;
+        int locations = 0;
 
-    // Populate binding and attribute info
-    uint thisOffset = 0;
-    std::vector<uint> offsets;
-    offsets.push_back(0);
+        for (auto &vboIdx : combo) {
+            BufferCreateInfo *vbo = info.vbos[vboIdx];
 
-    VkVertexInputBindingDescription bindingDescription{};
-    bindingDescription.binding = vbo->binding;
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            VkVertexInputBindingDescription bindingDescription{};
+            bindingDescription.binding = bindings;
+            bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    // Calculate atribute locations and sizes
-    for (auto &attrib : vbo->dataTypes) {
-        VkFormat thisFormat = dataFormats[static_cast<uint>(attrib)];
+            // Calculate offsets from dataTypes
+            uint thisOffset = 0;
+            std::vector<uint> theseOffsets;
+            theseOffsets.push_back(0);
 
-        VkVertexInputAttributeDescription attributeDescription{};
-        attributeDescription.binding = vbo->binding;
-        attributeDescription.format = thisFormat;
-        attributeDescription.location = locations;
-        attributeDescription.offset = thisOffset;
-        attribInfo->attributes.push_back(attributeDescription);
+            // Calculate atribute locations and sizes
+            for (auto &dType : vbo->dataTypes) {
+                VkFormat thisFormat = dataFormats[static_cast<uint>(dType)];
 
-        locations += ((thisFormat == VK_FORMAT_R64G64B64_SFLOAT) || (thisFormat == VK_FORMAT_R64G64B64A64_SFLOAT)) ? 2 : 1;
-        thisOffset = dataSizes[static_cast<uint>(attrib)];
-        offsets.push_back(thisOffset);
+                VkVertexInputAttributeDescription attributeDescription{};
+                attributeDescription.binding = bindings;
+                attributeDescription.location = locations;
+                attributeDescription.format = thisFormat;
+                attributeDescription.offset = thisOffset;
+                attrib->attributes.push_back(attributeDescription);
+
+                locations += ((thisFormat == VK_FORMAT_R64G64B64_SFLOAT) || (thisFormat == VK_FORMAT_R64G64B64A64_SFLOAT)) ? 2 : 1;
+                thisOffset = dataSizes[static_cast<uint>(dType)];
+                theseOffsets.push_back(thisOffset);
+            }
+
+            bindingDescription.stride = std::accumulate(theseOffsets.cbegin(), theseOffsets.cend(), 0);
+            attrib->bindings.push_back(bindingDescription);
+            bindings++;
+        }
     }
-
-    bindingDescription.stride = std::accumulate(offsets.cbegin(), offsets.cend(), 0);
-    attribInfo->bindings.push_back(bindingDescription);
-
-    return attribInfo;
 }
 
-void ProgramVK::stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData) {
+void ProgramVK::stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData, bool create) {
     VkBufferUsageFlags usage = ((type == BufferType::VERTEX) ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : VK_BUFFER_USAGE_INDEX_BUFFER_BIT) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
     createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
@@ -1077,51 +1043,11 @@ void ProgramVK::stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemor
     memcpy(data, bufData, bufSize);
     this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
 
-    createBuffer(bufSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, bufferMemory);
+    if (create) {
+        createBuffer(bufSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, bufferMemory);
+    }
 
     copyBuffer(buffer, p_stagingBuffer, bufSize);
-
-    this->p_vdf->vkDestroyBuffer(this->p_dev, p_stagingBuffer, nullptr);
-    this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);
-}
-
-void ProgramVK::stageAndCopyVertexBuffer(ModelInfo *model, VKuint idx, bool update, VKuint64 bufSize, const void *bufData) {
-    VkBuffer *vbo = &model->vbos[idx];
-    VkDeviceMemory *vboMem = &model->vboMemory[idx];
-
-    createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
-
-    void* data;
-    this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, bufSize, 0, &data);
-    memcpy(data, bufData, bufSize);
-    this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
-
-    if (!update) {
-        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, *vbo, *vboMem);
-    }
-    
-    copyBuffer(*vbo, p_stagingBuffer, bufSize);
-
-    this->p_vdf->vkDestroyBuffer(this->p_dev, p_stagingBuffer, nullptr);
-    this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);
-}
-
-void ProgramVK::stageAndCopyIndexBuffer(ModelInfo *model, bool update, VKuint64 bufSize, const void *bufData) {
-    VkBuffer *ibo = &model->ibo;
-    VkDeviceMemory *iboMem = &model->iboMemory;
-
-    createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
-
-    void* data;
-    this->p_vdf->vkMapMemory(this->p_dev, p_stagingMemory, 0, bufSize, 0, &data);
-    memcpy(data, bufData, bufSize);
-    this->p_vdf->vkUnmapMemory(this->p_dev, p_stagingMemory);
-
-    if (!update) {
-        createBuffer(bufSize, (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, *ibo, *iboMem);
-    }
-
-    copyBuffer(*ibo, p_stagingBuffer, bufSize);
 
     this->p_vdf->vkDestroyBuffer(this->p_dev, p_stagingBuffer, nullptr);
     this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);
@@ -1243,38 +1169,84 @@ void ProgramVK::createDescriptorSetLayout(VKuint set, VKuint binding) {
     }
 }
 
-void ProgramVK::updateRender(const std::string &modelName, OffsetInfo &off) {
-    ModelInfo *model = getModelFromName(modelName);
+void ProgramVK::updateBuffer(std::string bufferName, VKuint64 count, VKuint64 size, const void *data) {
+    VKuint idx = this->p_mapBuffers[bufferName];
+    BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
 
-    // Recreate pipeline to use new shader
-    for (auto &render : model->renders) {
-        if (render->iboOffset == off.offset) {
-            this->createPipeFromLibraries(render,
-                                          model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
-                                          model->pipeInfo->pipeLib->preRasterization[off.vertShaderIndex],
-                                          model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]);
+    if (!bufferInfo->data) {
+        // Model was pre-declared and needs to be updated for initialization
+        bufferInfo->count = count;
+        bufferInfo->size = size;
+        bufferInfo->data = data;
+
+        this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], bufferInfo->type, size, data);
+
+        if (bufferInfo->type == BufferType::VERTEX) this->p_models[this->p_mapBufferToModel[bufferName]]->valid.vbo = true;
+        if (bufferInfo->type == BufferType::INDEX) this->p_models[this->p_mapBufferToModel[bufferName]]->valid.ibo = true;
+
+    } else {
+        if (bufferInfo->size >= size) {
+            // Model was already initialized, and buffer is large enough to update in place
+            bufferInfo->count = count;
+            bufferInfo->size = size;
+            bufferInfo->data = data;
+            
+            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], bufferInfo->type, size, data, false);
+        } else {
+            // Model was already initialized, but buffer needs to be recreated to fit new size
+            bufferInfo->count = count;
+            bufferInfo->size = size;
+            bufferInfo->data = data;
+
+            this->p_vdf->vkDestroyBuffer(this->p_dev, this->p_buffers[idx], nullptr);
+            this->p_vdf->vkFreeMemory(this->p_dev, this->p_buffersMemory[idx], nullptr);
+            this->p_buffers[idx] = VK_NULL_HANDLE;
+            this->p_buffersMemory[idx] = VK_NULL_HANDLE;
+
+            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], bufferInfo->type, size, data);
         }
     }
+
 }
 
-void ProgramVK::updateBuffer(BufferUpdateInfo &buf) {
-    VKuint id = -1;
-    
-    // Find model
-    ModelInfo *model = getModelFromName(buf.modelName);
+void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
+    VKuint idx = this->p_mapBuffers[info.bufferName];
+    BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
 
-    // Find buffer and update with new data
-    if (buf.type == BufferType::VERTEX) {
-        try {
-            id = p_mapBuffers.at(buf.bufferName);
-        } catch (const std::out_of_range &e) {
-            std::cout << "Buffer not found: " << buf.bufferName << std::endl;
-            return;
+    if (!bufferInfo->data) {
+        // Model was pre-declared and needs to be updated for initialization
+        bufferInfo->count = info.count;
+        bufferInfo->size = info.size;
+        bufferInfo->data = info.data;
+
+        this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data);
+
+        if (info.type == BufferType::VERTEX) this->p_models[this->p_mapModels[info.modelName]]->valid.vbo = true;
+        if (info.type == BufferType::INDEX) this->p_models[this->p_mapModels[info.modelName]]->valid.ibo = true;
+
+    } else {
+        if (bufferInfo->size >= info.size) {
+            // Model was already initialized, and buffer is large enough to update in place
+            bufferInfo->count = info.count;
+            bufferInfo->size = info.size;
+            bufferInfo->data = info.data;
+            
+            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data, false);
+        } else {
+            // Model was already initialized, but buffer needs to be recreated to fit new size
+            bufferInfo->count = info.count;
+            bufferInfo->size = info.size;
+            bufferInfo->data = info.data;
+
+            this->p_vdf->vkDestroyBuffer(this->p_dev, this->p_buffers[idx], nullptr);
+            this->p_vdf->vkFreeMemory(this->p_dev, this->p_buffersMemory[idx], nullptr);
+            this->p_buffers[idx] = VK_NULL_HANDLE;
+            this->p_buffersMemory[idx] = VK_NULL_HANDLE;
+
+            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data);
         }
-        this->stageAndCopyVertexBuffer(model, id, true, buf.size, buf.data);
-    } else if (buf.type == BufferType::INDEX) {
-        this->stageAndCopyIndexBuffer(model, true, buf.size, buf.data);
     }
+
 }
 
 void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string uboName, uint32_t uboSize, const void *uboData) {
@@ -1282,6 +1254,22 @@ void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string uboName, 
 
     void *dest = this->p_uniformBufferMappings[currentImage][uboIdx];
     memcpy(dest, uboData, uboSize);
+}
+
+void ProgramVK::updatePushConstant(std::string name, const void *data, uint32_t size) {
+    VKuint pid = this->p_mapPushConsts[name];
+    this->p_pushConsts[pid].second = data;
+    
+    if (size) {
+        // Update existing PCR with new size, data, and Range
+        VkPushConstantRange *pcr = &this->p_pushConstRanges[pid];
+        pcr->stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        pcr->offset = 0;
+        pcr->size = size;
+
+        this->p_pushConsts[pid].first = size;
+        this->p_pushConsts[pid].second = data;
+    }
 }
 
 void ProgramVK::updateClearColor(float r, float g, float b, float a) {
@@ -1341,8 +1329,8 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
             }
             this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
-            this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, model->vbos.size(), render->firstVbo, render->vboOffsets.data());
-            this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, *render->ibo, 0, VK_INDEX_TYPE_UINT32);
+            this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, render->vbos.size(), render->vbos.data(), render->vboOffsets.data());
+            this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, render->ibo, 0, VK_INDEX_TYPE_UINT32);
             if (render->pushConst) {
                 this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts.back(), VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[0].first, this->p_pushConsts[0].second);
             }
@@ -1448,21 +1436,9 @@ bool ProgramVK::isActive(const std::string &modelName) {
 void ProgramVK::printModel(ModelInfo *model) {
     std::cout << "Model: " << model->id << "\n";
     
-    if (!model->attributes) {
-        std::cout << "    No attributes." << "\n";
-    } else {
-        for (int i = 0; i < model->attributes->bindings.size(); i++) {
-            std::cout << "    Binding " << i << ": " << model->attributes->bindings[i].binding << "\n";
-
-            for (int j = 0; j < model->attributes->attributes.size(); j++) {
-                if (model->attributes->attributes[j].binding == i) {
-                    std::cout << "        Attribute " << j << ": " << model->attributes->attributes[j].location << "\n";
-                    std::cout << "            Offset: " << model->attributes->attributes[j].offset << "\n";
-                    std::cout << "            Format: " << dataFormatNames[dataFormatIdx[model->attributes->attributes[j].format]] << "\n";
-                    std::cout << "            Size  : " << dataSizes[dataFormatIdx[model->attributes->attributes[j].format]] << "\n";
-                }
-            }
-        }
+    for (const auto &vboIdx : model->vbos) {
+        BufferCreateInfo *vbo = this->p_buffersInfo[vboIdx];
+        std::cout << "    VBO: " << vbo->name << "\n";
     }
 
     if (!model->renders.size()) {
@@ -1479,7 +1455,7 @@ void ProgramVK::printModel(ModelInfo *model) {
 }
 
 void ProgramVK::printInfo(ModelCreateInfo *info) {
-    std::cout << "Model: " << info->name << "\n";
+    std::cout << "\nInfo: " << info->name << "\n";
     
     for (auto &vbo : info->vbos) {
         std::cout << "    VBO: " << vbo->name << "\n";
@@ -1513,10 +1489,10 @@ void ProgramVK::printInfo(ModelCreateInfo *info) {
     std::cout << "    Offsets: " << "\n";
     for (int i = 0; i < info->offsets.size(); i++) {
         auto &offset = info->offsets[i];
-        std::cout << "        [" << i << "]: " << offset.offset << "\n";
-        std::cout << "            Vertex Shader  : " << info->vertShaders[offset.vertShaderIndex] << "\n";
-        std::cout << "            Fragment Shader: " << info->fragShaders[offset.fragShaderIndex] << "\n";
-        std::cout << "            Topology       : " << topologyNames[info->topologies[offset.topologyIndex]] << "\n";
+        std::cout << "        [" << i << "]: Offset         : " << offset.offset << "\n";
+        std::cout << "             Vertex Shader  : " << info->vertShaders[offset.vertShaderIndex] << "\n";
+        std::cout << "             Fragment Shader: " << info->fragShaders[offset.fragShaderIndex] << "\n";
+        std::cout << "             Topology       : " << topologyNames[info->topologies[offset.topologyIndex]] << "\n";
     }
 
     std::cout << std::endl;

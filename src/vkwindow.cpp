@@ -82,7 +82,9 @@ void VKWindow::initWindow() {
     initVecsAndMatrices();
 
     // Init -- ProgramGLs and Shaders
-    initCrystalModel();
+    initModels();
+
+    this->atomixProg->activateModel("crystal");
 
     // Init -- Time
     vw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -238,16 +240,19 @@ void VKWindow::initCrystalModel() {
     crystalModel.vertShaders = { "default.vert" };
     crystalModel.fragShaders = { "default.frag" };
     crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP };
+    crystalModel.bufferCombos = { { 0 } };
     crystalModel.offsets = {
         {   .offset = 0,
             .vertShaderIndex = 0,
             .fragShaderIndex = 0,
-            .topologyIndex = 0
+            .topologyIndex = 0,
+            .bufferComboIndex = 0
         },
         {   .offset = crystalRingOffset,
             .vertShaderIndex = 0,
             .fragShaderIndex = 0,
-            .topologyIndex = 1
+            .topologyIndex = 1,
+            .bufferComboIndex = 0
         }
     };
 
@@ -278,11 +283,13 @@ void VKWindow::initWaveModel() {
     waveModel.vertShaders = { "gpu_circle.vert", "gpu_sphere.vert" };
     waveModel.fragShaders = { "default.frag" };
     waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
+    waveModel.bufferCombos = { { 0 } };
     waveModel.offsets = {
         {   .offset = 0,
             .vertShaderIndex = 0,
             .fragShaderIndex = 0,
-            .topologyIndex = 0
+            .topologyIndex = 0,
+            .bufferComboIndex = 0
         }
     };
 
@@ -314,7 +321,7 @@ void VKWindow::initCloudModel() {
     BufferCreateInfo cloudInd{};
     cloudInd.type = BufferType::INDEX;
     cloudInd.name = "cloudIndices";
-    cloudInd.dataTypes = {DataType::UINT};
+    cloudInd.dataTypes = { DataType::UINT };
 
     // Define Atomix Cloud Model with above buffers
     ModelCreateInfo cloudModel{};
@@ -325,7 +332,18 @@ void VKWindow::initCloudModel() {
     cloudModel.vertShaders = { "gpu_harmonics.vert" };
     cloudModel.fragShaders = { "default.frag" };
     cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
-    cloudModel.offsets = { { 0, 0, 0, 0 } };
+    cloudModel.bufferCombos = { { 0, 1 } };
+    cloudModel.offsets = {
+        {   .offset = 0,
+            .vertShaderIndex = 0,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0,
+            .bufferComboIndex = 0
+        }
+    };
+
+    // vbo=( 0 , 1 )
+    // each vbo has its (binding and) attrs, locations are assigned dynamically
 
     // Add Atomix Cloud Model to program
     atomixProg->addModel(cloudModel);
@@ -334,7 +352,7 @@ void VKWindow::initCloudModel() {
 void VKWindow::initModels() {
     initCrystalModel();
     initWaveModel();
-    // initCloudModel();
+    initCloudModel();
 }
 
 void VKWindow::changeModes(bool force) {
@@ -520,7 +538,17 @@ void VKWindow::updateBuffersAndShaders() {
 
     // Set up ProgramVK with buffers for the first time OR capture updates from currentManager
     if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
-        (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudModel() : initWaveModel();
+        // (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudModel() : initWaveModel();
+        if (flGraphState.hasAny(egs::CLOUD_MODE)) {
+            this->atomixProg->updateBuffer("cloudVertices", cloudManager->getVertexCount(), cloudManager->getVertexSize(), cloudManager->getVertexData());
+            this->atomixProg->updateBuffer("cloudData", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData());
+            this->atomixProg->updateBuffer("cloudIndices", cloudManager->getIndexCount(), cloudManager->getIndexSize(), cloudManager->getIndexData());
+            this->atomixProg->activateModel("cloud");
+        } else if (flGraphState.hasAny(egs::WAVE_MODE)) {
+            this->atomixProg->updateBuffer("waveVertices", waveManager->getVertexCount(), waveManager->getVertexSize(), waveManager->getVertexData());
+            this->atomixProg->updateBuffer("waveIndices", waveManager->getIndexCount(), waveManager->getIndexSize(), waveManager->getIndexData());
+            this->atomixProg->activateModel("wave");
+        }
         initVecsAndMatrices();
     } else {
         uint flags = currentManager->clearUpdates(); // TODO Broken
@@ -540,7 +568,7 @@ void VKWindow::updateBuffersAndShaders() {
         OffsetInfo off{};
         off.vertShaderIndex = 1;
         off.offset = 0;
-        atomixProg->updateRender("wave", off);
+        // atomixProg->updateRender("wave", off);
     }
     BufferUpdateInfo updBuf{};
     updBuf.modelName = vw_currentModel;

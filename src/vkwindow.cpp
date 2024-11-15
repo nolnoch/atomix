@@ -236,7 +236,7 @@ void VKWindow::initCrystalModel() {
     crystalModel.name = "crystal";
     crystalModel.vbos = { &crystalVert };
     crystalModel.ibo = &crystalInd;
-    crystalModel.ubos = { "worldState" };
+    crystalModel.ubos = { "WorldState" };
     crystalModel.vertShaders = { "default.vert" };
     crystalModel.fragShaders = { "default.frag" };
     crystalModel.topologies = { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP };
@@ -279,7 +279,7 @@ void VKWindow::initWaveModel() {
     waveModel.name = "wave";
     waveModel.vbos = { &waveVert };
     waveModel.ibo = &waveInd;
-    waveModel.ubos = { "worldState", "waveState" };
+    waveModel.ubos = { "WorldState", "WaveState" };
     waveModel.vertShaders = { "gpu_circle.vert", "gpu_sphere.vert" };
     waveModel.fragShaders = { "default.frag" };
     waveModel.pushConstant = "pushConst";
@@ -328,7 +328,7 @@ void VKWindow::initCloudModel() {
     cloudModel.name = "cloud";
     cloudModel.vbos = { &cloudVert, &cloudData };
     cloudModel.ibo = &cloudInd;
-    cloudModel.ubos = { "worldState" };
+    cloudModel.ubos = { "WorldState" };
     cloudModel.vertShaders = { "gpu_harmonics.vert" };
     cloudModel.fragShaders = { "default.frag" };
     cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
@@ -598,7 +598,7 @@ void VKWindow::updateBuffersAndShaders() {
         }
 
         for (int i = 0; i < MAX_CONCURRENT_FRAME_COUNT; i++) {
-            this->atomixProg->updateUniformBuffer(i, "waveState", sizeof(this->vw_wave), &this->vw_wave);
+            this->atomixProg->updateUniformBuffer(i, "WaveState", sizeof(this->vw_wave), &this->vw_wave);
         }
     }
 
@@ -625,7 +625,7 @@ void VKWindow::updateWorldState() {
     vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
     this->q_TotalRot.normalize();
 
-    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "worldState", sizeof(this->vw_world), &this->vw_world);
+    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
 }
 
 void VKWindow::updateTime(PushConstants &pConst) {

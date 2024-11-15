@@ -1267,6 +1267,7 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
             bufferInfo->data = info.data;
             
             this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data, false);
+            
         } else {
             // Model was already initialized, but buffer needs to be recreated to fit new size
             bufferInfo->count = info.count;

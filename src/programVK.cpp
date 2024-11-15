@@ -1364,9 +1364,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
             }
 
             this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
-            if (!i) {
-                this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayouts[model->pipeLayouts[0]], 0, this->p_descSets[image].size(), this->p_descSets[image].data(), 0, nullptr);                
-            }
+            this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayouts[model->pipeLayouts[0]], 0, this->p_descSets[image].size(), this->p_descSets[image].data(), 0, nullptr);                
             this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
             this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, render->vbos.size(), renderVbos.data(), render->vboOffsets.data());

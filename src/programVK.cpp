@@ -347,18 +347,7 @@ void ProgramVK::addUniformsAndPushConstants() {
         createDescriptorSets(sets[i], bindings[i], sizes[i]);
     }
 
-    // Pipeline Layout
-    VkPipelineLayoutCreateInfo lay{};
-    lay.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    lay.setLayoutCount = this->p_setLayouts.size();
-    lay.pSetLayouts = this->p_setLayouts.data();
-    lay.pushConstantRangeCount = this->p_pushConstRanges.size();
-    lay.pPushConstantRanges = this->p_pushConstRanges.data();
-
-    this->p_pipeLayouts.push_back({});
-    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &lay, nullptr, &this->p_pipeLayouts.back()) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create pipeline layout!");
-    }
+    definePipeLayouts();
 }
 
 VKuint ProgramVK::addModel(ModelCreateInfo &info) {
@@ -427,6 +416,12 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
 
     // Pipeline Model Setup
     this->pipelineModelSetup(info, model);
+    if (!info.pushConstant.empty()) {
+        VKuint pcrIdx = this->p_mapPushConsts[info.pushConstant];
+        model->pipeLayouts.push_back(pcrIdx + 1);
+    } else {
+        model->pipeLayouts.push_back(0);
+    }
 
     std::vector<VKuint> indexCount;
     for (int i = 0; i < info.offsets.size(); i++) {
@@ -445,12 +440,20 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         model->renders.push_back(new RenderInfo{});
         RenderInfo *render = model->renders.back();
         for (auto &vIdx : info.bufferCombos[off.bufferComboIndex]) {
-            render->vbos.push_back(this->p_buffers[model->vbos[vIdx]]);
+            render->vbos.push_back(model->vbos[vIdx]);
         }
-        render->ibo = this->p_buffers[model->ibo];
+        render->ibo = model->ibo;
         render->vboOffsets.resize(model->vbos.size(), 0);
         render->iboOffset = off.offset;
         render->indexCount = indexCount[i];
+        if (info.pushConstant.empty()) {
+            render->pushConst = -1;
+            render->pipeLayoutIndex = 0;
+        } else {
+            VKuint pcrIdx = this->p_mapPushConsts[info.pushConstant];
+            render->pushConst = pcrIdx;
+            render->pipeLayoutIndex = 0;
+        }
         
         // Not all platforms support libraries
         if (p_libEnabled) {
@@ -616,6 +619,38 @@ void ProgramVK::createRenderPass() {
     }
 }
 
+void ProgramVK::definePipeLayouts() {
+    
+    // Define pipeline layout with no push constants
+    VkPipelineLayoutCreateInfo lay{};
+    lay.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    lay.setLayoutCount = this->p_setLayouts.size();
+    lay.pSetLayouts = this->p_setLayouts.data();
+    lay.pushConstantRangeCount = 0;
+    lay.pPushConstantRanges = VK_NULL_HANDLE;
+
+    this->p_pipeLayouts.push_back({});
+    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &lay, nullptr, &this->p_pipeLayouts.back()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create pipeline layout!");
+    }
+
+    // Define pipeline layout with push constants, one layout per push constant
+    for (auto &pcr : this->p_pushConstRanges) {
+        VkPipelineLayoutCreateInfo lay{};
+        lay.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        lay.setLayoutCount = this->p_setLayouts.size();
+        lay.pSetLayouts = this->p_setLayouts.data();
+        lay.pushConstantRangeCount = 1;
+        lay.pPushConstantRanges = &pcr;
+
+        this->p_pipeLayouts.push_back({});
+        if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &lay, nullptr, &this->p_pipeLayouts.back()) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create pipeline layout!");
+        }
+    }
+    
+}
+
 void ProgramVK::pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m) {
     m->pipeInfo = new ModelPipelineInfo{};
 
@@ -750,7 +785,7 @@ void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs,
     // Model-specific pipeline
     pipelineInfo.pVertexInputState = &m->pipeInfo->vboCreates[vbo];
     pipelineInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[ia];
-    pipelineInfo.layout = this->p_pipeLayouts.back();
+    pipelineInfo.layout = this->p_pipeLayouts[m->pipeLayouts[0]];
 
     if ((this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, p_pipeCache, 1, &pipelineInfo, nullptr, &render->pipeline)) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
@@ -1323,16 +1358,21 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
         ModelInfo *model = this->p_models[i];
 
         for (auto &render : model->renders) {
+            std::vector<VkBuffer> renderVbos;
+            for (auto &vbo : render->vbos) {
+                renderVbos.push_back(this->p_buffers[vbo]);
+            }
+
             this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
             if (!i) {
-                this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayouts.back(), 0, this->p_descSets[image].size(), this->p_descSets[image].data(), 0, nullptr);                
+                this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayouts[model->pipeLayouts[0]], 0, this->p_descSets[image].size(), this->p_descSets[image].data(), 0, nullptr);                
             }
             this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
-            this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, render->vbos.size(), render->vbos.data(), render->vboOffsets.data());
-            this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, render->ibo, 0, VK_INDEX_TYPE_UINT32);
-            if (render->pushConst) {
-                this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts.back(), VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[0].first, this->p_pushConsts[0].second);
+            this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, render->vbos.size(), renderVbos.data(), render->vboOffsets.data());
+            this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, this->p_buffers[render->ibo], 0, VK_INDEX_TYPE_UINT32);
+            if (render->pushConst >= 0) {
+                this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts[model->pipeLayouts[0]], VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[render->pushConst].first, this->p_pushConsts[render->pushConst].second);
             }
             this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->iboOffset, 0, 0);
         }

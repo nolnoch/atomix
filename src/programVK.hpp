@@ -163,6 +163,7 @@ struct OffsetInfo {
     VKuint fragShaderIndex = 0;
     VKuint topologyIndex = 0;
     VKuint bufferComboIndex = 0;
+    VKuint pushConstantIndex = 0;
 };
 
 struct ModelCreateInfo {
@@ -172,7 +173,7 @@ struct ModelCreateInfo {
     std::vector<std::string> ubos;
     std::vector<std::string> vertShaders;
     std::vector<std::string> fragShaders;
-    std::vector<std::string> pushConstants;
+    std::string pushConstant;
     std::vector<VkPrimitiveTopology> topologies;
     std::vector<std::vector<VKuint>> bufferCombos;
     std::vector<OffsetInfo> offsets;
@@ -185,7 +186,7 @@ struct PipelineLibrary {
 };
 
 struct ModelPipelineInfo {
-    std::vector<VkPipelineVertexInputStateCreateInfo> vboCreates{};
+    std::vector<VkPipelineVertexInputStateCreateInfo> vboCreates;
     std::vector<VkPipelineInputAssemblyStateCreateInfo> iaCreates;
 };
 
@@ -204,11 +205,11 @@ struct GlobalPipelineInfo {
 
 struct RenderInfo {
     VkPipeline pipeline = VK_NULL_HANDLE;
-    std::vector<VkBuffer> vbos;
-    VkBuffer ibo = VK_NULL_HANDLE;
+    std::vector<VKuint> vbos;
+    VKuint ibo = 0;
     std::vector<VkDeviceSize> vboOffsets;
     std::vector<VKuint> uboIndices;
-    VKuint pushConst = 0;
+    VKint pushConst = 0;
     VKuint pipeLayoutIndex = 0;
     VkDeviceSize iboOffset = 0;
     uint64_t indexCount = 0;
@@ -234,6 +235,7 @@ struct ModelInfo {
     VKuint ibo = 0;
     std::vector<VKuint> vertShaders;
     std::vector<VKuint> fragShaders;
+    std::vector<VKuint> pipeLayouts;
     std::vector<AttribInfo *> attributes;
     ModelPipelineInfo *pipeInfo = nullptr;
     std::vector<RenderInfo *> renders;
@@ -260,6 +262,7 @@ public:
     VkShaderModule& createShaderModule(Shader *shader);
     VKuint createShaderStage(Shader *shader);
     void defineBufferAttributes(ModelCreateInfo &info, ModelInfo *m);
+    void definePipeLayouts();
 
     void addUniformsAndPushConstants();
     VKuint addModel(ModelCreateInfo &info);

@@ -282,6 +282,7 @@ void VKWindow::initWaveModel() {
     waveModel.ubos = { "worldState", "waveState" };
     waveModel.vertShaders = { "gpu_circle.vert", "gpu_sphere.vert" };
     waveModel.fragShaders = { "default.frag" };
+    waveModel.pushConstant = "pushConst";
     waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
     waveModel.bufferCombos = { { 0 } };
     waveModel.offsets = {
@@ -289,7 +290,8 @@ void VKWindow::initWaveModel() {
             .vertShaderIndex = 0,
             .fragShaderIndex = 0,
             .topologyIndex = 0,
-            .bufferComboIndex = 0
+            .bufferComboIndex = 0,
+            .pushConstantIndex = 0
         }
     };
 
@@ -297,9 +299,7 @@ void VKWindow::initWaveModel() {
     atomixProg->addModel(waveModel);
 
     // Activate Atomix Wave Model
-    /* atomixProg->activateModel("wave");
-    flGraphState.set(egs::WAVE_RENDER);
-    flGraphState.set(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR); */
+    atomixProg->updatePushConstant("pushConst", &this->vw_renderer->pConst);
 }
 
 void VKWindow::initCloudModel() {
@@ -536,30 +536,15 @@ void VKWindow::updateBuffersAndShaders() {
         return;
     }
 
-    // Set up ProgramVK with buffers for the first time OR capture updates from currentManager
-    if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
-        // (flGraphState.hasAny(egs::CLOUD_MODE)) ? initCloudModel() : initWaveModel();
-        if (flGraphState.hasAny(egs::CLOUD_MODE)) {
-            this->atomixProg->updateBuffer("cloudVertices", cloudManager->getVertexCount(), cloudManager->getVertexSize(), cloudManager->getVertexData());
-            this->atomixProg->updateBuffer("cloudData", cloudManager->getDataCount(), cloudManager->getDataSize(), cloudManager->getDataData());
-            this->atomixProg->updateBuffer("cloudIndices", cloudManager->getIndexCount(), cloudManager->getIndexSize(), cloudManager->getIndexData());
-            this->atomixProg->activateModel("cloud");
-        } else if (flGraphState.hasAny(egs::WAVE_MODE)) {
-            this->atomixProg->updateBuffer("waveVertices", waveManager->getVertexCount(), waveManager->getVertexSize(), waveManager->getVertexData());
-            this->atomixProg->updateBuffer("waveIndices", waveManager->getIndexCount(), waveManager->getIndexSize(), waveManager->getIndexData());
-            this->atomixProg->activateModel("wave");
-        }
-        initVecsAndMatrices();
-    } else {
-        uint flags = currentManager->clearUpdates(); // TODO Broken
-        flGraphState.set(flags);
-    }
+    // Capture updates from currentManager
+    uint flags = currentManager->clearUpdates();
+    flGraphState.set(flags);
     this->updateSize();
 
-    // Continue with ProgramVK update
-    if (flGraphState.hasAny(egs::WAVE_RENDER)) {
+    // Set current model
+    if (flGraphState.hasAny(egs::WAVE_MODE)) {
         vw_currentModel = "wave";
-    } else if (flGraphState.hasAny(egs::CLOUD_RENDER)) {
+    } else if (flGraphState.hasAny(egs::CLOUD_MODE)) {
         vw_currentModel = "cloud";
     }
     
@@ -623,6 +608,11 @@ void VKWindow::updateBuffersAndShaders() {
 
     if (flGraphState.hasAny(egs::UPD_MATRICES)) {
         initVecsAndMatrices();
+    }
+
+    if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
+        this->atomixProg->activateModel(vw_currentModel);
+        flGraphState.set(flGraphState.hasAny(egs::WAVE_MODE) ? egs::WAVE_RENDER : egs::CLOUD_RENDER);
     }
 
     flGraphState.clear(eUpdateFlags);

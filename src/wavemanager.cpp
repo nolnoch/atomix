@@ -46,6 +46,7 @@ void WaveManager::newConfig(AtomixConfig *config) {
 
 void WaveManager::initManager() {
     create();
+    mStatus.set(eInitFlags);
 }
 
 void WaveManager::receiveConfig(AtomixConfig *config) {

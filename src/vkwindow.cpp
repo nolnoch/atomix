@@ -964,6 +964,9 @@ void VKRenderer::releaseResources() {
 }
 
 void VKRenderer::startNextFrame() {
+    // Reap zombie buffers
+    this->atomixProg->reapZombies();
+
     // Update buffers and shaders if necessary
     this->vr_vkw->updateBuffersAndShaders();
 

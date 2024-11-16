@@ -206,7 +206,6 @@ struct GlobalPipelineInfo {
 struct RenderInfo {
     VkPipeline pipeline = VK_NULL_HANDLE;
     std::vector<VKuint> vbos;
-    VKuint ibo = 0;
     std::vector<VkDeviceSize> vboOffsets;
     std::vector<VKuint> uboIndices;
     VKint pushConst = 0;
@@ -307,7 +306,7 @@ public:
     void updateSwapExtent(int x, int y);
 
     void render(VkExtent2D &extent);
-    void renderMacOS(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
+    void reapZombies();
 
     Shader* getShaderFromName(const std::string& fileName);
     Shader* getShaderFromId(VKuint id);
@@ -324,6 +323,8 @@ public:
 
 
 private:
+    void _updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data, bool isVBO, bool isIBO);
+
     const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 
     VkDevice p_dev = VK_NULL_HANDLE;
@@ -359,6 +360,8 @@ private:
     
     std::vector<VkBuffer> p_buffers;
     std::vector<VkDeviceMemory> p_buffersMemory;
+    std::deque<VKuint> p_buffersFree;
+    std::map<VKuint, std::vector<VKuint>> p_mapZombieIndices;
     std::vector<BufferCreateInfo *> p_buffersInfo;
     std::map<std::string, VKuint> p_mapBuffers;
     std::map<std::string, VKuint> p_mapBufferToModel;
@@ -384,8 +387,7 @@ private:
     VkResult err = VK_SUCCESS;
     
     bool p_libEnabled = false;
-    bool enabled = false;
-    int stage = 0;
+    VKint stage = 0;
 
     std::array<unsigned int, 19> dataSizes = {
         sizeof(float),

@@ -440,9 +440,8 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         model->renders.push_back(new RenderInfo{});
         RenderInfo *render = model->renders.back();
         for (auto &vIdx : info.bufferCombos[off.bufferComboIndex]) {
-            render->vbos.push_back(model->vbos[vIdx]);
+            render->vbos.push_back(vIdx);
         }
-        render->ibo = model->ibo;
         render->vboOffsets.resize(model->vbos.size(), 0);
         render->iboOffset = off.offset;
         render->indexCount = indexCount[i];
@@ -1204,27 +1203,52 @@ void ProgramVK::createDescriptorSetLayout(VKuint set, VKuint binding) {
     }
 }
 
-void ProgramVK::updateBuffer(std::string bufferName, VKuint64 count, VKuint64 size, const void *data) {
+void ProgramVK::updateBuffer(std::string bufferName, VKuint64 bufferCount, VKuint64 bufferSize, const void *bufferData) {
     VKuint idx = this->p_mapBuffers[bufferName];
     BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
+    ModelInfo *model = this->p_models[this->p_mapBufferToModel[bufferName]];
+    const BufferType type = bufferInfo->type;
+    VKuint64 count = bufferCount;
+    VKuint64 size = bufferSize;
+    const void *data = bufferData;
+    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
+    bool isIBO = (type == BufferType::INDEX);
 
+    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data, isVBO, isIBO);
+}
+
+void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
+    VKuint idx = this->p_mapBuffers[info.bufferName];
+    BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
+    ModelInfo *model = this->p_models[this->p_mapBufferToModel[info.bufferName]];
+    const BufferType type = info.type;
+    VKuint64 count = info.count;
+    VKuint64 size = info.size;
+    const void *data = info.data;
+    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
+    bool isIBO = (type == BufferType::INDEX);
+
+    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data, isVBO, isIBO);
+}
+
+void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data, bool isVBO, bool isIBO) {
     if (!bufferInfo->data) {
         // Model was pre-declared and needs to be updated for initialization
         bufferInfo->count = count;
         bufferInfo->size = size;
         bufferInfo->data = data;
 
-        this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], bufferInfo->type, size, data);
+        this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data);
 
         // Update model render status
-        ModelInfo *model = this->p_models[this->p_mapBufferToModel[bufferName]];
-        if (bufferInfo->type == BufferType::INDEX) {
+        if (isIBO) {
             for (auto &render : model->renders) {
                 render->indexCount += count;
             }
             model->valid.ibo = true;
+        } else if (isVBO) {
+            model->valid.vbo = true;
         }
-        if (bufferInfo->type == BufferType::VERTEX) model->valid.vbo = true;
 
     } else {
         if (bufferInfo->size >= size) {
@@ -1233,70 +1257,41 @@ void ProgramVK::updateBuffer(std::string bufferName, VKuint64 count, VKuint64 si
             bufferInfo->size = size;
             bufferInfo->data = data;
             
-            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], bufferInfo->type, size, data, false);
+            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data, false);
+            
         } else {
             // Model was already initialized, but buffer needs to be recreated to fit new size
+            VKuint frame = this->p_vkw->currentSwapChainImageIndex();
+
             bufferInfo->count = count;
             bufferInfo->size = size;
             bufferInfo->data = data;
 
-            this->p_vdf->vkDestroyBuffer(this->p_dev, this->p_buffers[idx], nullptr);
-            this->p_vdf->vkFreeMemory(this->p_dev, this->p_buffersMemory[idx], nullptr);
-            this->p_buffers[idx] = VK_NULL_HANDLE;
-            this->p_buffersMemory[idx] = VK_NULL_HANDLE;
-
-            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], bufferInfo->type, size, data);
-        }
-    }
-
-}
-
-void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
-    VKuint idx = this->p_mapBuffers[info.bufferName];
-    BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
-
-    if (!bufferInfo->data) {
-        // Model was pre-declared and needs to be updated for initialization
-        bufferInfo->count = info.count;
-        bufferInfo->size = info.size;
-        bufferInfo->data = info.data;
-
-        this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data);
-
-        // Update model render status
-        ModelInfo *model = this->p_models[this->p_mapBufferToModel[info.bufferName]];
-        if (bufferInfo->type == BufferType::INDEX) {
-            for (auto &render : model->renders) {
-                render->indexCount += info.count;
+            VKuint zombieIdx =  0;
+            if (this->p_buffersFree.size()) {
+                zombieIdx = this->p_buffersFree.front();
+                this->p_buffersFree.pop_front();
             }
-            model->valid.ibo = true;
-        }
-        if (bufferInfo->type == BufferType::VERTEX) model->valid.vbo = true;
 
-    } else {
-        if (bufferInfo->size >= info.size) {
-            // Model was already initialized, and buffer is large enough to update in place
-            bufferInfo->count = info.count;
-            bufferInfo->size = info.size;
-            bufferInfo->data = info.data;
+            VKuint newIdx = 0;
+            if (zombieIdx) {
+                newIdx = zombieIdx;
+            } else {
+                newIdx = this->p_buffers.size();
+                this->p_buffers.push_back({});
+                this->p_buffersMemory.push_back({});
+            }
+            this->stageAndCopyBuffer(this->p_buffers[newIdx], this->p_buffersMemory[newIdx], type, size, data);
             
-            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data, false);
-            
-        } else {
-            // Model was already initialized, but buffer needs to be recreated to fit new size
-            bufferInfo->count = info.count;
-            bufferInfo->size = info.size;
-            bufferInfo->data = info.data;
+            if (isVBO) {
+                std::replace(model->vbos.begin(), model->vbos.end(), idx, newIdx);
+            } else if (isIBO) {
+                model->ibo = newIdx;
+            }
 
-            this->p_vdf->vkDestroyBuffer(this->p_dev, this->p_buffers[idx], nullptr);
-            this->p_vdf->vkFreeMemory(this->p_dev, this->p_buffersMemory[idx], nullptr);
-            this->p_buffers[idx] = VK_NULL_HANDLE;
-            this->p_buffersMemory[idx] = VK_NULL_HANDLE;
-
-            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data);
+            this->p_mapZombieIndices[frame].push_back(idx);
         }
     }
-
 }
 
 void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string uboName, uint32_t uboSize, const void *uboData) {
@@ -1375,7 +1370,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
         for (auto &render : model->renders) {
             std::vector<VkBuffer> renderVbos;
             for (auto &vbo : render->vbos) {
-                renderVbos.push_back(this->p_buffers[vbo]);
+                renderVbos.push_back(this->p_buffers[model->vbos[vbo]]);
             }
 
             this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
@@ -1383,7 +1378,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
             this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
             this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
             this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, render->vbos.size(), renderVbos.data(), render->vboOffsets.data());
-            this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, this->p_buffers[render->ibo], 0, VK_INDEX_TYPE_UINT32);
+            this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, this->p_buffers[model->ibo], 0, VK_INDEX_TYPE_UINT32);
             if (render->pushConst >= 0) {
                 this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts[model->pipeLayouts[0]], VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[render->pushConst].first, this->p_pushConsts[render->pushConst].second);
             }
@@ -1393,6 +1388,29 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     
     // Cleanup
     this->p_vdf->vkCmdEndRenderPass(cmdBuff);
+}
+
+void ProgramVK::reapZombies() {
+    VKuint frame = this->p_vkw->currentSwapChainImageIndex();
+    if (!this->p_mapZombieIndices.size()) {
+        return;
+    }
+
+    for (auto &frameIdx : this->p_mapZombieIndices) {
+        if (frameIdx.first == frame) {
+            continue;
+        }
+
+        for (auto &idx : frameIdx.second) {
+            this->p_vdf->vkDestroyBuffer(this->p_dev, this->p_buffers[idx], nullptr);
+            this->p_vdf->vkFreeMemory(this->p_dev, this->p_buffersMemory[idx], nullptr);
+            this->p_buffers[idx] = VK_NULL_HANDLE;
+            this->p_buffersMemory[idx] = VK_NULL_HANDLE;
+            this->p_buffersFree.push_back(idx);
+        }
+
+        frameIdx.second.clear();
+    }
 }
 
 Shader* ProgramVK::getShaderFromName(const std::string& fileName) {

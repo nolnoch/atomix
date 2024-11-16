@@ -24,7 +24,6 @@
 
 #include "programVK.hpp"
 
-#include <set>
 
 /**
  * Default Constructor.
@@ -374,12 +373,6 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     }
 
     // Shaders
-    for (auto &shader : info.vertShaders) {
-        model->vertShaders.push_back(getShaderFromName(shader)->getId());
-    }
-    for (auto &shader : info.fragShaders) {
-        model->fragShaders.push_back(getShaderFromName(shader)->getId());
-    }
     model->valid.shaders = true;
     model->valid.uniforms = true;
 
@@ -439,12 +432,15 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         OffsetInfo &off = info.offsets[i];
         model->renders.push_back(new RenderInfo{});
         RenderInfo *render = model->renders.back();
+        
         for (auto &vIdx : info.bufferCombos[off.bufferComboIndex]) {
             render->vbos.push_back(vIdx);
         }
         render->vboOffsets.resize(model->vbos.size(), 0);
+        
         render->iboOffset = off.offset;
         render->indexCount = indexCount[i];
+        
         if (info.pushConstant.empty()) {
             render->pushConst = -1;
             render->pipeLayoutIndex = 0;
@@ -468,6 +464,10 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
             this->createPipeline(render, model, vs, fs, off.bufferComboIndex, off.topologyIndex);
         }
     }
+    for (auto &prog : info.programs) {
+        model->programs = info.programs;
+    }
+    model->activePrograms.clear();
     model->valid.renders = true;
 
     printModel(model);
@@ -481,28 +481,59 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     return model->id;
 }
 
-VKuint ProgramVK::activateModel(const std::string &name) {
+bool ProgramVK::activateModel(const std::string &name) {
     VKuint id = getModelIdFromName(name);
+    bool success = false;
 
     if (this->p_models[id]->valid.validate()) {
-        p_activeModels.push_back(id);
+        if (success = p_activeModels.insert(id).second) {
+            std::cout << "Model validated and added to active models: " << name << std::endl;
+            p_models[id]->activePrograms.insert(0);
+        } else {
+            std::cout << "Model already added to active models: " << name << std::endl;
+        }
     } else {
         std::cout << "Model not validated and not added to active models: " << name << std::endl;
-        id = -1;
+        success = false;
     }
     
-    return id;
+    return success;
 }
 
-VKuint ProgramVK::deactivateModel(const std::string &name) {
+bool ProgramVK::addModelProgram(const std::string &name, VKuint program) {
     VKuint id = getModelIdFromName(name);
+    
+    return p_activeModels.contains(id) && p_models[id]->activePrograms.insert(program).second;
+}
 
-    if (!std::erase(p_activeModels, id)) {
-        std::cout << "Model not found and not removed from active models: " << name << std::endl;
-        id = -1;
+bool ProgramVK::removeModelProgram(const std::string &name, VKuint program) {
+    VKuint id = getModelIdFromName(name);
+    
+    return p_activeModels.contains(id) && p_models[id]->activePrograms.erase(program);
+}
+
+bool ProgramVK::clearModelPrograms(const std::string &name) {
+    VKuint id = getModelIdFromName(name);
+    bool success = false;
+
+    if (p_activeModels.contains(id)) {
+        p_models[id]->activePrograms.clear();
+        success = true;
+    }
+    
+    return success;
+}
+
+bool ProgramVK::deactivateModel(const std::string &name) {
+    VKuint id = getModelIdFromName(name);
+    bool success = false;
+
+    if (p_activeModels.contains(id)) {
+        p_models[id]->activePrograms.clear();
+        success = (p_activeModels.erase(id) > 0);
     }
 
-    return id;
+    return success;
 }
 
 void ProgramVK::createPipelineCache() {
@@ -1240,10 +1271,9 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
 
         this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data);
 
-        // Update model render status
         if (isIBO) {
-            for (auto &render : model->renders) {
-                render->indexCount += count;
+            for (auto &renderIdx : model->programs[0]) {
+                model->renders[renderIdx]->indexCount += count;
             }
             model->valid.ibo = true;
         } else if (isVBO) {
@@ -1258,6 +1288,14 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
             bufferInfo->data = data;
             
             this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data, false);
+
+            if (isIBO) {
+                for (auto &prog : model->activePrograms) {
+                    for (auto &renderIdx : model->programs[prog]) {
+                        model->renders[renderIdx]->indexCount = count;
+                    }
+                }
+            }
             
         } else {
             // Model was already initialized, but buffer needs to be recreated to fit new size
@@ -1276,17 +1314,29 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
             VKuint newIdx = 0;
             if (zombieIdx) {
                 newIdx = zombieIdx;
+                this->p_buffersInfo[newIdx] = new BufferCreateInfo(*bufferInfo);
             } else {
                 newIdx = this->p_buffers.size();
                 this->p_buffers.push_back({});
                 this->p_buffersMemory.push_back({});
+                this->p_buffersInfo.push_back(new BufferCreateInfo(*bufferInfo));
             }
+            this->p_buffersInfo[newIdx]->id = newIdx;
+            this->p_mapBuffers[bufferInfo->name] = newIdx;
+            delete this->p_buffersInfo[idx];
+            this->p_buffersInfo[idx] = nullptr;
+            
             this->stageAndCopyBuffer(this->p_buffers[newIdx], this->p_buffersMemory[newIdx], type, size, data);
             
             if (isVBO) {
                 std::replace(model->vbos.begin(), model->vbos.end(), idx, newIdx);
             } else if (isIBO) {
                 model->ibo = newIdx;
+                for (auto &prog : model->activePrograms) {
+                    for (auto &renderIdx : model->programs[prog]) {
+                        model->renders[renderIdx]->indexCount = count;
+                    }
+                }
             }
 
             this->p_mapZombieIndices[frame].push_back(idx);
@@ -1367,23 +1417,27 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     for (int i = 0; i < this->p_activeModels.size(); i++) {
         ModelInfo *model = this->p_models[i];
 
-        for (auto &render : model->renders) {
-            std::vector<VkBuffer> renderVbos;
-            for (auto &vbo : render->vbos) {
-                renderVbos.push_back(this->p_buffers[model->vbos[vbo]]);
-            }
+        for (auto &prog : model->activePrograms) {
+            for (auto &renderIdx : model->programs[prog]) {
+                RenderInfo *render = model->renders[renderIdx];
+                std::vector<VkBuffer> renderVbos;
+                for (auto &vbo : render->vbos) {
+                    renderVbos.push_back(this->p_buffers[model->vbos[vbo]]);
+                }
 
-            this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
-            this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayouts[model->pipeLayouts[0]], 0, this->p_descSets[image].size(), this->p_descSets[image].data(), 0, nullptr);                
-            this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
-            this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
-            this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, render->vbos.size(), renderVbos.data(), render->vboOffsets.data());
-            this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, this->p_buffers[model->ibo], 0, VK_INDEX_TYPE_UINT32);
-            if (render->pushConst >= 0) {
-                this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts[model->pipeLayouts[0]], VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[render->pushConst].first, this->p_pushConsts[render->pushConst].second);
+                this->p_vdf->vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, render->pipeline);
+                this->p_vdf->vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, this->p_pipeLayouts[model->pipeLayouts[render->pipeLayoutIndex]], 0, this->p_descSets[image].size(), this->p_descSets[image].data(), 0, nullptr);                
+                this->p_vdf->vkCmdSetViewport(cmdBuff, 0, 1, &this->p_viewport);
+                this->p_vdf->vkCmdSetScissor(cmdBuff, 0, 1, &this->p_scissor);
+                this->p_vdf->vkCmdBindVertexBuffers(cmdBuff, 0, render->vbos.size(), renderVbos.data(), render->vboOffsets.data());
+                this->p_vdf->vkCmdBindIndexBuffer(cmdBuff, this->p_buffers[model->ibo], 0, VK_INDEX_TYPE_UINT32);
+                if (render->pushConst >= 0) {
+                    this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts[model->pipeLayouts[render->pipeLayoutIndex]], VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[render->pushConst].first, this->p_pushConsts[render->pushConst].second);
+                }
+                this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->iboOffset, 0, 0);
             }
-            this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->iboOffset, 0, 0);
         }
+        
     }
     
     // Cleanup
@@ -1463,8 +1517,8 @@ ModelInfo* ProgramVK::getModelFromName(const std::string& name) {
     return p_models[id];
 }
 
-VKuint ProgramVK::getModelIdFromName(const std::string& name) {
-    VKuint id = -1;
+VKint ProgramVK::getModelIdFromName(const std::string& name) {
+    VKint id = -1;
     
     if (p_mapModels.find(name) == p_mapModels.end()) {
         std::cout << "Model not found: " << name << std::endl;
@@ -1478,7 +1532,7 @@ VKuint ProgramVK::getModelIdFromName(const std::string& name) {
     return id;
 }
 
-std::vector<VKuint> ProgramVK::getActiveModelsById() {
+std::set<VKuint> ProgramVK::getActiveModelsById() {
     return p_activeModels;
 }
 
@@ -1490,6 +1544,11 @@ std::vector<std::string> ProgramVK::getActiveModelsByName() {
     }
 
     return names;
+}
+
+std::set<VKuint> ProgramVK::getModelActivePrograms(std::string modelName) {
+    VKuint id = getModelIdFromName(modelName);
+    return p_models[id]->activePrograms;
 }
 
 bool ProgramVK::isActive(const std::string &modelName) {

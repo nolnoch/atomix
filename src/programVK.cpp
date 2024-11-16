@@ -1216,8 +1216,15 @@ void ProgramVK::updateBuffer(std::string bufferName, VKuint64 count, VKuint64 si
 
         this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], bufferInfo->type, size, data);
 
-        if (bufferInfo->type == BufferType::VERTEX) this->p_models[this->p_mapBufferToModel[bufferName]]->valid.vbo = true;
-        if (bufferInfo->type == BufferType::INDEX) this->p_models[this->p_mapBufferToModel[bufferName]]->valid.ibo = true;
+        // Update model render status
+        ModelInfo *model = this->p_models[this->p_mapBufferToModel[bufferName]];
+        if (bufferInfo->type == BufferType::INDEX) {
+            for (auto &render : model->renders) {
+                render->indexCount += count;
+            }
+            model->valid.ibo = true;
+        }
+        if (bufferInfo->type == BufferType::VERTEX) model->valid.vbo = true;
 
     } else {
         if (bufferInfo->size >= size) {
@@ -1256,8 +1263,15 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
 
         this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], info.type, info.size, info.data);
 
-        if (info.type == BufferType::VERTEX) this->p_models[this->p_mapModels[info.modelName]]->valid.vbo = true;
-        if (info.type == BufferType::INDEX) this->p_models[this->p_mapModels[info.modelName]]->valid.ibo = true;
+        // Update model render status
+        ModelInfo *model = this->p_models[this->p_mapBufferToModel[info.bufferName]];
+        if (bufferInfo->type == BufferType::INDEX) {
+            for (auto &render : model->renders) {
+                render->indexCount += info.count;
+            }
+            model->valid.ibo = true;
+        }
+        if (bufferInfo->type == BufferType::VERTEX) model->valid.vbo = true;
 
     } else {
         if (bufferInfo->size >= info.size) {

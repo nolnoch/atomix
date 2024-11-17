@@ -31,8 +31,8 @@ MainWindow::MainWindow() {
 void MainWindow::init(QRect &windowSize) {
     cfgParser = new ConfigParser;
     
-    int windowWidth = windowSize.width();
-    int windowHeight = windowSize.height();
+    mw_width = windowSize.width();
+    mw_height = windowSize.height();
 
     valIntSmall = new QIntValidator();  
     valIntSmall->setRange(1, 8);
@@ -43,8 +43,8 @@ void MainWindow::init(QRect &windowSize) {
     valDoubleLarge = new QDoubleValidator();
     valDoubleLarge->setRange(0.001, 999.999, 3);
 
-    intTabMinWidth = windowWidth / 6;
-    intTabLabelHeight = windowHeight / 12;
+    intTabMinWidth = mw_width / 6;
+    intTabLabelHeight = mw_height / 12;
     intSliderLen = 20;
     intHarmonicsGroupMaxWidth = (intTabMinWidth - 30) >> 1;
     lastSliderSentX = 0.0f;
@@ -86,25 +86,25 @@ void MainWindow::init(QRect &windowSize) {
     std::cout << "VKWindow variable created" << std::endl;
     vkGraph->setVulkanInstance(&vkInst);
     std::cout << "Vulkan instance set" << std::endl;
-    vkWinWidWrapper = QWidget::createWindowContainer(vkGraph);
-    setCentralWidget(vkWinWidWrapper);
-    graph = vkWinWidWrapper;
+    graph = QWidget::createWindowContainer(vkGraph);
+    setCentralWidget(graph);
     graphWin = vkGraph;
 #elifdef USING_QOPENGL
     // OpenGL-specific setup
     glGraph = new GWidget(this, cfgParser);
     setCentralWidget(glGraph);
     graph = glGraph;
+    graphWin = glGraph;
 #endif
 
     refreshConfigs();
     refreshShaders();
     loadConfig();
     refreshOrbits();
-    setupDetails();
 
     connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
     connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
+    // connect(vkGraph, SIGNAL(forwardKeyEvent(QKeyEvent*)), this, SLOT(keyPressEvent(QKeyEvent*)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
 #ifdef USING_QVULKAN
@@ -206,6 +206,18 @@ void MainWindow::refreshOrbits() {
     }
 }
 
+void MainWindow::postInit(int titlebarHeight) {
+    QRect mwLoc = this->geometry();
+    mw_x = mwLoc.x();
+    mw_y = mwLoc.y();
+    mw_titleHeight = titlebarHeight;
+
+    setupDetails();
+    setupLoading();
+
+    this->grabKeyboard();
+}
+
 void MainWindow::setupDetails() {
     fontDebug.setStyleHint(QFont::Monospace);
     fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
@@ -221,10 +233,14 @@ void MainWindow::setupDetails() {
     labelDetails->setFont(fontDebug);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    // labelDetails->move(500, 500);
     labelDetails->raise();
     labelDetails->adjustSize();
-    // labelDetails->hide();
+
+    labelDetails->move(mw_x + 10, mw_y + 50);
+    
+    labelDetails->setAttribute(Qt::WA_NoSystemBackground);
+    labelDetails->setAttribute(Qt::WA_TranslucentBackground);
+    labelDetails->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
 }
 
 void MainWindow::setupLoading() {
@@ -235,10 +251,14 @@ void MainWindow::setupLoading() {
     pbLoading->setTextVisible(true);
 
     int lh = pbLoading->sizeHint().height();
-    int gh = graph->height();
-    int gw = graph->width();
+    int gh = mw_y + mw_titleHeight + mw_height + 12;
+    int gw = this->centralWidget()->width();
     pbLoading->resize(gw, lh);
-    pbLoading->move(0, gh - lh);
+    pbLoading->move(mw_x, gh - lh);
+
+    pbLoading->setAttribute(Qt::WA_NoSystemBackground);
+    pbLoading->setAttribute(Qt::WA_TranslucentBackground);
+    pbLoading->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
 
     pbLoading->raise();
 }
@@ -1071,8 +1091,8 @@ void MainWindow::handleSlideBackground(int val) {
 #endif
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *e)
-{
+void MainWindow::keyPressEvent(QKeyEvent *e) {
+    // TODO : Refactor to switch-case
     if (e->key() == Qt::Key_Escape) {
         close();
     } else if (e->key() == Qt::Key_D) {
@@ -1094,9 +1114,16 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
         if (fd.exec() == QDialog::Accepted) {
             image.save(fd.selectedFiles().first());
         }
+    } else if (e->key() == Qt::Key_Home) {
+        vkGraph->handleHome();
+    } else if (e->key() == Qt::Key_Space) {
+        vkGraph->handlePause();
     } else {
         QWidget::keyPressEvent(e);
     }
+
+    this->setFocus();
+    this->grabKeyboard();
 }
 
 void MainWindow::printHarmap() {

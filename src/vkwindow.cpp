@@ -54,6 +54,19 @@ void VKWindow::cleanup() {
     delete vw_timer;
 }
 
+void VKWindow::changeModes(bool force) {
+    if (!waveManager || force) {
+        delete cloudManager;
+        cloudManager = 0;
+        flGraphState.clear(eCloudFlags);
+    } else if (!cloudManager || force) {
+        delete waveManager;
+        waveManager = 0;
+        flGraphState.clear(eWaveFlags);
+    }
+    currentManager = 0;
+}
+
 QVulkanWindowRenderer* VKWindow::createRenderer() {
     std::cout << "Renderer has been created!" << std::endl;
 
@@ -311,7 +324,7 @@ void VKWindow::initWaveModel() {
     atomixProg->addModel(waveModel);
 
     // Activate Atomix Wave Model
-    atomixProg->updatePushConstant("pushConst", &this->vw_renderer->pConst);
+    atomixProg->updatePushConstant("pushConst", &this->pConst);
 }
 
 void VKWindow::initCloudModel() {
@@ -368,23 +381,6 @@ void VKWindow::initModels() {
     initCrystalModel();
     initWaveModel();
     initCloudModel();
-}
-
-void VKWindow::changeModes(bool force) {
-    if (!waveManager || force) {
-        delete cloudManager;
-        cloudManager = 0;
-        atomixProg = 0;
-        flGraphState.clear(eCloudFlags);
-        if (atomixProg) atomixProg->deactivateModel("cloud");
-    } else if (!cloudManager || force) {
-        delete waveManager;
-        waveManager = 0;
-        atomixProg = 0;
-        flGraphState.clear(eWaveFlags);
-        if (atomixProg) atomixProg->deactivateModel("wave");
-    }
-    currentManager = 0;
 }
 
 void VKWindow::initVecsAndMatrices() {
@@ -509,22 +505,24 @@ void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
         QWindow::mouseReleaseEvent(e);
 }
 
-void VKWindow::keyPressEvent(QKeyEvent * e) {
-    if (e->key() == Qt::Key_Home) {
-        initVecsAndMatrices();
-        requestUpdate();
-    } else if (e->key() == Qt::Key_Space) {
-        vw_pause = !vw_pause;
-        if (vw_pause) {
-            vw_timePaused = QDateTime::currentMSecsSinceEpoch();
-        } else {
-            vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-            vw_timeStart += vw_timeEnd - vw_timePaused;
-        }
-        requestUpdate();
+void VKWindow::handleHome() {
+    initVecsAndMatrices();
+    requestUpdate();
+}
+
+void VKWindow::handlePause() {
+    vw_pause = !vw_pause;
+    if (vw_pause) {
+        vw_timePaused = QDateTime::currentMSecsSinceEpoch();
     } else {
-        QWindow::keyPressEvent(e);
+        vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+        vw_timeStart += vw_timeEnd - vw_timePaused;
     }
+    requestUpdate();
+}
+
+void VKWindow::keyPressEvent(QKeyEvent *e) {
+    e->ignore();
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -549,94 +547,110 @@ void VKWindow::updateExtent(VkExtent2D &renderExtent) {
 }
 
 void VKWindow::updateBuffersAndShaders() {
-    if (flGraphState.hasNone(egs::UPDATE_REQUIRED)) {
-        return;
-    }
+    // Re-calculate world-state matrices (per-frame)
+    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
+    vw_world.m4_world = m4_translation * m4_rotation;
+    vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    this->q_TotalRot.normalize();
 
-    // Capture updates from currentManager
-    uint flags = currentManager->clearUpdates();
-    flGraphState.set(flags);
-    this->updateSize();
-
-    // Set current model
-    if (flGraphState.hasAny(egs::WAVE_MODE)) {
-        vw_currentModel = "wave";
-    } else if (flGraphState.hasAny(egs::CLOUD_MODE)) {
-        vw_currentModel = "cloud";
+    // Update time (per-frame)
+    if (this->flGraphState.hasAny(egs::WAVE_RENDER)) {
+        if (!vw_pause) {
+            vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+        }
+        pConst.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
     }
     
-    // Shaders
-    if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
-        std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
-        VKuint newProgram = (activePrograms.find(0) != activePrograms.end()) ? 1 : 0;
+    if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
+        // Capture updates from currentManager
+        uint flags = currentManager->clearUpdates();
+        this->flGraphState.set(flags);
+        this->updateSize();
 
-        this->atomixProg->clearModelPrograms(vw_currentModel);
-        this->atomixProg->addModelProgram(vw_currentModel, newProgram);
-    }
-    BufferUpdateInfo updBuf{};
-    updBuf.modelName = vw_currentModel;
-
-    // VBO 1: Vertices
-    if (flGraphState.hasAny(egs::UPD_VBO)) {
-        updBuf.bufferName = vw_currentModel + "Vertices";
-        updBuf.type = BufferType::VERTEX;
-        updBuf.count = currentManager->getVertexCount();
-        updBuf.size = currentManager->getVertexSize();
-        updBuf.data = currentManager->getVertexData();
-        atomixProg->updateBuffer(updBuf);
-    }
-
-    // VBO 2: Data
-    if (flGraphState.hasAny(egs::UPD_DATA)) {
-        updBuf.bufferName = vw_currentModel + "Data";
-        updBuf.type = BufferType::DATA;
-        updBuf.count = currentManager->getDataCount();
-        updBuf.size = currentManager->getDataSize();
-        updBuf.data = currentManager->getDataData();
-        atomixProg->updateBuffer(updBuf);
-    }
-
-    // EBO: Indices
-    if (flGraphState.hasAny(egs::UPD_EBO)) {
-        updBuf.bufferName = vw_currentModel + "Indices";
-        updBuf.type = BufferType::INDEX;
-        updBuf.count = currentManager->getIndexCount();
-        updBuf.size = currentManager->getIndexSize();
-        updBuf.data = currentManager->getIndexData();
-        atomixProg->updateBuffer(updBuf);
-    }
-
-    // Uniforms
-    if (flGraphState.hasAny(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR)) {
-        if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
-            this->waveManager->getMaths(this->vw_wave.waveMaths);
+        // Set current model
+        vw_previousModel = vw_currentModel;
+        if (flGraphState.hasAny(egs::WAVE_MODE)) {
+            vw_currentModel = "wave";
+        } else if (flGraphState.hasAny(egs::CLOUD_MODE)) {
+            vw_currentModel = "cloud";
         }
-        if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
-            this->waveManager->getColours(this->vw_wave.waveColours);
+        
+        // Changing shaders is equivalent to changing model program
+        if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
+            std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
+            VKuint newProgram = (activePrograms.find(0) != activePrograms.end()) ? 1 : 0;
+
+            this->atomixProg->clearModelPrograms(vw_currentModel);
+            this->atomixProg->addModelProgram(vw_currentModel, newProgram);
+        }
+        BufferUpdateInfo updBuf{};
+        updBuf.modelName = vw_currentModel;
+
+        // Update VBO 1: Vertices
+        if (flGraphState.hasAny(egs::UPD_VBO)) {
+            updBuf.bufferName = vw_currentModel + "Vertices";
+            updBuf.type = BufferType::VERTEX;
+            updBuf.count = currentManager->getVertexCount();
+            updBuf.size = currentManager->getVertexSize();
+            updBuf.data = currentManager->getVertexData();
+            atomixProg->updateBuffer(updBuf);
         }
 
-        for (int i = 0; i < MAX_CONCURRENT_FRAME_COUNT; i++) {
-            this->atomixProg->updateUniformBuffer(i, "WaveState", sizeof(this->vw_wave), &this->vw_wave);
+        // Update VBO 2: Data
+        if (flGraphState.hasAny(egs::UPD_DATA)) {
+            updBuf.bufferName = vw_currentModel + "Data";
+            updBuf.type = BufferType::DATA;
+            updBuf.count = currentManager->getDataCount();
+            updBuf.size = currentManager->getDataSize();
+            updBuf.data = currentManager->getDataData();
+            atomixProg->updateBuffer(updBuf);
         }
+
+        // Update EBO: Indices
+        if (flGraphState.hasAny(egs::UPD_EBO)) {
+            updBuf.bufferName = vw_currentModel + "Indices";
+            updBuf.type = BufferType::INDEX;
+            updBuf.count = currentManager->getIndexCount();
+            updBuf.size = currentManager->getIndexSize();
+            updBuf.data = currentManager->getIndexData();
+            atomixProg->updateBuffer(updBuf);
+        }
+
+        // Update Uniforms
+        if (flGraphState.hasAny(egs::UPD_UNI_MATHS | egs::UPD_UNI_COLOUR)) {
+            if (flGraphState.hasAny(egs::UPD_UNI_MATHS)) {
+                this->waveManager->getMaths(this->vw_wave.waveMaths);
+            }
+            if (flGraphState.hasAny(egs::UPD_UNI_COLOUR)) {
+                this->waveManager->getColours(this->vw_wave.waveColours);
+            }
+
+            for (int i = 0; i < MAX_CONCURRENT_FRAME_COUNT; i++) {
+                this->atomixProg->updateUniformBuffer(i, "WaveState", sizeof(this->vw_wave), &this->vw_wave);
+            }
+        }
+
+        if (flGraphState.hasAny(egs::UPD_PUSH_CONST)) {
+            pConst.mode = waveManager->getMode();
+        }
+
+        if (flGraphState.hasAny(egs::UPD_MATRICES)) {
+            initVecsAndMatrices();
+        }
+
+        if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER) && flGraphState.hasAny(egs::WAVE_MODE | egs::CLOUD_MODE)) {
+            if (!vw_previousModel.empty()) this->atomixProg->deactivateModel(vw_previousModel);
+            this->atomixProg->activateModel(vw_currentModel);
+            flGraphState.set(flGraphState.hasAny(egs::WAVE_MODE) ? egs::WAVE_RENDER : egs::CLOUD_RENDER);
+        }
+
+        flGraphState.clear(eUpdateFlags);
     }
 
-    if (flGraphState.hasAny(egs::UPD_PUSH_CONST)) {
-        this->updateWaveMode(this->vw_renderer->pConst);
-    }
-
-    if (flGraphState.hasAny(egs::UPD_MATRICES)) {
-        initVecsAndMatrices();
-    }
-
-    if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
-        this->atomixProg->activateModel(vw_currentModel);
-        flGraphState.set(flGraphState.hasAny(egs::WAVE_MODE) ? egs::WAVE_RENDER : egs::CLOUD_RENDER);
-    }
-
-    flGraphState.clear(eUpdateFlags);
+    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
 }
 
-void VKWindow::updateWorldState() {
+/* void VKWindow::updateWorldState() {
     // Re-calculate world-state matrices
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     vw_world.m4_world = m4_translation * m4_rotation;
@@ -646,18 +660,14 @@ void VKWindow::updateWorldState() {
     atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
 }
 
-void VKWindow::updateTime(PushConstants &pConst) {
+void VKWindow::updateTime() {
     if (!vw_pause) {
         vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
     float time = (vw_timeEnd - vw_timeStart) / 1000.0f;
 
     pConst.time = time;
-}
-
-void VKWindow::updateWaveMode(PushConstants &pConst) {
-    pConst.mode = waveManager->getMode();
-}
+} */
 
 void VKWindow::setBGColour(float colour) {
     vw_bg = colour;
@@ -987,14 +997,6 @@ void VKRenderer::startNextFrame() {
 
     // Update buffers and shaders if necessary
     this->vr_vkw->updateBuffersAndShaders();
-
-    // Update world state (per-frame)
-    this->vr_vkw->updateWorldState();
-
-    // Update time (per-frame)
-    if (this->vr_vkw->flGraphState.hasAny(egs::WAVE_RENDER)) {
-        this->vr_vkw->updateTime(this->pConst);
-    }
 
     // Call Program to render
     atomixProg->render(vr_extent);

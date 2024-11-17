@@ -103,7 +103,7 @@ enum egs {
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
 const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
-const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
+const uint eUpdateFlags = uint(-1) << 4;
 
 class VKWindow;
 
@@ -127,8 +127,6 @@ public:
     void releaseResources() override;
 
     void startNextFrame() override;
-
-    PushConstants pConst = {0.0f};
 
 private:
     ProgramVK *atomixProg = nullptr;
@@ -171,11 +169,14 @@ public:
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
     void updateWorldState();
-    void updateTime(PushConstants &pConst);
-    void updateWaveMode(PushConstants &pConst);
+    void updateTime();
+    void updateWaveMode();
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
+
+    void handleHome();
+    void handlePause();
 
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
     BitFlag flGraphState;
@@ -183,6 +184,7 @@ public:
 signals:
     void detailsChanged(AtomixInfo *info);
     void toggleLoading (bool loading);
+    void forwardKeyEvent(QKeyEvent *e);
 
 public slots:
     void cleanup();
@@ -200,7 +202,6 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
-    void onGrabRequested();
 
 private:
     void threadFinished();
@@ -221,6 +222,7 @@ private:
 
     VKRenderer *vw_renderer = nullptr;
     std::string vw_currentModel = "";
+    std::string vw_previousModel = "";
 
     AtomixInfo vw_info;
     QOpenGLContext *vw_context = nullptr;
@@ -272,6 +274,7 @@ private:
 
     WorldState vw_world;
     WaveState vw_wave;
+    PushConstants pConst = {0.0f};
     
 };
 

@@ -84,7 +84,7 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
     void init(QRect &windowSize);
-    void setupLoading();
+    void postInit(int titlebarHeight);
 
 public slots:
     void updateDetails(AtomixInfo *info);
@@ -104,6 +104,7 @@ private:
     void refreshConfigs();
     void refreshShaders();
     void refreshOrbits();
+    void setupLoading();
     void setupDetails();
 
     void handleComboCfg();
@@ -206,6 +207,12 @@ private:
     int intHarmonicsGroupMaxWidth;
     float lastSliderSentX;
     float lastSliderSentY;
+
+    int mw_width = 0;
+    int mw_height = 0;
+    int mw_x = 0;
+    int mw_y = 0;
+    int mw_titleHeight = 0;
 
     AtomixInfo dInfo;
 };

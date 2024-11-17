@@ -73,15 +73,13 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     vw_renderer->setProgram(atomixProg);
 
     std::cout << "Program has been initialized!" << std::endl;
-
-    std::cout << "Program has been updated with uniforms!" << std::endl;
 }
 
 void VKWindow::initWindow() {
     // Init -- Matrices
     initVecsAndMatrices();
 
-    // Init -- ProgramGLs and Shaders
+    // Init -- ProgramVK and Shaders
     initModels();
 
     this->atomixProg->activateModel("crystal");
@@ -378,11 +376,13 @@ void VKWindow::changeModes(bool force) {
         cloudManager = 0;
         atomixProg = 0;
         flGraphState.clear(eCloudFlags);
+        if (atomixProg) atomixProg->deactivateModel("cloud");
     } else if (!cloudManager || force) {
         delete waveManager;
         waveManager = 0;
         atomixProg = 0;
         flGraphState.clear(eWaveFlags);
+        if (atomixProg) atomixProg->deactivateModel("wave");
     }
     currentManager = 0;
 }

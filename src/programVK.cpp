@@ -486,7 +486,7 @@ bool ProgramVK::activateModel(const std::string &name) {
     bool success = false;
 
     if (this->p_models[id]->valid.validate()) {
-        if (success = p_activeModels.insert(id).second) {
+        if ((success = p_activeModels.insert(id).second)) {
             std::cout << "Model validated and added to active models: " << name << std::endl;
             p_models[id]->activePrograms.insert(0);
         } else {
@@ -534,6 +534,10 @@ bool ProgramVK::deactivateModel(const std::string &name) {
     }
 
     return success;
+}
+
+void ProgramVK::clearActiveModels() {
+    p_activeModels.clear();
 }
 
 void ProgramVK::createPipelineCache() {
@@ -1551,13 +1555,15 @@ std::set<VKuint> ProgramVK::getModelActivePrograms(std::string modelName) {
     return p_models[id]->activePrograms;
 }
 
-bool ProgramVK::isActive(const std::string &modelName) {
+bool ProgramVK::isActive(const std::string &modelName, VKuint program) {
     bool active = false;
-    VKuint id = getModelIdFromName(modelName);
+    VKint id = getModelIdFromName(modelName);
 
-    bool found = id >= 0;
-    if (found) {
+    if (id >= 0) {
         active = (p_activeModels.end() != std::find(p_activeModels.cbegin(), p_activeModels.cend(), id));
+        if (active) {
+            active = (p_models[id]->activePrograms.end() != std::find(p_models[id]->activePrograms.cbegin(), p_models[id]->activePrograms.cend(), program));
+        }
     }
 
     return active;

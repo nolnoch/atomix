@@ -73,15 +73,13 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     vw_renderer->setProgram(atomixProg);
 
     std::cout << "Program has been initialized!" << std::endl;
-
-    std::cout << "Program has been updated with uniforms!" << std::endl;
 }
 
 void VKWindow::initWindow() {
     // Init -- Matrices
     initVecsAndMatrices();
 
-    // Init -- ProgramGLs and Shaders
+    // Init -- ProgramVK and Shaders
     initModels();
 
     this->atomixProg->activateModel("crystal");
@@ -255,6 +253,9 @@ void VKWindow::initCrystalModel() {
             .bufferComboIndex = 0
         }
     };
+    crystalModel.programs = {
+        { 0, 1 }
+    };
 
     // Add Crystal Model to program
     atomixProg->addModel(crystalModel);
@@ -292,7 +293,18 @@ void VKWindow::initWaveModel() {
             .topologyIndex = 0,
             .bufferComboIndex = 0,
             .pushConstantIndex = 0
+        },
+        {   .offset = 0,
+            .vertShaderIndex = 1,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0,
+            .bufferComboIndex = 0,
+            .pushConstantIndex = 0
         }
+    };
+    waveModel.programs = {
+        { 0 },
+        { 1 }
     };
 
     // Add Atomix Wave Model to program
@@ -341,6 +353,9 @@ void VKWindow::initCloudModel() {
             .bufferComboIndex = 0
         }
     };
+    cloudModel.programs = {
+        { 0 }
+    };
 
     // vbo=( 0 , 1 )
     // each vbo has its (binding and) attrs, locations are assigned dynamically
@@ -361,11 +376,13 @@ void VKWindow::changeModes(bool force) {
         cloudManager = 0;
         atomixProg = 0;
         flGraphState.clear(eCloudFlags);
+        if (atomixProg) atomixProg->deactivateModel("cloud");
     } else if (!cloudManager || force) {
         delete waveManager;
         waveManager = 0;
         atomixProg = 0;
         flGraphState.clear(eWaveFlags);
+        if (atomixProg) atomixProg->deactivateModel("wave");
     }
     currentManager = 0;
 }
@@ -550,10 +567,11 @@ void VKWindow::updateBuffersAndShaders() {
     
     // Shaders
     if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
-        OffsetInfo off{};
-        off.vertShaderIndex = 1;
-        off.offset = 0;
-        // atomixProg->updateRender("wave", off);
+        std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
+        VKuint newProgram = (activePrograms.find(0) != activePrograms.end()) ? 1 : 0;
+
+        this->atomixProg->clearModelPrograms(vw_currentModel);
+        this->atomixProg->addModelProgram(vw_currentModel, newProgram);
     }
     BufferUpdateInfo updBuf{};
     updBuf.modelName = vw_currentModel;
@@ -964,6 +982,9 @@ void VKRenderer::releaseResources() {
 }
 
 void VKRenderer::startNextFrame() {
+    // Reap zombie buffers
+    this->atomixProg->reapZombies();
+
     // Update buffers and shaders if necessary
     this->vr_vkw->updateBuffersAndShaders();
 

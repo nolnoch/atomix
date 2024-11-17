@@ -192,6 +192,7 @@ private:
     GWidget *glGraph = nullptr;
 #endif
     QWidget *graph = nullptr;
+    QWindow *graphWin = nullptr;
 
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;

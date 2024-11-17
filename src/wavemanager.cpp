@@ -96,6 +96,10 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     } else {
         this->newConfig(config);
     }
+
+    if (flWaveCfg.hasAny(ewc::SPHERE)) {
+        mStatus.set(em::UPD_SHAD_V);
+    }
     
     if (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH)) {
         mStatus.set(em::UPD_UNI_MATHS);
@@ -117,7 +121,9 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
 double WaveManager::create() {
     for (int i = 0; i < cfg.waves; i++) {
         waveVertices.push_back(new vVec3);
+        waveVertices[i]->reserve(waveResolution * waveResolution);
         waveIndices.push_back(new uvec);
+        waveIndices[i]->reserve(waveResolution * waveResolution);
         phase_const.push_back(phase_base * i);
     
         if (cfg.sphere) {
@@ -203,14 +209,13 @@ void WaveManager::circleWaveGPU(int idx) {
 }
 
 void WaveManager::sphereWaveGPU(int idx) {
-    double radius = (double) (idx + 1);
-    // int l = idx * this->waveResolution * this->waveResolution;
+    double radius = double(idx + 1);
     uint pixelCount = idx * this->waveResolution * this->waveResolution;
 
     for (int i = 0; i < this->waveResolution; i++) {
         int m = i * this->waveResolution;
+        double theta = i * deg_fac;
         for (int j = 0; j < this->waveResolution; j++) {
-            double theta = i * deg_fac;
             double phi = j * deg_fac;
 
             float h = (float) theta;
@@ -221,9 +226,7 @@ void WaveManager::sphereWaveGPU(int idx) {
             
             waveVertices[idx]->push_back(factorsA);
 
-            // waveIndices[idx]->push_back(l + m + j);
             waveIndices[idx]->push_back(pixelCount++);
-            //std::cout << glm::to_string(factorsB) << "\n";
         }
     }
 }

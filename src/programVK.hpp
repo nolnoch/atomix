@@ -61,6 +61,7 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <set>
 
 #include "shaderobj.hpp"
 #include "global.hpp"
@@ -163,7 +164,7 @@ struct OffsetInfo {
     VKuint fragShaderIndex = 0;
     VKuint topologyIndex = 0;
     VKuint bufferComboIndex = 0;
-    VKuint pushConstantIndex = 0;
+    VKint pushConstantIndex = -1;
 };
 
 struct ModelCreateInfo {
@@ -177,6 +178,7 @@ struct ModelCreateInfo {
     std::vector<VkPrimitiveTopology> topologies;
     std::vector<std::vector<VKuint>> bufferCombos;
     std::vector<OffsetInfo> offsets;
+    std::vector<std::vector<VKuint>> programs;
 };
 
 struct PipelineLibrary {
@@ -206,7 +208,6 @@ struct GlobalPipelineInfo {
 struct RenderInfo {
     VkPipeline pipeline = VK_NULL_HANDLE;
     std::vector<VKuint> vbos;
-    VKuint ibo = 0;
     std::vector<VkDeviceSize> vboOffsets;
     std::vector<VKuint> uboIndices;
     VKint pushConst = 0;
@@ -233,12 +234,12 @@ struct ModelInfo {
     std::string name;
     std::vector<VKuint> vbos;
     VKuint ibo = 0;
-    std::vector<VKuint> vertShaders;
-    std::vector<VKuint> fragShaders;
     std::vector<VKuint> pipeLayouts;
     std::vector<AttribInfo *> attributes;
     ModelPipelineInfo *pipeInfo = nullptr;
     std::vector<RenderInfo *> renders;
+    std::vector<std::vector<VKuint>> programs;
+    std::set<VKuint> activePrograms;
     ValidityInfo valid;
 };
 
@@ -266,8 +267,11 @@ public:
 
     void addUniformsAndPushConstants();
     VKuint addModel(ModelCreateInfo &info);
-    VKuint activateModel(const std::string &name);
-    VKuint deactivateModel(const std::string &name);
+    bool activateModel(const std::string &name);
+    bool addModelProgram(const std::string &name, VKuint program = 0);
+    bool removeModelProgram(const std::string &name, VKuint program = 0);
+    bool clearModelPrograms(const std::string &name);
+    bool deactivateModel(const std::string &name);
 
     void createPipelineCache();
     void savePipelineToCache();
@@ -307,15 +311,16 @@ public:
     void updateSwapExtent(int x, int y);
 
     void render(VkExtent2D &extent);
-    void renderMacOS(VkCommandBuffer& cmdBuff, VkExtent2D &extent);
+    void reapZombies();
 
     Shader* getShaderFromName(const std::string& fileName);
     Shader* getShaderFromId(VKuint id);
     VKuint getShaderIdFromName(const std::string& fileName);
     ModelInfo* getModelFromName(const std::string& modelName);
-    VKuint getModelIdFromName(const std::string& name);
-    std::vector<VKuint> getActiveModelsById();
+    VKint getModelIdFromName(const std::string& name);
+    std::set<VKuint> getActiveModelsById();
     std::vector<std::string> getActiveModelsByName();
+    std::set<VKuint> getModelActivePrograms(std::string modelName);
 
     bool isActive(const std::string& modelName);
 
@@ -324,6 +329,8 @@ public:
 
 
 private:
+    void _updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data, bool isVBO, bool isIBO);
+
     const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 
     VkDevice p_dev = VK_NULL_HANDLE;
@@ -353,12 +360,14 @@ private:
     std::map<std::string, VKuint> p_mapShaders;
 
     std::vector<ModelInfo *> p_models;
-    std::vector<VKuint> p_validModels;
-    std::vector<VKuint> p_activeModels;
+    std::set<VKuint> p_validModels;
+    std::set<VKuint> p_activeModels;
     std::map<std::string, VKuint> p_mapModels;
     
     std::vector<VkBuffer> p_buffers;
     std::vector<VkDeviceMemory> p_buffersMemory;
+    std::deque<VKuint> p_buffersFree;
+    std::map<VKuint, std::vector<VKuint>> p_mapZombieIndices;
     std::vector<BufferCreateInfo *> p_buffersInfo;
     std::map<std::string, VKuint> p_mapBuffers;
     std::map<std::string, VKuint> p_mapBufferToModel;
@@ -384,8 +393,7 @@ private:
     VkResult err = VK_SUCCESS;
     
     bool p_libEnabled = false;
-    bool enabled = false;
-    int stage = 0;
+    VKint stage = 0;
 
     std::array<unsigned int, 19> dataSizes = {
         sizeof(float),

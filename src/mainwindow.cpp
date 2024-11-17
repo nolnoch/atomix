@@ -87,6 +87,7 @@ void MainWindow::init(QRect &windowSize) {
     vkWinWidWrapper = QWidget::createWindowContainer(vkGraph);
     setCentralWidget(vkWinWidWrapper);
     graph = vkWinWidWrapper;
+    graphWin = vkGraph;
 #elifdef USING_QOPENGL
     // OpenGL-specific setup
     glGraph = new GWidget(this, cfgParser);
@@ -206,7 +207,6 @@ void MainWindow::refreshOrbits() {
 void MainWindow::setupDetails() {
     fontDebug.setStyleHint(QFont::Monospace);
     fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
-    fontDebug.setFamily("Monospace");
     QString strDetails = QString("Position:      %1\n"\
                                  "View|Near:     %2\n"\
                                  "View|Far:      %3\n\n"\
@@ -219,9 +219,10 @@ void MainWindow::setupDetails() {
     labelDetails->setFont(fontDebug);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    // labelDetails->move(500, 500);
     labelDetails->raise();
     labelDetails->adjustSize();
-    labelDetails->hide();
+    // labelDetails->hide();
 }
 
 void MainWindow::setupLoading() {
@@ -342,7 +343,7 @@ void MainWindow::setupTabs() {
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
     tabWidth = wTabWaves->width() / wTabs->count();
     QString strTabStyle = QString("QWidget { font-size: %1 px; }"\
-                                  /* "QLabel { font-size: 17px; }"\ */
+                                  "QLabel { font-size: 17px; }"\
                                   "QLabel#tabDesc { font-size: %2 px; }"\
                                   "QTabBar::tab { height: 40px; width: %5 px; font-size: %3 px; }"\
                                   "QTabBar::tab::selected { color: #9999FF; font-size: %4 px; }"\

@@ -1099,7 +1099,7 @@ void ProgramVK::defineBufferAttributes(ModelCreateInfo &info, ModelInfo *m) {
 }
 
 void ProgramVK::stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData, bool create) {
-    VkBufferUsageFlags usage = ((type == BufferType::VERTEX) ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : VK_BUFFER_USAGE_INDEX_BUFFER_BIT) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferUsageFlags usage = ((type == BufferType::VERTEX || type == BufferType::DATA) ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : VK_BUFFER_USAGE_INDEX_BUFFER_BIT) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
     createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), p_stagingBuffer, p_stagingMemory);
 
@@ -1325,7 +1325,7 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
             this->p_mapBuffers[bufferInfo->name] = newIdx;
             delete this->p_buffersInfo[idx];
             this->p_buffersInfo[idx] = nullptr;
-            
+
             this->stageAndCopyBuffer(this->p_buffers[newIdx], this->p_buffersMemory[newIdx], type, size, data);
             
             if (isVBO) {
@@ -1414,8 +1414,8 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     this->p_vdf->vkCmdBeginRenderPass(cmdBuff, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     
     // For each active model, bind and draw for all render targets
-    for (int i = 0; i < this->p_activeModels.size(); i++) {
-        ModelInfo *model = this->p_models[i];
+    for (auto &modelIdx : this->p_activeModels) {
+        ModelInfo *model = this->p_models[modelIdx];
 
         for (auto &prog : model->activePrograms) {
             for (auto &renderIdx : model->programs[prog]) {

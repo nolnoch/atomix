@@ -505,22 +505,24 @@ void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
         QWindow::mouseReleaseEvent(e);
 }
 
-void VKWindow::keyPressEvent(QKeyEvent * e) {
-    if (e->key() == Qt::Key_Home) {
-        initVecsAndMatrices();
-        requestUpdate();
-    } else if (e->key() == Qt::Key_Space) {
-        vw_pause = !vw_pause;
-        if (vw_pause) {
-            vw_timePaused = QDateTime::currentMSecsSinceEpoch();
-        } else {
-            vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-            vw_timeStart += vw_timeEnd - vw_timePaused;
-        }
-        requestUpdate();
+void VKWindow::handleHome() {
+    initVecsAndMatrices();
+    requestUpdate();
+}
+
+void VKWindow::handlePause() {
+    vw_pause = !vw_pause;
+    if (vw_pause) {
+        vw_timePaused = QDateTime::currentMSecsSinceEpoch();
     } else {
-        QWindow::keyPressEvent(e);
+        vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
+        vw_timeStart += vw_timeEnd - vw_timePaused;
     }
+    requestUpdate();
+}
+
+void VKWindow::keyPressEvent(QKeyEvent *e) {
+    e->ignore();
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -636,8 +638,8 @@ void VKWindow::updateBuffersAndShaders() {
             initVecsAndMatrices();
         }
 
-        if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
-            this->atomixProg->deactivateModel(vw_previousModel);
+        if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER) && flGraphState.hasAny(egs::WAVE_MODE | egs::CLOUD_MODE)) {
+            if (!vw_previousModel.empty()) this->atomixProg->deactivateModel(vw_previousModel);
             this->atomixProg->activateModel(vw_currentModel);
             flGraphState.set(flGraphState.hasAny(egs::WAVE_MODE) ? egs::WAVE_RENDER : egs::CLOUD_RENDER);
         }

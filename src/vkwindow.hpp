@@ -175,12 +175,16 @@ public:
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
+    void handleHome();
+    void handlePause();
+
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
     BitFlag flGraphState;
 
 signals:
     void detailsChanged(AtomixInfo *info);
     void toggleLoading (bool loading);
+    void forwardKeyEvent(QKeyEvent *e);
 
 public slots:
     void cleanup();
@@ -193,11 +197,11 @@ protected:
     void paintGL() override;
     void resizeGL(int width, int height) override; */
 
-    void wheelEvent(QWheelEvent *event);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-    void keyPressEvent(QKeyEvent *event);
+    void wheelEvent(QWheelEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     void threadFinished();

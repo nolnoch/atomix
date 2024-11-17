@@ -272,6 +272,7 @@ public:
     bool removeModelProgram(const std::string &name, VKuint program = 0);
     bool clearModelPrograms(const std::string &name);
     bool deactivateModel(const std::string &name);
+    void clearActiveModels();
 
     void createPipelineCache();
     void savePipelineToCache();
@@ -322,7 +323,7 @@ public:
     std::vector<std::string> getActiveModelsByName();
     std::set<VKuint> getModelActivePrograms(std::string modelName);
 
-    bool isActive(const std::string& modelName);
+    bool isActive(const std::string& modelName, VKuint program = 0);
 
     void printModel(ModelInfo *model);
     void printInfo(ModelCreateInfo *info);

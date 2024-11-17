@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     // Engage
     app.processEvents();
     mainWindow.show();
-    mainWindow.setupLoading();
+    mainWindow.postInit(QApplication::style()->pixelMetric(QStyle::PM_TitleBarHeight));
     
     return app.exec();
 }

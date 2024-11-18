@@ -556,12 +556,10 @@ void VKWindow::updateBuffersAndShaders() {
     this->q_TotalRot.normalize();
 
     // Update time (per-frame)
-    if (this->flGraphState.hasAny(egs::WAVE_RENDER)) {
-        if (!vw_pause) {
-            vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-        }
-        pConstWave.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
+    if (!vw_pause) {
+        vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
+    pConstWave.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
     
     if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
         // Capture updates from currentManager

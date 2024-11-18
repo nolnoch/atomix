@@ -11,6 +11,10 @@ layout(set = 0, binding = 0) uniform WorldState {
     mat4 projMat;
 } worldState;
 
+layout (push_constant) uniform PushConstants {
+    float max_radius;
+} pConstCloud;
+
 
 void main() {
     /* VBO Variables */
@@ -34,7 +38,7 @@ void main() {
     // 0000FF -> 00FFFF -> FFFFFF
     //  Blue      Cyan     White
 
-    float alpha = clamp(1.0f - (radius / 150.0f), 0.0f, 1.0f);
+    float alpha = clamp(1.0f - (radius / pConstCloud.max_radius), 0.0f, 1.0f);
     vec3 pdvColour;
 
     if (pdv > 0.90f) {          // 90% - 100% -- White
@@ -57,5 +61,5 @@ void main() {
 
     vertColour = vec4(pdvColour, alpha);
     gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(posX, posY, posZ, 1.0f);
-    gl_PointSize = 1.3f;
+    gl_PointSize = 1.4f;
 }

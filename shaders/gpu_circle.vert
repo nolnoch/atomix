@@ -18,7 +18,7 @@ layout(set = 1, binding = 0) uniform WaveState {
 layout(push_constant) uniform PushConstants {
     float time;
     uint mode;
-} pushConst;
+} pConstWave;
 
 
 void main() {
@@ -39,17 +39,17 @@ void main() {
    
     /* Circular Wavefunction */
     //                             sin(2pi / L * x) - (2pi / T * t)
-    float wavefunc = cos((two_pi_L * r * theta) - (two_pi_T * pushConst.time) + phase_const);
+    float wavefunc = cos((two_pi_L * r * theta) - (two_pi_T * pConstWave.time) + phase_const);
     float displacement = amp * wavefunc;
 
     /* Assign vertices */
     float x_coord, y_coord, z_coord;
-    if (pushConst.mode == 0) {
+    if (pConstWave.mode == 0) {
         // Orthogonal waves
         x_coord = r * cos_th;
         y_coord = displacement;
         z_coord = r * sin_th;
-    } else if (pushConst.mode == 1) {
+    } else if (pConstWave.mode == 1) {
         // Parallel waves
         x_coord = (r + displacement) * cos_th;
         y_coord = 0.0f;

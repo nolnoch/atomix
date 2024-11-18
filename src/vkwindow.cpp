@@ -118,7 +118,6 @@ void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRec
         cloudManager = new CloudManager(config, *cloudMap, numRecipes);
         currentManager = cloudManager;
         futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
-        // futureModel = QtConcurrent::run(&CloudManager::testThreadingInit, cloudManager);
     } else if (cloudManager) {
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
         futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
@@ -126,6 +125,8 @@ void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRec
     if (cloudManager) {
         fwModel->setFuture(futureModel);
         this->max_n = cloudMap->rbegin()->first;
+        int divSciExp = std::abs(floor(log10(config->cloudTolerance)));
+        this->pConstCloud.maxRadius = cm_maxRadius[divSciExp - 1][max_n - 1];
         emit toggleLoading(true);
     }
 }
@@ -296,7 +297,7 @@ void VKWindow::initWaveModel() {
     waveModel.ubos = { "WorldState", "WaveState" };
     waveModel.vertShaders = { "gpu_circle.vert", "gpu_sphere.vert" };
     waveModel.fragShaders = { "default.frag" };
-    waveModel.pushConstant = "pushConst";
+    waveModel.pushConstant = "pConstWave";
     waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
     waveModel.bufferCombos = { { 0 } };
     waveModel.offsets = {
@@ -323,8 +324,8 @@ void VKWindow::initWaveModel() {
     // Add Atomix Wave Model to program
     atomixProg->addModel(waveModel);
 
-    // Activate Atomix Wave Model
-    atomixProg->updatePushConstant("pushConst", &this->pConst);
+    // Assign push constants data
+    atomixProg->updatePushConstant("pConstWave", &this->pConstWave);
 }
 
 void VKWindow::initCloudModel() {
@@ -356,6 +357,7 @@ void VKWindow::initCloudModel() {
     cloudModel.ubos = { "WorldState" };
     cloudModel.vertShaders = { "gpu_harmonics.vert" };
     cloudModel.fragShaders = { "default.frag" };
+    cloudModel.pushConstant = "pConstCloud";
     cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
     cloudModel.bufferCombos = { { 0, 1 } };
     cloudModel.offsets = {
@@ -370,11 +372,11 @@ void VKWindow::initCloudModel() {
         { 0 }
     };
 
-    // vbo=( 0 , 1 )
-    // each vbo has its (binding and) attrs, locations are assigned dynamically
-
     // Add Atomix Cloud Model to program
     atomixProg->addModel(cloudModel);
+
+    // Assign push constants data
+    atomixProg->updatePushConstant("pConstCloud", &this->pConstCloud);
 }
 
 void VKWindow::initModels() {
@@ -558,7 +560,7 @@ void VKWindow::updateBuffersAndShaders() {
         if (!vw_pause) {
             vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
         }
-        pConst.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
+        pConstWave.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
     }
     
     if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
@@ -631,7 +633,7 @@ void VKWindow::updateBuffersAndShaders() {
         }
 
         if (flGraphState.hasAny(egs::UPD_PUSH_CONST)) {
-            pConst.mode = waveManager->getMode();
+            pConstWave.mode = waveManager->getMode();
         }
 
         if (flGraphState.hasAny(egs::UPD_MATRICES)) {
@@ -674,7 +676,7 @@ void VKWindow::setBGColour(float colour) {
 }
 
 void VKWindow::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
-    uint layer_max = cloudManager->getMaxRadius(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
+    uint layer_max = cloudManager->getMaxLayer(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
     uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
 
     (*vertex) = (pixel_count << 2) * 3;     // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices

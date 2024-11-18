@@ -503,13 +503,13 @@ bool ProgramVK::activateModel(const std::string &name) {
 bool ProgramVK::addModelProgram(const std::string &name, VKuint program) {
     VKuint id = getModelIdFromName(name);
     
-    return p_activeModels.contains(id) && p_models[id]->activePrograms.insert(program).second;
+    return p_activeModels.contains(id) && (p_models[id]->activePrograms.insert(program).second);
 }
 
 bool ProgramVK::removeModelProgram(const std::string &name, VKuint program) {
     VKuint id = getModelIdFromName(name);
     
-    return p_activeModels.contains(id) && p_models[id]->activePrograms.erase(program);
+    return p_activeModels.contains(id) && (p_models[id]->activePrograms.erase(program));
 }
 
 bool ProgramVK::clearModelPrograms(const std::string &name) {

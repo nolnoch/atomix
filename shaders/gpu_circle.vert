@@ -44,21 +44,16 @@ void main() {
 
     /* Assign vertices */
     float x_coord, y_coord, z_coord;
-    if (pConstWave.mode == 0) {
-        // Orthogonal waves
-        x_coord = r * cos_th;
-        y_coord = displacement;
-        z_coord = r * sin_th;
-    } else if (pConstWave.mode == 1) {
-        // Parallel waves
-        x_coord = (r + displacement) * cos_th;
-        y_coord = 0.0f;
-        z_coord = (r + displacement) * sin_th;
-    }
+
+    x_coord = mix((r * cos_th), ((r + displacement) * cos_th), pConstWave.mode);
+    y_coord = mix((displacement), (0.0f), pConstWave.mode);
+    z_coord = mix((r * sin_th), ((r + displacement) * sin_th), pConstWave.mode);
 
     /* Assign colours */
     uint mask = 0xFF;
     float fMask = float(mask);
+    vec4 finalPos = vec4(0.0f);
+    vec4 finalNeg = vec4(0.0f);
     vec4 final = vec4(0.0f);
     float scale = abs(wavefunc);
 
@@ -67,29 +62,29 @@ void main() {
     float baseG = ((base >> 16) & mask) / fMask;
     float baseR = ((base >> 24) & mask) / fMask;
 
-    if (wavefunc >= 0) {
-        float peakA = (peak & mask) / fMask;
-        float peakB = ((peak >> 8) & mask) / fMask;
-        float peakG = ((peak >> 16) & mask) / fMask;
-        float peakR = ((peak >> 24) & mask) / fMask;
+    float peakA = (peak & mask) / fMask;
+    float peakB = ((peak >> 8) & mask) / fMask;
+    float peakG = ((peak >> 16) & mask) / fMask;
+    float peakR = ((peak >> 24) & mask) / fMask;
 
-        final.r = (scale * peakR) + ((1 - scale) * baseR);
-        final.g = (scale * peakG) + ((1 - scale) * baseG);
-        final.b = (scale * peakB) + ((1 - scale) * baseB);
-        final.a = (scale * peakA) + ((1 - scale) * baseA);
-    } else {
-        float trghA = (trough & mask) / fMask;
-        float trghB = ((trough >> 8) & mask) / fMask;
-        float trghG = ((trough >> 16) & mask) / fMask;
-        float trghR = ((trough >> 24) & mask) / fMask;
+    float trghA = (trough & mask) / fMask;
+    float trghB = ((trough >> 8) & mask) / fMask;
+    float trghG = ((trough >> 16) & mask) / fMask;
+    float trghR = ((trough >> 24) & mask) / fMask;
+    
+    finalPos.r = mix(baseR, peakR, scale);
+    finalPos.g = mix(baseG, peakG, scale);
+    finalPos.b = mix(baseB, peakB, scale);
+    finalPos.a = mix(baseA, peakA, scale);
 
-        final.r = (scale * trghR) + ((1 - scale) * baseR);
-        final.g = (scale * trghG) + ((1 - scale) * baseG);
-        final.b = (scale * trghB) + ((1 - scale) * baseB);
-        final.a = (scale * trghA) + ((1 - scale) * baseA);
-    }
+    finalNeg.r = mix(baseR, trghR, scale);
+    finalNeg.g = mix(baseG, trghG, scale);
+    finalNeg.b = mix(baseB, trghB, scale);
+    finalNeg.a = mix(baseA, trghA, scale);
+
+    final = mix(finalNeg, finalPos, step(0.0f, wavefunc));
 
     vertColour = final;
     gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(x_coord, y_coord, z_coord, 1.0f);
-    gl_PointSize = 1.3f;
+    gl_PointSize = 1.4f;
 }

@@ -67,7 +67,7 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     cm_proc_coarse.lock();
     // Check for relevant config changes OR for recipes to require larger radius
 
-    bool widerRadius = (getMaxRadius(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxRadius(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
+    bool widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
     bool newMap = cloudOrbitals != (*inMap);
     bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
     bool newResolution = (this->cloudResolution != config->cloudResolution);
@@ -132,6 +132,8 @@ void CloudManager::initManager() {
     // std::cout << "Init() -- Functions took:\n";
     // this->printTimes();
 
+    mStatus.set(em::UPD_MATRICES);
+
     cm_proc_coarse.unlock();
 }
 
@@ -143,7 +145,7 @@ double CloudManager::create() {
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     this->max_n = cloudOrbitals.rbegin()->first;
-    int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
+    int opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
     double deg_fac_local = this->deg_fac;
@@ -198,7 +200,7 @@ double CloudManager::createThreaded() {
 
     this->max_n = cloudOrbitals.rbegin()->first;
     int div_local = this->cloudLayerDivisor;
-    int opt_max_radius = getMaxRadius(this->cloudTolerance, this->max_n, div_local);
+    int opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, div_local);
     int theta_max_local = this->cloudResolution;
     int phi_max_local = this->cloudResolution >> 1;
     int layer_size = theta_max_local * phi_max_local;
@@ -972,9 +974,13 @@ const uint CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-const uint CloudManager::getMaxRadius(double tolerance, int n_max, int divisor) {
+const uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
+    return getMaxRadius(tolerance, n_max) * divisor;
+}
+
+const uint CloudManager::getMaxRadius(double tolerance, int n_max) {
     int divSciExp = std::abs(floor(log10(tolerance)));
-    return cm_maxRadius[divSciExp - 1][n_max - 1] * divisor;
+    return cm_maxRadius[divSciExp - 1][n_max - 1];
 }
 
 /*

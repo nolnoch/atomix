@@ -77,9 +77,13 @@ struct WaveState {
 };
 Q_DECLARE_METATYPE(WaveState);
 
-struct PushConstants {
+struct PushConstantsWave {
     float time = 0.0f;
     uint mode = 0;
+};
+
+struct PushConstantsCloud {
+    float maxRadius = 0.0f;
 };
 
 enum egs {
@@ -274,8 +278,8 @@ private:
 
     WorldState vw_world;
     WaveState vw_wave;
-    PushConstants pConst = {0.0f};
-    
+    PushConstantsWave pConstWave = {0.0f, 0};
+    PushConstantsCloud pConstCloud = {0.0f};
 };
 
 #endif

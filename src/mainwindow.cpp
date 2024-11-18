@@ -933,6 +933,7 @@ void MainWindow::handleButtResetRecipes() {
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     buttMorbHarmonics->setEnabled(false);
+    buttLockRecipes->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbWaves() {
@@ -958,6 +959,9 @@ void MainWindow::handleButtMorbWaves() {
 
     groupColors->setEnabled(true);
     groupOrbits->setEnabled(true);
+    if (listOrbitalLocked->count()) {
+        buttMorbHarmonics->setEnabled(true);
+    }
 }
 
 void MainWindow::handleButtMorbHarmonics() {

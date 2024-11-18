@@ -18,7 +18,7 @@ layout(set = 1, binding = 0) uniform WaveState {
 layout(push_constant) uniform PushConstants {
     float time;
     uint mode;
-} pushConst;
+} pConstWave;
 
 
 void main() {
@@ -47,7 +47,7 @@ void main() {
     /* Spherical Wavefunction */
     //                             sin((2pi / L * x) - (2pi / T * t)) + phase
     //                         sin((k * cos_phi * x) + (k * sin_phi * y) - (2pi / T * t))
-    float wavefunc = cos((two_pi_L * r_theta) - (two_pi_T * pushConst.time) + phase_const);
+    float wavefunc = cos((two_pi_L * r_theta) - (two_pi_T * pConstWave.time) + phase_const);
     float displacement = amp * wavefunc;
 
     /* Assign vertices */

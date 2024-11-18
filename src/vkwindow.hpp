@@ -77,9 +77,13 @@ struct WaveState {
 };
 Q_DECLARE_METATYPE(WaveState);
 
-struct PushConstants {
+struct PushConstantsWave {
     float time = 0.0f;
     uint mode = 0;
+};
+
+struct PushConstantsCloud {
+    float maxRadius = 0.0f;
 };
 
 enum egs {
@@ -168,9 +172,6 @@ public:
     void setColorsWaves(int id, uint colorChoice);
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
-    void updateWorldState();
-    void updateTime();
-    void updateWaveMode();
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
@@ -274,8 +275,8 @@ private:
 
     WorldState vw_world;
     WaveState vw_wave;
-    PushConstants pConst = {0.0f};
-    
+    PushConstantsWave pConstWave = {0.0f, 0};
+    PushConstantsCloud pConstCloud = {0.0f};
 };
 
 #endif

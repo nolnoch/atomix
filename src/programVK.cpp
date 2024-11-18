@@ -24,6 +24,7 @@
 
 #include "programVK.hpp"
 
+#include <unordered_set>
 
 /**
  * Default Constructor.
@@ -353,8 +354,9 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     assert(this->p_mapDescriptors.size());
     ModelInfo *model;
     VKuint idx = p_models.size();
-
+#ifdef DEBUG
     printInfo(&info);
+#endif
 
     // Check for existing model and add if it doesn't exist
     const auto [it, success] = p_mapModels.insert({info.name, idx});
@@ -416,6 +418,48 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         model->pipeLayouts.push_back(0);
     }
 
+    // Pipeline Libraries
+    if (p_libEnabled) {
+        model->pipeInfo->library = new PipelineLibrary{};
+        auto hash = [](const std::pair<VKuint, VKuint> &p) {
+            return std::hash<VKuint>()(p.first) ^ std::hash<VKuint>()(p.second);
+        };
+        std::map<uint64_t, int> vis;
+        std::map<uint64_t, int> pre;
+        std::map<uint64_t, int> fsc;
+        uint64_t hashVal = 0;
+
+        for (auto &off : info.offsets) {
+            int v = 0, p = 0, f = 0;
+            VKuint tv = 0, tp = 0, tf = 0;
+            
+            hashVal = hash({off.bufferComboIndex, off.topologyIndex});
+            if (vis.insert({hashVal, v}).second) {
+                this->genVertexInputPipeLib(model, off.bufferComboIndex, off.topologyIndex);
+                tv = v++;
+            } else {
+                tv = vis[hashVal];
+            }
+            hashVal = hash({off.vertShaderIndex, off.pushConstantIndex});
+            if (pre.insert({hashVal, p}).second) {
+                this->genPreRasterizationPipeLib(model, off.vertShaderIndex, off.pushConstantIndex);
+                tp = p++;
+            } else {
+                tp = pre[hashVal];
+            }
+            hashVal = std::hash<VKuint>()(off.fragShaderIndex);
+            if (fsc.insert({hashVal, f}).second) {
+                this->genFragmentShaderPipeLib(model, off.fragShaderIndex);
+                tf = f++;
+            } else {
+                tf = fsc[hashVal];
+            }
+
+            off.offsetLibs = VKtuple(tv, tp, tf);
+        }
+    }
+
+    // Generate index counts for Render objects based on specifed offsets
     std::vector<VKuint> indexCount;
     for (int i = 0; i < info.offsets.size(); i++) {
         VKuint end = 0;
@@ -427,7 +471,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         indexCount.push_back(end - info.offsets[i].offset);
     }
 
-    // Populate Renders
+    // Populate Render objects with parameters and final Pipelines
     for (int i = 0; i < info.offsets.size(); i++) {
         OffsetInfo &off = info.offsets[i];
         model->renders.push_back(new RenderInfo{});
@@ -450,13 +494,9 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
             render->pipeLayoutIndex = 0;
         }
         
-        // Not all platforms support libraries
         if (p_libEnabled) {
-            /* // Final Pipelines for Renders (Libraries)
-            this->createPipeFromLibraries(render,
-                                            model->pipeInfo->pipeLib->vertexInput[off.topologyIndex],
-                                            model->pipeInfo->pipeLib->preRasterization[off.vertShaderIndex],
-                                            model->pipeInfo->pipeLib->fragmentShader[off.fragShaderIndex]); */
+            // Final Pipelines for Renders (Libraries)
+            this->createPipeFromLibraries(render, model, std::get<0>(off.offsetLibs), std::get<1>(off.offsetLibs), std::get<2>(off.offsetLibs));
         } else {
             // Final Pipelines for Renders (Full PSO)
             VKuint vs = this->getShaderFromName(info.vertShaders[off.vertShaderIndex])->getStageIdx();
@@ -470,12 +510,14 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     model->activePrograms.clear();
     model->valid.renders = true;
 
+#ifdef DEBUG
     printModel(model);
+#endif
 
     if (model->valid.validate()) {
-        std::cout << "Model validated: " << info.name << std::endl;
+        std::cout << "Model added and validated: " << info.name << std::endl;
     } else {
-        std::cout << "Model not validated: " << info.name << std::endl;
+        std::cout << "Model added but not validated: " << info.name << std::endl;
     }
 
     return model->id;
@@ -503,13 +545,13 @@ bool ProgramVK::activateModel(const std::string &name) {
 bool ProgramVK::addModelProgram(const std::string &name, VKuint program) {
     VKuint id = getModelIdFromName(name);
     
-    return p_activeModels.contains(id) && p_models[id]->activePrograms.insert(program).second;
+    return p_activeModels.contains(id) && (p_models[id]->activePrograms.insert(program).second);
 }
 
 bool ProgramVK::removeModelProgram(const std::string &name, VKuint program) {
     VKuint id = getModelIdFromName(name);
     
-    return p_activeModels.contains(id) && p_models[id]->activePrograms.erase(program);
+    return p_activeModels.contains(id) && (p_models[id]->activePrograms.erase(program));
 }
 
 bool ProgramVK::clearModelPrograms(const std::string &name) {
@@ -828,7 +870,7 @@ void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs,
     m->valid.pipelines = true;
 }
 
-void ProgramVK::genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia) {
+void ProgramVK::genVertexInputPipeLib(ModelInfo *m, int vbo, int ia) {
     // Declare model-specific pipeline library part: Vertex Input State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibVBOInfo{};
     pipeLibVBOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -840,20 +882,18 @@ void ProgramVK::genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputSta
     pipeCreateLibVBOInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeCreateLibVBOInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pipeCreateLibVBOInfo.pNext = &pipeLibVBOInfo;
-    pipeCreateLibVBOInfo.pVertexInputState = &vbo;
-    pipeCreateLibVBOInfo.pInputAssemblyState = &ia;
+    pipeCreateLibVBOInfo.pVertexInputState = &m->pipeInfo->vboCreates[vbo];
+    pipeCreateLibVBOInfo.pInputAssemblyState = &m->pipeInfo->iaCreates[ia];
     pipeCreateLibVBOInfo.pDynamicState = &this->p_pipeInfo.dyn;
 
-    VkPipeline pipe = VK_NULL_HANDLE;
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibVBOInfo, nullptr, &pipe);
+    m->pipeInfo->library->vertexInput.push_back({});
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibVBOInfo, nullptr, &m->pipeInfo->library->vertexInput.back());
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vertex Input pipeline library!");
     }
-    // model->pipeInfo->pipeLib->vertexInput.push_back(pipe);
-    // TODO : Make this use direct assignment to the vector
 }
 
-void ProgramVK::genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineLayout &lay, VkPipelineRasterizationStateCreateInfo &rs) {
+void ProgramVK::genPreRasterizationPipeLib(ModelInfo *m, int vs, int lay) {
     // Declare model-specific pipeline library part: Pre-Rasterization State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibPRSInfo{};
     pipeLibPRSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -866,23 +906,22 @@ void ProgramVK::genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderSta
     pipeCreateLibPRSInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pipeCreateLibPRSInfo.pNext = &pipeLibPRSInfo;
     pipeCreateLibPRSInfo.stageCount = 1;
-    pipeCreateLibPRSInfo.pStages = &vert;
-    pipeCreateLibPRSInfo.pRasterizationState = &rs;
+    pipeCreateLibPRSInfo.pStages = &this->p_shaderStages[vs];
+    pipeCreateLibPRSInfo.pRasterizationState = &this->p_pipeInfo.rsCreate;
     pipeCreateLibPRSInfo.pViewportState = &this->p_pipeInfo.vp;
     pipeCreateLibPRSInfo.pDynamicState = &this->p_pipeInfo.dyn;
-    pipeCreateLibPRSInfo.layout = lay;
+    pipeCreateLibPRSInfo.layout = this->p_pipeLayouts[m->pipeLayouts[lay]];
     pipeCreateLibPRSInfo.renderPass = this->p_renderPass;
     pipeCreateLibPRSInfo.subpass = 0;
 
-    VkPipeline pipe = VK_NULL_HANDLE;
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibPRSInfo, nullptr, &pipe);
+    m->pipeInfo->library->preRasterization.push_back({});
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibPRSInfo, nullptr, &m->pipeInfo->library->preRasterization.back());
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Pre-Rasterization pipeline library!");
     }
-    // model->pipeInfo->pipeLib->preRasterization.push_back(pipe);
 }
 
-void ProgramVK::genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag) {
+void ProgramVK::genFragmentShaderPipeLib(ModelInfo *m, int fs) {
     // Create global pipeline library part: Fragment Shader State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibFSInfo{};
     pipeLibFSInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT;
@@ -894,19 +933,18 @@ void ProgramVK::genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStage
     pipeCreateLibFSInfo.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pipeCreateLibFSInfo.pNext = &pipeLibFSInfo;
     pipeCreateLibFSInfo.stageCount = 1;
-    pipeCreateLibFSInfo.pStages = &frag;
+    pipeCreateLibFSInfo.pStages = &this->p_shaderStages[fs];
     pipeCreateLibFSInfo.pDepthStencilState = &this->p_pipeInfo.ds;
     pipeCreateLibFSInfo.pMultisampleState = &this->p_pipeInfo.ms;
     pipeCreateLibFSInfo.pDynamicState = &this->p_pipeInfo.dyn;
     pipeCreateLibFSInfo.renderPass = this->p_renderPass;
     pipeCreateLibFSInfo.subpass = 0;
 
-    VkPipeline pipe = VK_NULL_HANDLE;
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFSInfo, nullptr, &pipe);
+    m->pipeInfo->library->fragmentShader.push_back({});
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFSInfo, nullptr, &m->pipeInfo->library->fragmentShader.back());
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Fragment Shader pipeline library!");
     }
-    // model->pipeInfo->pipeLib->fragmentShader.push_back(pipe);
 }
 
 void ProgramVK::genFragmentOutputPipeLib() {
@@ -926,16 +964,14 @@ void ProgramVK::genFragmentOutputPipeLib() {
     pipeCreateLibFOInfo.renderPass = this->p_renderPass;
     pipeCreateLibFOInfo.subpass = 0;
 
-    VkPipeline pipe = VK_NULL_HANDLE;
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFOInfo, nullptr, &pipe);
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeCreateLibFOInfo, nullptr, &this->p_fragmentOutput);
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Fragment Output pipeline library!");
     }
-    this->p_fragmentOutput = pipe;
 }
 
-void ProgramVK::createPipeFromLibraries(RenderInfo *render, VkPipeline &vis, VkPipeline &pre, VkPipeline &frag) {
-    std::vector<VkPipeline> libs = { vis, pre, frag, this->p_fragmentOutput };
+void ProgramVK::createPipeFromLibraries(RenderInfo *render, ModelInfo *m, int vis, int pre, int frag) {
+    std::vector<VkPipeline> libs = { m->pipeInfo->library->vertexInput[vis], m->pipeInfo->library->preRasterization[pre], m->pipeInfo->library->fragmentShader[frag], this->p_fragmentOutput };
 
     VkPipelineLibraryCreateInfoKHR pipeLibLinkInfo{};
     pipeLibLinkInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
@@ -948,13 +984,10 @@ void ProgramVK::createPipeFromLibraries(RenderInfo *render, VkPipeline &vis, VkP
     pipeInfo.pNext = &pipeLibLinkInfo;
     pipeInfo.flags = VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
 
-    VkPipeline pipe = VK_NULL_HANDLE;
-    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeInfo, nullptr, &pipe);
+    err = this->p_vdf->vkCreateGraphicsPipelines(this->p_dev, this->p_pipeCache, 1, &pipeInfo, nullptr, &render->pipeline);
     if (err != VK_SUCCESS) {
         throw std::runtime_error("Failed to create graphics pipeline!");
     }
-
-    render->pipeline = pipe;
 }
 
 void ProgramVK::updatePipeFromLibraries() {

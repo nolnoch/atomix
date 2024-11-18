@@ -24,6 +24,10 @@
 
 #include "mainwindow.hpp"
 
+uint VK_MINOR_VERSION;
+uint VK_SPIRV_VERSION;
+
+
 MainWindow::MainWindow() {
     // onAddNew();
 }
@@ -73,7 +77,8 @@ void MainWindow::init(QRect &windowSize) {
     } else {
         VK_SPIRV_VERSION = 0;
     }
-    std::cout << version.toString().toStdString() << std::endl;
+    std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
+    std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
     
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);
@@ -87,7 +92,9 @@ void MainWindow::init(QRect &windowSize) {
     vkGraph->setVulkanInstance(&vkInst);
     std::cout << "Vulkan instance set" << std::endl;
     graph = QWidget::createWindowContainer(vkGraph);
+    std::cout << "Window container created" << std::endl;
     setCentralWidget(graph);
+    std::cout << "Central widget set" << std::endl;
     graphWin = vkGraph;
 #elifdef USING_QOPENGL
     // OpenGL-specific setup
@@ -214,8 +221,6 @@ void MainWindow::postInit(int titlebarHeight) {
 
     setupDetails();
     setupLoading();
-
-    this->grabKeyboard();
 }
 
 void MainWindow::setupDetails() {
@@ -935,6 +940,7 @@ void MainWindow::handleButtResetRecipes() {
 
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     buttMorbHarmonics->setEnabled(false);
+    buttLockRecipes->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbWaves() {
@@ -960,6 +966,9 @@ void MainWindow::handleButtMorbWaves() {
 
     groupColors->setEnabled(true);
     groupOrbits->setEnabled(true);
+    if (listOrbitalLocked->count()) {
+        buttMorbHarmonics->setEnabled(true);
+    }
 }
 
 void MainWindow::handleButtMorbHarmonics() {
@@ -1122,8 +1131,6 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
         QWidget::keyPressEvent(e);
     }
 
-    this->setFocus();
-    this->grabKeyboard();
 }
 
 void MainWindow::printHarmap() {

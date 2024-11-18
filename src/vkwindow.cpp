@@ -118,7 +118,6 @@ void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRec
         cloudManager = new CloudManager(config, *cloudMap, numRecipes);
         currentManager = cloudManager;
         futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
-        // futureModel = QtConcurrent::run(&CloudManager::testThreadingInit, cloudManager);
     } else if (cloudManager) {
         // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
         futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
@@ -126,6 +125,8 @@ void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRec
     if (cloudManager) {
         fwModel->setFuture(futureModel);
         this->max_n = cloudMap->rbegin()->first;
+        int divSciExp = std::abs(floor(log10(config->cloudTolerance)));
+        this->pConstCloud.maxRadius = cm_maxRadius[divSciExp - 1][max_n - 1];
         emit toggleLoading(true);
     }
 }
@@ -296,7 +297,7 @@ void VKWindow::initWaveModel() {
     waveModel.ubos = { "WorldState", "WaveState" };
     waveModel.vertShaders = { "gpu_circle.vert", "gpu_sphere.vert" };
     waveModel.fragShaders = { "default.frag" };
-    waveModel.pushConstant = "pushConst";
+    waveModel.pushConstant = "pConstWave";
     waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
     waveModel.bufferCombos = { { 0 } };
     waveModel.offsets = {
@@ -323,8 +324,8 @@ void VKWindow::initWaveModel() {
     // Add Atomix Wave Model to program
     atomixProg->addModel(waveModel);
 
-    // Activate Atomix Wave Model
-    atomixProg->updatePushConstant("pushConst", &this->pConst);
+    // Assign push constants data
+    atomixProg->updatePushConstant("pConstWave", &this->pConstWave);
 }
 
 void VKWindow::initCloudModel() {
@@ -356,6 +357,7 @@ void VKWindow::initCloudModel() {
     cloudModel.ubos = { "WorldState" };
     cloudModel.vertShaders = { "gpu_harmonics.vert" };
     cloudModel.fragShaders = { "default.frag" };
+    cloudModel.pushConstant = "pConstCloud";
     cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
     cloudModel.bufferCombos = { { 0, 1 } };
     cloudModel.offsets = {
@@ -370,11 +372,11 @@ void VKWindow::initCloudModel() {
         { 0 }
     };
 
-    // vbo=( 0 , 1 )
-    // each vbo has its (binding and) attrs, locations are assigned dynamically
-
     // Add Atomix Cloud Model to program
     atomixProg->addModel(cloudModel);
+
+    // Assign push constants data
+    atomixProg->updatePushConstant("pConstCloud", &this->pConstCloud);
 }
 
 void VKWindow::initModels() {
@@ -522,7 +524,7 @@ void VKWindow::handlePause() {
 }
 
 void VKWindow::keyPressEvent(QKeyEvent *e) {
-    e->ignore();
+    QCoreApplication::sendEvent(this->parent(), e);
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -554,12 +556,10 @@ void VKWindow::updateBuffersAndShaders() {
     this->q_TotalRot.normalize();
 
     // Update time (per-frame)
-    if (this->flGraphState.hasAny(egs::WAVE_RENDER)) {
-        if (!vw_pause) {
-            vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-        }
-        pConst.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
+    if (!vw_pause) {
+        vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
+    pConstWave.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
     
     if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
         // Capture updates from currentManager
@@ -631,7 +631,7 @@ void VKWindow::updateBuffersAndShaders() {
         }
 
         if (flGraphState.hasAny(egs::UPD_PUSH_CONST)) {
-            pConst.mode = waveManager->getMode();
+            pConstWave.mode = waveManager->getMode();
         }
 
         if (flGraphState.hasAny(egs::UPD_MATRICES)) {
@@ -671,10 +671,11 @@ void VKWindow::updateTime() {
 
 void VKWindow::setBGColour(float colour) {
     vw_bg = colour;
+    this->atomixProg->updateClearColor(vw_bg, vw_bg, vw_bg, 1.0f);
 }
 
 void VKWindow::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
-    uint layer_max = cloudManager->getMaxRadius(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
+    uint layer_max = cloudManager->getMaxLayer(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
     uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
 
     (*vertex) = (pixel_count << 2) * 3;     // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices
@@ -831,6 +832,7 @@ VKRenderer::~VKRenderer() {
 
 void VKRenderer::preInitResources() {
     std::cout << "preInitResources" << std::endl;
+    std::cout << this->vr_vkw->parent()->objectName().toStdString() << std::endl;
 }
 
 void VKRenderer::initResources() {
@@ -845,11 +847,26 @@ void VKRenderer::initResources() {
     vr_vf = vr_vi->functions();
 
     // Retrieve physical device constraints
-    QString dev_info;
-    dev_info += QString::asprintf("Number of physical devices: %d\n", int(vr_qvw->availablePhysicalDevices().count()));
-
     VkPhysicalDeviceProperties vr_props;
+    VkPhysicalDeviceProperties2 vr_props2;
     vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
+    // vr_vf->vkGetPhysicalDeviceProperties2(vr_phydev, &vr_props2);
+
+#ifdef DEBUG
+    QString dev_info;
+    int deviceCount = vr_qvw->availablePhysicalDevices().count();
+    dev_info += QString::asprintf("Number of physical devices: %d\n", deviceCount);
+    for (int i = 0; i < deviceCount; i++) {
+        dev_info += QString::asprintf("Device %d: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
+                                      i,
+                                      vr_qvw->availablePhysicalDevices().at(i).deviceName,
+                                      VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                                      VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                                      VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                                      VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
+                                      VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
+                                      VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).apiVersion));
+    }
 
     dev_info += QString::asprintf("Active physical device name: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
                               vr_props.deviceName,
@@ -857,6 +874,8 @@ void VKRenderer::initResources() {
                               VK_VERSION_PATCH(vr_props.driverVersion),
                               VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion),
                               VK_VERSION_PATCH(vr_props.apiVersion));
+
+    // dev_info += QString::asprintf("PhysDevProps2: %u", vr_props2.sType);
 
     dev_info += QStringLiteral("Supported instance layers:\n");
     for (const QVulkanLayer &layer : vr_vi->supportedLayers())
@@ -882,7 +901,7 @@ void VKRenderer::initResources() {
     dev_info += QLatin1Char('\n');
 
     std::cout << dev_info.toStdString() << std::endl;
-
+#endif
     const int concFrameCount = vr_qvw->concurrentFrameCount();
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
     this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;

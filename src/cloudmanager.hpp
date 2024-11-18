@@ -84,7 +84,8 @@ class CloudManager : public Manager {
         void cloudTestCSV();
         
         const uint getColourSize();
-        const uint getMaxRadius(double tolerance, int n_max, int divisor);
+        const uint getMaxLayer(double tolerance, int n_max, int divisor);
+        const uint getMaxRadius(double tolerance, int n_max);
         bool hasVertices();
         bool hasBuffers();
 

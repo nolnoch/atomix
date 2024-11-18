@@ -11,6 +11,10 @@ layout(set = 0, binding = 0) uniform WorldState {
     mat4 projMat;
 } worldState;
 
+layout (push_constant) uniform PushConstants {
+    float max_radius;
+} pConstCloud;
+
 
 void main() {
     /* VBO Variables */
@@ -23,39 +27,29 @@ void main() {
     float posY = radius * cos(phi);
     float posZ = radius * sin(phi) * cos(theta);
 
-    /* Colour */
-    //  FF0000 -> FFFF00 -> 00FF00 -> 00FFFF -> 0000FF -> FF00FF -> FFFFFF
-    //    red     yellow     green     cyan      blue     magenta    white
+    /* Alpha */
+    // float alpha = clamp(1.0f - (radius / pConstCloud.max_radius), 0.0f, 1.0f);       // Scale by radius (inversely)
+    float alpha = pow(pdv, (1.0f / 3.0f));                                              // Scale by probability
+    // float alpha = 1.0f;                                                              // No scaling
     
-    //  magenta    blue      green    yellow     red      
-    //  FF00FF -> 0000FF -> 00FF00 -> FFFF00 -> FF0000
-    //  16,711,935 -> 255 -> 65,280 -> 16,776,960 -> 16,711,680
-
-    // 0000FF -> 00FFFF -> FFFFFF
-    //  Blue      Cyan     White
-
-    float alpha = clamp(1.0f - (radius / 150.0f), 0.0f, 1.0f);
-    vec3 pdvColour;
-
-    if (pdv > 0.90f) {          // 90% - 100% -- White
-        pdvColour = vec3(pdv, pdv, pdv);
-    } else if (pdv > 0.70f) {   // 70% - 90%  -- Red
-        pdvColour = vec3(pdv, 0.0f, 0.0f);
-    } else if (pdv > 0.50f) {   // 50% - 70%  -- Yellow
-        pdvColour = vec3(pdv, pdv, 0.0f);
-    } else if (pdv > 0.35f) {   // 35% - 50%  -- Green
-        pdvColour = vec3(0.0f, pdv, 0.0f);
-    } else if (pdv > 0.20f) {   // 20% - 35%  -- Cyan
-        pdvColour = vec3(0.0f, pdv, pdv);
-    } else if (pdv > 0.10f) {   // 10% - 20%  -- Blue
-        float pdv_adj = pdv * 1.5f;
-        pdvColour = vec3(0.0f, 0.0f, pdv_adj);
-    } else {                    //  0% - 10%  -- Purple
-        float pdv_adj = pdv * 2.0f;
-        pdvColour = vec3(pdv_adj, 0.0f, pdv_adj);
-    }
+    /* Colours */
+    vec3 colours[11] = {
+        vec3(2.0f, 0.0f, 2.0f),      // [0-9%] -- Magenta
+        vec3(0.0f, 0.0f, 1.5f),      // [10-19%] -- Blue
+        vec3(0.0f, 0.5f, 1.0f),      // [20-29%] -- Cyan-Blue
+        vec3(0.0f, 1.0f, 0.5f),      // [30-39%] -- Cyan-Green
+        vec3(0.0f, 1.0f, 0.0f),      // [40-49%] -- Green
+        vec3(1.0f, 1.0f, 0.0f),      // [50-59%] -- Yellow
+        vec3(1.0f, 1.0f, 0.0f),      // [60-69%] -- Yellow
+        vec3(1.0f, 0.0f, 0.0f),      // [70-79%] -- Red
+        vec3(1.0f, 0.0f, 0.0f),      // [80-89%] -- Red
+        vec3(1.0f, 1.0f, 1.0f),      // [90-99%] -- White
+        vec3(1.0f, 1.0f, 1.0f)       // [100%] -- White
+    };
+    uint colourIdx = uint(pdv * 10.0f);
+    vec3 pdvColour = colours[colourIdx] * pdv;
 
     vertColour = vec4(pdvColour, alpha);
     gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(posX, posY, posZ, 1.0f);
-    gl_PointSize = 1.3f;
+    gl_PointSize = 1.4f;
 }

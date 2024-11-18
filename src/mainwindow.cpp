@@ -85,7 +85,9 @@ void MainWindow::init(QRect &windowSize) {
     vkGraph->setVulkanInstance(&vkInst);
     std::cout << "Vulkan instance set" << std::endl;
     graph = QWidget::createWindowContainer(vkGraph);
+    std::cout << "Window container created" << std::endl;
     setCentralWidget(graph);
+    std::cout << "Central widget set" << std::endl;
     graphWin = vkGraph;
 #elifdef USING_QOPENGL
     // OpenGL-specific setup
@@ -212,8 +214,6 @@ void MainWindow::postInit(int titlebarHeight) {
 
     setupDetails();
     setupLoading();
-
-    this->grabKeyboard();
 }
 
 void MainWindow::setupDetails() {
@@ -1120,8 +1120,6 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
         QWidget::keyPressEvent(e);
     }
 
-    this->setFocus();
-    this->grabKeyboard();
 }
 
 void MainWindow::printHarmap() {

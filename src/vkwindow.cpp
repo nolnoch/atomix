@@ -524,7 +524,7 @@ void VKWindow::handlePause() {
 }
 
 void VKWindow::keyPressEvent(QKeyEvent *e) {
-    e->ignore();
+    QCoreApplication::sendEvent(this->parent(), e);
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -673,6 +673,7 @@ void VKWindow::updateTime() {
 
 void VKWindow::setBGColour(float colour) {
     vw_bg = colour;
+    this->atomixProg->updateClearColor(vw_bg, vw_bg, vw_bg, 1.0f);
 }
 
 void VKWindow::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
@@ -833,6 +834,7 @@ VKRenderer::~VKRenderer() {
 
 void VKRenderer::preInitResources() {
     std::cout << "preInitResources" << std::endl;
+    std::cout << this->vr_vkw->parent()->objectName().toStdString() << std::endl;
 }
 
 void VKRenderer::initResources() {

@@ -73,6 +73,7 @@ typedef float VKfloat;
 typedef char VKchar;
 typedef int VKint;
 typedef int VKsizei;
+typedef std::tuple<VKuint, VKuint, VKuint> VKtuple;
 
 #define UBOIDX(a, b) ((a * MAX_FRAMES_IN_FLIGHT) + b)
 
@@ -165,6 +166,7 @@ struct OffsetInfo {
     VKuint topologyIndex = 0;
     VKuint bufferComboIndex = 0;
     VKint pushConstantIndex = -1;
+    VKtuple offsetLibs = VKtuple(0, 0, 0);
 };
 
 struct ModelCreateInfo {
@@ -190,6 +192,7 @@ struct PipelineLibrary {
 struct ModelPipelineInfo {
     std::vector<VkPipelineVertexInputStateCreateInfo> vboCreates;
     std::vector<VkPipelineInputAssemblyStateCreateInfo> iaCreates;
+    PipelineLibrary *library = nullptr;
 };
 
 struct GlobalPipelineInfo {
@@ -286,14 +289,14 @@ public:
     void pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m);
     void pipelineGlobalSetup();
     void createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int vbo, int ia);
-    void genVertexInputPipeLib(ModelInfo *model, VkPipelineVertexInputStateCreateInfo &vbo, VkPipelineInputAssemblyStateCreateInfo &ia);
-    void genPreRasterizationPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &vert, VkPipelineLayout &lay, VkPipelineRasterizationStateCreateInfo &rs);
-    void genFragmentShaderPipeLib(ModelInfo *model, VkPipelineShaderStageCreateInfo &frag);
+    void genVertexInputPipeLib(ModelInfo *m, int vbo, int ia);
+    void genPreRasterizationPipeLib(ModelInfo *m, int vs, int lay);
+    void genFragmentShaderPipeLib(ModelInfo *m, int fs);
     void genFragmentOutputPipeLib();
-    void createPipeFromLibraries(RenderInfo *render, VkPipeline &vis, VkPipeline &pre, VkPipeline &frag);
+    void createPipeFromLibraries(RenderInfo *render, ModelInfo *m, int vis, int pre, int frag);
     void updatePipeFromLibraries();
 
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     void copyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size);
     void stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData, bool createBuffer = true);
     void createPersistentUniformBuffers();

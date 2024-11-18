@@ -847,11 +847,26 @@ void VKRenderer::initResources() {
     vr_vf = vr_vi->functions();
 
     // Retrieve physical device constraints
-    QString dev_info;
-    dev_info += QString::asprintf("Number of physical devices: %d\n", int(vr_qvw->availablePhysicalDevices().count()));
-
     VkPhysicalDeviceProperties vr_props;
+    VkPhysicalDeviceProperties2 vr_props2;
     vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
+    // vr_vf->vkGetPhysicalDeviceProperties2(vr_phydev, &vr_props2);
+
+#ifdef DEBUG
+    QString dev_info;
+    int deviceCount = vr_qvw->availablePhysicalDevices().count();
+    dev_info += QString::asprintf("Number of physical devices: %d\n", deviceCount);
+    for (int i = 0; i < deviceCount; i++) {
+        dev_info += QString::asprintf("Device %d: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
+                                      i,
+                                      vr_qvw->availablePhysicalDevices().at(i).deviceName,
+                                      VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                                      VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                                      VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                                      VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
+                                      VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
+                                      VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).apiVersion));
+    }
 
     dev_info += QString::asprintf("Active physical device name: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
                               vr_props.deviceName,
@@ -859,6 +874,8 @@ void VKRenderer::initResources() {
                               VK_VERSION_PATCH(vr_props.driverVersion),
                               VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion),
                               VK_VERSION_PATCH(vr_props.apiVersion));
+
+    // dev_info += QString::asprintf("PhysDevProps2: %u", vr_props2.sType);
 
     dev_info += QStringLiteral("Supported instance layers:\n");
     for (const QVulkanLayer &layer : vr_vi->supportedLayers())
@@ -884,7 +901,7 @@ void VKRenderer::initResources() {
     dev_info += QLatin1Char('\n');
 
     std::cout << dev_info.toStdString() << std::endl;
-
+#endif
     const int concFrameCount = vr_qvw->concurrentFrameCount();
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
     this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;

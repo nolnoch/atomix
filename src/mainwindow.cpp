@@ -24,6 +24,10 @@
 
 #include "mainwindow.hpp"
 
+uint VK_MINOR_VERSION;
+uint VK_SPIRV_VERSION;
+
+
 MainWindow::MainWindow() {
     // onAddNew();
 }
@@ -58,7 +62,7 @@ void MainWindow::init(QRect &windowSize) {
 #ifdef USING_QVULKAN
     // Vulkan-specific setup
     QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
-    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library", "VK_KHR_push_descriptor" };
+    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     
     QVersionNumber version = vkInst.supportedApiVersion();
     VK_MINOR_VERSION = version.minorVersion();
@@ -71,7 +75,8 @@ void MainWindow::init(QRect &windowSize) {
     } else {
         VK_SPIRV_VERSION = 0;
     }
-    std::cout << version.toString().toStdString() << std::endl;
+    std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
+    std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
     
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);

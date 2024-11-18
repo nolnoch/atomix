@@ -852,6 +852,22 @@ void VKRenderer::initResources() {
     vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
     // vr_vf->vkGetPhysicalDeviceProperties2(vr_phydev, &vr_props2);
 
+    QVersionNumber version = QVersionNumber(VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion), VK_VERSION_PATCH(vr_props.apiVersion));
+    if (version.minorVersion() != VK_MINOR_VERSION) {
+        VK_MINOR_VERSION = version.minorVersion();
+        if (VK_MINOR_VERSION >= 3) {
+            VK_SPIRV_VERSION = 6;
+        } else if (VK_MINOR_VERSION == 2) {
+            VK_SPIRV_VERSION = 5;
+        } else if (VK_MINOR_VERSION == 1) {
+            VK_SPIRV_VERSION = 3;
+        } else {
+            VK_SPIRV_VERSION = 0;
+        }
+        std::cout << "Post-Device-Query Reassignment: Vulkan API version: " << version.toString().toStdString() << std::endl;
+        std::cout << "Post-Device-Query Reassignment: Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
+    }
+
 #ifdef DEBUG
     QString dev_info;
     int deviceCount = vr_qvw->availablePhysicalDevices().count();

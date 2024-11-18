@@ -39,6 +39,7 @@ void main() {
     //  Blue      Cyan     White
 
     float alpha = clamp(1.0f - (radius / pConstCloud.max_radius), 0.0f, 1.0f);
+    // float alpha = pdv;
     vec3 pdvColour;
 
     if (pdv > 0.90f) {          // 90% - 100% -- White

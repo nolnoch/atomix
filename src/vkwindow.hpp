@@ -172,9 +172,6 @@ public:
     void setColorsWaves(int id, uint colorChoice);
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
-    void updateWorldState();
-    void updateTime();
-    void updateWaveMode();
 
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);

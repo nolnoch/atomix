@@ -26,11 +26,13 @@
 #include "slideswitch.hpp"
 
 
-SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, QWidget* parent)
-  : QWidget(parent), slsw_value(false), slsw_duration(100), slsw_enabled(true) {
+SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent)
+  : slsw_width(width), slsw_height(height), QWidget(parent),
+   slsw_value(false), slsw_duration(100), slsw_enabled(true) {
     setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
     this->setFixedSize(QSize(slsw_width, slsw_height));
+    this->slsw_borderRadius = (slsw_height >> 1);
     
     // Grab Palette from parent context (dark mode vs light mode colours)
     this->pal.base = this->palette().brush(QPalette::Base);
@@ -64,7 +66,8 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, QWidget* parent)
     // slsw_offcolor = this->pal.base.color();
     slsw_oncolor = this->pal.high.color();
     slsw_SwitchBackground = new SwitchBackground(slsw_oncolor, this);
-    slsw_Button = new SwitchCircle(slsw_borderRadius + 10, this);
+    int circleRad = int(double(slsw_borderRadius) * 1.8);
+    slsw_Button = new SwitchCircle(circleRad, this);
     
     // Create animations
     prAnim_buttMove = new QPropertyAnimation(this);
@@ -79,8 +82,8 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, QWidget* parent)
     slsw_LabelOn = new QLabel(this);
     slsw_LabelOff->setText(strFalse);
     slsw_LabelOn->setText(strTrue);
-    QString strOff = QString("QLabel#switchOff { color: %1; }").arg(pal.text.color().name());
-    QString strOn = QString("QLabel#switchOn { color: %1; }").arg(pal.textHigh.color().name());
+    QString strOff = QString("QLabel#switchOff { color: %1; font-size: %2 px; }").arg(pal.text.color().name()).arg(10);
+    QString strOn = QString("QLabel#switchOn { color: %1; font-size: %2 px; }").arg(pal.textHigh.color().name()).arg(10);
     slsw_LabelOff->setObjectName("switchOff");
     slsw_LabelOn->setObjectName("switchOn");
     slsw_LabelOff->setStyleSheet(strOff);
@@ -96,7 +99,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, QWidget* parent)
     // Last touches
     slsw_SwitchBackground->resize(slsw_height - 1, slsw_height - 1);
     slsw_SwitchBackground->move(2, 2);
-    slsw_Button->move(2, 2);
+    slsw_Button->move(1, 1);
 
     slsw_SwitchBackground->hide();
     slsw_LabelOn->hide();
@@ -210,20 +213,20 @@ void SlideSwitch::toggle() {
     prAnim_buttMove->setDuration(slsw_duration);
     prAnim_backMove->setDuration(slsw_duration);
 
-    int hback = 20;
+    int hback = 10;
     QSize initial_size(hback, hback);
     QSize final_size(this->width() - 4, hback);
 
-    int xi = 2;
-    int y  = 2;
-    int xf = this->width() - 22;
+    int xi = 1;
+    int y  = 1;
+    int xf = this->width() - 19;
 
     if (slsw_value) {
         final_size = QSize(hback, hback);
         initial_size = QSize(this->width() - 4, hback);
 
         xi = xf;
-        xf = 2;
+        xf = 1;
     }
     // Assigning new current value
     slsw_value = !slsw_value;

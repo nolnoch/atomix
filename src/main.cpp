@@ -68,14 +68,10 @@ int main(int argc, char* argv[]) {
     MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
-    double ratio = SRATIO;
-    int dispX = dispXY.width() * ratio ?: SWIDTH;
-    int dispY = dispXY.height() * ratio ?: SHEIGHT;
-    mainWindow.resize(dispX, dispY);
-    mainWindow.move(dispXY.center() - mainWindow.frameGeometry().center());
+    dispXY = QRect(0, 0, dispXY.width() + 1, dispXY.height() + 1);
+    
     mainWindow.setWindowTitle(QCoreApplication::applicationName());
-    QRect winSize = QRect(0, 0, dispX, dispY);
-    mainWindow.init(winSize);
+    mainWindow.init(dispXY);
 
     // Engage
     app.processEvents();

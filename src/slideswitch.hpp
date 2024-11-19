@@ -36,7 +36,7 @@ class SlideSwitch : public QWidget {
     Q_DISABLE_COPY(SlideSwitch)
 
 public:
-    explicit SlideSwitch(QString strTrue, QString strFalse, QWidget* parent = nullptr);
+    explicit SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent = nullptr);
     ~SlideSwitch() override;
 
     void redraw();

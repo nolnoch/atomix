@@ -262,6 +262,7 @@ private:
     uint vw_vertexCount = 0;
     bool vw_pause = false;
     bool vw_init = false;
+    bool vw_tracking = false;
     
     QMutex modifyingModel;
 

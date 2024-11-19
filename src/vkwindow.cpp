@@ -443,17 +443,22 @@ void VKWindow::wheelEvent(QWheelEvent *e) {
 }
 
 void VKWindow::mousePressEvent(QMouseEvent *e) {
-    glm::vec3 mouseVec = glm::vec3(e->pos().x(), height() - e->pos().y(), v3_cameraPosition.z);
+    glm::vec3 mouseVec = glm::vec3(e->pos().x(), vw_extent.height - e->pos().y(), v3_cameraPosition.z);
     v3_mouseBegin = mouseVec;
     v3_mouseEnd = mouseVec;
 
-    if (!vw_movement && (e->button() & (Qt::LeftButton | Qt::RightButton | Qt::MiddleButton)))
-        vw_movement |= e->button();
-    else
+    if (!vw_movement && (e->button() & (Qt::LeftButton | Qt::RightButton | Qt::MiddleButton))) {
+        this->vw_movement |= e->button();
+        // this->vw_tracking = true;
+    } else {
         QWindow::mousePressEvent(e);
+    }
 }
 
 void VKWindow::mouseMoveEvent(QMouseEvent *e) {
+    if (!this->vw_movement) {
+        return;
+    }
     glm::vec3 mouseVec = glm::vec3(e->pos().x(), vw_extent.height - e->pos().y(), v3_cameraPosition.z);
     glm::vec3 cameraVec = v3_cameraPosition - v3_cameraTarget;
     v3_mouseBegin = v3_mouseEnd;
@@ -501,10 +506,12 @@ void VKWindow::mouseMoveEvent(QMouseEvent *e) {
 }
 
 void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
-    if (e->button() & (Qt::RightButton | Qt::LeftButton | Qt::MiddleButton))
-        vw_movement = false;
-    else
+    if (e->button() & (Qt::RightButton | Qt::LeftButton | Qt::MiddleButton)) {
+        this->vw_movement = 0;
+        // this->vw_tracking = false;
+    } else {
         QWindow::mouseReleaseEvent(e);
+    }
 }
 
 void VKWindow::handleHome() {

@@ -150,8 +150,8 @@ private:
     SlideSwitch *slswSuper = nullptr;
     SlideSwitch *slswCPU = nullptr;
     SlideSwitch *slswSphere = nullptr;
-    QComboBox *entryVertex = nullptr;
-    QComboBox *entryFrag = nullptr;
+    /* QComboBox *entryVertex = nullptr;
+    QComboBox *entryFrag = nullptr; */
     QComboBox *comboConfigFile = nullptr;
 
     QButtonGroup *buttGroupOrbits = nullptr;
@@ -199,14 +199,15 @@ private:
     int numRecipes = 0;
     bool recipeLoaded = false;
 
-    int intTabsWidth;
-    int intTabMinWidth;
-    int intTabLabelHeight;
-    int intSliderLen;
-    int lineWidth;
-    int intHarmonicsGroupMaxWidth;
-    float lastSliderSentX;
-    float lastSliderSentY;
+    int intGraphWidth = 0;
+    int intTabMinWidth = 0;
+    int intTabMaxWidth = 0;
+    int intTabLabelHeight = 0;
+    int intSliderLen = 0;
+    int lineWidth = 0;
+    int intHarmonicsGroupMaxWidth = 0;
+    float lastSliderSentX = 0.0f;
+    float lastSliderSentY = 0.0f;
 
     int mw_width = 0;
     int mw_height = 0;

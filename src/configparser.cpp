@@ -382,25 +382,6 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
     if (changes < 14)
         cout << "Some configuration values not found; defaults were used instead." << endl;
 
-    string ortho = "gpu_circle.vert";
-    string para = "gpu_circle.vert";
-    string super = "cpu_circle.vert";
-    string gpu_sphere = "gpu_sphere.vert";
-    string cpu_sphere = "cpu_sphere.vert";
-    string shaderPath = atomixFiles.shaders();
-    string vshad = shaderPath + inCfg->vert;
-    string fshad = shaderPath + inCfg->frag;
-    if (custom_shader) {
-        /* Here we check for valid shader files */
-        if (std::find(vshFiles.begin(), vshFiles.end(), vshad) == vshFiles.end()) {
-            cout << "Invalid vertex shader: no such file found." << endl;
-            errors++;
-        }
-        if (std::find(fshFiles.begin(), fshFiles.end(), fshad) == fshFiles.end()) {
-            cout << "Invalid fragment shader: no such file found." << endl;
-            errors++;
-        }
-    }
     /* Here we check for Ortho/Super conflicts */
     if (!inCfg->parallel) {
         if (inCfg->superposition) {

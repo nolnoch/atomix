@@ -542,16 +542,54 @@ bool ProgramVK::activateModel(const std::string &name) {
     return success;
 }
 
-bool ProgramVK::addModelProgram(const std::string &name, VKuint program) {
+bool ProgramVK::addModelProgram(const std::string &name, const std::string &program) {
     VKuint id = getModelIdFromName(name);
+    ModelInfo *model = p_models[id];
+    VKint programId = -1;
+
+    if (!p_activeModels.contains(id)) {
+        std::cout << "Model not active: " << name << std::endl;
+        return false;
+    }
+
+    for (uint i = 0; i < model->programs.size(); i++) {
+        if (model->programs[i].name == program) {
+            programId = i;
+            break;
+        }
+    }
+
+    if (programId == -1) {
+        std::cout << "Program not found: " << program << std::endl;
+        return false;
+    }
     
-    return p_activeModels.contains(id) && (p_models[id]->activePrograms.insert(program).second);
+    return (model->activePrograms.insert(programId).second);
 }
 
-bool ProgramVK::removeModelProgram(const std::string &name, VKuint program) {
+bool ProgramVK::removeModelProgram(const std::string &name, const std::string &program) {
     VKuint id = getModelIdFromName(name);
+    ModelInfo *model = p_models[id];
+    VKint programId = -1;
+
+    if (!p_activeModels.contains(id)) {
+        std::cout << "Model not active: " << name << std::endl;
+        return false;
+    }
+
+    for (uint i = 0; i < model->programs.size(); i++) {
+        if (model->programs[i].name == program) {
+            programId = i;
+            break;
+        }
+    }
+
+    if (programId == -1) {
+        std::cout << "Program not found: " << program << std::endl;
+        return false;
+    }
     
-    return p_activeModels.contains(id) && (p_models[id]->activePrograms.erase(program));
+    return (model->activePrograms.erase(programId));
 }
 
 bool ProgramVK::clearModelPrograms(const std::string &name) {
@@ -1309,7 +1347,7 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
         this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data);
 
         if (isIBO) {
-            for (auto &renderIdx : model->programs[0]) {
+            for (auto &renderIdx : model->programs[0].offsets) {
                 model->renders[renderIdx]->indexCount += count;
             }
             model->valid.ibo = true;
@@ -1328,7 +1366,7 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
 
             if (isIBO) {
                 for (auto &prog : model->activePrograms) {
-                    for (auto &renderIdx : model->programs[prog]) {
+                    for (auto &renderIdx : model->programs[prog].offsets) {
                         model->renders[renderIdx]->indexCount = count;
                     }
                 }
@@ -1370,7 +1408,7 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
             } else if (isIBO) {
                 model->ibo = newIdx;
                 for (auto &prog : model->activePrograms) {
-                    for (auto &renderIdx : model->programs[prog]) {
+                    for (auto &renderIdx : model->programs[prog].offsets) {
                         model->renders[renderIdx]->indexCount = count;
                     }
                 }
@@ -1455,7 +1493,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
         ModelInfo *model = this->p_models[modelIdx];
 
         for (auto &prog : model->activePrograms) {
-            for (auto &renderIdx : model->programs[prog]) {
+            for (auto &renderIdx : model->programs[prog].offsets) {
                 RenderInfo *render = model->renders[renderIdx];
                 std::vector<VkBuffer> renderVbos;
                 for (auto &vbo : render->vbos) {

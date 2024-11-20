@@ -100,7 +100,11 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     if (flWaveCfg.hasAny(ewc::SPHERE)) {
         mStatus.set(em::UPD_SHAD_V);
     }
-    
+
+    if (flWaveCfg.hasAny(ewc::SUPERPOSITION | ewc::CPU)) {
+        mStatus.set(em::UPD_SHAD_V);
+    }
+
     if (flWaveCfg.hasAny(ewc::AMPLITUDE | ewc::PERIOD | ewc::WAVELENGTH)) {
         mStatus.set(em::UPD_UNI_MATHS);
     }

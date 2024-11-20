@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     std::cout << QT_VERSION_STR << std::endl;
 
     QDir execDir = QDir(QCoreApplication::applicationDirPath());
-    const QDir atomixDir = QDir(execDir.relativeFilePath("../../"));
+    const QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));
     atomixFiles.setRoot(atomixDir.absolutePath().toStdString());
     std::string icoPath = atomixDir.relativeFilePath("resources/icons/favicon.ico").toStdString();
     QIcon icoAtomix(QString::fromStdString(atomixFiles.resources()) + QString::fromStdString("icons/favicon.ico"));

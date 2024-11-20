@@ -159,6 +159,11 @@ struct DrawInfo {
     std::string ibo;
 };
 
+struct ProgramInfo {
+    std::string name;
+    std::vector<VKuint> offsets;
+};
+
 struct OffsetInfo {
     VkDeviceSize offset = 0;
     VKuint vertShaderIndex = 0;
@@ -180,7 +185,7 @@ struct ModelCreateInfo {
     std::vector<VkPrimitiveTopology> topologies;
     std::vector<std::vector<VKuint>> bufferCombos;
     std::vector<OffsetInfo> offsets;
-    std::vector<std::vector<VKuint>> programs;
+    std::vector<ProgramInfo> programs;
 };
 
 struct PipelineLibrary {
@@ -241,7 +246,7 @@ struct ModelInfo {
     std::vector<AttribInfo *> attributes;
     ModelPipelineInfo *pipeInfo = nullptr;
     std::vector<RenderInfo *> renders;
-    std::vector<std::vector<VKuint>> programs;
+    std::vector<ProgramInfo> programs;
     std::set<VKuint> activePrograms;
     ValidityInfo valid;
 };
@@ -271,8 +276,8 @@ public:
     void addUniformsAndPushConstants();
     VKuint addModel(ModelCreateInfo &info);
     bool activateModel(const std::string &name);
-    bool addModelProgram(const std::string &name, VKuint program = 0);
-    bool removeModelProgram(const std::string &name, VKuint program = 0);
+    bool addModelProgram(const std::string &name, const std::string &program = "default");
+    bool removeModelProgram(const std::string &name, const std::string &program = "default");
     bool clearModelPrograms(const std::string &name);
     bool deactivateModel(const std::string &name);
     void clearActiveModels();

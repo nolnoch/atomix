@@ -593,12 +593,15 @@ void VKWindow::updateBuffersAndShaders() {
     }
     pConstWave.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
 
-    // TODO : Update CPU-only buffers
+    // TODO : This breaks on changeMode(). Do we need CPU/Superposition at all?
+    if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU()) {
+        this->waveManager->update(pConstWave.time);
+        this->flGraphState.set(egs::UPDATE_REQUIRED);
+    }
     
     if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
         // Capture updates from currentManager
-        uint flags = currentManager->clearUpdates();
-        this->flGraphState.set(flags);
+        this->flGraphState.set(currentManager->clearUpdates());
         this->updateSize();
 
         // Set current model

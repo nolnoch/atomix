@@ -268,7 +268,9 @@ void VKWindow::initCrystalModel() {
         }
     };
     crystalModel.programs = {
-        { 0, 1 }
+        { .name = "default",
+          .offsets = { 0, 1 }
+        }
     };
 
     // Add Crystal Model to program
@@ -276,12 +278,19 @@ void VKWindow::initCrystalModel() {
 }
 
 void VKWindow::initWaveModel() {
-    // Define VBO for Atomix Wave
+    // Define VBO:GPU for Atomix Wave
     BufferCreateInfo waveVert{};
     waveVert.binding = 0;
     waveVert.name = "waveVertices";
     waveVert.type = BufferType::VERTEX;
     waveVert.dataTypes = { DataType::FLOAT_VEC3 };
+
+    // Define VBO:CPU for Atomix Wave
+    BufferCreateInfo waveVertCPU{};
+    waveVertCPU.binding = 0;
+    waveVertCPU.name = "waveVerticesCPU";
+    waveVertCPU.type = BufferType::VERTEX;
+    waveVertCPU.dataTypes = { DataType::FLOAT_VEC3, DataType::FLOAT_VEC3 };
 
     // Define IBO for Atomix Wave
     BufferCreateInfo waveInd{};
@@ -292,14 +301,14 @@ void VKWindow::initWaveModel() {
     // Define Atomix Wave Model with above buffers
     ModelCreateInfo waveModel{};
     waveModel.name = "wave";
-    waveModel.vbos = { &waveVert };
+    waveModel.vbos = { &waveVert, &waveVertCPU };
     waveModel.ibo = &waveInd;
     waveModel.ubos = { "WorldState", "WaveState" };
-    waveModel.vertShaders = { "gpu_circle.vert", "gpu_sphere.vert" };
+    waveModel.vertShaders = { "gpu_circle.vert", "default.vert", "gpu_sphere.vert" };
     waveModel.fragShaders = { "default.frag" };
     waveModel.pushConstant = "pConstWave";
+    waveModel.bufferCombos = { { 0 }, { 1 } };
     waveModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
-    waveModel.bufferCombos = { { 0 } };
     waveModel.offsets = {
         {   .offset = 0,
             .vertShaderIndex = 0,
@@ -312,13 +321,27 @@ void VKWindow::initWaveModel() {
             .vertShaderIndex = 1,
             .fragShaderIndex = 0,
             .topologyIndex = 0,
+            .bufferComboIndex = 1,
+            .pushConstantIndex = 0
+        },
+        {   .offset = 0,
+            .vertShaderIndex = 2,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0,
             .bufferComboIndex = 0,
             .pushConstantIndex = 0
         }
     };
     waveModel.programs = {
-        { 0 },
-        { 1 }
+        { .name = "default",
+          .offsets = { 0 }
+        },
+        { .name = "cpu",
+          .offsets = { 1 }
+        },
+        { .name = "sphere",
+          .offsets = { 2 }
+        }
     };
 
     // Add Atomix Wave Model to program
@@ -369,7 +392,9 @@ void VKWindow::initCloudModel() {
         }
     };
     cloudModel.programs = {
-        { 0 }
+        { .name = "default",
+          .offsets = { 0 }
+        }
     };
 
     // Add Atomix Cloud Model to program
@@ -567,6 +592,8 @@ void VKWindow::updateBuffersAndShaders() {
         vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
     pConstWave.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
+
+    // TODO : Update CPU-only buffers
     
     if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
         // Capture updates from currentManager
@@ -585,7 +612,15 @@ void VKWindow::updateBuffersAndShaders() {
         // Changing shaders is equivalent to changing model program
         if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
             std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
-            VKuint newProgram = (activePrograms.find(0) != activePrograms.end()) ? 1 : 0;
+            std::string newProgram;
+
+            if (waveManager->getCPU()) {
+                newProgram = "cpu";
+            } else if (waveManager->getSphere()) {
+                newProgram = "sphere";
+            } else {
+                newProgram = "default";
+            }
 
             this->atomixProg->clearModelPrograms(vw_currentModel);
             this->atomixProg->addModelProgram(vw_currentModel, newProgram);
@@ -595,7 +630,8 @@ void VKWindow::updateBuffersAndShaders() {
 
         // Update VBO 1: Vertices
         if (flGraphState.hasAny(egs::UPD_VBO)) {
-            updBuf.bufferName = vw_currentModel + "Vertices";
+            std::string bufferCPU = waveManager->getCPU() ? "VerticesCPU" : "Vertices";
+            updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::VERTEX;
             updBuf.count = currentManager->getVertexCount();
             updBuf.size = currentManager->getVertexSize();

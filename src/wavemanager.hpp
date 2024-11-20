@@ -49,6 +49,9 @@ class WaveManager : public Manager {
 
         uint getMode() { return this->cfg.parallel; }
         float getPhase() { return this->phase_base; }
+        bool getSuperposition() { return this->cfg.superposition; }
+        bool getSphere() { return this->cfg.sphere; }
+        bool getCPU() { return this->cfg.cpu; }
         void getMaths(glm::vec3 &maths) { maths = this->waveMaths; }
         void getColours(glm::uvec3 &colours) { colours = this->waveColours; }
 

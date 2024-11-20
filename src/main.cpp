@@ -23,7 +23,7 @@
  */
 
 
-#include <QApplication>
+#include <QtWidgets/QApplication>
 #include <QSurfaceFormat>
 #include <QScreen>
 #include <QCommandLineParser>
@@ -42,9 +42,17 @@ int main(int argc, char* argv[]) {
     std::cout << QT_VERSION_STR << std::endl;
 
     QDir execDir = QDir(QCoreApplication::applicationDirPath());
-    const QDir atomixDir = QDir(execDir.relativeFilePath("../../"));
-    atomixFiles.setRoot(atomixDir.absolutePath().toStdString());
-    std::string icoPath = atomixDir.relativeFilePath("resources/icons/favicon.ico").toStdString();
+    QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
+    if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
+        QString dir = QFileDialog::getExistingDirectory(
+            nullptr,
+            "Select Atomix Directory",
+            execDir.absolutePath(),
+            QFileDialog::ShowDirsOnly
+        );
+        execDir = QDir(dir);
+        atomixFiles.setRoot(dir.toStdString());
+    }
     QIcon icoAtomix(QString::fromStdString(atomixFiles.resources()) + QString::fromStdString("icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
 
@@ -68,14 +76,10 @@ int main(int argc, char* argv[]) {
     MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
-    double ratio = SRATIO;
-    int dispX = dispXY.width() * ratio ?: SWIDTH;
-    int dispY = dispXY.height() * ratio ?: SHEIGHT;
-    mainWindow.resize(dispX, dispY);
-    mainWindow.move(dispXY.center() - mainWindow.frameGeometry().center());
+    dispXY = QRect(0, 0, dispXY.width() + 1, dispXY.height() + 1);
+    
     mainWindow.setWindowTitle(QCoreApplication::applicationName());
-    QRect winSize = QRect(0, 0, dispX, dispY);
-    mainWindow.init(winSize);
+    mainWindow.init(dispXY);
 
     // Engage
     app.processEvents();

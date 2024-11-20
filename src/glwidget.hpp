@@ -25,7 +25,7 @@
 #ifndef GLWIDGET_H
 #define GLWIDGET_H
 
-#include <QOpenGLWidget>
+#include <QtOpenGLWidgets/QOpenGLWidget>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
@@ -34,7 +34,7 @@
 #include <QFuture>
 #include <QPromise>
 #include <QtConcurrent/QtConcurrent>
-#include <QOpenGLFunctions_4_5_Core>
+#include <QtOpenGL/QOpenGLFunctions_4_5_Core>
 #include "programGL.hpp"
 #include "quaternion.hpp"
 #include "wavemanager.hpp"

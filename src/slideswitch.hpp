@@ -25,18 +25,19 @@
 #ifndef SLIDESWITCH_H
 #define SLIDESWITCH_H
 
-#include <QWidget>
-#include <QLabel>
+#include <QtWidgets/QWidget>
+#include <QtWidgets/QLabel>
 #include <QPainter>
 #include <QPen>
 #include <QPropertyAnimation>
+#include <QResizeEvent>
 
 class SlideSwitch : public QWidget {
     Q_OBJECT
     Q_DISABLE_COPY(SlideSwitch)
 
 public:
-    explicit SlideSwitch(QString strTrue, QString strFalse, QWidget* parent = nullptr);
+    explicit SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent = nullptr);
     ~SlideSwitch() override;
 
     void redraw();
@@ -52,9 +53,16 @@ public:
 
     //-- Getters
     bool value() const;
+    QSize sizeHint() const override { return QSize(slsw_width, slsw_height); }
 
 signals:
     void valueChanged(bool newvalue);
+
+public slots:
+    void _toggleBG();
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     class SwitchCircle;

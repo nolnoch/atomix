@@ -23,7 +23,7 @@
  */
 
 
-#include <QApplication>
+#include <QtWidgets/QApplication>
 #include <QSurfaceFormat>
 #include <QScreen>
 #include <QCommandLineParser>
@@ -42,9 +42,17 @@ int main(int argc, char* argv[]) {
     std::cout << QT_VERSION_STR << std::endl;
 
     QDir execDir = QDir(QCoreApplication::applicationDirPath());
-    const QDir atomixDir = QDir(execDir.relativeFilePath("../../"));
-    atomixFiles.setRoot(atomixDir.absolutePath().toStdString());
-    std::string icoPath = atomixDir.relativeFilePath("resources/icons/favicon.ico").toStdString();
+    QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
+    if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
+        QString dir = QFileDialog::getExistingDirectory(
+            nullptr,
+            "Select Atomix Directory",
+            execDir.absolutePath(),
+            QFileDialog::ShowDirsOnly
+        );
+        execDir = QDir(dir);
+        atomixFiles.setRoot(dir.toStdString());
+    }
     QIcon icoAtomix(QString::fromStdString(atomixFiles.resources()) + QString::fromStdString("icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
 

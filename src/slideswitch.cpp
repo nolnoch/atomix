@@ -27,11 +27,16 @@
 
 
 SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent)
-  : slsw_width(width), slsw_height(height), QWidget(parent),
-   slsw_value(false), slsw_duration(100), slsw_enabled(true) {
-    setWindowFlags(Qt::FramelessWindowHint);
-    setAttribute(Qt::WA_TranslucentBackground);
-    this->setFixedSize(QSize(slsw_width, slsw_height));
+  : slsw_width(width), slsw_height(height), slsw_value(false), slsw_duration(100), slsw_enabled(true) {
+    setParent(parent);
+    /* setWindowFlags(Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_TranslucentBackground); */
+    this->resize(slsw_width, slsw_height);
+    this->setMinimumSize(QSize(120, 20));
+    this->setSizeIncrement(QSize(4, 2));
+    this->setBaseSize(QSize(slsw_width, slsw_height));
+    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    // this->sizePolicy().setControlType(QSizePolicy::LineEdit);
     this->slsw_borderRadius = (slsw_height >> 1);
     
     // Grab Palette from parent context (dark mode vs light mode colours)
@@ -43,27 +48,28 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     this->pal.light = this->palette().brush(QPalette::Light);
     
     // Set linear gradients (not currently used much)
-    linGrad_border = QLinearGradient(80,0,80,26);
+    int width2 = slsw_width >> 1;
+    linGrad_border = QLinearGradient(width2, 0, width2, slsw_height);
     linGrad_border.setColorAt(0, QColor(this->pal.alt.color().lighter(120)));
     linGrad_border.setColorAt(0.40, QColor(this->pal.alt.color()));
     linGrad_border.setColorAt(0.60, QColor(this->pal.alt.color()));
     linGrad_border.setColorAt(1, QColor(this->pal.alt.color().lighter(120)));
 
-    linGrad_enabledOff = QLinearGradient(80,0,80,26);
+    linGrad_enabledOff = QLinearGradient(width2, 0, width2, slsw_height);
     linGrad_enabledOff.setColorAt(0, QColor(this->pal.base.color().lighter(140)));
     linGrad_enabledOff.setColorAt(0.35, QColor(this->pal.base.color().lighter(120)));
     linGrad_enabledOff.setColorAt(0.50, QColor(this->pal.base.color()));
     linGrad_enabledOff.setColorAt(0.65, QColor(this->pal.base.color().lighter(120)));
     linGrad_enabledOff.setColorAt(1, QColor(this->pal.base.color().lighter(140)));
 
-    linGrad_disabled = QLinearGradient(80,0,80,26);
+    linGrad_disabled = QLinearGradient(width2, 0, width2, slsw_height);
     linGrad_disabled.setColorAt(0, QColor(Qt::lightGray));
     linGrad_disabled.setColorAt(0.40, QColor(Qt::darkGray));
     linGrad_disabled.setColorAt(0.60, QColor(Qt::darkGray));
     linGrad_disabled.setColorAt(1, QColor(Qt::lightGray));
     
     // Create background and button
-    // slsw_offcolor = this->pal.base.color();
+    slsw_offcolor = this->pal.base.color();
     slsw_oncolor = this->pal.high.color();
     slsw_SwitchBackground = new SwitchBackground(slsw_oncolor, this);
     int circleRad = int(double(slsw_borderRadius) * 1.8);
@@ -82,8 +88,9 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     slsw_LabelOn = new QLabel(this);
     slsw_LabelOff->setText(strFalse);
     slsw_LabelOn->setText(strTrue);
-    QString strOff = QString("QLabel#switchOff { color: %1; font-size: %2 px; }").arg(pal.text.color().name()).arg(10);
-    QString strOn = QString("QLabel#switchOn { color: %1; font-size: %2 px; }").arg(pal.textHigh.color().name()).arg(10);
+    int fontPx = this->fontInfo().pixelSize();
+    QString strOff = QString("QLabel#switchOff { color: %1; font-size: %2 px; }").arg(pal.text.color().name()).arg(fontPx);
+    QString strOn = QString("QLabel#switchOn { color: %1; font-size: %2 px; }").arg(pal.textHigh.color().name()).arg(fontPx);
     slsw_LabelOff->setObjectName("switchOff");
     slsw_LabelOn->setObjectName("switchOn");
     slsw_LabelOff->setStyleSheet(strOff);
@@ -91,7 +98,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
 
     // Position labels
     int labOffCenter = slsw_LabelOff->sizeHint().width() >> 1;
-    int labOnCenter = slsw_LabelOff->sizeHint().width() >> 1;
+    int labOnCenter = slsw_LabelOn->sizeHint().width() >> 1;
     int switchCenter = slsw_width >> 1;
     slsw_LabelOff->move(switchCenter - labOffCenter, 3);
     slsw_LabelOn->move(switchCenter - labOnCenter, 3);
@@ -104,6 +111,8 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     slsw_SwitchBackground->hide();
     slsw_LabelOn->hide();
     slsw_LabelOff->show();
+
+    connect(prAnim_backMove, &QPropertyAnimation::finished, this, &SlideSwitch::_toggleBG);
 }
 
 SlideSwitch::~SlideSwitch() {
@@ -213,21 +222,33 @@ void SlideSwitch::toggle() {
     prAnim_buttMove->setDuration(slsw_duration);
     prAnim_backMove->setDuration(slsw_duration);
 
-    int hback = 10;
+    // Movement values
+    int hback = slsw_borderRadius >> 1;
     QSize initial_size(hback, hback);
-    QSize final_size(this->width() - 4, hback);
+    QSize final_size(this->width() - hback, hback);
 
     int xi = 1;
     int y  = 1;
-    int xf = this->width() - 19;
+    int xf = this->width() - (slsw_height - 2);
 
     if (slsw_value) {
         final_size = QSize(hback, hback);
-        initial_size = QSize(this->width() - 4, hback);
+        initial_size = QSize(this->width() - hback, hback);
 
         xi = xf;
         xf = 1;
     }
+
+    prAnim_buttMove->setStartValue(QPoint(xi, y));
+    prAnim_buttMove->setEndValue(QPoint(xf, y));
+
+    prAnim_backMove->setStartValue(initial_size);
+    prAnim_backMove->setEndValue(final_size);
+
+    // Start animation
+    prAnim_buttMove->start();
+    prAnim_backMove->start();
+
     // Assigning new current value
     slsw_value = !slsw_value;
     if (slsw_value) {
@@ -239,16 +260,19 @@ void SlideSwitch::toggle() {
         slsw_LabelOn->hide();
     }
 
-    prAnim_buttMove->setStartValue(QPoint(xi, y));
-    prAnim_buttMove->setEndValue(QPoint(xf, y));
-
-    prAnim_backMove->setStartValue(initial_size);
-    prAnim_backMove->setEndValue(final_size);
-
-    prAnim_buttMove->start();
-    prAnim_backMove->start();
-
     emit valueChanged(slsw_value);
+}
+
+void SlideSwitch::_toggleBG() {
+    if (!slsw_value) slsw_SwitchBackground->hide();
+}
+
+void SlideSwitch::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    QSize newSize = event->size();
+    this->slsw_width  = newSize.width();
+    this->slsw_height = newSize.height();
+    this->slsw_borderRadius = (this->slsw_height >> 1);
 }
 
 void SlideSwitch::_update() {

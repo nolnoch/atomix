@@ -53,7 +53,7 @@
 #ifndef PROGRAMGL_HPP_
 #define PROGRAMGL_HPP_
 
-#include <QOpenGLFunctions_4_5_Core>
+#include <QtOpenGL/QOpenGLFunctions_4_5_Core>
 #include <iostream>
 #include <vector>
 #include <deque>

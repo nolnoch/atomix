@@ -56,11 +56,11 @@ ConfigParser::~ConfigParser() {
 
 void ConfigParser::fillConfigFile() {
     /* This is broken and currently unnecessary anyway. */
-    config.waves = config.waves >= 0 ?: 4;
-    config.amplitude = config.amplitude > 0 ?: 0.6f;
+    config.waves = config.waves ?: 4;
+    config.amplitude = config.amplitude ?: 0.6f;
     config.period = config.period ?: 1.0f;
-    config.wavelength = config.wavelength > 0 ?: 2.0f * M_PI;
-    config.resolution = config.resolution > 0 ?: 360;
+    config.wavelength = config.wavelength ?: 2.0f * M_PI;
+    config.resolution = config.resolution ?: 360;
 }
 
 int ConfigParser::findFiles(std::string loc, std::string type, std::vector<std::string>* fileList) {

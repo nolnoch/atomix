@@ -34,12 +34,13 @@ MainWindow::MainWindow() {
 
 void MainWindow::init(QRect &screenSize) {
     double ratio = SRATIO;
-    mw_width = SWIDTH + (int(screenSize.width() - SWIDTH) >> 2);
-    mw_height = SHEIGHT + (int(screenSize.height() - SHEIGHT) >> 2);
+    mw_width = SWIDTH + int((screenSize.width() - SWIDTH) * 0.33);
+    mw_height = SHEIGHT + int((screenSize.height() - SHEIGHT) * 0.33);
     QRect dispXY = QRect(0, 0, mw_width, mw_height);
     this->resize(mw_width, mw_height);
     this->move(screenSize.center() - this->frameGeometry().center());
     cfgParser = new ConfigParser;
+    setWindowTitle(tr("atomix"));
 
     valIntSmall = new QIntValidator();  
     valIntSmall->setRange(1, 8);
@@ -59,13 +60,11 @@ void MainWindow::init(QRect &screenSize) {
     lastSliderSentX = 0.0f;
     lastSliderSentY = 0.0f;
     lineWidth = (isMacOS) ? 1 : 3;
+    slslwWidth = (intTabMaxWidth - 80) >> 1;
 
-    // Setup Dock GUI
-    setupTabs();
-    addDockWidget(Qt::RightDockWidgetArea, dockTabs);
-
+    // Graphics setup
 #ifdef USING_QVULKAN
-    // Vulkan-specific setup
+    // Vulkan
     QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
     QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     
@@ -101,21 +100,24 @@ void MainWindow::init(QRect &screenSize) {
     std::cout << "Central widget set" << std::endl;
     graphWin = vkGraph;
 #elifdef USING_QOPENGL
-    // OpenGL-specific setup
+    // OpenGL
     glGraph = new GWidget(this, cfgParser);
     setCentralWidget(glGraph);
     graph = glGraph;
     graphWin = glGraph;
 #endif
 
+    // Setup Dock GUI
+    setupTabs();
+    this->addDockWidget(Qt::RightDockWidgetArea, dockTabs);
     refreshConfigs();
     refreshShaders();
     loadConfig();
     refreshOrbits();
 
+    // Signal-Slot connections
     connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
     connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
-    // connect(vkGraph, SIGNAL(forwardKeyEvent(QKeyEvent*)), this, SLOT(keyPressEvent(QKeyEvent*)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
 #ifdef USING_QVULKAN
@@ -140,73 +142,7 @@ void MainWindow::init(QRect &screenSize) {
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
-    slswPara->redraw();
-    slswSuper->redraw();
-    slswCPU->redraw();
-    slswSphere->redraw();
-    setWindowTitle(tr("atomix"));
-
-    // std::cout << "PC Default Thread Count is: " << QThread::idealThreadCount() << std::endl;
-}
-
-void MainWindow::refreshConfigs() {
-    int files = cfgParser->cfgFiles.size();
-    std::string configPath = atomixFiles.configs();
-    int rootLength = configPath.length();
-
-    if (!files)
-        files = cfgParser->findFiles(configPath, CFGEXT, &cfgParser->cfgFiles);
-    assert(files);
-
-    comboConfigFile->clear();
-    for (int i = 0; i < files; i++) {
-        comboConfigFile->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength), i + 1);
-    }
-    comboConfigFile->addItem(tr("Custom"), files + 1);
-    comboConfigFile->setCurrentText(DEFAULT);
-}
-
-void MainWindow::refreshShaders() {
-    std::string shaderPath = atomixFiles.shaders();
-    int rootLength = shaderPath.length();
-    int files = 0;
-
-    // Vertex Shaders
-    files = cfgParser->vshFiles.size();
-    if (!files)
-        files = cfgParser->findFiles(shaderPath, VSHEXT, &cfgParser->vshFiles);
-    assert(files);
-
-    for (int i = 0; i < files; i++) {
-        QString item = QString::fromStdString(cfgParser->vshFiles[i]).sliced(rootLength);
-    }
-
-    // Fragment Shaders
-    files = cfgParser->fshFiles.size();
-    if (!files)
-        files = cfgParser->findFiles(shaderPath, FSHEXT, &cfgParser->fshFiles);
-    assert(files);
-
-    for (int i = 0; i < files; i++) {
-        QString item = QString::fromStdString(cfgParser->fshFiles[i]).sliced(rootLength);
-    }
-}
-
-void MainWindow::refreshOrbits() {
-    const QSignalBlocker blocker(buttGroupOrbits);
-    ushort renderedOrbits = 0;
-
-    for (int i = 0; i < waveConfig.waves; i++) {
-        renderedOrbits |= (1 << i);
-    }
-    for (int i = 0; i < MAX_ORBITS; i++) {
-        uint checkID = 1 << i;
-        QAbstractButton *checkBox = buttGroupOrbits->button(checkID);
-        bool checkState = (renderedOrbits & checkID);
-
-        checkBox->setEnabled(checkState);
-        checkBox->setChecked(checkState);
-    }
+    setupStyleSheet();
 }
 
 void MainWindow::postInit(int titlebarHeight) {
@@ -225,53 +161,19 @@ void MainWindow::postInit(int titlebarHeight) {
     tableOrbitalReport->setColumnWidth(0, colWidth);
     tableOrbitalReport->setColumnWidth(1, colWidth);
 
+    QRect entryLoc = entryOrbit->geometry();
+    int entryWidth = entryLoc.width();
+    int entryHeight = entryLoc.height();
+
+    slswPara->resize(entryWidth, entryHeight);
+
+    slswPara->redraw();
+    slswSuper->redraw();
+    slswCPU->redraw();
+    slswSphere->redraw();
+
     setupDetails();
     setupLoading();
-}
-
-void MainWindow::setupDetails() {
-    fontDebug.setStyleHint(QFont::Monospace);
-    fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
-    QString strDetails = QString("Position:      %1\n"\
-                                 "View|Near:     %2\n"\
-                                 "View|Far:      %3\n\n"\
-                                 "Buffer|Vertex: %4\n"\
-                                 "Buffer|Data:   %5\n"\
-                                 "Buffer|Index:  %6\n"\
-                                 "Buffer|Total:  %7\n"\
-                                 ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
-    labelDetails = new QLabel(graph);
-    labelDetails->setFont(fontDebug);
-    labelDetails->setText(strDetails);
-    labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    labelDetails->raise();
-    labelDetails->adjustSize();
-
-    labelDetails->move(mw_x + 10, mw_y + 50);
-    
-    labelDetails->setAttribute(Qt::WA_NoSystemBackground);
-    labelDetails->setAttribute(Qt::WA_TranslucentBackground);
-    labelDetails->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
-}
-
-void MainWindow::setupLoading() {
-    QSizePolicy qPolicyLoading = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    pbLoading = new QProgressBar(graph);
-    pbLoading->setMinimum(0);
-    pbLoading->setMaximum(0);
-    pbLoading->setTextVisible(true);
-
-    int lh = pbLoading->sizeHint().height();
-    int gh = mw_y + mw_titleHeight + mw_height + 12;
-    int gw = this->centralWidget()->width();
-    pbLoading->resize(gw, lh);
-    pbLoading->move(mw_x, gh - lh);
-
-    pbLoading->setAttribute(Qt::WA_NoSystemBackground);
-    pbLoading->setAttribute(Qt::WA_TranslucentBackground);
-    pbLoading->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
-
-    pbLoading->raise();
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -321,52 +223,40 @@ void MainWindow::setLoading(bool loading) {
     }
 }
 
-void MainWindow::loadConfig() {
-    int files = cfgParser->cfgFiles.size();
-    int comboID = comboConfigFile->currentData().toInt();
-    AtomixConfig *cfg = nullptr;
-
-    if (comboID <= files) {
-        assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1], &waveConfig));
-        cfg = &waveConfig;
-    } else if (comboID == files + 1) {
-        // TODO handle this
-        std::cout << "Invalid at this time." << std::endl;
+void MainWindow::keyPressEvent(QKeyEvent *e) {
+    // TODO : Refactor to switch-case
+    if (e->key() == Qt::Key_Escape) {
+        close();
+    } else if (e->key() == Qt::Key_D) {
+        if (labelDetails->isVisible()) {
+            labelDetails->hide();
+        } else {
+            labelDetails->show();
+        }
+    } else if (e->key() == Qt::Key_P) {
+        if (!vkGraph->supportsGrab()) {
+            std::cout << "Grabbing not supported." << std::endl;
+            return;
+        }
+        QImage image = vkGraph->grab();
+        QFileDialog fd(this, "Save Image");
+        fd.setAcceptMode(QFileDialog::AcceptSave);
+        fd.setDefaultSuffix("png");
+        fd.selectFile("filename.png");
+        if (fd.exec() == QDialog::Accepted) {
+            image.save(fd.selectedFiles().first());
+        }
+    } else if (e->key() == Qt::Key_Home) {
+        vkGraph->handleHome();
+    } else if (e->key() == Qt::Key_Space) {
+        vkGraph->handlePause();
     } else {
-        return;
+        QWidget::keyPressEvent(e);
     }
 
-    entryOrbit->setText(QString::number(cfg->waves));
-    entryAmp->setText(QString::number(cfg->amplitude));
-    entryPeriod->setText(QString::number(cfg->period));
-    entryWavelength->setText(QString::number(cfg->wavelength));
-    entryResolution->setText(QString::number(cfg->resolution));
-    /* entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
-    entryFrag->setCurrentText(QString::fromStdString(cfg->frag)); */
-
-    slswPara->setValue(cfg->parallel);
-    slswSuper->setValue(cfg->superposition);
-    slswCPU->setValue(cfg->cpu);
-    slswSphere->setValue(cfg->sphere);
-
-    entryCloudLayers->setText(QString::number(cfg->cloudLayDivisor));
-    entryCloudRes->setText(QString::number(cfg->cloudResolution));
-    entryCloudMinRDP->setText(QString::number(cfg->cloudTolerance));
 }
 
 void MainWindow::setupTabs() {
-    int baseFontSize, descFontSize, tabUnselectedFontSize, tabSelectedFontSize, tabWidth;
-
-    qreal dpr = this->devicePixelRatio();
-    double dpiFontFactor = dpr * 1.333333;
-    std::cout << "DPR: " << dpr << std::endl;
-    std::cout << "DPI: " << dpiFontFactor << std::endl;
-
-    baseFontSize = 15;              // 17
-    descFontSize = 24;              // 23
-    tabUnselectedFontSize = 12;     // 15
-    tabSelectedFontSize = 17;       // 19
-
     dockTabs = new QDockWidget(this);
     dockTabs->setContentsMargins(0, 0, 0, 0);
     wTabs = new QTabWidget(this);
@@ -378,19 +268,6 @@ void MainWindow::setupTabs() {
     setupDockHarmonics();
     wTabs->addTab(wTabWaves, tr("Waves"));
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
-    tabWidth = intTabMaxWidth / wTabs->count();
-    QString strTabStyle = QString("QWidget { font-size: %1 px; }"\
-                                  "QLabel { font-size: %2 px; }"\
-                                  "QLabel#tabDesc { font-size: %3 px; }"\
-                                  "QTabBar::tab { height: 40px; width: %4 px; font-size: %5 px; }"\
-                                  "QTabBar::tab::selected { font-size: %6 px; }")\
-                                  .arg(baseFontSize).arg(baseFontSize)\
-                                  .arg(descFontSize)\
-                                  .arg(tabWidth)\
-                                  .arg(tabUnselectedFontSize)\
-                                  .arg(tabSelectedFontSize);
-    wTabs->setStyleSheet(strTabStyle);
-
     dockTabs->setWidget(wTabs);
 }
 
@@ -468,10 +345,16 @@ void MainWindow::setupDockWaves() {
     entryWavelength->setAlignment(Qt::AlignRight);
     entryResolution->setAlignment(Qt::AlignRight);
 
-    slswPara = new SlideSwitch("Para", "Ortho", 120, 20, this);
-    slswSuper = new SlideSwitch("On", "Off", 120, 20, this);
-    slswCPU = new SlideSwitch("CPU", "GPU", 120, 20, this);
-    slswSphere = new SlideSwitch("Sphere", "Circle", 120, 20, this);
+    int entryHintWidth = entryOrbit->sizeHint().width();
+    int entryWidth = entryOrbit->geometry().width();
+
+    int entryHintHeight = entryOrbit->sizeHint().height();
+    int entryHeight = entryOrbit->geometry().height();
+
+    slswPara = new SlideSwitch("Para", "Ortho", entryHintWidth, 26, this);
+    slswSuper = new SlideSwitch("On", "Off", entryHintWidth, 26, this);
+    slswCPU = new SlideSwitch("CPU", "GPU", entryHintWidth, 26, this);
+    slswSphere = new SlideSwitch("Sphere", "Circle", entryHintWidth, 26, this);
 
     QCheckBox *orbit1 = new QCheckBox("1");
     QCheckBox *orbit2 = new QCheckBox("2");
@@ -608,9 +491,6 @@ void MainWindow::setupDockHarmonics() {
     QStringList strlistTreeHeaders = { "Orbital" };
     treeOrbitalSelect->setHeaderLabels(strlistTreeHeaders);
     treeOrbitalSelect->header()->setDefaultAlignment(Qt::AlignCenter);
-    QFont fontTree = treeOrbitalSelect->font();
-    fontTree.setPointSize(10);
-    treeOrbitalSelect->setFont(fontTree);
     treeOrbitalSelect->setContentsMargins(0, 0, 0, 0);
 
     QTreeWidgetItem *lastN = nullptr;
@@ -677,15 +557,12 @@ void MainWindow::setupDockHarmonics() {
     tableOrbitalReport->setColumnCount(2);
     QStringList headersReport = { "Weight", "Orbital" };
     tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
-    tableOrbitalReport->horizontalHeader()->setFont(fontTree);
     tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableOrbitalReport->verticalHeader()->setVisible(false);
     tableOrbitalReport->setShowGrid(false);
     tableOrbitalReport->setSortingEnabled(true);
-    tableOrbitalReport->setFont(fontTree);
     listOrbitalLocked = new QListWidget();
-    listOrbitalLocked->setFont(fontTree);
 
     QVBoxLayout *layRecipeBuilder = new QVBoxLayout;
     layRecipeBuilder->addWidget(treeOrbitalSelect);
@@ -709,16 +586,13 @@ void MainWindow::setupDockHarmonics() {
 
     buttLockRecipes = new QPushButton("Lock Selection");
     buttLockRecipes->setSizePolicy(qPolicyExpandH);
-    buttLockRecipes->setFont(fontTree);
     buttLockRecipes->setEnabled(false);
     buttLockRecipes->setContentsMargins(0, 0, 0, 0);
     buttClearRecipes = new QPushButton("Clear Selection");
     buttClearRecipes->setSizePolicy(qPolicyExpandH);
-    buttClearRecipes->setFont(fontTree);
     buttClearRecipes->setEnabled(false);
     buttResetRecipes = new QPushButton("Clear Locked");
     buttResetRecipes->setSizePolicy(qPolicyExpandH);
-    buttResetRecipes->setFont(fontTree);
     buttResetRecipes->setEnabled(false);
 
     QHBoxLayout *layHRecipeButts = new QHBoxLayout;
@@ -729,15 +603,14 @@ void MainWindow::setupDockHarmonics() {
 
     groupRecipeReporter->setAlignment(Qt::AlignRight);
     groupRecipeReporter->setMaximumWidth(intHarmonicsGroupMaxWidth);
-    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; font-size: 12px; }");
+    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777 }");
     groupRecipeReporter->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeBuilder->setAlignment(Qt::AlignLeft);
     groupRecipeBuilder->setMaximumWidth(intHarmonicsGroupMaxWidth);
-    groupRecipeBuilder->setStyleSheet("QGroupBox { font-size: 12px; }");
     groupRecipeBuilder->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeLocked->setAlignment(Qt::AlignRight);
     groupRecipeLocked->setMaximumWidth(intHarmonicsGroupMaxWidth);
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; font-size: 12px; }");
+    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->layout()->setContentsMargins(0, 0, 0, 0);
 
     slideCullingX = new QSlider(Qt::Horizontal);
@@ -798,6 +671,170 @@ void MainWindow::setupDockHarmonics() {
     wTabHarmonics->setLayout(layDockHarmonics);
     // wTabHarmonics->setMinimumWidth(intTabMinWidth);
     // wTabHarmonics->setMaximumWidth(intTabMaxWidth);
+}
+
+void MainWindow::setupStyleSheet() {
+    int baseFontSize, descFontSize, tabUnselectedFontSize, tabSelectedFontSize, tabWidth;
+    qreal dpr = this->devicePixelRatio();
+    QRect effRes = QRect(0, 0, mw_width * dpr, mw_height * dpr);
+    tabWidth = intTabMaxWidth / wTabs->count();
+
+    baseFontSize = 17;              // 17
+    descFontSize = 23;              // 23
+    tabUnselectedFontSize = 14;     // 15
+    tabSelectedFontSize = 18;       // 19
+
+    QString atomixStyle = QString("QWidget { font-size: %1px; }"\
+                                  "QLabel { font-size: %1px; }"\
+                                  "QLabel#tabDesc { font-size: %2px; }"\
+                                  "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; }"\
+                                  "QTabBar::tab::selected { font-size: %5px; }")\
+                                  .arg(QString::number(baseFontSize))
+                                  .arg(QString::number(descFontSize))
+                                  .arg(QString::number(tabWidth))
+                                  .arg(QString::number(tabUnselectedFontSize))
+                                  .arg(QString::number(tabSelectedFontSize));
+    this->setStyleSheet(atomixStyle);
+
+    std::cout << "StyleSheet: " << atomixStyle.toStdString() << std::endl;
+}
+
+void MainWindow::refreshConfigs() {
+    int files = cfgParser->cfgFiles.size();
+    std::string configPath = atomixFiles.configs();
+    int rootLength = configPath.length();
+
+    if (!files)
+        files = cfgParser->findFiles(configPath, CFGEXT, &cfgParser->cfgFiles);
+    assert(files);
+
+    comboConfigFile->clear();
+    for (int i = 0; i < files; i++) {
+        comboConfigFile->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength), i + 1);
+    }
+    comboConfigFile->addItem(tr("Custom"), files + 1);
+    comboConfigFile->setCurrentText(DEFAULT);
+}
+
+void MainWindow::refreshShaders() {
+    std::string shaderPath = atomixFiles.shaders();
+    int rootLength = shaderPath.length();
+    int files = 0;
+
+    // Vertex Shaders
+    files = cfgParser->vshFiles.size();
+    if (!files)
+        files = cfgParser->findFiles(shaderPath, VSHEXT, &cfgParser->vshFiles);
+    assert(files);
+
+    for (int i = 0; i < files; i++) {
+        QString item = QString::fromStdString(cfgParser->vshFiles[i]).sliced(rootLength);
+    }
+
+    // Fragment Shaders
+    files = cfgParser->fshFiles.size();
+    if (!files)
+        files = cfgParser->findFiles(shaderPath, FSHEXT, &cfgParser->fshFiles);
+    assert(files);
+
+    for (int i = 0; i < files; i++) {
+        QString item = QString::fromStdString(cfgParser->fshFiles[i]).sliced(rootLength);
+    }
+}
+
+void MainWindow::loadConfig() {
+    int files = cfgParser->cfgFiles.size();
+    int comboID = comboConfigFile->currentData().toInt();
+    AtomixConfig *cfg = nullptr;
+
+    if (comboID <= files) {
+        assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1], &waveConfig));
+        cfg = &waveConfig;
+    } else if (comboID == files + 1) {
+        // TODO handle this
+        std::cout << "Invalid at this time." << std::endl;
+    } else {
+        return;
+    }
+
+    entryOrbit->setText(QString::number(cfg->waves));
+    entryAmp->setText(QString::number(cfg->amplitude));
+    entryPeriod->setText(QString::number(cfg->period));
+    entryWavelength->setText(QString::number(cfg->wavelength));
+    entryResolution->setText(QString::number(cfg->resolution));
+    /* entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
+    entryFrag->setCurrentText(QString::fromStdString(cfg->frag)); */
+
+    slswPara->setValue(cfg->parallel);
+    slswSuper->setValue(cfg->superposition);
+    slswCPU->setValue(cfg->cpu);
+    slswSphere->setValue(cfg->sphere);
+
+    entryCloudLayers->setText(QString::number(cfg->cloudLayDivisor));
+    entryCloudRes->setText(QString::number(cfg->cloudResolution));
+    entryCloudMinRDP->setText(QString::number(cfg->cloudTolerance));
+}
+
+void MainWindow::refreshOrbits() {
+    const QSignalBlocker blocker(buttGroupOrbits);
+    ushort renderedOrbits = 0;
+
+    for (int i = 0; i < waveConfig.waves; i++) {
+        renderedOrbits |= (1 << i);
+    }
+    for (int i = 0; i < MAX_ORBITS; i++) {
+        uint checkID = 1 << i;
+        QAbstractButton *checkBox = buttGroupOrbits->button(checkID);
+        bool checkState = (renderedOrbits & checkID);
+
+        checkBox->setEnabled(checkState);
+        checkBox->setChecked(checkState);
+    }
+}
+
+void MainWindow::setupDetails() {
+    fontDebug.setStyleHint(QFont::Monospace);
+    fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
+    QString strDetails = QString("Position:      %1\n"\
+                                 "View|Near:     %2\n"\
+                                 "View|Far:      %3\n\n"\
+                                 "Buffer|Vertex: %4\n"\
+                                 "Buffer|Data:   %5\n"\
+                                 "Buffer|Index:  %6\n"\
+                                 "Buffer|Total:  %7\n"\
+                                 ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
+    labelDetails = new QLabel(graph);
+    labelDetails->setFont(fontDebug);
+    labelDetails->setText(strDetails);
+    labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    labelDetails->raise();
+    labelDetails->adjustSize();
+
+    labelDetails->move(mw_x + 10, mw_y + 50);
+    
+    labelDetails->setAttribute(Qt::WA_NoSystemBackground);
+    labelDetails->setAttribute(Qt::WA_TranslucentBackground);
+    labelDetails->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
+}
+
+void MainWindow::setupLoading() {
+    QSizePolicy qPolicyLoading = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbLoading = new QProgressBar(graph);
+    pbLoading->setMinimum(0);
+    pbLoading->setMaximum(0);
+    pbLoading->setTextVisible(true);
+
+    int lh = pbLoading->sizeHint().height();
+    int gh = mw_y + mw_titleHeight + mw_height + 12;
+    int gw = this->centralWidget()->width();
+    pbLoading->resize(gw, lh);
+    pbLoading->move(mw_x, gh - lh);
+
+    pbLoading->setAttribute(Qt::WA_NoSystemBackground);
+    pbLoading->setAttribute(Qt::WA_TranslucentBackground);
+    pbLoading->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
+
+    pbLoading->raise();
 }
 
 void MainWindow::handleComboCfg() {
@@ -1124,39 +1161,6 @@ void MainWindow::handleSlideBackground(int val) {
 #elifdef USING_QOPENGL
     glGraph->setBGColour((static_cast<float>(val) / intSliderLen));
 #endif
-}
-
-void MainWindow::keyPressEvent(QKeyEvent *e) {
-    // TODO : Refactor to switch-case
-    if (e->key() == Qt::Key_Escape) {
-        close();
-    } else if (e->key() == Qt::Key_D) {
-        if (labelDetails->isVisible()) {
-            labelDetails->hide();
-        } else {
-            labelDetails->show();
-        }
-    } else if (e->key() == Qt::Key_P) {
-        if (!vkGraph->supportsGrab()) {
-            std::cout << "Grabbing not supported." << std::endl;
-            return;
-        }
-        QImage image = vkGraph->grab();
-        QFileDialog fd(this, "Save Image");
-        fd.setAcceptMode(QFileDialog::AcceptSave);
-        fd.setDefaultSuffix("png");
-        fd.selectFile("filename.png");
-        if (fd.exec() == QDialog::Accepted) {
-            image.save(fd.selectedFiles().first());
-        }
-    } else if (e->key() == Qt::Key_Home) {
-        vkGraph->handleHome();
-    } else if (e->key() == Qt::Key_Space) {
-        vkGraph->handlePause();
-    } else {
-        QWidget::keyPressEvent(e);
-    }
-
 }
 
 void MainWindow::printHarmap() {

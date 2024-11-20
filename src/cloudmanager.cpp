@@ -667,28 +667,26 @@ double CloudManager::cullSliderThreaded() {
     system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
     if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
-        /*  Default -- sliders are not culling, so copy idxCulledTolerance directly to allIndices!  */
+        //  Default -- sliders are not culling, so copy idxCulledTolerance directly to allIndices! 
         allIndices.resize(this->cm_pixels);
         allIndices.assign(this->cm_pixels, 0);
         std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
     } else {
-        /*  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  */
+        //  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
         uint layer_size = 0, culled_theta_all = 0, phi_size = 0, phi_half = 0, culled_phi_b = 0, culled_phi_f = 0;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
         culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
         phi_size = this->cloudResolution >> 1;
-        culled_phi_b = static_cast<uint>(ceil(phi_size * (1.0f - this->cfg.CloudCull_y))) + phi_size;
         culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.CloudCull_y));
 
         // Define lambda for multi-use
-        auto lambda_cull = [layer_size, culled_theta_all, phi_size, culled_phi_b, culled_phi_f](const uint &item){
+        auto lambda_cull = [layer_size, culled_theta_all, phi_size, culled_phi_f](const uint &item){
                 uint phi_pos = item % phi_size;
                 bool culled_theta = ((item % layer_size) <= culled_theta_all);
                 bool culled_theta_phis = (phi_pos <= phi_size);
                 bool culled_phi_front = (phi_pos <= culled_phi_f);
-                bool culled_phi_back = (phi_pos >= culled_phi_b);
 
-                return !((culled_theta && culled_theta_phis) || (culled_phi_front || culled_phi_back));
+                return !((culled_theta && culled_theta_phis) || (culled_phi_front));
             };
 
         // Count unculled vertices

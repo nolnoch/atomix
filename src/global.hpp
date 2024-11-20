@@ -33,6 +33,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <string>
+#include <filesystem>
 
 // #define MACOS
 #ifdef MACOS
@@ -56,11 +57,17 @@ struct AtomixFiles {
     std::string configsDir;
     std::string resourcesDir;
 
-    void setRoot(const std::string &_root) {
+    bool setRoot(const std::string &_root) {
+        if (!std::filesystem::exists(std::string(_root + "/shaders"))) {
+            return false;
+        }
+
         rootDir = _root + "/";
         shadersDir = rootDir + "shaders/";
         configsDir = rootDir + "configs/";
         resourcesDir = rootDir + "resources/";
+
+        return true;
     }
 
     constexpr std::string& root() { return rootDir; }

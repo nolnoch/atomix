@@ -25,11 +25,12 @@
 #ifndef SLIDESWITCH_H
 #define SLIDESWITCH_H
 
-#include <QWidget>
-#include <QLabel>
+#include <QtWidgets/QWidget>
+#include <QtWidgets/QLabel>
 #include <QPainter>
 #include <QPen>
 #include <QPropertyAnimation>
+#include <QResizeEvent>
 
 class SlideSwitch : public QWidget {
     Q_OBJECT
@@ -52,9 +53,16 @@ public:
 
     //-- Getters
     bool value() const;
+    QSize sizeHint() const override { return QSize(slsw_width, slsw_height); }
 
 signals:
     void valueChanged(bool newvalue);
+
+public slots:
+    void _toggleBG();
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     class SwitchCircle;

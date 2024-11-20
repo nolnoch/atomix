@@ -26,25 +26,25 @@
 #define MAINWINDOW_H
 
 
-#include <QMainWindow>
-#include <QDockWidget>
-#include <QMessageBox>
-#include <QColorDialog>
-#include <QFileDialog>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QGroupBox>
-#include <QButtonGroup>
-#include <QComboBox>
-#include <QBoxLayout>
-#include <QCheckBox>
-#include <QListWidget>
-#include <QTreeWidget>
-#include <QTableWidget>
-#include <QHeaderView>
-#include <QSlider>
-#include <QProgressBar>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QColorDialog>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QListWidget>
+#include <QtWidgets/QTreeWidget>
+#include <QtWidgets/QTableWidget>
+#include <QtWidgets/QHeaderView>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QProgressBar>
 #include <QSignalBlocker>
 #include <QThread>
 #include "slideswitch.hpp"
@@ -86,6 +86,9 @@ public:
     void init(QRect &windowSize);
     void postInit(int titlebarHeight);
 
+signals:
+    void changeRenderedOrbits(uint selectedOrbits);
+
 public slots:
     void updateDetails(AtomixInfo *info);
     void setLoading(bool loading);
@@ -93,19 +96,17 @@ public slots:
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 
-signals:
-    void changeRenderedOrbits(uint selectedOrbits);
-
 private:
-    void loadConfig();
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
+    void setupStyleSheet();
     void refreshConfigs();
     void refreshShaders();
+    void loadConfig();
     void refreshOrbits();
-    void setupLoading();
     void setupDetails();
+    void setupLoading();
 
     void handleComboCfg();
     void handleConfigChanged();
@@ -206,6 +207,8 @@ private:
     int intSliderLen = 0;
     int lineWidth = 0;
     int intHarmonicsGroupMaxWidth = 0;
+    int slslwWidth = 0;
+    
     float lastSliderSentX = 0.0f;
     float lastSliderSentY = 0.0f;
 

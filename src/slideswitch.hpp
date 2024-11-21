@@ -80,7 +80,6 @@ private:
     QColor slsw_pencolor;
     QColor slsw_offcolor;
     QColor slsw_oncolor;
-    int _tol;
     int slsw_borderRadius = 12;
     int slsw_width = 160;
     int slsw_height = 26;

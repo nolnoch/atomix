@@ -163,16 +163,26 @@ void MainWindow::postInit(int titlebarHeight) {
     tableOrbitalReport->setColumnWidth(0, colWidth);
     tableOrbitalReport->setColumnWidth(1, colWidth);
 
-    QRect entryLoc = entryOrbit->geometry();
+    /* QRect entryLoc = entryOrbit->geometry();
     int entryWidth = entryLoc.width();
-    int entryHeight = entryLoc.height();
+    // int entryHeight = entryLoc.height();
 
-    slswPara->resize(entryWidth, entryHeight);
+    int slswWidth = slswPara->width(), slswHeight = slswPara->height();
+    
+    slswPara->resize(entryWidth, 26);
+    slswSuper->resize(entryWidth, 26);
+    slswCPU->resize(entryWidth, 26);
+    slswSphere->resize(entryWidth, 26);
+
+    int newWidth = slswPara->width(); */
 
     slswPara->redraw();
     slswSuper->redraw();
     slswCPU->redraw();
     slswSphere->redraw();
+
+    /* slswWidth = slswPara->width();
+    slswHeight = slswPara->height(); */
 
     setupDetails();
     setupLoading();
@@ -249,6 +259,8 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
             image.save(fd.selectedFiles().first());
         }
     } else if (e->key() == Qt::Key_Home) {
+        int w = slswPara->width();
+        int h = slswPara->height();
         vkGraph->handleHome();
     } else if (e->key() == Qt::Key_Space) {
         vkGraph->handlePause();
@@ -295,9 +307,9 @@ void MainWindow::setupDockWaves() {
     groupOrbits = new QGroupBox("Visible Orbits");
     groupOrbits->setEnabled(false);
 
-    QLabel *labelWaves = new QLabel("<p>Explore stable wave patterns in circular or spherical forms in this configuration</p>");
+    QLabel *labelWaves = new QLabel("<p>Explore stable circular or spherical wave patterns</p>");
     labelWaves->setObjectName("tabDesc");
-    // labelWaves->setMaximumHeight(intTabLabelHeight);
+    labelWaves->setMaximumHeight(intTabLabelHeight);
     labelWaves->setMinimumHeight(intTabLabelHeight);
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
@@ -398,8 +410,6 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->addWidget(labelSuper, 6, 0, 1, 2, Qt::AlignLeft);
     layWaveConfig->addWidget(labelCPU, 7, 0, 1, 2, Qt::AlignLeft);
     layWaveConfig->addWidget(labelSphere, 8, 0, 1, 2, Qt::AlignLeft);
-    /* layWaveConfig->addWidget(labelVertex, 9, 0, 1, 2, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelFrag, 10, 0, 1, 2, Qt::AlignLeft); */
 
     layWaveConfig->addWidget(entryOrbit, 0, 3, 1, 2, Qt::AlignRight);
     layWaveConfig->addWidget(entryAmp, 1, 3, 1, 2, Qt::AlignRight);
@@ -411,9 +421,6 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->addWidget(slswSuper, 6, 3, 1, 2, Qt::AlignRight);
     layWaveConfig->addWidget(slswCPU, 7, 3, 1, 2, Qt::AlignRight);
     layWaveConfig->addWidget(slswSphere, 8, 3, 1, 2, Qt::AlignRight);
-
-    /* layWaveConfig->addWidget(entryVertex, 9, 3, 1, 2, Qt::AlignRight);
-    layWaveConfig->addWidget(entryFrag, 10, 3, 1, 2, Qt::AlignRight); */
 
     layOptionBox->addLayout(layWaveConfig);
 
@@ -582,8 +589,8 @@ void MainWindow::setupDockHarmonics() {
 
     QGridLayout *layOrbitalGrid = new QGridLayout;
     layOrbitalGrid->addWidget(groupRecipeBuilder, 0, 0, 7, 1);
-    layOrbitalGrid->addWidget(groupRecipeReporter, 0, 1, 2, 1);
-    layOrbitalGrid->addWidget(groupRecipeLocked, 2, 1, 5, 1);
+    layOrbitalGrid->addWidget(groupRecipeReporter, 0, 1, 4, 1);
+    layOrbitalGrid->addWidget(groupRecipeLocked, 4, 1, 3, 1);
     layOrbitalGrid->setContentsMargins(0, 0, 0, 0);
 
     buttLockRecipes = new QPushButton("Lock Selection");

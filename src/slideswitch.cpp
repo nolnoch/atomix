@@ -32,10 +32,9 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     /* setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground); */
     this->resize(slsw_width, slsw_height);
-    this->setMinimumSize(QSize(120, 20));
-    this->setSizeIncrement(QSize(4, 2));
-    this->setBaseSize(QSize(slsw_width, slsw_height));
-    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    // this->setMinimumSize(QSize(120, 20));
+    // this->setBaseSize(QSize(slsw_width, slsw_height));
+    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     // this->sizePolicy().setControlType(QSizePolicy::LineEdit);
     this->slsw_borderRadius = (slsw_height >> 1);
     
@@ -137,14 +136,17 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
     QPen pen(Qt::NoPen);
     painter->setPen(pen);
 
+    int dimWidth = this->width();
+    int dimHeight = this->height();
+
     // Set Outer border [constant]
     painter->setBrush(this->pal.alt);
-    painter->drawRoundedRect(0, 0, this->width(), this->height(), slsw_borderRadius, slsw_borderRadius);
+    painter->drawRoundedRect(0, 0, dimWidth, dimHeight, slsw_borderRadius, slsw_borderRadius);
 
     // Set middle border [half-replaced]
     // painter->setBrush(linGrad_border);
     painter->setBrush(this->pal.alt);
-    painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsw_borderRadius, slsw_borderRadius);
+    painter->drawRoundedRect(1, 1, dimWidth - 2, dimHeight - 2, slsw_borderRadius, slsw_borderRadius);
 
     // Set inner border [fully replaced]
     // painter->setBrush(this->pal.alt);
@@ -153,11 +155,11 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
     if (slsw_enabled) {
         // Set Enabled-Off colour
         painter->setBrush(this->pal.base);
-        painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
+        painter->drawRoundedRect(2, 2, dimWidth - 4, dimHeight - 4, slsw_borderRadius, slsw_borderRadius);
     } else {
         // Set Disabled colour
         painter->setBrush(linGrad_disabled);
-        painter->drawRoundedRect(2, 2, this->width() - 4, this->height() - 4, slsw_borderRadius, slsw_borderRadius);
+        painter->drawRoundedRect(2, 2, dimWidth - 4, dimHeight - 4, slsw_borderRadius, slsw_borderRadius);
     }
     painter->end();
 }
@@ -269,10 +271,25 @@ void SlideSwitch::_toggleBG() {
 
 void SlideSwitch::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
+
     QSize newSize = event->size();
     this->slsw_width  = newSize.width();
     this->slsw_height = newSize.height();
     this->slsw_borderRadius = (this->slsw_height >> 1);
+
+    if (newSize.width() == 159) {
+        std::cout << "Resize to 159: " << this->width() << "\n";
+    } else {
+        std::cout << "Resize to ?: " << this->width() << "\n";
+    }
+
+    /* delete slsw_Button;
+    
+    int circleRad = int(double(slsw_borderRadius) * 1.8);
+    slsw_Button = new SwitchCircle(circleRad, this);
+    prAnim_buttMove->setTargetObject(slsw_Button);
+    prAnim_buttMove->setPropertyName("pos");
+    slsw_Button->move(1, 1); */
 }
 
 void SlideSwitch::_update() {

@@ -602,7 +602,6 @@ void VKWindow::updateBuffersAndShaders() {
     if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
         // Capture updates from currentManager
         this->flGraphState.set(currentManager->clearUpdates());
-        this->updateSize();
 
         // Set current model
         vw_previousModel = vw_currentModel;
@@ -633,7 +632,7 @@ void VKWindow::updateBuffersAndShaders() {
 
         // Update VBO 1: Vertices
         if (flGraphState.hasAny(egs::UPD_VBO)) {
-            std::string bufferCPU = waveManager->getCPU() ? "VerticesCPU" : "Vertices";
+            std::string bufferCPU = currentManager->isCPU() ? "VerticesCPU" : "Vertices";
             updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::VERTEX;
             updBuf.count = currentManager->getVertexCount();
@@ -691,6 +690,7 @@ void VKWindow::updateBuffersAndShaders() {
         }
 
         flGraphState.clear(eUpdateFlags);
+        this->updateSize();
     }
 
     atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
@@ -754,9 +754,10 @@ void VKWindow::updateSize() {
 
     if (flGraphState.hasAny(egs::WAVE_RENDER | egs::CLOUD_RENDER)) {
         VSize = currentManager->getVertexSize();            // (count)   * (3 floats) * (4 B/float) * (1 vector)  -- only allVertices
-        ISize = currentManager->getIndexSize() * 3;         // (count/2) * (1 uint)   * (4 B/uint)  * (3 vectors) -- idxTolerance + idxSlider + allIndices [very rough estimate]}
+        ISize = currentManager->getIndexSize();         // (count/2) * (1 uint)   * (4 B/uint)  * (3 vectors) -- idxTolerance + idxSlider + allIndices [very rough estimate]}
         if (flGraphState.hasAny(egs::CLOUD_RENDER)) {
             DSize = currentManager->getDataSize();          // (count)   * (1 float)  * (4 B/float) * (1 vectors) -- only allData [already clear()ing dataStaging; might delete it]
+            ISize *= 3;
         }
     }
 

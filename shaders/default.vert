@@ -14,4 +14,5 @@ layout(set = 0, binding = 0) uniform WorldState {
 void main() {
     vertColour = vec4(colour, 1.0f);
     gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(pos, 1.0f);
+    gl_PointSize = 1.4f;
 }

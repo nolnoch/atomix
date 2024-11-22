@@ -201,6 +201,10 @@ void MainWindow::postInit(int titlebarHeight) {
     cellWidth = cellLoc.width();
     cellHeight = cellLoc.height();
 
+    // TODO : Test on macOS and make dynamic
+    int dent = treeOrbitalSelect->indentation();
+    // treeOrbitalSelect->setIndentation(15);
+
     /* slswWidth = slswPara->width();
     slswHeight = slswPara->height(); */
 
@@ -751,25 +755,26 @@ void MainWindow::setupStyleSheet() {
     std::cout << "Effective Resolution: " << effRes.width() << "x" << effRes.height() << std::endl;
     std::cout << "Tab Projected Width: " << effTabWidth << std::endl;
 
-    baseFontSize = 12;              // 17
-    descFontSize = 16;              // 23
-    tabUnselectedFontSize = 10;     // 15
-    tabSelectedFontSize = 14;       // 19
-    treeFontSize = 11;              // 17
-    treeCheckSize = 18;             // 20
-    treeSpacing = 0;                // 0
+    baseFontSize = int(round(effTabWidth / 25.0));              // 17 - 12
+    descFontSize = int(round(effTabWidth / 18.5));              // 23 - 16
+    tabUnselectedFontSize = int(round(effTabWidth / 28.0));     // 15 - 10
+    tabSelectedFontSize = int(round(effTabWidth / 21.0));       // 19 - 14
+    treeFontSize = int(round(effTabWidth / 25.0));              // 17 - 11
+    treeCheckSize = int(round(baseFontSize * 1.5));              // 20 - 18
+    treeSpacing = 0;                                            // 0
 
     QString atomixStyle = QString(
         "QWidget { font-size: %1px; }"\
         "QLabel { font-size: %1px; }"\
         "QLabel#tabDesc { font-size: %2px; }"\
         "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; }"\
-        "QTabBar::tab::selected { font-size: %5px; }"\
+        "QTabBar::tab::selected { font-size: %5px; }"
         "QLabel#switchOff { font-size: %1px; }"\
         "QLabel#switchOn { font-size: %1px; }"\
         "QTreeWidget { font-size: %6px; margin: 0px; padding: 0px; spacing: 0px; }"\
-        "QTreeWidget::item { margin: %8px; padding: 0px; spacing: 0px; }"\
-        "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: 0px; padding: 0px; spacing: 0px; }"\
+        "QTreeWidget::item { margin: 0px; padding: 0px; spacing: 0px; }"\
+        "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: 0px; padding: 0px; spacing: 0px; }"
+        "QTableWidget::item { font-size: %6px; margin: 0px; padding: 0px; spacing: 0px; }"
         ).arg(QString::number(baseFontSize))            // 1
         .arg(QString::number(descFontSize))             // 2
         .arg(QString::number(tabWidth))                 // 3

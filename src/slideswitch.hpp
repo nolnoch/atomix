@@ -27,12 +27,13 @@
 
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QLabel>
+#include <QAbstractButton>
 #include <QPainter>
 #include <QPen>
 #include <QPropertyAnimation>
 #include <QResizeEvent>
 
-class SlideSwitch : public QWidget {
+class SlideSwitch : public QAbstractButton {
     Q_OBJECT
     Q_DISABLE_COPY(SlideSwitch)
 
@@ -43,7 +44,7 @@ public:
     void redraw();
 
     //-- QWidget methods
-    void mousePressEvent(QMouseEvent *) override;
+    // void mousePressEvent(QMouseEvent *) override;
     void paintEvent(QPaintEvent* event) override;
     void setEnabled(bool);
 
@@ -55,23 +56,23 @@ public:
     bool value() const;
     QSize sizeHint() const override { return QSize(slsw_width, slsw_height); }
 
-signals:
-    void valueChanged(bool newvalue);
-
 public slots:
     void _toggleBG();
+    void setChecked(bool newValue);
+    void click();
+    void toggle();
 
 protected:
-    void resizeEvent(QResizeEvent* event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    bool hitButton(const QPoint &pos) const override;
+    void nextCheckState() override;
+    void checkStateSet() override;
 
 private:
     class SwitchCircle;
     class SwitchBackground;
     void _update();
-    void toggle();
-
-    bool slsw_value;
-    int  slsw_duration;
+    void _toggle();
 
     QLinearGradient linGrad_border;
     QLinearGradient linGrad_enabledOff;
@@ -83,16 +84,23 @@ private:
     int slsw_borderRadius = 12;
     int slsw_width = 160;
     int slsw_height = 26;
+    int slsw_duration = 100;
+    bool slsw_enabled = true;
+    bool slsw_value = false;
     int fontPx = 12;
     int buttMove = 0;
+
+    bool enabled = false;
+    bool checkable = false;
+    bool checked = false;
+    bool down = false;
+    QString text = "";
 
     // This order for definition is important (these widgets overlap)
     QLabel*           slsw_LabelOff;
     SwitchBackground* slsw_SwitchBackground;
     QLabel*           slsw_LabelOn;
     SwitchCircle*     slsw_Button;
-
-    bool slsw_enabled;
 
     QPropertyAnimation* prAnim_buttMove;
     QPropertyAnimation* prAnim_backMove;
@@ -131,6 +139,8 @@ private:
     QLinearGradient slsb_linGrad_enabled;
     QLinearGradient slsb_linGrad_disabled;
     int             slsb_borderRadius;
+    int             slsb_height;
+    int             slsb_width;
 
     bool            slsb_enabled;
 };

@@ -29,7 +29,7 @@ void main() {
 
     /* Alpha */
     // float alpha = clamp(1.0f - (radius / pConstCloud.max_radius), 0.0f, 1.0f);       // Scale by radius (inversely)
-    float alpha = clamp(sqrt(pdv), 0.6f, 1.0f);                                              // Scale by probability
+    float alpha = clamp(sqrt(pdv), 0.6f, 1.0f);                                         // Scale by probability
     // float alpha = 1.0f;                                                              // No scaling
     
     /* Colours */

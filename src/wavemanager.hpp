@@ -46,12 +46,12 @@ class WaveManager : public Manager {
         
         void newWaves();
         uint selectWaves(int id, bool checked);
+        void setTime(double time) { this->time = time; }
 
         uint getMode() { return this->cfg.parallel; }
         float getPhase() { return this->phase_base; }
         bool getSuperposition() { return this->cfg.superposition; }
         bool getSphere() { return this->cfg.sphere; }
-        bool getCPU() { return this->cfg.cpu; }
         void getMaths(glm::vec3 &maths) { maths = this->waveMaths; }
         void getColours(glm::uvec3 &colours) { colours = this->waveColours; }
 
@@ -78,6 +78,8 @@ class WaveManager : public Manager {
         
         double waveResolution;
         double phase_base = PI_TWO;
+        double time = 0.0;
+        bool init = false;
 };
 
 #endif

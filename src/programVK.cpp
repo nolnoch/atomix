@@ -167,7 +167,6 @@ bool ProgramVK::addShader(const std::string &fName, VKuint type) {
  */
 int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
     int errors = fList->size();
-    VKuint shID, shIdx = 0;
     
     for (auto &fName : *fList) {
         bool validFile = addShader(fName, type);
@@ -307,7 +306,7 @@ void ProgramVK::addUniformsAndPushConstants() {
                     
                     // Create a descriptor set layout
                     s->addDescIdx(j);
-                    createDescriptorSetLayout(uni.set, uni.binding);
+                    createDescriptorSetLayout(uni.binding);
                     
                     // Create a uniform buffer with persistent mapping
                     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -341,6 +340,7 @@ void ProgramVK::addUniformsAndPushConstants() {
             }
         }
     }
+    std::cout << std::endl;
 
     // Descriptor Sets
     for (int i = 0; i < setCount; i++) {
@@ -504,7 +504,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
             this->createPipeline(render, model, vs, fs, off.bufferComboIndex, off.topologyIndex);
         }
     }
-    for (auto &prog : info.programs) {
+    for (int i = 0; i < info.programs.size(); i++) {
         model->programs = info.programs;
     }
     model->activePrograms.clear();
@@ -529,7 +529,6 @@ bool ProgramVK::activateModel(const std::string &name) {
 
     if (this->p_models[id]->valid.validate()) {
         if ((success = p_activeModels.insert(id).second)) {
-            std::cout << "Model validated and added to active models: " << name << std::endl;
             p_models[id]->activePrograms.insert(0);
         } else {
             std::cout << "Model already added to active models: " << name << std::endl;
@@ -1211,7 +1210,7 @@ void ProgramVK::createPersistentUniformBuffers() {
                     assert(this->p_setLayouts.size() == j);
                     
                     this->p_setLayouts.push_back({});
-                    createDescriptorSetLayout(j, uni.binding);
+                    createDescriptorSetLayout(uni.binding);
                     
                     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                         createBuffer(uni.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[i][j], this->p_uniformBuffersMemory[i][j]);
@@ -1290,7 +1289,7 @@ void ProgramVK::createDescriptorPool(VKuint bindings) {
     }
 }
 
-void ProgramVK::createDescriptorSetLayout(VKuint set, VKuint binding) {
+void ProgramVK::createDescriptorSetLayout(VKuint binding) {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = binding;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

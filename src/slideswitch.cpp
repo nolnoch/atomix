@@ -29,7 +29,7 @@
 
 
 SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent)
-  : slsw_width(width), slsw_height(height), slsw_value(false), slsw_duration(100), slsw_enabled(true) {
+  : slsw_width(width), slsw_height(height), slsw_duration(100), slsw_enabled(true), slsw_value(false) {
     setParent(parent);
     /* setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground); */
@@ -39,6 +39,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     // this->sizePolicy().setControlType(QSizePolicy::LineEdit);
     this->slsw_borderRadius = slsw_height >> 1;
+    this->setCheckable(true);
     
     // Grab Palette from parent context (dark mode vs light mode colours)
     this->pal.base = this->palette().brush(QPalette::Base);
@@ -89,6 +90,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     slsw_LabelOn = new QLabel(this);
     slsw_LabelOff->setText(strFalse);
     slsw_LabelOn->setText(strTrue);
+    text = strFalse;
     slsw_LabelOff->setObjectName("switchOff");
     slsw_LabelOn->setObjectName("switchOn");
     fontPx = slsw_height >> 1;
@@ -143,7 +145,7 @@ void SlideSwitch::redraw() {
     int labOffCenter = slsw_LabelOff->width() >> 1;
     int labOnCenter = slsw_LabelOn->width() >> 1;
     int switchCenter = slsw_width >> 1;
-    int labMove = int(double(slsw_height) * 0.2);
+    int labMove = int(double(slsw_height) * 0.25);
     slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
     slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
 }
@@ -184,9 +186,9 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
     painter->end();
 }
 
-void SlideSwitch::mousePressEvent(QMouseEvent*) {
-    this->toggle();
-}
+/* void SlideSwitch::mousePressEvent(QMouseEvent*) {
+    this->click();
+} */
 
 void SlideSwitch::setEnabled(bool flag) {
     slsw_enabled = flag;
@@ -215,25 +217,25 @@ void SlideSwitch::setValue(bool flag) {
     if (flag == value()) {
         return;
     } else {
-        toggle();
+        _toggle();
         // _update();
         // setEnabled(slsw_enabled);
     }
 
-    if (slsw_value) {
+    /* if (slsw_value) {
         slsw_LabelOn->show();
         slsw_LabelOff->hide();
     } else {
         slsw_LabelOff->show();
         slsw_LabelOn->hide();
-    }
+    } */
 }
 
 bool SlideSwitch::value() const {
     return slsw_value;
 }
 
-void SlideSwitch::toggle() {
+void SlideSwitch::_toggle() {
     if (!slsw_enabled) {
         return;
     }
@@ -274,6 +276,7 @@ void SlideSwitch::toggle() {
 
     // Assigning new current value
     slsw_value = !slsw_value;
+    checked = slsw_value;
     if (slsw_value) {
         slsw_LabelOff->hide();
         slsw_LabelOn->show();
@@ -282,12 +285,25 @@ void SlideSwitch::toggle() {
         slsw_LabelOff->show();
         slsw_LabelOn->hide();
     }
-
-    emit valueChanged(slsw_value);
 }
 
 void SlideSwitch::_toggleBG() {
     if (!slsw_value) slsw_SwitchBackground->hide();
+}
+
+void SlideSwitch::click() {
+    QAbstractButton::click();
+    this->_toggle();
+}
+
+void SlideSwitch::setChecked(bool newValue) {
+    QAbstractButton::setChecked(newValue);
+    this->setValue(newValue);
+}
+
+void SlideSwitch::toggle() {
+    QAbstractButton::toggle();
+    this->_toggle();
 }
 
 void SlideSwitch::resizeEvent(QResizeEvent* event) {
@@ -302,7 +318,7 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     slsw_SwitchBackground->updateSize();
     slsw_Button->updateSize();
 
-    fontPx = slsw_height >> 1;
+    fontPx = int(double(slsw_height) * 0.55);
     QString strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
     QString strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
     slsw_LabelOff->setStyleSheet(strOff);
@@ -321,6 +337,22 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     prAnim_buttMove->setTargetObject(slsw_Button);
     prAnim_buttMove->setPropertyName("pos");
     slsw_Button->move(1, 1); */
+}
+
+bool SlideSwitch::hitButton(const QPoint &pos) const {
+    QRect rect = QRect(0, 0, this->width(), this->height());
+    bool hit = rect.contains(pos);
+    return hit;
+}
+
+void SlideSwitch::nextCheckState() {
+    if (isCheckable()) {
+        setChecked(!isChecked());
+    }
+}
+
+void SlideSwitch::checkStateSet() {
+    this->setValue(true);
 }
 
 void SlideSwitch::_update() {
@@ -346,17 +378,21 @@ void SlideSwitch::_update() {
 
 SlideSwitch::SwitchBackground::SwitchBackground(QColor color, SlideSwitch *parent)
   : QWidget(parent), parentPtr(parent), slsb_color(color) {
-    setFixedHeight(parentPtr->slsw_height - 4);
-    slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
+    this->slsb_width = parentPtr->slsw_width - 4;
+    this->slsb_height = parentPtr->slsw_height - 4;
+    this->slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
+    setFixedHeight(this->slsb_height);
+    int cx = this->slsb_width >> 1;
+    int cy = this->slsb_height >> 1;
 
-    slsb_linGrad_enabled = QLinearGradient(80, 0, 80, 20);
+    slsb_linGrad_enabled = QLinearGradient(cx, 0, cx, cy);
     slsb_linGrad_enabled.setColorAt(0, slsb_color.darker(120));
     slsb_linGrad_enabled.setColorAt(0.20, slsb_color.darker(110));
     slsb_linGrad_enabled.setColorAt(0.50, slsb_color);
     slsb_linGrad_enabled.setColorAt(0.80, slsb_color.darker(110));
     slsb_linGrad_enabled.setColorAt(1, slsb_color.darker(120));
 
-    slsb_linGrad_disabled = QLinearGradient(0, 25, 70, 0);
+    slsb_linGrad_disabled = QLinearGradient(cx, 0, cx, cy);
     slsb_linGrad_disabled.setColorAt(0, QColor(190, 190, 190));
     slsb_linGrad_disabled.setColorAt(0.25, QColor(230, 230, 230));
     slsb_linGrad_disabled.setColorAt(0.95, QColor(190, 190, 190));
@@ -374,19 +410,8 @@ void SlideSwitch::SwitchBackground::paintEvent(QPaintEvent*) {
 
     QPen pen(Qt::NoPen);
     painter->setPen(pen);
-    if (slsb_enabled) {
-        // painter->setBrush(parentPtr->pal.light);
-        // painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
-
-        painter->setBrush(slsb_linGrad_enabled);
-        painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
-    } else {
-        painter->setBrush(parentPtr->pal.alt);
-        painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
-
-        painter->setBrush(slsb_linGrad_disabled);
-        painter->drawRoundedRect(1, 1, this->width() - 2, this->height() - 2, slsb_borderRadius, slsb_borderRadius);
-    }
+    painter->setBrush((slsb_enabled) ? slsb_linGrad_enabled : slsb_linGrad_disabled);
+    painter->drawRoundedRect(0, 0, this->width(), this->height(), slsb_borderRadius, slsb_borderRadius);
     painter->end();
 }
 
@@ -395,24 +420,28 @@ void SlideSwitch::SwitchBackground::setEnabled(bool flag) {
 }
 
 void SlideSwitch::SwitchBackground::updateSize() {
-    setFixedHeight(parentPtr->slsw_height - 4);
-    slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
+    this->slsb_width = parentPtr->slsw_width - 4;
+    this->slsb_height = parentPtr->slsw_height - 4;
+    this->slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
+    setFixedHeight(this->slsb_height);
+    int cx = this->slsb_width >> 1;
+    int cy = this->slsb_height >> 1;
+
+    slsb_linGrad_enabled.setStart(cx, 0);
+    slsb_linGrad_enabled.setFinalStop(cx, cy);
 }
 
 SlideSwitch::SwitchCircle::SwitchCircle(int radius, SlideSwitch *parent)
   : QWidget(parent), parentPtr(parent), slsc_buttRadius(radius), slsc_borderRadius(12) {
     setFixedSize(slsc_buttRadius, slsc_buttRadius);
-
     int buttRad = slsc_buttRadius >> 1;
-    int cx = static_cast<int>(this->width() / 2);
-    int cy = static_cast<int>(this->height() / 2);
 
-    slsc_radGrad_button = QRadialGradient(cx, cy, buttRad);
-    slsc_radGrad_button.setColorAt(0, parentPtr->pal.light.color().lighter(180));
-    slsc_radGrad_button.setColorAt(0.20, parentPtr->pal.light.color().lighter(200));
-    slsc_radGrad_button.setColorAt(0.50, parentPtr->pal.light.color().lighter(275));
-    slsc_radGrad_button.setColorAt(0.85, parentPtr->pal.base.color().lighter(200));
-    // radGrad_button.setColorAt(1, parentPtr->pal.base.color().darker(150));
+    slsc_radGrad_button = QRadialGradient(buttRad, buttRad, buttRad);
+    slsc_radGrad_button.setColorAt(0, parentPtr->pal.light.color().lighter(200));
+    slsc_radGrad_button.setColorAt(0.20, parentPtr->pal.light.color().lighter(220));
+    slsc_radGrad_button.setColorAt(0.65, parentPtr->pal.light.color().lighter(275));
+    slsc_radGrad_button.setColorAt(0.88, parentPtr->pal.base.color());
+    // radGrad_button.setColorAt(1, parentPtr->pal.base.color().lighter(150));
 
     /* _lg = QLinearGradient(3, 18, 20, 4);
     _lg.setColorAt(0, QColor(255, 255, 255));
@@ -465,5 +494,10 @@ void SlideSwitch::SwitchCircle::setEnabled(bool flag) {
 void SlideSwitch::SwitchCircle::updateSize() {
     int circleRad = parentPtr->slsw_height;
     slsc_buttRadius = circleRad;
+    int buttRad = slsc_buttRadius >> 1;
+
     setFixedSize(circleRad, circleRad);
+    slsc_radGrad_button.setCenter(buttRad, buttRad);
+    slsc_radGrad_button.setFocalPoint(buttRad, buttRad);
+    slsc_radGrad_button.setRadius(buttRad);
 }

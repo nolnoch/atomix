@@ -30,26 +30,24 @@ void main() {
     float two_pi_T = waveState.waveMaths.y;
     float amp = waveState.waveMaths.z;
 
-    uint peak = waveState.waveColours.x;
-    uint base = waveState.waveColours.y;
-    uint trough = waveState.waveColours.z;
-
     float cos_th = cos(theta);
     float sin_th = sin(theta);
    
-    /* Circular Wavefunction */
+    /* Wavefunction */
     //                             sin(2pi / L * x) - (2pi / T * t)
     float wavefunc = cos((two_pi_L * r * theta) - (two_pi_T * pConstWave.time) + phase_const);
     float displacement = amp * wavefunc;
 
-    /* Assign vertices */
-    float x_coord, y_coord, z_coord;
-
-    x_coord = mix((r * cos_th), ((r + displacement) * cos_th), pConstWave.mode);
-    y_coord = mix((displacement), (0.0f), pConstWave.mode);
-    z_coord = mix((r * sin_th), ((r + displacement) * sin_th), pConstWave.mode);
+    /* Assign vertices (Circle) */
+    float x_coord = mix((r * cos_th), ((r + displacement) * cos_th), pConstWave.mode);
+    float y_coord = mix((displacement), (0.0f), pConstWave.mode);
+    float z_coord = mix((r * sin_th), ((r + displacement) * sin_th), pConstWave.mode);
 
     /* Assign colours */
+    uint peak = waveState.waveColours.x;
+    uint base = waveState.waveColours.y;
+    uint trough = waveState.waveColours.z;
+
     uint mask = 0xFF;
     float fMask = float(mask);
     vec4 finalPos = vec4(0.0f);

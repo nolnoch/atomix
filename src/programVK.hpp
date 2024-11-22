@@ -113,12 +113,6 @@ struct AtomixDevice {
     VkDevice device = VK_NULL_HANDLE;
 };
 
-struct ProgUniInfo {
-    std::string name;
-    uint location = 0;
-    uint binding = 0;
-};
-
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
@@ -148,15 +142,6 @@ struct BufferUpdateInfo {
     uint64_t count = 0;
     uint64_t size = 0;
     const void *data = nullptr;
-};
-
-struct DrawInfo {
-    std::string vertShader;
-    std::vector<std::string> vertUniforms;
-    std::string fragShader;
-    std::vector<std::string> fragUniforms;
-    std::vector<std::string> vbos;
-    std::string ibo;
 };
 
 struct ProgramInfo {
@@ -305,7 +290,7 @@ public:
     void copyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size);
     void stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData, bool createBuffer = true);
     void createPersistentUniformBuffers();
-    void createDescriptorSetLayout(VKuint set, VKuint binding);
+    void createDescriptorSetLayout(VKuint binding);
     void createDescriptorPool(VKuint bindings);
     void createDescriptorSets(VKuint set, VKuint binding, VKuint size);
 
@@ -354,7 +339,7 @@ private:
     VkExtent2D p_swapExtent = { 0, 0 };
     float p_clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-    VkViewport p_viewport = { 0, 0, 0, 0 };
+    VkViewport p_viewport = { 0, 0, 0, 0, 0, 0 };
     VkRect2D p_scissor = { {0, 0}, {0, 0} };
 
     QVulkanDeviceFunctions *p_vdf = nullptr;

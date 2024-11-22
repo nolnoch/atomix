@@ -105,17 +105,17 @@ void Manager::genIndexBuffer() {
  *  Getters -- Size
  */
 
-const uint Manager::getVertexSize() {
+uint Manager::getVertexSize() {
     assert(mStatus.hasAll(em::VERT_READY));
     return this->vertexSize;
 }
 
-const uint Manager::getDataSize() {
+uint Manager::getDataSize() {
     assert(mStatus.hasAll(em::DATA_READY));
     return this->dataSize;
 }
 
-const uint Manager::getIndexSize() {
+uint Manager::getIndexSize() {
     assert(mStatus.hasAll(em::INDEX_READY));
     return this->indexSize;
 }
@@ -124,17 +124,17 @@ const uint Manager::getIndexSize() {
  *  Getters -- Count
  */
 
-const uint Manager::getVertexCount() {
+uint Manager::getVertexCount() {
     assert(mStatus.hasAll(em::VERT_READY));
     return this->vertexCount;
 }
 
-const uint Manager::getDataCount() {
+uint Manager::getDataCount() {
     assert(mStatus.hasAll(em::DATA_READY));
     return this->dataCount;
 }
 
-const uint Manager::getIndexCount() {
+uint Manager::getIndexCount() {
     assert(mStatus.hasAll(em::INDEX_READY));
     return this->indexCount;
 }
@@ -156,18 +156,6 @@ const float* Manager::getDataData() {
 const uint* Manager::getIndexData() {
     assert(mStatus.hasAll(em::INDEX_READY));
     return &allIndices[0];
-}
-
-std::string& Manager::getShaderVert() {
-    return this->cfg.vert;
-}
-
-std::string& Manager::getShaderFrag() {
-    return this->cfg.frag;    
-}
-
-bool Manager::isCPU() {
-    return cfg.cpu;
 }
 
 /*

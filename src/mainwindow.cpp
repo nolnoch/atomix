@@ -121,6 +121,7 @@ void MainWindow::init(QRect &screenSize) {
 #elifdef USING_QOPENGL
     connect(buttGroupOrbits, &QButtonGroup::idToggled, glGraph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
 #endif
+    connect(buttGroupConfig, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
     connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleDoubleClick);
@@ -205,9 +206,7 @@ void MainWindow::postInit(int titlebarHeight) {
     int dent = treeOrbitalSelect->indentation();
     // treeOrbitalSelect->setIndentation(15);
 
-    /* slswWidth = slswPara->width();
-    slswHeight = slswPara->height(); */
-
+    bool test = slswPara->isCheckable();
 
     setupDetails();
     setupLoading();
@@ -396,6 +395,13 @@ void MainWindow::setupDockWaves() {
     slswCPU = new SlideSwitch("CPU", "GPU", entryHintWidth, entryHintHeight, this);
     slswSphere = new SlideSwitch("Sphere", "Circle", entryHintWidth, entryHintHeight, this);
 
+    buttGroupConfig = new QButtonGroup();
+    buttGroupConfig->setExclusive(false);
+    buttGroupConfig->addButton(slswPara, 0);
+    buttGroupConfig->addButton(slswSuper, 1);
+    buttGroupConfig->addButton(slswCPU, 2);
+    buttGroupConfig->addButton(slswSphere, 3);
+
     QCheckBox *orbit1 = new QCheckBox("1");
     QCheckBox *orbit2 = new QCheckBox("2");
     QCheckBox *orbit3 = new QCheckBox("3");
@@ -452,7 +458,7 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->setColumnStretch(0,6);
     layWaveConfig->setColumnStretch(1,1);
     layWaveConfig->setColumnStretch(2,6);
-    layWaveConfig->setRowStretch(layWaveConfig->rowCount(),1);
+    // layWaveConfig->setRowStretch(layWaveConfig->rowCount(),1);
 
     /* layWaveConfig->setRowStretch(0,1);
     layWaveConfig->setRowStretch(1,1);
@@ -745,7 +751,7 @@ void MainWindow::setupDockHarmonics() {
 }
 
 void MainWindow::setupStyleSheet() {
-    int baseFontSize, descFontSize, tabUnselectedFontSize, tabSelectedFontSize, tabWidth, treeFontSize, treeCheckSize, treeSpacing;
+    int baseFontSize, descFontSize, tabUnselectedFontSize, tabSelectedFontSize, tabWidth, treeFontSize, treeCheckSize, treeMargin, treePadding, treeSpacing;
     qreal dpr = this->devicePixelRatio();
     QRect effRes = QRect(0, 0, mw_width * dpr, mw_height * dpr);
     int effTabWidth = effRes.width() * 0.2;
@@ -760,8 +766,11 @@ void MainWindow::setupStyleSheet() {
     tabUnselectedFontSize = int(round(effTabWidth / 28.0));     // 15 - 10
     tabSelectedFontSize = int(round(effTabWidth / 21.0));       // 19 - 14
     treeFontSize = int(round(effTabWidth / 25.0));              // 17 - 11
-    treeCheckSize = int(round(baseFontSize * 1.5));              // 20 - 18
+    treeCheckSize = int(round(baseFontSize * 1.5));             // 20 - 18
+    treeMargin = 0;                                             // 0
+    treePadding = 0;                                            // 0
     treeSpacing = 0;                                            // 0
+    
 
     QString atomixStyle = QString(
         "QWidget { font-size: %1px; }"\
@@ -771,10 +780,10 @@ void MainWindow::setupStyleSheet() {
         "QTabBar::tab::selected { font-size: %5px; }"
         "QLabel#switchOff { font-size: %1px; }"\
         "QLabel#switchOn { font-size: %1px; }"\
-        "QTreeWidget { font-size: %6px; margin: 0px; padding: 0px; spacing: 0px; }"\
-        "QTreeWidget::item { margin: 0px; padding: 0px; spacing: 0px; }"\
-        "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: 0px; padding: 0px; spacing: 0px; }"
-        "QTableWidget::item { font-size: %6px; margin: 0px; padding: 0px; spacing: 0px; }"
+        "QTreeWidget { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; }"\
+        "QTreeWidget::item { margin: %8px; padding: %9px; spacing: %10px; }"\
+        "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: %8px; padding: %9px; spacing: %10px; }"
+        "QTableWidget::item { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; }"
         ).arg(QString::number(baseFontSize))            // 1
         .arg(QString::number(descFontSize))             // 2
         .arg(QString::number(tabWidth))                 // 3
@@ -782,7 +791,9 @@ void MainWindow::setupStyleSheet() {
         .arg(QString::number(tabSelectedFontSize))      // 5
         .arg(QString::number(treeFontSize))             // 6
         .arg(QString::number(treeCheckSize))            // 7
-        .arg(QString::number(treeSpacing));             // 8
+        .arg(QString::number(treeMargin))               // 8
+        .arg(QString::number(treePadding))              // 9
+        .arg(QString::number(treeSpacing));             // 10
     this->setStyleSheet(atomixStyle);
 #ifdef DEBUG
     std::cout << "StyleSheet: " << atomixStyle.toStdString() << std::endl;
@@ -1183,6 +1194,55 @@ void MainWindow::handleButtMorbHarmonics() {
 void MainWindow::handleWeightChange(int row, int col) {
     // Getting older sucks...
     buttLockRecipes->setEnabled(true);
+}
+
+void MainWindow::handleButtConfig(int id, bool checked) {
+    enum CfgButt { PARA = 0, SUPER  = 1, CPU = 2, SPHERE = 3 };
+
+    bool test = buttGroupConfig->button(id)->isChecked();
+
+    if (checked) {
+        switch (id) {
+            case PARA:
+                // Parallel waves
+                break;
+            case SUPER:
+                // Superposition
+                buttGroupConfig->button(PARA)->setChecked(true);
+                // buttGroupConfig->button(PARA)->click();
+                buttGroupConfig->button(CPU)->setChecked(true);
+                break;
+            case CPU:
+                // CPU rendering
+                break;
+            case SPHERE:
+                // Spherical wave pattern
+                buttGroupConfig->button(PARA)->setChecked(true);
+                break;
+            default:
+                break;
+        }
+    } else {
+        switch (id) {
+            case PARA:
+                // Orthogonal waves
+                buttGroupConfig->button(SUPER)->setChecked(false);
+                buttGroupConfig->button(SPHERE)->setChecked(false);
+                break;
+            case SUPER:
+                // No superposition
+                break;
+            case CPU:
+                // GPU rendering
+                buttGroupConfig->button(SUPER)->setChecked(false);
+                break;
+            case SPHERE:
+                // Circular wave pattern
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 void MainWindow::handleButtColors(int id) {

@@ -83,6 +83,8 @@ private:
     int slsw_borderRadius = 12;
     int slsw_width = 160;
     int slsw_height = 26;
+    int fontPx = 12;
+    int buttMove = 0;
 
     // This order for definition is important (these widgets overlap)
     QLabel*           slsw_LabelOff;
@@ -103,6 +105,9 @@ private:
         QBrush textHigh;
         QBrush light;
     } pal;
+
+    QString _strOff = QString("QLabel#switchOff { color: %1; font-size: %2px; }");
+    QString _strOn = QString("QLabel#switchOn { color: %1; font-size: %2px; }");
 };
 
 class SlideSwitch::SwitchBackground : public QWidget {
@@ -112,6 +117,8 @@ class SlideSwitch::SwitchBackground : public QWidget {
 public:
     explicit SwitchBackground(QColor color, SlideSwitch *parent = nullptr);
     ~SwitchBackground() override;
+
+    void updateSize();
 
     //-- QWidget methods
     void paintEvent(QPaintEvent* event) override;
@@ -136,6 +143,8 @@ class SlideSwitch::SwitchCircle : public QWidget {
 public:
     explicit SwitchCircle(int radius, SlideSwitch* parent = nullptr);
     ~SwitchCircle() override;
+
+    void updateSize();
 
     //-- QWidget methods
     void paintEvent(QPaintEvent* event) override;

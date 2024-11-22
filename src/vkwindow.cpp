@@ -39,7 +39,6 @@ VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
     : cfgParser(configParser) {
     setSurfaceType(QVulkanWindow::VulkanSurface);
     this->setDeviceExtensions({ "VK_KHR_portability_subset" });
-    std::cout << "Window has been created!" << std::endl;
 }
 
 VKWindow::~VKWindow() {
@@ -68,8 +67,6 @@ void VKWindow::changeModes(bool force) {
 }
 
 QVulkanWindowRenderer* VKWindow::createRenderer() {
-    std::cout << "Renderer has been created!" << std::endl;
-
     vw_renderer = new VKRenderer(this);
     vw_renderer->setWindow(this);
     
@@ -878,8 +875,8 @@ VKRenderer::~VKRenderer() {
 }
 
 void VKRenderer::preInitResources() {
-    std::cout << "preInitResources" << std::endl;
-    std::cout << this->vr_vkw->parent()->objectName().toStdString() << std::endl;
+    /* std::cout << "preInitResources" << std::endl;
+    std::cout << this->vr_vkw->parent()->objectName().toStdString() << std::endl; */
 }
 
 void VKRenderer::initResources() {

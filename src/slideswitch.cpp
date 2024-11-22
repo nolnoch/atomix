@@ -23,6 +23,8 @@
  */
 
 #include <iostream>
+#include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QStackedWidget>
 #include "slideswitch.hpp"
 
 
@@ -34,9 +36,9 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     this->resize(slsw_width, slsw_height);
     // this->setMinimumSize(QSize(120, 20));
     // this->setBaseSize(QSize(slsw_width, slsw_height));
-    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     // this->sizePolicy().setControlType(QSizePolicy::LineEdit);
-    this->slsw_borderRadius = (slsw_height >> 1);
+    this->slsw_borderRadius = slsw_height >> 1;
     
     // Grab Palette from parent context (dark mode vs light mode colours)
     this->pal.base = this->palette().brush(QPalette::Base);
@@ -71,7 +73,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     slsw_offcolor = this->pal.base.color();
     slsw_oncolor = this->pal.high.color();
     slsw_SwitchBackground = new SwitchBackground(slsw_oncolor, this);
-    int circleRad = int(double(slsw_borderRadius) * 1.8);
+    int circleRad = slsw_height;
     slsw_Button = new SwitchCircle(circleRad, this);
     
     // Create animations
@@ -87,25 +89,35 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     slsw_LabelOn = new QLabel(this);
     slsw_LabelOff->setText(strFalse);
     slsw_LabelOn->setText(strTrue);
-    int fontPx = this->fontInfo().pixelSize();
-    QString strOff = QString("QLabel#switchOff { color: %1; font-size: %2 px; }").arg(pal.text.color().name()).arg(fontPx);
-    QString strOn = QString("QLabel#switchOn { color: %1; font-size: %2 px; }").arg(pal.textHigh.color().name()).arg(fontPx);
     slsw_LabelOff->setObjectName("switchOff");
     slsw_LabelOn->setObjectName("switchOn");
+    fontPx = slsw_height >> 1;
+    QString strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
+    QString strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
     slsw_LabelOff->setStyleSheet(strOff);
     slsw_LabelOn->setStyleSheet(strOn);
+
+    /* QHBoxLayout *layout = new QHBoxLayout(this);
+    QStackedWidget *stack = new QStackedWidget(this);
+    stack->addWidget(slsw_LabelOff);
+    stack->addWidget(slsw_LabelOn);
+    layout->addWidget(stack);
+    layout->setContentsMargins(2, 2, 2, 2);
+    layout->setSpacing(0); */
 
     // Position labels
     int labOffCenter = slsw_LabelOff->sizeHint().width() >> 1;
     int labOnCenter = slsw_LabelOn->sizeHint().width() >> 1;
     int switchCenter = slsw_width >> 1;
-    slsw_LabelOff->move(switchCenter - labOffCenter, 3);
-    slsw_LabelOn->move(switchCenter - labOnCenter, 3);
+    int labMove = int(double(slsw_height) * 0.25);
+    slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
+    slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
 
     // Last touches
     slsw_SwitchBackground->resize(slsw_height - 1, slsw_height - 1);
     slsw_SwitchBackground->move(2, 2);
-    slsw_Button->move(1, 1);
+    buttMove = int(double(slsw_height) * 0.06);
+    slsw_Button->move(buttMove, 0);
 
     slsw_SwitchBackground->hide();
     slsw_LabelOn->hide();
@@ -126,6 +138,14 @@ SlideSwitch::~SlideSwitch() {
 void SlideSwitch::redraw() {
     slsw_LabelOff->adjustSize();
     slsw_LabelOn->adjustSize();
+
+    // Position labels
+    int labOffCenter = slsw_LabelOff->width() >> 1;
+    int labOnCenter = slsw_LabelOn->width() >> 1;
+    int switchCenter = slsw_width >> 1;
+    int labMove = int(double(slsw_height) * 0.2);
+    slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
+    slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
 }
 
 void SlideSwitch::paintEvent(QPaintEvent*) {
@@ -140,8 +160,8 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
     int dimHeight = this->height();
 
     // Set Outer border [constant]
-    painter->setBrush(this->pal.alt);
-    painter->drawRoundedRect(0, 0, dimWidth, dimHeight, slsw_borderRadius, slsw_borderRadius);
+    // painter->setBrush(this->pal.alt);
+    // painter->drawRoundedRect(0, 0, dimWidth, dimHeight, slsw_borderRadius, slsw_borderRadius);
 
     // Set middle border [half-replaced]
     // painter->setBrush(linGrad_border);
@@ -229,16 +249,17 @@ void SlideSwitch::toggle() {
     QSize initial_size(hback, hback);
     QSize final_size(this->width() - hback, hback);
 
-    int xi = 1;
-    int y  = 1;
-    int xf = this->width() - (slsw_height - 2);
+    int xi = buttMove;
+    int y  = 0;
+    // int xf = this->width() - (slsw_height - 2);
+    int xf = this->width() - (slsw_height);
 
     if (slsw_value) {
         final_size = QSize(hback, hback);
         initial_size = QSize(this->width() - hback, hback);
 
         xi = xf;
-        xf = 1;
+        xf = buttMove;
     }
 
     prAnim_buttMove->setStartValue(QPoint(xi, y));
@@ -276,12 +297,22 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     this->slsw_width  = newSize.width();
     this->slsw_height = newSize.height();
     this->slsw_borderRadius = (this->slsw_height >> 1);
+    buttMove = int(double(slsw_height) * 0.06);
 
-    if (newSize.width() == 159) {
+    slsw_SwitchBackground->updateSize();
+    slsw_Button->updateSize();
+
+    fontPx = slsw_height >> 1;
+    QString strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
+    QString strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
+    slsw_LabelOff->setStyleSheet(strOff);
+    slsw_LabelOn->setStyleSheet(strOn);
+
+    /* if (newSize.width() == 159) {
         std::cout << "Resize to 159: " << this->width() << "\n";
     } else {
         std::cout << "Resize to ?: " << this->width() << "\n";
-    }
+    } */
 
     /* delete slsw_Button;
     
@@ -316,6 +347,7 @@ void SlideSwitch::_update() {
 SlideSwitch::SwitchBackground::SwitchBackground(QColor color, SlideSwitch *parent)
   : QWidget(parent), parentPtr(parent), slsb_color(color) {
     setFixedHeight(parentPtr->slsw_height - 4);
+    slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
 
     slsb_linGrad_enabled = QLinearGradient(80, 0, 80, 20);
     slsb_linGrad_enabled.setColorAt(0, slsb_color.darker(120));
@@ -328,8 +360,6 @@ SlideSwitch::SwitchBackground::SwitchBackground(QColor color, SlideSwitch *paren
     slsb_linGrad_disabled.setColorAt(0, QColor(190, 190, 190));
     slsb_linGrad_disabled.setColorAt(0.25, QColor(230, 230, 230));
     slsb_linGrad_disabled.setColorAt(0.95, QColor(190, 190, 190));
-
-    slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
 
     slsb_enabled = true;
 }
@@ -364,13 +394,24 @@ void SlideSwitch::SwitchBackground::setEnabled(bool flag) {
     slsb_enabled = flag;
 }
 
+void SlideSwitch::SwitchBackground::updateSize() {
+    setFixedHeight(parentPtr->slsw_height - 4);
+    slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
+}
+
 SlideSwitch::SwitchCircle::SwitchCircle(int radius, SlideSwitch *parent)
   : QWidget(parent), parentPtr(parent), slsc_buttRadius(radius), slsc_borderRadius(12) {
     setFixedSize(slsc_buttRadius, slsc_buttRadius);
 
-    slsc_radGrad_button = QRadialGradient(static_cast<int>(this->width() / 2), static_cast<int>(this->height() / 2), slsc_buttRadius / 2);
-    slsc_radGrad_button.setColorAt(0, parentPtr->pal.light.color().lighter(275));
-    slsc_radGrad_button.setColorAt(0.9, parentPtr->pal.light.color());
+    int buttRad = slsc_buttRadius >> 1;
+    int cx = static_cast<int>(this->width() / 2);
+    int cy = static_cast<int>(this->height() / 2);
+
+    slsc_radGrad_button = QRadialGradient(cx, cy, buttRad);
+    slsc_radGrad_button.setColorAt(0, parentPtr->pal.light.color().lighter(180));
+    slsc_radGrad_button.setColorAt(0.20, parentPtr->pal.light.color().lighter(200));
+    slsc_radGrad_button.setColorAt(0.50, parentPtr->pal.light.color().lighter(275));
+    slsc_radGrad_button.setColorAt(0.85, parentPtr->pal.base.color().lighter(200));
     // radGrad_button.setColorAt(1, parentPtr->pal.base.color().darker(150));
 
     /* _lg = QLinearGradient(3, 18, 20, 4);
@@ -404,19 +445,25 @@ void SlideSwitch::SwitchCircle::paintEvent(QPaintEvent*) {
     painter->setBrush(parentPtr->pal.high);
     painter->drawEllipse(1, 1, slsc_buttRadius - 2, slsc_buttRadius - 2);
 
-    painter->setBrush(parentPtr->pal.light);
-    painter->drawEllipse(2, 2, slsc_buttRadius - 4, slsc_buttRadius - 4);
+    painter->setBrush(parentPtr->pal.base);
+    painter->drawEllipse(3, 3, slsc_buttRadius - 6, slsc_buttRadius - 6);
 
     if (slsc_enabled) {
         painter->setBrush(slsc_radGrad_button);
-        painter->drawEllipse(3, 3, slsc_buttRadius - 6, slsc_buttRadius - 6);
+        painter->drawEllipse(4, 4, slsc_buttRadius - 8, slsc_buttRadius - 8);
     } else {
         painter->setBrush(slsc_linGrad_disabled);
-        painter->drawEllipse(3, 3, slsc_buttRadius - 6, slsc_buttRadius - 6);
+        painter->drawEllipse(4, 4, slsc_buttRadius - 8, slsc_buttRadius - 8);
     }
 
     painter->end();
 }
 void SlideSwitch::SwitchCircle::setEnabled(bool flag) {
     slsc_enabled = flag;
+}
+
+void SlideSwitch::SwitchCircle::updateSize() {
+    int circleRad = parentPtr->slsw_height;
+    slsc_buttRadius = circleRad;
+    setFixedSize(circleRad, circleRad);
 }

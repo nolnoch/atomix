@@ -395,6 +395,11 @@ void MainWindow::setupDockWaves() {
     slswCPU = new SlideSwitch("CPU", "GPU", entryHintWidth, entryHintHeight, this);
     slswSphere = new SlideSwitch("Sphere", "Circle", entryHintWidth, entryHintHeight, this);
 
+    slswPara->setChecked(false);
+    slswSuper->setChecked(false);
+    slswCPU->setChecked(false);
+    slswSphere->setChecked(false);
+
     buttGroupConfig = new QButtonGroup();
     buttGroupConfig->setExclusive(false);
     buttGroupConfig->addButton(slswPara, 0);
@@ -1199,8 +1204,6 @@ void MainWindow::handleWeightChange(int row, int col) {
 void MainWindow::handleButtConfig(int id, bool checked) {
     enum CfgButt { PARA = 0, SUPER  = 1, CPU = 2, SPHERE = 3 };
 
-    bool test = buttGroupConfig->button(id)->isChecked();
-
     if (checked) {
         switch (id) {
             case PARA:
@@ -1209,7 +1212,6 @@ void MainWindow::handleButtConfig(int id, bool checked) {
             case SUPER:
                 // Superposition
                 buttGroupConfig->button(PARA)->setChecked(true);
-                // buttGroupConfig->button(PARA)->click();
                 buttGroupConfig->button(CPU)->setChecked(true);
                 break;
             case CPU:

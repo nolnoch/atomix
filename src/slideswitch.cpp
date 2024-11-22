@@ -218,17 +218,7 @@ void SlideSwitch::setValue(bool flag) {
         return;
     } else {
         _toggle();
-        // _update();
-        // setEnabled(slsw_enabled);
     }
-
-    /* if (slsw_value) {
-        slsw_LabelOn->show();
-        slsw_LabelOff->hide();
-    } else {
-        slsw_LabelOff->show();
-        slsw_LabelOn->hide();
-    } */
 }
 
 bool SlideSwitch::value() const {
@@ -276,7 +266,6 @@ void SlideSwitch::_toggle() {
 
     // Assigning new current value
     slsw_value = !slsw_value;
-    checked = slsw_value;
     if (slsw_value) {
         slsw_LabelOff->hide();
         slsw_LabelOn->show();
@@ -352,7 +341,7 @@ void SlideSwitch::nextCheckState() {
 }
 
 void SlideSwitch::checkStateSet() {
-    this->setValue(true);
+    this->setValue(isChecked());
 }
 
 void SlideSwitch::_update() {

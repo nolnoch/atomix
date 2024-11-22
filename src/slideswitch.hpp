@@ -90,10 +90,10 @@ private:
     int fontPx = 12;
     int buttMove = 0;
 
-    bool enabled = false;
+    /* bool enabled = false;
     bool checkable = false;
     bool checked = false;
-    bool down = false;
+    bool down = false; */
     QString text = "";
 
     // This order for definition is important (these widgets overlap)

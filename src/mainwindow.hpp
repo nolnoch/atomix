@@ -219,6 +219,9 @@ private:
     int mw_titleHeight = 0;
 
     AtomixInfo dInfo;
+
+    QLabel *labelDebug = nullptr;
+    QGridLayout *layoutDebug = nullptr;
 };
 
 #endif

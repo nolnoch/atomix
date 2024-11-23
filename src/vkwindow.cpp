@@ -533,6 +533,10 @@ void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
     }
 }
 
+void VKWindow::keyPressEvent(QKeyEvent *e) {
+    QCoreApplication::sendEvent(this->parent(), e);
+}
+
 void VKWindow::handleHome() {
     initVecsAndMatrices();
     requestUpdate();
@@ -547,10 +551,6 @@ void VKWindow::handlePause() {
         vw_timeStart += vw_timeEnd - vw_timePaused;
     }
     requestUpdate();
-}
-
-void VKWindow::keyPressEvent(QKeyEvent *e) {
-    QCoreApplication::sendEvent(this->parent(), e);
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -575,6 +575,8 @@ void VKWindow::updateExtent(VkExtent2D &renderExtent) {
 }
 
 void VKWindow::updateBuffersAndShaders() {
+    bool threadsFinished = fwModel->isFinished();
+
     // Re-calculate world-state matrices (per-frame)
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     vw_world.m4_world = m4_translation * m4_rotation;
@@ -588,12 +590,12 @@ void VKWindow::updateBuffersAndShaders() {
     pConstWave.time = (vw_timeEnd - vw_timeStart) * 0.001f;
 
     // TODO : This breaks on changeMode(). Do we need CPU/Superposition at all?
-    if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU()) {
+    if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU() && threadsFinished) {
         this->waveManager->update(pConstWave.time);
         this->flGraphState.set(egs::UPDATE_REQUIRED);
     }
     
-    if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
+    if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED) && threadsFinished) {
         // Capture updates from currentManager
         this->flGraphState.set(currentManager->clearUpdates());
 
@@ -700,25 +702,6 @@ void VKWindow::updateBuffersAndShaders() {
 
     atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
 }
-
-/* void VKWindow::updateWorldState() {
-    // Re-calculate world-state matrices
-    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
-    vw_world.m4_world = m4_translation * m4_rotation;
-    vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    this->q_TotalRot.normalize();
-
-    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
-}
-
-void VKWindow::updateTime() {
-    if (!vw_pause) {
-        vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-    }
-    float time = (vw_timeEnd - vw_timeStart) / 1000.0f;
-
-    pConst.time = time;
-} */
 
 void VKWindow::setBGColour(float colour) {
     vw_bg = colour;

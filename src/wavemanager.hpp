@@ -77,10 +77,11 @@ class WaveManager : public Manager {
 
         glm::vec3 waveMaths = glm::vec3(0, 0, 0);
         glm::uvec3 waveColours = glm::uvec3(0xFF00FFFF, 0x0000FFFF, 0x00FFFFFF);
+        glm::dvec3 waveMathsCPU = glm::dvec3(0, 0, 0);
         
         ushort renderedWaves = 255;
         
-        double waveResolution;
+        int waveResolution;
         double phase_base = PI_TWO;
         double time = 0.0;
         bool init = false;

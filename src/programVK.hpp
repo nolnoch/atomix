@@ -323,7 +323,7 @@ public:
 
 
 private:
-    void _updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data, bool isVBO, bool isIBO);
+    void _updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data);
 
     const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 

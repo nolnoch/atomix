@@ -48,15 +48,16 @@ class WaveManager : public Manager {
         uint selectWaves(int id, bool checked);
         void setTime(double time) { this->time = time; }
 
+        void setPeak(uint colourBits) { this->waveColours.r = colourBits; }
+        void setBase(uint colourBits) { this->waveColours.g = colourBits; }
+        void setTrough(uint colourBits) { this->waveColours.b = colourBits; }
+
         uint getMode() { return this->cfg.parallel; }
         float getPhase() { return this->phase_base; }
         bool getSuperposition() { return this->cfg.superposition; }
         bool getSphere() { return this->cfg.sphere; }
         void getMaths(glm::vec3 &maths) { maths = this->waveMaths; }
         void getColours(glm::uvec3 &colours) { colours = this->waveColours; }
-
-        glm::vec3 waveMaths = glm::vec3(0, 0, 0);
-        glm::uvec3 waveColours = glm::uvec3(0xFF00FFFF, 0x0000FFFF, 0x00FFFFFF);
 
     private:
         void resetManager() override;
@@ -73,6 +74,9 @@ class WaveManager : public Manager {
         std::vector<vVec3 *> waveVertices;
         std::vector<uvec *> waveIndices;
         std::vector<double> phase_const;
+
+        glm::vec3 waveMaths = glm::vec3(0, 0, 0);
+        glm::uvec3 waveColours = glm::uvec3(0xFF00FFFF, 0x0000FFFF, 0x00FFFFFF);
         
         ushort renderedWaves = 255;
         

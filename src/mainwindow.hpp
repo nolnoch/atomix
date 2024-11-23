@@ -117,6 +117,7 @@ private:
     void handleButtResetRecipes();
     void handleButtMorbWaves();
     void handleButtMorbHarmonics();
+    void handleButtConfig(int id, bool checked);
     void handleButtColors(int id);
     void handleWeightChange(int row, int col);
     void handleSlideCullingX(int val);
@@ -155,6 +156,7 @@ private:
     QComboBox *entryFrag = nullptr; */
     QComboBox *comboConfigFile = nullptr;
 
+    QButtonGroup *buttGroupConfig = nullptr;
     QButtonGroup *buttGroupOrbits = nullptr;
     QButtonGroup *buttGroupColors = nullptr;
 
@@ -219,6 +221,9 @@ private:
     int mw_titleHeight = 0;
 
     AtomixInfo dInfo;
+
+    QLabel *labelDebug = nullptr;
+    QGridLayout *layoutDebug = nullptr;
 };
 
 #endif

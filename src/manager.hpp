@@ -51,25 +51,24 @@ class Manager {
         virtual void initManager() {};
 
         virtual double create() { return 0.0; };
-        virtual void update(double time) {};
+        virtual void update(double time) {m_time = time;};
 
         uint clearUpdates();
 
-        const uint getVertexCount();
-        const uint getVertexSize();
-        const uint getDataCount();
-        const uint getDataSize();
-        const uint getIndexCount();
-        const uint getIndexSize();
+        uint getVertexCount();
+        uint getVertexSize();
+        uint getDataCount();
+        uint getDataSize();
+        uint getIndexCount();
+        uint getIndexSize();
         
         const float* getVertexData();
         const float* getDataData();
         const uint* getIndexData();
 
-        std::string& getShaderVert();
-        std::string& getShaderFrag();
-
-        bool isCPU();
+        std::string& getShaderVert() { return this->cfg.vert; };
+        std::string& getShaderFrag() { return this->cfg.frag; };
+        bool getCPU() { return this->cfg.cpu; };
 
         void printIndices();
         void printVertices();
@@ -107,6 +106,7 @@ class Manager {
         uint64_t indexSize = 0;
 
         double deg_fac = 0;
+        double m_time = 0;
 
         enum em {
             INIT =              1 << 0,     // Manager has been initialized

@@ -27,7 +27,6 @@
 
 WaveManager::WaveManager(AtomixConfig *config) {
     newConfig(config);
-    mStatus.set(em::INIT);
 }
 
 WaveManager::~WaveManager() {
@@ -51,6 +50,13 @@ void WaveManager::initManager() {
 
 void WaveManager::receiveConfig(AtomixConfig *config) {
     BitFlag flWaveCfg;
+
+    if (mStatus.hasNone(em::INIT)) {
+        newConfig(config);
+        create();
+        mStatus.set(eInitFlags | em::INIT);
+        return;
+    }
     
     // Check for relevant config changes OR for recipes to require larger radius
     if (cfg.waves != config->waves) {                    // Requires new {Vertices[cpu/gpu], VBO, EBO}
@@ -129,20 +135,25 @@ double WaveManager::create() {
         waveIndices.push_back(new uvec);
         waveIndices[i]->reserve(waveResolution * waveResolution);
         phase_const.push_back(phase_base * i);
+        double startTime = (this->time) ?: 0.0;
     
         if (cfg.sphere) {
             if (cfg.cpu)
-                updateWaveCPUSphere(i, 0);
+                updateWaveCPUSphere(i, startTime);
             else
                 sphereWaveGPU(i);
         } else {
             if (cfg.cpu)
-                updateWaveCPUCircle(i, 0);
+                updateWaveCPUCircle(i, startTime);
             else
                 circleWaveGPU(i);
         }
     }
     mStatus.set(em::VERT_READY | em::INDEX_READY);
+
+    if (!init) {
+        init = true;
+    }
 
     genVertexArray();
     genIndexBuffer();
@@ -217,7 +228,6 @@ void WaveManager::sphereWaveGPU(int idx) {
     uint pixelCount = idx * this->waveResolution * this->waveResolution;
 
     for (int i = 0; i < this->waveResolution; i++) {
-        int m = i * this->waveResolution;
         double theta = i * deg_fac;
         for (int j = 0; j < this->waveResolution; j++) {
             double phi = j * deg_fac;
@@ -239,8 +249,8 @@ void WaveManager::updateWaveCPUCircle(int idx, double t) {
     double radius = (double) (idx + 1);
     uint pixelCount = idx * this->waveResolution;
     uint peak = this->waveColours.r;
-    uint base = this->waveColours.b;
-    uint trough = this->waveColours.g;
+    uint base = this->waveColours.g;
+    uint trough = this->waveColours.b;
 
     /* y = A * sin((this->waveMaths.x * r * theta) - (this->waveMaths.y * t) + (p = 0)) */
     /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
@@ -285,7 +295,7 @@ void WaveManager::updateWaveCPUCircle(int idx, double t) {
         waveVertices[idx]->push_back(vertex);
         waveVertices[idx]->push_back(colour);
 
-        if (!t) {
+        if (!init) {
             waveIndices[idx]->push_back(pixelCount++);
         }
     }
@@ -298,11 +308,10 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
     double radius = (double) (idx + 1);
     uint pixelCount = idx * this->waveResolution * this->waveResolution;
     uint peak = this->waveColours.r;
-    uint base = this->waveColours.b;
-    uint trough = this->waveColours.g;
+    uint base = this->waveColours.g;
+    uint trough = this->waveColours.b;
 
     for (int i = 0; i < this->waveResolution; i++) {
-        int m = i * this->waveResolution;
         for (int j = 0; j < this->waveResolution; j++) {
             double theta = i * deg_fac;
             double phi = j * deg_fac;
@@ -338,7 +347,7 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
             waveVertices[idx]->push_back(vertex);
             waveVertices[idx]->push_back(colour);
 
-            if (!t) {
+            if (!init) {
                 waveIndices[idx]->push_back(pixelCount++);
             }
         }
@@ -398,6 +407,7 @@ void WaveManager::resetManager() {
     this->renderedWaves = 255;
     this->deg_fac = 0.0;
     this->phase_base = PI_TWO;
+    this->init = false;
 
     this->mStatus.setTo(em::INIT);
 }

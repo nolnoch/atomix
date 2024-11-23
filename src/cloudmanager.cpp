@@ -379,7 +379,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     int vecs_to_fill = numOrbitals - 1;
     int num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
     bool no_vecs = !num_top_vectors;
-    for (uint top = 0; top < num_top_vectors; top++) {
+    for (int top = 0; top < num_top_vectors; top++) {
         vec_top_threads.push_back(new std::vector<double>);
         (*vec_top_threads[top]).assign(this->pixelCount, 0.0);
     }
@@ -423,7 +423,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             allRecipeFutures.push_back(recipeFutures);
 
             // Divide up the Layers loop into chunks and spawn threads to handle those chunks, from the thread pool
-            uint top_start = 1, top_end = 1;
+            int top_start = 1, top_end = 1;
             while (top_end < opt_max_radius) {
                 if (opt_max_radius - top_end >= thread_loop_limit) {
                     top_end = top_start + thread_loop_limit;
@@ -633,7 +633,7 @@ double CloudManager::cullSlider() {
     if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
         std::copy(idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), std::back_inserter(allIndices));
     } else {
-        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, phi_half = 0, culled_phi_b = 0, culled_phi_f = 0;
+        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_b = 0, culled_phi_f = 0;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
         culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
         phi_size = this->cloudResolution >> 1;
@@ -674,7 +674,7 @@ double CloudManager::cullSliderThreaded() {
         std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
     } else {
         //  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
-        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, phi_half = 0, culled_phi_b = 0, culled_phi_f = 0;
+        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
         culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
         phi_size = this->cloudResolution >> 1;
@@ -969,15 +969,15 @@ void CloudManager::resetManager() {
  *  Getters -- Size
  */
 
-const uint CloudManager::getColourSize() {
+uint CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-const uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
+uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
     return getMaxRadius(tolerance, n_max) * divisor;
 }
 
-const uint CloudManager::getMaxRadius(double tolerance, int n_max) {
+uint CloudManager::getMaxRadius(double tolerance, int n_max) {
     int divSciExp = std::abs(floor(log10(tolerance)));
     return cm_maxRadius[divSciExp - 1][n_max - 1];
 }
@@ -1093,8 +1093,6 @@ void CloudManager::testThreadingInit() {
     uint test_min = 0;
     uint test_max = 8;
 
-    uint sleep_time = 1;
-
     uint vruns = ((vecs_max - vecs_min) / vstep) + 1;
     uint pruns = ((pool_max - pool_min) / pstep) + 1;
     uint lruns = ((loop_max - loop_min) / lstep) + 1;
@@ -1117,13 +1115,13 @@ void CloudManager::testThreadingInit() {
     test_times.reserve(vruns * pruns * lruns);
     
     uint progress = 0;
-    for (int v = vecs_min; v <= vecs_max; v += vstep) {
+    for (uint v = vecs_min; v <= vecs_max; v += vstep) {
         std::cout << "Progress: " << ++progress << "/" << vruns << "..." << std::endl;
         this->cm_vecs = v;
-        for (int p = pool_min; p <= pool_max; p += pstep) {
+        for (uint p = pool_min; p <= pool_max; p += pstep) {
             cloudPool.reset(p);
             // sleep(sleep_time);
-            for (int l = loop_min; l <= loop_max; l += lstep) {
+            for (uint l = loop_min; l <= loop_max; l += lstep) {
                 this->cm_loop = l;
                 std::vector<double> times(test_max, 0.0);
                 for (int i = test_min; i < test_max; i++) {
@@ -1138,10 +1136,10 @@ void CloudManager::testThreadingInit() {
         }
     }
 
-    for (int v = 0; v < vruns; v++) {
-        for (int p = 0; p < pruns; p++) {
+    for (uint v = 0; v < vruns; v++) {
+        for (uint p = 0; p < pruns; p++) {
             std::cout << "" << ((v * vstep) + vecs_min) << "," << ((p * pstep) + pool_min) << ",";
-            for (int l = 0; l < lruns; l++) {
+            for (uint l = 0; l < lruns; l++) {
                 uint idx = (v * pruns * lruns) + (p * lruns) + l;
                 std::cout << test_times[idx] << ",";
             }

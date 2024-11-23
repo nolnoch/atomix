@@ -167,7 +167,6 @@ bool ProgramVK::addShader(const std::string &fName, VKuint type) {
  */
 int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
     int errors = fList->size();
-    VKuint shID, shIdx = 0;
     
     for (auto &fName : *fList) {
         bool validFile = addShader(fName, type);
@@ -307,7 +306,7 @@ void ProgramVK::addUniformsAndPushConstants() {
                     
                     // Create a descriptor set layout
                     s->addDescIdx(j);
-                    createDescriptorSetLayout(uni.set, uni.binding);
+                    createDescriptorSetLayout(uni.binding);
                     
                     // Create a uniform buffer with persistent mapping
                     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -341,6 +340,7 @@ void ProgramVK::addUniformsAndPushConstants() {
             }
         }
     }
+    std::cout << std::endl;
 
     // Descriptor Sets
     for (int i = 0; i < setCount; i++) {
@@ -504,7 +504,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
             this->createPipeline(render, model, vs, fs, off.bufferComboIndex, off.topologyIndex);
         }
     }
-    for (auto &prog : info.programs) {
+    for (int i = 0; i < info.programs.size(); i++) {
         model->programs = info.programs;
     }
     model->activePrograms.clear();
@@ -529,14 +529,12 @@ bool ProgramVK::activateModel(const std::string &name) {
 
     if (this->p_models[id]->valid.validate()) {
         if ((success = p_activeModels.insert(id).second)) {
-            std::cout << "Model validated and added to active models: " << name << std::endl;
-            p_models[id]->activePrograms.insert(0);
+            return success;
         } else {
             std::cout << "Model already added to active models: " << name << std::endl;
         }
     } else {
         std::cout << "Model not validated and not added to active models: " << name << std::endl;
-        success = false;
     }
     
     return success;
@@ -1211,7 +1209,7 @@ void ProgramVK::createPersistentUniformBuffers() {
                     assert(this->p_setLayouts.size() == j);
                     
                     this->p_setLayouts.push_back({});
-                    createDescriptorSetLayout(j, uni.binding);
+                    createDescriptorSetLayout(uni.binding);
                     
                     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                         createBuffer(uni.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[i][j], this->p_uniformBuffersMemory[i][j]);
@@ -1290,7 +1288,7 @@ void ProgramVK::createDescriptorPool(VKuint bindings) {
     }
 }
 
-void ProgramVK::createDescriptorSetLayout(VKuint set, VKuint binding) {
+void ProgramVK::createDescriptorSetLayout(VKuint binding) {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = binding;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1317,10 +1315,8 @@ void ProgramVK::updateBuffer(std::string bufferName, VKuint64 bufferCount, VKuin
     VKuint64 count = bufferCount;
     VKuint64 size = bufferSize;
     const void *data = bufferData;
-    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
-    bool isIBO = (type == BufferType::INDEX);
 
-    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data, isVBO, isIBO);
+    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data);
 }
 
 void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
@@ -1331,13 +1327,14 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
     VKuint64 count = info.count;
     VKuint64 size = info.size;
     const void *data = info.data;
-    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
-    bool isIBO = (type == BufferType::INDEX);
 
-    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data, isVBO, isIBO);
+    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data);
 }
 
-void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data, bool isVBO, bool isIBO) {
+void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data) {
+    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
+    bool isIBO = (type == BufferType::INDEX);
+    
     if (!bufferInfo->data) {
         // Model was pre-declared and needs to be updated for initialization
         bufferInfo->count = count;
@@ -1347,8 +1344,10 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
         this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data);
 
         if (isIBO) {
-            for (auto &renderIdx : model->programs[0].offsets) {
-                model->renders[renderIdx]->indexCount += count;
+            for (auto &prog : model->programs) {
+                for (auto &renderIdx : prog.offsets) {
+                    model->renders[renderIdx]->indexCount = count;
+                }
             }
             model->valid.ibo = true;
         } else if (isVBO) {

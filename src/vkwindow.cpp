@@ -36,10 +36,9 @@ static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 
 
 VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
-    : cfgParser(configParser) {
+    : cfgParser(configParser), vw_parent(parent) {
     setSurfaceType(QVulkanWindow::VulkanSurface);
     this->setDeviceExtensions({ "VK_KHR_portability_subset" });
-    std::cout << "Window has been created!" << std::endl;
 }
 
 VKWindow::~VKWindow() {
@@ -68,8 +67,6 @@ void VKWindow::changeModes(bool force) {
 }
 
 QVulkanWindowRenderer* VKWindow::createRenderer() {
-    std::cout << "Renderer has been created!" << std::endl;
-
     vw_renderer = new VKRenderer(this);
     vw_renderer->setWindow(this);
     
@@ -84,8 +81,6 @@ void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     atomixProg->init();
 
     vw_renderer->setProgram(atomixProg);
-
-    std::cout << "Program has been initialized!" << std::endl;
 }
 
 void VKWindow::initWindow() {
@@ -96,6 +91,7 @@ void VKWindow::initWindow() {
     initModels();
 
     this->atomixProg->activateModel("crystal");
+    this->atomixProg->addModelProgram("crystal");
 
     // Init -- Time
     vw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -138,14 +134,12 @@ void VKWindow::newWaveConfig(AtomixConfig *config) {
     }
 
     if (!waveManager) {
-        // Initialize waveManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
         waveManager = new WaveManager(config);
         currentManager = waveManager;
-        futureModel = QtConcurrent::run(&WaveManager::initManager, waveManager);
-    } else {
-        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-        futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     }
+
+    waveManager->setTime(this->pConstWave.time);
+    futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     fwModel->setFuture(futureModel);
     emit toggleLoading(true);
 }
@@ -562,13 +556,13 @@ void VKWindow::keyPressEvent(QKeyEvent *e) {
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
     switch (id) {
     case 1:
-        waveManager->waveColours.r = colorChoice;
+        waveManager->setPeak(colorChoice);
         break;
     case 2:
-        waveManager->waveColours.g = colorChoice;
+        waveManager->setBase(colorChoice);
         break;
     case 3:
-        waveManager->waveColours.b = colorChoice;
+        waveManager->setTrough(colorChoice);
         break;
     default:
         break;
@@ -591,7 +585,7 @@ void VKWindow::updateBuffersAndShaders() {
     if (!vw_pause) {
         vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
-    pConstWave.time = (vw_timeEnd - vw_timeStart) / 1000.0f;
+    pConstWave.time = (vw_timeEnd - vw_timeStart) * 0.001f;
 
     // TODO : This breaks on changeMode(). Do we need CPU/Superposition at all?
     if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU()) {
@@ -613,7 +607,7 @@ void VKWindow::updateBuffersAndShaders() {
         
         // Changing shaders is equivalent to changing model program
         if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
-            std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
+            // std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
             std::string newProgram;
 
             if (waveManager->getCPU()) {
@@ -632,7 +626,7 @@ void VKWindow::updateBuffersAndShaders() {
 
         // Update VBO 1: Vertices
         if (flGraphState.hasAny(egs::UPD_VBO)) {
-            std::string bufferCPU = currentManager->isCPU() ? "VerticesCPU" : "Vertices";
+            std::string bufferCPU = currentManager->getCPU() ? "VerticesCPU" : "Vertices";
             updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::VERTEX;
             updBuf.count = currentManager->getVertexCount();
@@ -686,6 +680,17 @@ void VKWindow::updateBuffersAndShaders() {
         if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER) && flGraphState.hasAny(egs::WAVE_MODE | egs::CLOUD_MODE)) {
             if (!vw_previousModel.empty()) this->atomixProg->deactivateModel(vw_previousModel);
             this->atomixProg->activateModel(vw_currentModel);
+            
+            std::string program = "default";
+            if (currentManager == waveManager) {
+                if (waveManager->getCPU()) {
+                    program = "cpu";
+                } else if (waveManager->getSphere()) {
+                    program = "sphere";
+                }
+            }
+            this->atomixProg->addModelProgram(vw_currentModel, program);
+
             flGraphState.set(flGraphState.hasAny(egs::WAVE_MODE) ? egs::WAVE_RENDER : egs::CLOUD_RENDER);
         }
 
@@ -878,8 +883,8 @@ VKRenderer::~VKRenderer() {
 }
 
 void VKRenderer::preInitResources() {
-    std::cout << "preInitResources" << std::endl;
-    std::cout << this->vr_vkw->parent()->objectName().toStdString() << std::endl;
+    /* std::cout << "preInitResources" << std::endl;
+    std::cout << this->vr_vkw->parent()->objectName().toStdString() << std::endl; */
 }
 
 void VKRenderer::initResources() {
@@ -895,9 +900,7 @@ void VKRenderer::initResources() {
 
     // Retrieve physical device constraints
     VkPhysicalDeviceProperties vr_props;
-    VkPhysicalDeviceProperties2 vr_props2;
     vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
-    // vr_vf->vkGetPhysicalDeviceProperties2(vr_phydev, &vr_props2);
 
     QVersionNumber version = QVersionNumber(VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion), VK_VERSION_PATCH(vr_props.apiVersion));
     if (version.minorVersion() != VK_MINOR_VERSION) {
@@ -965,7 +968,7 @@ void VKRenderer::initResources() {
 
     std::cout << dev_info.toStdString() << std::endl;
 #endif
-    const int concFrameCount = vr_qvw->concurrentFrameCount();
+    // const int concFrameCount = vr_qvw->concurrentFrameCount();
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
     this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
     const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;

@@ -221,6 +221,8 @@ private:
     void printFlags(std::string);
     void printConfig(AtomixConfig *cfg);
 
+    ConfigParser *cfgParser = nullptr;
+    QWidget *vw_parent = nullptr;
     VKRenderer *vw_renderer = nullptr;
     std::string vw_currentModel = "";
     std::string vw_previousModel = "";
@@ -228,7 +230,6 @@ private:
     AtomixInfo vw_info;
     QOpenGLContext *vw_context = nullptr;
     ProgramVK *atomixProg = nullptr;
-    ConfigParser *cfgParser = nullptr;
     Manager *currentManager = nullptr;
     WaveManager *waveManager = nullptr;
     CloudManager *cloudManager = nullptr;

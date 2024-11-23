@@ -249,8 +249,8 @@ void WaveManager::updateWaveCPUCircle(int idx, double t) {
     double radius = (double) (idx + 1);
     uint pixelCount = idx * this->waveResolution;
     uint peak = this->waveColours.r;
-    uint base = this->waveColours.b;
-    uint trough = this->waveColours.g;
+    uint base = this->waveColours.g;
+    uint trough = this->waveColours.b;
 
     /* y = A * sin((this->waveMaths.x * r * theta) - (this->waveMaths.y * t) + (p = 0)) */
     /* y = A * sin(  (  k   *   x )    -    (   w   *  t )   +   p    */
@@ -308,8 +308,8 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
     double radius = (double) (idx + 1);
     uint pixelCount = idx * this->waveResolution * this->waveResolution;
     uint peak = this->waveColours.r;
-    uint base = this->waveColours.b;
-    uint trough = this->waveColours.g;
+    uint base = this->waveColours.g;
+    uint trough = this->waveColours.b;
 
     for (int i = 0; i < this->waveResolution; i++) {
         for (int j = 0; j < this->waveResolution; j++) {

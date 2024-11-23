@@ -529,13 +529,12 @@ bool ProgramVK::activateModel(const std::string &name) {
 
     if (this->p_models[id]->valid.validate()) {
         if ((success = p_activeModels.insert(id).second)) {
-            p_models[id]->activePrograms.insert(0);
+            return success;
         } else {
             std::cout << "Model already added to active models: " << name << std::endl;
         }
     } else {
         std::cout << "Model not validated and not added to active models: " << name << std::endl;
-        success = false;
     }
     
     return success;
@@ -1316,10 +1315,8 @@ void ProgramVK::updateBuffer(std::string bufferName, VKuint64 bufferCount, VKuin
     VKuint64 count = bufferCount;
     VKuint64 size = bufferSize;
     const void *data = bufferData;
-    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
-    bool isIBO = (type == BufferType::INDEX);
 
-    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data, isVBO, isIBO);
+    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data);
 }
 
 void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
@@ -1330,13 +1327,14 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
     VKuint64 count = info.count;
     VKuint64 size = info.size;
     const void *data = info.data;
-    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
-    bool isIBO = (type == BufferType::INDEX);
 
-    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data, isVBO, isIBO);
+    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data);
 }
 
-void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data, bool isVBO, bool isIBO) {
+void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data) {
+    bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
+    bool isIBO = (type == BufferType::INDEX);
+    
     if (!bufferInfo->data) {
         // Model was pre-declared and needs to be updated for initialization
         bufferInfo->count = count;
@@ -1346,8 +1344,10 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
         this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data);
 
         if (isIBO) {
-            for (auto &renderIdx : model->programs[0].offsets) {
-                model->renders[renderIdx]->indexCount += count;
+            for (auto &prog : model->programs) {
+                for (auto &renderIdx : prog.offsets) {
+                    model->renders[renderIdx]->indexCount = count;
+                }
             }
             model->valid.ibo = true;
         } else if (isVBO) {

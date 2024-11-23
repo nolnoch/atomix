@@ -91,6 +91,7 @@ void VKWindow::initWindow() {
     initModels();
 
     this->atomixProg->activateModel("crystal");
+    this->atomixProg->addModelProgram("crystal");
 
     // Init -- Time
     vw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -136,7 +137,7 @@ void VKWindow::newWaveConfig(AtomixConfig *config) {
         waveManager = new WaveManager(config);
         currentManager = waveManager;
     }
-    
+
     waveManager->setTime(this->pConstWave.time);
     futureModel = QtConcurrent::run(&WaveManager::receiveConfig, waveManager, config);
     fwModel->setFuture(futureModel);
@@ -555,13 +556,13 @@ void VKWindow::keyPressEvent(QKeyEvent *e) {
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
     switch (id) {
     case 1:
-        waveManager->waveColours.r = colorChoice;
+        waveManager->setPeak(colorChoice);
         break;
     case 2:
-        waveManager->waveColours.g = colorChoice;
+        waveManager->setBase(colorChoice);
         break;
     case 3:
-        waveManager->waveColours.b = colorChoice;
+        waveManager->setTrough(colorChoice);
         break;
     default:
         break;
@@ -606,7 +607,7 @@ void VKWindow::updateBuffersAndShaders() {
         
         // Changing shaders is equivalent to changing model program
         if (flGraphState.hasAny(egs::UPD_SHAD_V | egs::UPD_SHAD_F)) {
-            std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
+            // std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
             std::string newProgram;
 
             if (waveManager->getCPU()) {
@@ -679,6 +680,17 @@ void VKWindow::updateBuffersAndShaders() {
         if (flGraphState.hasNone(egs::WAVE_RENDER | egs::CLOUD_RENDER) && flGraphState.hasAny(egs::WAVE_MODE | egs::CLOUD_MODE)) {
             if (!vw_previousModel.empty()) this->atomixProg->deactivateModel(vw_previousModel);
             this->atomixProg->activateModel(vw_currentModel);
+            
+            std::string program = "default";
+            if (currentManager == waveManager) {
+                if (waveManager->getCPU()) {
+                    program = "cpu";
+                } else if (waveManager->getSphere()) {
+                    program = "sphere";
+                }
+            }
+            this->atomixProg->addModelProgram(vw_currentModel, program);
+
             flGraphState.set(flGraphState.hasAny(egs::WAVE_MODE) ? egs::WAVE_RENDER : egs::CLOUD_RENDER);
         }
 

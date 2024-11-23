@@ -33,14 +33,14 @@ MainWindow::MainWindow() {
 }
 
 void MainWindow::init(QRect &screenSize) {
-    double ratio = SRATIO;
-    mw_width = SWIDTH + int((screenSize.width() - SWIDTH) * 0.33);
-    mw_height = SHEIGHT + int((screenSize.height() - SHEIGHT) * 0.33);
-    QRect dispXY = QRect(0, 0, mw_width, mw_height);
-    this->resize(mw_width, mw_height);
-    this->move(screenSize.center() - this->frameGeometry().center());
     cfgParser = new ConfigParser;
     setWindowTitle(tr("atomix"));
+    
+    double windowRatio = 0.33;
+    mw_width = SWIDTH + int((screenSize.width() - SWIDTH) * windowRatio);
+    mw_height = SHEIGHT + int((screenSize.height() - SHEIGHT) * windowRatio);
+    this->resize(mw_width, mw_height);
+    this->move(screenSize.center() - this->frameGeometry().center());
 
     valIntSmall = new QIntValidator();  
     valIntSmall->setRange(1, 8);
@@ -51,16 +51,10 @@ void MainWindow::init(QRect &screenSize) {
     valDoubleLarge = new QDoubleValidator();
     valDoubleLarge->setRange(0.001, 999.999, 3);
 
-    intTabMinWidth = mw_width / 5;
-    intTabMaxWidth = mw_width / 5;
-    intGraphWidth = intTabMaxWidth * 4;
-    intTabLabelHeight = mw_height / 12;
-    intSliderLen = 20;
-    intHarmonicsGroupMaxWidth = (intTabMaxWidth) >> 1;
     lastSliderSentX = 0.0f;
     lastSliderSentY = 0.0f;
-    lineWidth = (isMacOS) ? 1 : 3;
-    slslwWidth = (intTabMaxWidth - 80) >> 1;
+
+    setupStyleSheet();
 
     // Graphics setup
 #ifdef USING_QVULKAN
@@ -139,42 +133,21 @@ void MainWindow::init(QRect &screenSize) {
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
-    setupStyleSheet();
+    // setupStyleSheet();
 }
 
 void MainWindow::postInit(int titlebarHeight) {
     wTabs->adjustSize();
-    
-    QRect mwLoc = this->geometry();
-    QRect vkLoc = vkGraph->geometry();
-    QRect graphLoc = graph->geometry();
-    QRect dockLoc = dockTabs->geometry();
-    QRect tabLoc = wTabs->geometry();
-    mw_x = mwLoc.x();
-    mw_y = mwLoc.y();
     mw_titleHeight = titlebarHeight;
 
-    // std::cout << "Main Window: " << mwLoc.width() << "x" << mwLoc.height() << "\n";
-    std::cout << "Tab Actual Size: " << tabLoc.width() << "x" << tabLoc.height() << "\n";
-
+    QRect tabLoc = wTabs->geometry();
     int colWidth = (tabLoc.width() - 40) >> 2;
-    int tableWidth = tableOrbitalReport->width();
     tableOrbitalReport->setColumnWidth(0, colWidth);
     tableOrbitalReport->setColumnWidth(1, colWidth);
 
     QRect entryLoc = entryOrbit->geometry();
     int entryWidth = entryLoc.width();
     int entryHeight = entryLoc.height();
-    int labelHeight = labelDebug->height();
-    int labPixelSize = labelDebug->fontInfo().pixelSize();
-
-    QRect cellLoc = layoutDebug->cellRect(3,2);
-    int cellWidth = cellLoc.width();
-    int cellHeight = cellLoc.height();
-
-    cellLoc = layoutDebug->cellRect(5,2);
-    cellWidth = cellLoc.width();
-    cellHeight = cellLoc.height();
 
     slswPara->setMinimumHeight(entryHeight);
     slswSuper->setMinimumHeight(entryHeight);
@@ -186,27 +159,14 @@ void MainWindow::postInit(int titlebarHeight) {
     slswCPU->setMaximumWidth(entryWidth);
     slswSphere->setMaximumWidth(entryWidth);
 
-    int newWidth = slswPara->width();
-    int newHeight = slswPara->height();
-
     slswPara->redraw();
     slswSuper->redraw();
     slswCPU->redraw();
     slswSphere->redraw();
 
-    cellLoc = layoutDebug->cellRect(3,2);
-    cellWidth = cellLoc.width();
-    cellHeight = cellLoc.height();
-
-    cellLoc = layoutDebug->cellRect(5,2);
-    cellWidth = cellLoc.width();
-    cellHeight = cellLoc.height();
-
     // TODO : Test on macOS and make dynamic
-    int dent = treeOrbitalSelect->indentation();
+    // int dent = treeOrbitalSelect->indentation();
     // treeOrbitalSelect->setIndentation(15);
-
-    bool test = slswPara->isCheckable();
 
     setupDetails();
     setupLoading();
@@ -226,8 +186,6 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     std::array<int, 4> u = { 0, 0, 0, 0 };
     int div = 1024;
     
-    uint64_t oneGiB = 1024 * 1024 * 1024;
-
     for (int idx = 0; auto& f : bufs) {
         while (f > div) {
             f /= div;
@@ -283,8 +241,6 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
             image.save(fd.selectedFiles().first());
         }
     } else if (e->key() == Qt::Key_Home) {
-        int w = slswPara->width();
-        int h = slswPara->height();
         vkGraph->handleHome();
     } else if (e->key() == Qt::Key_Space) {
         vkGraph->handlePause();
@@ -299,7 +255,7 @@ void MainWindow::setupTabs() {
     dockTabs->setContentsMargins(0, 0, 0, 0);
     wTabs = new QTabWidget(this);
 
-    wTabs->setMaximumWidth(intTabMaxWidth);
+    wTabs->setMaximumWidth(aStyle.dockWidth);
     wTabs->setContentsMargins(0, 0, 0, 0);
 
     setupDockWaves();
@@ -333,11 +289,11 @@ void MainWindow::setupDockWaves() {
 
     QLabel *labelWaves = new QLabel("<p>Explore stable circular or spherical wave patterns</p>");
     labelWaves->setObjectName("tabDesc");
-    labelWaves->setMaximumHeight(intTabLabelHeight);
-    labelWaves->setMinimumHeight(intTabLabelHeight);
+    labelWaves->setMaximumHeight(aStyle.tabLabelHeight);
+    labelWaves->setMinimumHeight(aStyle.tabLabelHeight);
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
-    labelWaves->setLineWidth(lineWidth);
+    labelWaves->setLineWidth(aStyle.borderWidth);
     labelWaves->setMargin(12);
     labelWaves->setAlignment(Qt::AlignCenter);
 
@@ -384,11 +340,9 @@ void MainWindow::setupDockWaves() {
     entryWavelength->setAlignment(Qt::AlignRight);
     entryResolution->setAlignment(Qt::AlignRight);
 
+    // TODO : This is being resized automatically now. Shouldn't be necessary.
     int entryHintWidth = entryOrbit->sizeHint().width();
-    int entryWidth = entryOrbit->geometry().width();
-
     int entryHintHeight = entryOrbit->sizeHint().height();
-    int entryHeight = entryOrbit->geometry().height();
 
     slswPara = new SlideSwitch("Para", "Ortho", entryHintWidth, entryHintHeight, this);
     slswSuper = new SlideSwitch("On", "Off", entryHintWidth, entryHintHeight, this);
@@ -480,6 +434,16 @@ void MainWindow::setupDockWaves() {
     QPushButton *buttColorPeak = new QPushButton("Peak");
     QPushButton *buttColorBase = new QPushButton("Base");
     QPushButton *buttColorTrough = new QPushButton("Trough");
+    
+    mw_pixmap = new QPixmap(mw_baseFontSize, mw_baseFontSize);
+    mw_pixmap->fill(Qt::white);
+    icoPeak = new QIcon(*mw_pixmap);
+    icoBase = new QIcon(*mw_pixmap);
+    icoTrough = new QIcon(*mw_pixmap);
+    buttColorPeak->setIcon(*icoPeak);
+    buttColorBase->setIcon(*icoBase);
+    buttColorTrough->setIcon(*icoTrough);
+
     buttGroupColors->addButton(buttColorPeak, 1);
     buttGroupColors->addButton(buttColorBase, 2);
     buttGroupColors->addButton(buttColorTrough, 3);
@@ -502,20 +466,20 @@ void MainWindow::setupDockWaves() {
     groupOptions->setAlignment(Qt::AlignRight);
 
     layDock->addWidget(labelWaves);
-    layDock->addStretch(2);
+    layDock->addStretch(1);
     layDock->addWidget(groupConfig);
     layDock->addWidget(groupOptions);
     layDock->addWidget(buttMorbWaves);
-    layDock->addStretch(2);
+    layDock->addStretch(1);
     layDock->addWidget(groupColors);
     layDock->addWidget(groupOrbits);
 
-    layDock->setStretchFactor(labelWaves, 2);
-    layDock->setStretchFactor(groupConfig, 1);
+    // layDock->setStretchFactor(labelWaves, 2);
+    /* layDock->setStretchFactor(groupConfig, 1);
     layDock->setStretchFactor(groupOptions, 6);
     layDock->setStretchFactor(buttMorbWaves, 1);
     layDock->setStretchFactor(groupColors, 1);
-    layDock->setStretchFactor(groupOrbits, 1);
+    layDock->setStretchFactor(groupOrbits, 1); */
 
     buttMorbWaves->setSizePolicy(qPolicyExpand);
 
@@ -542,11 +506,11 @@ void MainWindow::setupDockHarmonics() {
 
     QLabel *labelHarmonics = new QLabel("Generate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)");
     labelHarmonics->setObjectName("tabDesc");
-    labelHarmonics->setMaximumHeight(intTabLabelHeight);
-    labelHarmonics->setMinimumHeight(intTabLabelHeight);
+    labelHarmonics->setMaximumHeight(aStyle.tabLabelHeight);
+    labelHarmonics->setMinimumHeight(aStyle.tabLabelHeight);
     labelHarmonics->setWordWrap(true);
     labelHarmonics->setFrameStyle(QFrame::Panel | QFrame::Raised);
-    labelHarmonics->setLineWidth(lineWidth);
+    labelHarmonics->setLineWidth(aStyle.borderWidth);
     labelHarmonics->setMargin(12);
     labelHarmonics->setAlignment(Qt::AlignCenter);
 
@@ -673,31 +637,31 @@ void MainWindow::setupDockHarmonics() {
     layHRecipeButts->setSpacing(0);
 
     groupRecipeReporter->setAlignment(Qt::AlignRight);
-    groupRecipeReporter->setMaximumWidth(intHarmonicsGroupMaxWidth);
+    groupRecipeReporter->setMaximumWidth(aStyle.groupMaxWidth);
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777 }");
     groupRecipeReporter->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeBuilder->setAlignment(Qt::AlignLeft);
-    groupRecipeBuilder->setMaximumWidth(intHarmonicsGroupMaxWidth);
+    groupRecipeBuilder->setMaximumWidth(aStyle.groupMaxWidth);
     groupRecipeBuilder->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeLocked->setAlignment(Qt::AlignRight);
-    groupRecipeLocked->setMaximumWidth(intHarmonicsGroupMaxWidth);
+    groupRecipeLocked->setMaximumWidth(aStyle.groupMaxWidth);
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->layout()->setContentsMargins(0, 0, 0, 0);
 
     slideCullingX = new QSlider(Qt::Horizontal);
     slideCullingX->setMinimum(0);
-    slideCullingX->setMaximum(intSliderLen);
-    slideCullingX->setTickInterval(intSliderLen / 4);
+    slideCullingX->setMaximum(aStyle.sliderTicks);
+    slideCullingX->setTickInterval(aStyle.sliderInterval);
     slideCullingX->setTickPosition(QSlider::TicksAbove);
     slideCullingY = new QSlider(Qt::Horizontal);
     slideCullingY->setMinimum(0);
-    slideCullingY->setMaximum(intSliderLen);
-    slideCullingY->setTickInterval(intSliderLen / 4);
+    slideCullingY->setMaximum(aStyle.sliderTicks);
+    slideCullingY->setTickInterval(aStyle.sliderInterval);
     slideCullingY->setTickPosition(QSlider::TicksAbove);
     slideBackground = new QSlider(Qt::Horizontal);
     slideBackground->setMinimum(0);
-    slideBackground->setMaximum(intSliderLen);
-    slideBackground->setTickInterval(intSliderLen / 4);
+    slideBackground->setMaximum(aStyle.sliderTicks);
+    slideBackground->setTickInterval(aStyle.sliderInterval);
     slideBackground->setTickPosition(QSlider::TicksBelow);
     
     QHBoxLayout *layHCulling = new QHBoxLayout;
@@ -756,53 +720,15 @@ void MainWindow::setupDockHarmonics() {
 }
 
 void MainWindow::setupStyleSheet() {
-    int baseFontSize, descFontSize, tabUnselectedFontSize, tabSelectedFontSize, tabWidth, treeFontSize, treeCheckSize, treeMargin, treePadding, treeSpacing;
-    qreal dpr = this->devicePixelRatio();
-    QRect effRes = QRect(0, 0, mw_width * dpr, mw_height * dpr);
-    int effTabWidth = effRes.width() * 0.2;
-    tabWidth = intTabMaxWidth / wTabs->count();
-
-    std::cout << "Device Pixel Ratio: " << dpr << std::endl;
-    std::cout << "Effective Resolution: " << effRes.width() << "x" << effRes.height() << std::endl;
-    std::cout << "Tab Projected Width: " << effTabWidth << std::endl;
-
-    baseFontSize = int(round(effTabWidth / 25.0));              // 17 - 12
-    descFontSize = int(round(effTabWidth / 18.5));              // 23 - 16
-    tabUnselectedFontSize = int(round(effTabWidth / 28.0));     // 15 - 10
-    tabSelectedFontSize = int(round(effTabWidth / 21.0));       // 19 - 14
-    treeFontSize = int(round(effTabWidth / 25.0));              // 17 - 11
-    treeCheckSize = int(round(baseFontSize * 1.5));             // 20 - 18
-    treeMargin = 0;                                             // 0
-    treePadding = 0;                                            // 0
-    treeSpacing = 0;                                            // 0
+    aStyle.setWindowSize(mw_width, mw_height);
+    aStyle.setDockWidth(mw_width * 0.2);
+    aStyle.scaleFonts();
+    aStyle.scaleWidgets();
+    aStyle.scaleTabWidth(2);
+    aStyle.updateStyleSheet();
+    this->setStyleSheet(aStyle.getStyleSheet());
     
-
-    QString atomixStyle = QString(
-        "QWidget { font-size: %1px; }"\
-        "QLabel { font-size: %1px; }"\
-        "QLabel#tabDesc { font-size: %2px; }"\
-        "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; }"\
-        "QTabBar::tab::selected { font-size: %5px; }"
-        "QLabel#switchOff { font-size: %1px; }"\
-        "QLabel#switchOn { font-size: %1px; }"\
-        "QTreeWidget { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; }"\
-        "QTreeWidget::item { margin: %8px; padding: %9px; spacing: %10px; }"\
-        "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: %8px; padding: %9px; spacing: %10px; }"
-        "QTableWidget::item { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; }"
-        ).arg(QString::number(baseFontSize))            // 1
-        .arg(QString::number(descFontSize))             // 2
-        .arg(QString::number(tabWidth))                 // 3
-        .arg(QString::number(tabUnselectedFontSize))    // 4
-        .arg(QString::number(tabSelectedFontSize))      // 5
-        .arg(QString::number(treeFontSize))             // 6
-        .arg(QString::number(treeCheckSize))            // 7
-        .arg(QString::number(treeMargin))               // 8
-        .arg(QString::number(treePadding))              // 9
-        .arg(QString::number(treeSpacing));             // 10
-    this->setStyleSheet(atomixStyle);
-#ifdef DEBUG
-    std::cout << "StyleSheet: " << atomixStyle.toStdString() << std::endl;
-#endif
+    std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
 }
 
 void MainWindow::refreshConfigs() {
@@ -924,7 +850,6 @@ void MainWindow::setupDetails() {
 }
 
 void MainWindow::setupLoading() {
-    QSizePolicy qPolicyLoading = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     pbLoading = new QProgressBar(graph);
     pbLoading->setMinimum(0);
     pbLoading->setMaximum(0);
@@ -1002,8 +927,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
         } else {
             /* Leaf node unchecked */
             int intItemRow = tableOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first()->row();
-            QTableWidgetItem *thisOrbital = tableOrbitalReport->item(intItemRow, 0);
-            QTableWidgetItem *thisWeight = tableOrbitalReport->item(intItemRow, 1);
             tableOrbitalReport->removeRow(intItemRow);
 
             if (!tableOrbitalReport->rowCount()) {
@@ -1022,7 +945,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     while (ptrParent) {
         int intSiblings = ptrParent->childCount();
         int intSiblingsSame = 0;
-        bool siblingChecked;
 
         for (int i = 0; i < intSiblings; i++) {
             if (ptrParent->child(i)->checkState(col) == checked) {
@@ -1196,7 +1118,7 @@ void MainWindow::handleButtMorbHarmonics() {
     buttMorbHarmonics->setEnabled(false);
 }
 
-void MainWindow::handleWeightChange(int row, int col) {
+void MainWindow::handleWeightChange([[maybe_unused]] int row, [[maybe_unused]] int col) {
     // Getting older sucks...
     buttLockRecipes->setEnabled(true);
 }
@@ -1282,13 +1204,13 @@ void MainWindow::handleButtColors(int id) {
 }
 
 void MainWindow::handleSlideCullingX(int val) {
-    float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
+    float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
     this->cloudConfig.CloudCull_x = pct;
     // slideCullingX->setFocus();
 }
 
 void MainWindow::handleSlideCullingY(int val) {
-    float pct = (static_cast<float>(val) / static_cast<float>(intSliderLen));
+    float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
     this->cloudConfig.CloudCull_y = pct;
     // slideCullingY->setFocus();
 }
@@ -1309,9 +1231,9 @@ void MainWindow::handleSlideReleased() {
 
 void MainWindow::handleSlideBackground(int val) {
 #ifdef USING_QVULKAN
-    vkGraph->setBGColour((static_cast<float>(val) / intSliderLen));
+    vkGraph->setBGColour((static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks)));
 #elifdef USING_QOPENGL
-    glGraph->setBGColour((static_cast<float>(val) / intSliderLen));
+    glGraph->setBGColour((static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks)));
 #endif
 }
 

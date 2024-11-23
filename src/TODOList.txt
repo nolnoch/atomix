@@ -16,10 +16,10 @@ o Debug overlay
 o Loading animation for vertex and RDP generation
 o Change far distance based on zoom level
 o Programmatically limit input on GUI fields
-+ Add application icon [WIP]
-- Implement Vulkan back-end
+o Add application icon
+o Implement Vulkan back-end
+o Programmatically ensure that certain config combos are maintained (i.e., superposition -> Parallel & CPU)
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Allow more than 8 waves? Can currently gen vertices for n<999, but filtered by indices (visible waves bitflag)
-- Programmatically ensure that certain config combos are maintained (i.e., superposition -> Parallel & CPU)
 - Implement CPU vs GPU orbital rendering
 - Energy tab

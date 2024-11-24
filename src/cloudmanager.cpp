@@ -720,20 +720,24 @@ double CloudManager::cullSliderThreaded() {
         std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
     } else {
         //  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
-        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0;
+        uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
         culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
+        theta_size = this->cloudResolution;
         phi_size = this->cloudResolution >> 1;
         culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.CloudCull_y));
 
         // Define lambda for multi-use
-        auto lambda_cull = [layer_size, culled_theta_all, phi_size, culled_phi_f](const uint &item){
+        auto lambda_cull = [layer_size, theta_size, culled_theta_all, phi_size, culled_phi_f](const uint &item){
+                uint layer_pos = (item % layer_size);
+                uint theta_pos = layer_pos / phi_size;
                 uint phi_pos = item % phi_size;
-                bool culled_theta = ((item % layer_size) <= culled_theta_all);
+                bool culled_theta = (layer_pos <= culled_theta_all);
                 bool culled_theta_phis = (phi_pos <= phi_size);
                 bool culled_phi_front = (phi_pos <= culled_phi_f);
+                bool culled_phi_thetas = (theta_pos <= phi_size);
 
-                return !((culled_theta && culled_theta_phis) || (culled_phi_front));
+                return !((culled_theta && culled_theta_phis) || (culled_phi_front && culled_phi_thetas));
             };
 
         // Count unculled vertices

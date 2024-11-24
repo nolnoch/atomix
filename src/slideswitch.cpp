@@ -93,7 +93,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     text = strFalse;
     slsw_LabelOff->setObjectName("switchOff");
     slsw_LabelOn->setObjectName("switchOn");
-    fontPx = slsw_height >> 1;
+    fontPx = (slsw_height >> 1) + 1;
     QString strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
     QString strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
     slsw_LabelOff->setStyleSheet(strOff);
@@ -111,7 +111,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     int labOffCenter = slsw_LabelOff->sizeHint().width() >> 1;
     int labOnCenter = slsw_LabelOn->sizeHint().width() >> 1;
     int switchCenter = slsw_width >> 1;
-    int labMove = int(double(slsw_height) * 0.25);
+    int labMove = int(double(slsw_height) * 0.20);
     slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
     slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
 
@@ -145,7 +145,7 @@ void SlideSwitch::redraw() {
     int labOffCenter = slsw_LabelOff->width() >> 1;
     int labOnCenter = slsw_LabelOn->width() >> 1;
     int switchCenter = slsw_width >> 1;
-    int labMove = int(double(slsw_height) * 0.25);
+    int labMove = int(double(slsw_height) * 0.20);
     slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
     slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
 }
@@ -307,25 +307,11 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     slsw_SwitchBackground->updateSize();
     slsw_Button->updateSize();
 
-    fontPx = int(double(slsw_height) * 0.55);
+    fontPx = int(double(slsw_height) * 0.58);
     QString strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
     QString strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
     slsw_LabelOff->setStyleSheet(strOff);
     slsw_LabelOn->setStyleSheet(strOn);
-
-    /* if (newSize.width() == 159) {
-        std::cout << "Resize to 159: " << this->width() << "\n";
-    } else {
-        std::cout << "Resize to ?: " << this->width() << "\n";
-    } */
-
-    /* delete slsw_Button;
-    
-    int circleRad = int(double(slsw_borderRadius) * 1.8);
-    slsw_Button = new SwitchCircle(circleRad, this);
-    prAnim_buttMove->setTargetObject(slsw_Button);
-    prAnim_buttMove->setPropertyName("pos");
-    slsw_Button->move(1, 1); */
 }
 
 bool SlideSwitch::hitButton(const QPoint &pos) const {
@@ -371,15 +357,17 @@ SlideSwitch::SwitchBackground::SwitchBackground(QColor color, SlideSwitch *paren
     this->slsb_height = parentPtr->slsw_height - 4;
     this->slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
     setFixedHeight(this->slsb_height);
-    int cx = this->slsb_width >> 1;
-    int cy = this->slsb_height >> 1;
+    int cx = this->slsb_width;
+    int cy = this->slsb_height;
 
     slsb_linGrad_enabled = QLinearGradient(cx, 0, cx, cy);
-    slsb_linGrad_enabled.setColorAt(0, slsb_color.darker(120));
+    slsb_linGrad_enabled.setColorAt(0, slsb_color.darker(140));
+    slsb_linGrad_enabled.setColorAt(0.10, slsb_color.darker(120));
     slsb_linGrad_enabled.setColorAt(0.20, slsb_color.darker(110));
-    slsb_linGrad_enabled.setColorAt(0.50, slsb_color);
-    slsb_linGrad_enabled.setColorAt(0.80, slsb_color.darker(110));
-    slsb_linGrad_enabled.setColorAt(1, slsb_color.darker(120));
+    slsb_linGrad_enabled.setColorAt(0.40, slsb_color.lighter(105));
+    slsb_linGrad_enabled.setColorAt(0.60, slsb_color.darker(110));
+    slsb_linGrad_enabled.setColorAt(0.80, slsb_color.darker(120));
+    slsb_linGrad_enabled.setColorAt(1, slsb_color.darker(140));
 
     slsb_linGrad_disabled = QLinearGradient(cx, 0, cx, cy);
     slsb_linGrad_disabled.setColorAt(0, QColor(190, 190, 190));
@@ -413,8 +401,8 @@ void SlideSwitch::SwitchBackground::updateSize() {
     this->slsb_height = parentPtr->slsw_height - 4;
     this->slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
     setFixedHeight(this->slsb_height);
-    int cx = this->slsb_width >> 1;
-    int cy = this->slsb_height >> 1;
+    int cx = this->slsb_width;
+    int cy = this->slsb_height;
 
     slsb_linGrad_enabled.setStart(cx, 0);
     slsb_linGrad_enabled.setFinalStop(cx, cy);

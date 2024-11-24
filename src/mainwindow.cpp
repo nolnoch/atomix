@@ -140,6 +140,12 @@ void MainWindow::postInit(int titlebarHeight) {
     wTabs->adjustSize();
     mw_titleHeight = titlebarHeight;
 
+    QRect mwLoc = this->geometry();
+    // mw_width = mwLoc.width();
+    // mw_height = mwLoc.height() - titlebarHeight;
+    mw_x = mwLoc.x();
+    mw_y = mwLoc.y();
+
     QRect tabLoc = wTabs->geometry();
     int colWidth = (tabLoc.width() - 40) >> 2;
     tableOrbitalReport->setColumnWidth(0, colWidth);
@@ -312,9 +318,9 @@ void MainWindow::setupDockWaves() {
     labelOrthoPara->setObjectName("configLabel");
     QLabel *labelSuper = new QLabel("Superposition:");
     labelSuper->setObjectName("configLabel");
-    QLabel *labelCPU = new QLabel("CPU vs GPU:");
+    QLabel *labelCPU = new QLabel("GPU vs CPU:");
     labelCPU->setObjectName("configLabel");
-    QLabel *labelSphere = new QLabel("Spherical vs Circular:");
+    QLabel *labelSphere = new QLabel("Circular vs Spherical:");
     labelSphere->setObjectName("configLabel");
     /* QLabel *labelVertex = new QLabel("Vertex Shader:");
     labelVertex->setObjectName("configLabel");
@@ -341,8 +347,8 @@ void MainWindow::setupDockWaves() {
     entryResolution->setAlignment(Qt::AlignRight);
 
     // TODO : This is being resized automatically now. Shouldn't be necessary.
-    int entryHintWidth = entryOrbit->sizeHint().width();
-    int entryHintHeight = entryOrbit->sizeHint().height();
+    int entryHintWidth = 135;
+    int entryHintHeight = 27;
 
     slswPara = new SlideSwitch("Para", "Ortho", entryHintWidth, entryHintHeight, this);
     slswSuper = new SlideSwitch("On", "Off", entryHintWidth, entryHintHeight, this);
@@ -419,37 +425,23 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->setColumnStretch(2,6);
     // layWaveConfig->setRowStretch(layWaveConfig->rowCount(),1);
 
-    /* layWaveConfig->setRowStretch(0,1);
-    layWaveConfig->setRowStretch(1,1);
-    layWaveConfig->setRowStretch(2,1);
-    layWaveConfig->setRowStretch(3,1);
-    layWaveConfig->setRowStretch(4,1);
-    layWaveConfig->setRowStretch(5,1);
-    layWaveConfig->setRowStretch(6,1);
-    layWaveConfig->setRowStretch(7,1);
-    layWaveConfig->setRowStretch(8,1); */
-
     layOptionBox->addLayout(layWaveConfig);
 
-    QPushButton *buttColorPeak = new QPushButton("Peak");
-    QPushButton *buttColorBase = new QPushButton("Base");
-    QPushButton *buttColorTrough = new QPushButton("Trough");
+    QPushButton *buttColorPeak = new QPushButton(" Peak");
+    QPushButton *buttColorBase = new QPushButton(" Base");
+    QPushButton *buttColorTrough = new QPushButton(" Trough");
     
-    mw_pixmap = new QPixmap(mw_baseFontSize, mw_baseFontSize);
-    mw_pixmap->fill(Qt::white);
-    icoPeak = new QIcon(*mw_pixmap);
-    icoBase = new QIcon(*mw_pixmap);
-    icoTrough = new QIcon(*mw_pixmap);
-    buttColorPeak->setIcon(*icoPeak);
-    buttColorBase->setIcon(*icoBase);
-    buttColorTrough->setIcon(*icoTrough);
+    pmColour = new QPixmap(aStyle.baseFont, aStyle.baseFont);
+    pmColour->fill(QColor::fromString("#FF00FF"));
+    buttColorPeak->setIcon(QIcon(*pmColour));
+    pmColour->fill(QColor::fromString("#0000FF"));
+    buttColorBase->setIcon(QIcon(*pmColour));
+    pmColour->fill(QColor::fromString("#00FFFF"));    
+    buttColorTrough->setIcon(QIcon(*pmColour));
 
     buttGroupColors->addButton(buttColorPeak, 1);
     buttGroupColors->addButton(buttColorBase, 2);
     buttGroupColors->addButton(buttColorTrough, 3);
-    buttColorPeak->setStyleSheet("QPushButton {background-color: #FF00FF; color: #000000;}");
-    buttColorBase->setStyleSheet("QPushButton {background-color: #0000FF; color: #000000;}");
-    buttColorTrough->setStyleSheet("QPushButton {background-color: #00FFFF; color: #000000;}");
 
     layColorPicker->addWidget(buttColorPeak);
     layColorPicker->addWidget(buttColorBase);
@@ -1172,34 +1164,28 @@ void MainWindow::handleButtConfig(int id, bool checked) {
 void MainWindow::handleButtColors(int id) {
     QColorDialog::ColorDialogOptions colOpts = QFlag(QColorDialog::ShowAlphaChannel);
     QColor colorChoice = QColorDialog::getColor(Qt::white, this, tr("Choose a Color"), colOpts);
-    uint color = 0;
+    uint colour = 0;
 
     int dRed = colorChoice.red();
-    color |= dRed;
-    color <<= 8;
+    colour |= dRed;
+    colour <<= 8;
     int dGreen = colorChoice.green();
-    color |= dGreen;
-    color <<= 8;
+    colour |= dGreen;
+    colour <<= 8;
     int dBlue = colorChoice.blue();
-    color |= dBlue;
-    uint nbc = color;
-    color <<= 8;
+    colour |= dBlue;
+    colour <<= 8;
     int dAlpha = colorChoice.alpha();
-    color |= dAlpha;
+    colour |= dAlpha;
 
-    //cout << "Incoming color " << id << ": (" << hex << dRed << ", " << dGreen << ", " << dBlue << ", " << dAlpha << ") as #" << color << endl;
-    std::string ntcHex = "000000";
-    if (dRed + dGreen + dBlue < 128)
-        ntcHex = "FFFFFF";
-    std::string nbcHex = std::format("{:06X}", nbc);
-    std::string ss = "QPushButton {background-color: #" + nbcHex + "; color: #" + ntcHex + ";}";
-    QString qss = QString::fromStdString(ss);
-    buttGroupColors->button(id)->setStyleSheet(qss);
+    QString colourHex = "#" + QString::fromStdString(std::format("{:08X}", colour));
+    pmColour->fill(QColor::fromString(colourHex));
+    buttGroupColors->button(id)->setIcon(QIcon(*pmColour));
 
 #ifdef USING_QVULKAN
-    vkGraph->setColorsWaves(id, color);
+    vkGraph->setColorsWaves(id, colour);
 #elifdef USING_QOPENGL
-    glGraph->setColorsWaves(id, color);
+    glGraph->setColorsWaves(id, colour);
 #endif
 }
 

@@ -89,6 +89,7 @@ struct AtomixStyle {
         treeFont = baseFont;
         tableFont = baseFont;
         listFont = baseFont;
+        switchFont = baseFont - 2;
     }
 
     void scaleWidgets() {
@@ -114,8 +115,8 @@ struct AtomixStyle {
             "QLabel#tabDesc { font-size: %2px; } "
             "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; } "
             "QTabBar::tab::selected { font-size: %5px; } "
-            "QLabel#switchOff { font-size: %1px; } "
-            "QLabel#switchOn { font-size: %1px; } "
+            "QLabel#switchOff { font-size: %11px; } "
+            "QLabel#switchOn { font-size: %11px; } "
             "QTreeWidget { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; } "
             "QTreeWidget::item { margin: %8px; padding: %9px; spacing: %10px; } "
             "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: %8px; padding: %9px; spacing: %10px; } "
@@ -129,14 +130,15 @@ struct AtomixStyle {
             .arg(QString::number(treeCheckSize))        // 7
             .arg(QString::number(margin))               // 8
             .arg(QString::number(padding))              // 9
-            .arg(QString::number(spacing));             // 10
+            .arg(QString::number(spacing))              // 10
+            .arg(QString::number(switchFont));            // 11
     }
 
     QString& getStyleSheet() {
         return styleString;
     }
 
-    uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont;
+    uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont, switchFont;
     uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
     uint margin, padding, spacing;
 
@@ -282,10 +284,7 @@ private:
     int mw_y = 0;
     int mw_titleHeight = 0;
 
-    QPixmap *mw_pixmap = nullptr;
-    QIcon *icoPeak = nullptr;
-    QIcon *icoBase = nullptr;
-    QIcon *icoTrough = nullptr;
+    QPixmap *pmColour = nullptr;
 
     AtomixInfo dInfo;
     AtomixStyle aStyle;

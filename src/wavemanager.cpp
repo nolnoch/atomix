@@ -140,9 +140,6 @@ double WaveManager::create() {
         phase_const.push_back(phase_base * i);
         double startTime = (this->time) ?: 0.0;
 
-        int testVerts = waveVertices[i]->size();
-        int testInds = waveIndices[i]->size();
-    
         if (cfg.sphere) {
             if (cfg.cpu)
                 updateWaveCPUSphere(i, startTime);

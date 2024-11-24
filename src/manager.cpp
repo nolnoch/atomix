@@ -92,6 +92,15 @@ void Manager::genDataBuffer() {
     this->mStatus.set(em::UPD_DATA);
 }
 
+void Manager::genColourBuffer() {
+    assert(mStatus.hasAll(em::DATA_READY));
+
+    this->colourCount = setColourCount();
+    this->colourSize = setColourSize();
+
+    this->mStatus.set(em::UPD_DATA);
+}
+
 void Manager::genIndexBuffer() {
     assert(mStatus.hasAll(em::INDEX_READY));
 
@@ -115,6 +124,11 @@ uint Manager::getDataSize() {
     return this->dataSize;
 }
 
+uint Manager::getColourSize() {
+    assert(mStatus.hasAll(em::DATA_READY));
+    return this->colourSize;
+}
+
 uint Manager::getIndexSize() {
     assert(mStatus.hasAll(em::INDEX_READY));
     return this->indexSize;
@@ -134,6 +148,11 @@ uint Manager::getDataCount() {
     return this->dataCount;
 }
 
+uint Manager::getColourCount() {
+    assert(mStatus.hasAll(em::DATA_READY));
+    return this->colourCount;
+}
+
 uint Manager::getIndexCount() {
     assert(mStatus.hasAll(em::INDEX_READY));
     return this->indexCount;
@@ -151,6 +170,11 @@ const float* Manager::getVertexData() {
 const float* Manager::getDataData() {
     assert(mStatus.hasAll(em::DATA_READY));
     return &allData[0];
+}
+
+const float* Manager::getColourData() {
+    assert(mStatus.hasAll(em::DATA_READY));
+    return glm::value_ptr(allColours.front());
 }
 
 const uint* Manager::getIndexData() {
@@ -178,6 +202,14 @@ int Manager::setDataSize() {
     return chunks * chunkSize;
 }
 
+int Manager::setColourSize() {
+    int chunks = colourCount ?: setColourCount();
+    int chunkSize = sizeof(glm::vec3);
+
+    //std::cout << "allColours has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
+    return chunks * chunkSize;
+}
+
 int Manager::setIndexSize() {
     int chunks = indexCount ?: setIndexCount();
     int chunkSize = sizeof(uint);
@@ -196,6 +228,10 @@ int Manager::setVertexCount() {
 
 int Manager::setDataCount() {
     return allData.size();
+}
+
+int Manager::setColourCount() {
+    return allColours.size();
 }
 
 int Manager::setIndexCount() {

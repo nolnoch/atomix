@@ -18,9 +18,9 @@ layout (push_constant) uniform PushConstants {
 
 void main() {
     /* VBO Variables */
-    float theta = factorsA.x;
-    float phi = factorsA.y;
-    float radius = factorsA.z;
+    float radius = factorsA.x;
+    float theta = factorsA.y;
+    float phi = factorsA.z;
 
     /* Position */
     float posX = radius * sin(phi) * sin(theta);

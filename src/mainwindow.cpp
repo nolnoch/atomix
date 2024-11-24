@@ -720,7 +720,7 @@ void MainWindow::setupStyleSheet() {
     aStyle.updateStyleSheet();
     this->setStyleSheet(aStyle.getStyleSheet());
     
-    std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
+    // std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
 }
 
 void MainWindow::refreshConfigs() {

@@ -59,15 +59,19 @@ class Manager {
         uint getVertexSize();
         uint getDataCount();
         uint getDataSize();
+        uint getColourCount();
+        uint getColourSize();
         uint getIndexCount();
         uint getIndexSize();
         
         const float* getVertexData();
         const float* getDataData();
+        const float* getColourData();
         const uint* getIndexData();
 
         std::string& getShaderVert() { return this->cfg.vert; };
         std::string& getShaderFrag() { return this->cfg.frag; };
+        AtomixConfig& getConfig() { return this->cfg; };
         bool getCPU() { return this->cfg.cpu; };
 
         void printIndices();
@@ -79,12 +83,15 @@ class Manager {
 
         virtual void genVertexArray();
         virtual void genDataBuffer();
+        virtual void genColourBuffer();
         virtual void genIndexBuffer();
         
         int setVertexCount();
         int setVertexSize();
         int setDataCount();
         int setDataSize();
+        int setColourCount();
+        int setColourSize();
         int setIndexCount();
         int setIndexSize();
 
@@ -95,6 +102,7 @@ class Manager {
         vVec3 allVertices;
         dvec dataStaging;
         fvec allData;
+        vVec3 allColours;
         uvec indicesStaging;
         uvec allIndices;
         
@@ -102,11 +110,15 @@ class Manager {
         uint64_t vertexSize = 0;
         uint64_t dataCount = 0;
         uint64_t dataSize = 0;
+        uint64_t colourCount = 0;
+        uint64_t colourSize = 0;
         uint64_t indexCount = 0;
         uint64_t indexSize = 0;
 
         double deg_fac = 0;
         double m_time = 0;
+
+        bool init = false;
 
         enum em {
             INIT =              1 << 0,     // Manager has been initialized

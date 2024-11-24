@@ -84,7 +84,6 @@ class WaveManager : public Manager {
         int waveResolution;
         double phase_base = PI_TWO;
         double time = 0.0;
-        bool init = false;
 };
 
 #endif

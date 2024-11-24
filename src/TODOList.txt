@@ -22,4 +22,5 @@ o Programmatically ensure that certain config combos are maintained (i.e., super
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Allow more than 8 waves? Can currently gen vertices for n<999, but filtered by indices (visible waves bitflag)
 - Implement CPU vs GPU orbital rendering
+- Fix Harmonics Phi culling
 - Energy tab

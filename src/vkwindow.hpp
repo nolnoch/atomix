@@ -164,20 +164,18 @@ class VKWindow : public QVulkanWindow {
 public:
     VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
     ~VKWindow();
-
+    
     QVulkanWindowRenderer* createRenderer() override;
     void initProgram(AtomixDevice *dev);
     void initWindow();
 
+    void handleHome();
+    void handlePause();
     void setColorsWaves(int id, uint colorChoice);
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
-
     void setBGColour(float colour);
     void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
-
-    void handleHome();
-    void handlePause();
 
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
     BitFlag flGraphState;
@@ -188,16 +186,11 @@ signals:
     void forwardKeyEvent(QKeyEvent *e);
 
 public slots:
-    void cleanup();
+    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes, bool canCreate = true);
     void newWaveConfig(AtomixConfig *cfg);
     void selectRenderedWaves(int id, bool checked);
-    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes, bool canCreate = true);
 
 protected:
-    /* void initializeGL() override;
-    void paintGL() override;
-    void resizeGL(int width, int height) override; */
-
     void wheelEvent(QWheelEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -205,15 +198,17 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 private:
-    void threadFinished();
-    void threadFinishedWithResult(uint result);
-
-    void initVecsAndMatrices();
+    void cleanup();
+    void changeModes(bool force);
+ 
     void initCrystalModel();
     void initWaveModel();
     void initCloudModel();
     void initModels();
-    void changeModes(bool force);
+    void initVecsAndMatrices();
+
+    void threadFinished();
+    void threadFinishedWithResult(uint result);
     
     std::string withCommas(int64_t value);
     void updateSize();

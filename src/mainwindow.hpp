@@ -45,6 +45,8 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QProgressBar>
+#include <QPixmap>
+#include <QIcon>
 #include <QSignalBlocker>
 #include <QThread>
 #include "slideswitch.hpp"
@@ -59,22 +61,91 @@
 const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;
 
-struct AtomixFonts {
-    uint main, tabSelected, tabUnselected, large, small, tiny, label, label2, label3, label4, label5;
-
-    void setDPI(int dpi) {
-        main = 24 * dpi / 96;
-        tabSelected = 20 * dpi / 96;
-        tabUnselected = 16 * dpi / 96;
-        large = 14 * dpi / 96;
-        small = 12 * dpi / 96;
-        tiny = 10 * dpi / 96;
-        label = 10 * dpi / 96;
-        label2 = 8 * dpi / 96;
-        label3 = 6 * dpi / 96;
-        label4 = 4 * dpi / 96;
-        label5 = 2 * dpi / 96;
+struct AtomixStyle {
+    void setConstraintsRatio(double min, double max) {
+        scaleMin = min;
+        scaleMax = max;
     }
+
+    void setConstraintsPixel(int min, int max) {
+        dockMin = min;
+        dockMax = max;
+    }
+    
+    void setWindowSize(int width, int height) {
+        windowWidth = width;
+        windowHeight = height;
+    }
+
+    void setDockWidth(int width) {
+        dockWidth = width;
+    }
+    
+    void scaleFonts() {
+        baseFont = int(round(dockWidth * 0.04));
+        descFont = int(round(baseFont * 1.333));
+        tabSelectedFont = int(round(baseFont * 1.15));
+        tabUnselectedFont = int(round(baseFont * 0.90));
+        treeFont = baseFont;
+        tableFont = baseFont;
+        listFont = baseFont;
+        switchFont = baseFont - 2;
+    }
+
+    void scaleWidgets() {
+        treeCheckSize = int(round(baseFont * 1.5));
+        tabLabelHeight = windowHeight / 12;
+        sliderTicks = 20;
+        sliderInterval = sliderTicks >> 2;
+        groupMaxWidth = dockWidth >> 1;
+        borderWidth = (isMacOS) ? 1 : 3;
+        margin = 0;
+        padding = 0;
+        spacing = 0;
+    }
+
+    void scaleTabWidth(int tabCount) {
+        tabWidth = dockWidth / tabCount;
+    }
+
+    void updateStyleSheet() {
+        styleString = QString(
+            "QWidget { font-size: %1px; } "
+            "QLabel { font-size: %1px; } "
+            "QLabel#tabDesc { font-size: %2px; } "
+            "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; } "
+            "QTabBar::tab::selected { font-size: %5px; } "
+            "QLabel#switchOff { font-size: %11px; } "
+            "QLabel#switchOn { font-size: %11px; } "
+            "QTreeWidget { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; } "
+            "QTreeWidget::item { margin: %8px; padding: %9px; spacing: %10px; } "
+            "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: %8px; padding: %9px; spacing: %10px; } "
+            "QTableWidget::item { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; } "
+            ).arg(QString::number(baseFont))            // 1
+            .arg(QString::number(descFont))             // 2
+            .arg(QString::number(tabWidth))             // 3
+            .arg(QString::number(tabUnselectedFont))    // 4
+            .arg(QString::number(tabSelectedFont))      // 5
+            .arg(QString::number(treeFont))             // 6
+            .arg(QString::number(treeCheckSize))        // 7
+            .arg(QString::number(margin))               // 8
+            .arg(QString::number(padding))              // 9
+            .arg(QString::number(spacing))              // 10
+            .arg(QString::number(switchFont));            // 11
+    }
+
+    QString& getStyleSheet() {
+        return styleString;
+    }
+
+    uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont, switchFont;
+    uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
+    uint margin, padding, spacing;
+
+    uint dockMin, dockMax, windowWidth, windowHeight;
+    double scaleMin, scaleMax, scale;
+
+    QString styleString;
 };
 
 
@@ -202,14 +273,7 @@ private:
     int numRecipes = 0;
     bool recipeLoaded = false;
 
-    int intGraphWidth = 0;
-    int intTabMinWidth = 0;
-    int intTabMaxWidth = 0;
-    int intTabLabelHeight = 0;
-    int intSliderLen = 0;
-    int lineWidth = 0;
-    int intHarmonicsGroupMaxWidth = 0;
-    int slslwWidth = 0;
+    int mw_baseFontSize = 0;
     
     float lastSliderSentX = 0.0f;
     float lastSliderSentY = 0.0f;
@@ -220,7 +284,10 @@ private:
     int mw_y = 0;
     int mw_titleHeight = 0;
 
+    QPixmap *pmColour = nullptr;
+
     AtomixInfo dInfo;
+    AtomixStyle aStyle;
 
     QLabel *labelDebug = nullptr;
     QGridLayout *layoutDebug = nullptr;

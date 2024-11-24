@@ -31,15 +31,10 @@
 #include <oneapi/dpl/execution>
 
 
-CloudManager::CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes) {
-    newConfig(cfg);
-    receiveCloudMap(&inMap, numRecipes);
-    
+CloudManager::CloudManager() {
     this->cm_pool = std::thread::hardware_concurrency();
     this->cm_loop = 1;
     this->cm_vecs = 0;
-    
-    mStatus.set(em::INIT);
 }
 
 CloudManager::~CloudManager() {
@@ -56,6 +51,8 @@ void CloudManager::newConfig(AtomixConfig *config) {
     this->cloudTolerance = cfg.cloudTolerance;
     this->deg_fac = TWO_PI / this->cloudResolution;
     this->cfg.vert = "gpu_harmonics.vert";
+    // TODO : Remove this after debugging
+    // this->cfg.cpu = true;
 }
 
 void CloudManager::receiveCloudMap(harmap *inMap, int numRecipes) {
@@ -66,8 +63,17 @@ void CloudManager::receiveCloudMap(harmap *inMap, int numRecipes) {
 
 void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes) {
     cm_proc_coarse.lock();
-    // Check for relevant config changes OR for recipes to require larger radius
 
+    if (mStatus.hasNone(em::INIT)) {
+        newConfig(config);
+        receiveCloudMap(inMap, numRecipes);
+        initManager();
+        mStatus.set(em::INIT);
+        cm_proc_coarse.unlock();
+        return;
+    }
+    
+    // Check for relevant config changes OR for recipes to require larger radius
     bool widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
     bool newMap = cloudOrbitals != (*inMap);
     bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
@@ -109,6 +115,7 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     if (newVerticesRequired || newMap || newTolerance) {
         mStatus.clear(em::INDEX_GEN);
         cm_times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
+        if (cfg.cpu) expandPDVsToColours();
     }
     // Re-cull the indices for slider position or if otherwise necessary
     if (newVerticesRequired || newMap || newTolerance || newCulling) {
@@ -123,26 +130,23 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
 }
 
 void CloudManager::initManager() {
-    cm_proc_coarse.lock();
-
     cm_times[0] = (cm_threading) ? createThreaded() : create();
     cm_times[1] = (cm_threading) ? bakeOrbitalsThreadedAlt() : bakeOrbitals();
     cm_times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
+    if (cfg.cpu) expandPDVsToColours();
     cm_times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
 
     // std::cout << "Init() -- Functions took:\n";
     // this->printTimes();
 
     mStatus.set(em::UPD_MATRICES);
-
-    cm_proc_coarse.unlock();
 }
 
 // #pragma GCC push_options
 // #pragma GCC optimize ("O3")
 
 double CloudManager::create() {
-    assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
+    assert(mStatus.hasNone(em::VERT_READY));
     steady_clock::time_point begin = steady_clock::now();
 
     this->max_n = cloudOrbitals.rbegin()->first;
@@ -169,9 +173,9 @@ double CloudManager::create() {
                     pos.y = radius * cos(phi);
                     pos.z = radius * sin(phi) * cos(theta);
                 } else {
-                    pos.x = (float) theta;
-                    pos.y = (float) phi;
-                    pos.z = (float) radius;
+                    pos.x = (float) radius;
+                    pos.y = (float) theta;
+                    pos.z = (float) phi;
                 }
 
                 allVertices.push_back(pos);
@@ -195,7 +199,7 @@ double CloudManager::create() {
 }
 
 double CloudManager::createThreaded() {
-    assert(mStatus.hasFirstNotLast(em::INIT, em::VERT_READY));
+    assert(mStatus.hasNone(em::VERT_READY));
     cm_proc_fine.lock();
     steady_clock::time_point begin = steady_clock::now();
 
@@ -207,6 +211,7 @@ double CloudManager::createThreaded() {
     int layer_size = theta_max_local * phi_max_local;
     double deg_fac_local = this->deg_fac;
     this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
+    bool isGPU = !cfg.cpu;
 
     /*  Memory -- Begin --- This memory-carving portion takes 94% of create() total time  */
     // auto beginInner = steady_clock::now();
@@ -228,7 +233,7 @@ double CloudManager::createThreaded() {
     // auto beginInner = steady_clock::now();
     vec3 *start = &this->allVertices.at(0);
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
-        [layer_size, phi_max_local, deg_fac_local, div_local, start](glm::vec3 &gVector){
+        [layer_size, phi_max_local, deg_fac_local, div_local, start, isGPU](glm::vec3 &gVector){
             int i = &gVector - start;
             int layer = (i / layer_size) + 1;
             int layer_pos = i % layer_size;
@@ -236,16 +241,22 @@ double CloudManager::createThreaded() {
             float phi = (layer_pos % phi_max_local) * deg_fac_local;
             float radius = static_cast<float>(layer) / div_local;
 
-            gVector.x = theta;
-            gVector.y = phi;
-            gVector.z = radius;
+            if (isGPU) {
+                gVector.x = radius;
+                gVector.y = theta;
+                gVector.z = phi;
+            } else {
+                gVector.x = radius * sin(phi) * sin(theta);
+                gVector.y = radius * cos(phi);
+                gVector.z = radius * sin(phi) * cos(theta);
+            }
         });
     // auto endInner = steady_clock::now();
     // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
     // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
     /*  Exit  */
-    mStatus.advance(em::INIT, em::VERT_READY);
+    mStatus.set(em::VERT_READY);
     genVertexArray();
     steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
@@ -299,7 +310,7 @@ double CloudManager::bakeOrbitals() {
 }
 
 double CloudManager::bakeOrbitalsThreaded() {
-    assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
+    assert(mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
     cm_proc_fine.lock();
     steady_clock::time_point begin = steady_clock::now();
 
@@ -366,7 +377,7 @@ double CloudManager::bakeOrbitalsThreaded() {
 }
 
 double CloudManager::bakeOrbitalsThreadedAlt() {
-    assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
+    assert(mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
     cm_proc_fine.lock();
     steady_clock::time_point begin = steady_clock::now();
 
@@ -443,6 +454,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                         // Radial wavefunc
                         double rho = 2.0 * radius / static_cast<double>(n);
                         double rhol = 1.0;
+                        // (factorial subroutine)
                         for (int l_times = l; l_times > 0; l_times--) {
                             rhol *= rho;
                         }
@@ -467,8 +479,8 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                                 (*thread_vec)[localCount] += (pdv * weight);
                             } // End of Phi Loop
                         } // End of Theta Loop
-                    } // End of Layer Loop (divided)
-                })); // End of lambda (thread loop)
+                    } // End of Layer Loop (layers per chunk)
+                })); // End of lambda (thread loop -- the chunk)
                 
                 top_start = top_end;
             } // End of Layer Loop (whole)
@@ -623,6 +635,41 @@ double CloudManager::cullToleranceThreaded() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+double CloudManager::expandPDVsToColours() {
+    allColours.resize(allVertices.size());
+    allColours.assign(allVertices.size(), vec3(0.0f, 0.0f, 0.0f));
+
+    vec3 colours[11] = {
+        vec3(2.0f, 0.0f, 2.0f),      // [0-9%] -- Magenta
+        vec3(0.0f, 0.0f, 1.5f),      // [10-19%] -- Blue
+        vec3(0.0f, 0.5f, 1.0f),      // [20-29%] -- Cyan-Blue
+        vec3(0.0f, 1.0f, 0.5f),      // [30-39%] -- Cyan-Green
+        vec3(0.0f, 1.0f, 0.0f),      // [40-49%] -- Green
+        vec3(1.0f, 1.0f, 0.0f),      // [50-59%] -- Yellow
+        vec3(1.0f, 1.0f, 0.0f),      // [60-69%] -- Yellow
+        vec3(1.0f, 0.0f, 0.0f),      // [70-79%] -- Red
+        vec3(1.0f, 0.0f, 0.0f),      // [80-89%] -- Red
+        vec3(1.0f, 1.0f, 1.0f),      // [90-99%] -- White
+        vec3(1.0f, 1.0f, 1.0f)       // [100%] -- White
+    };
+    const uint *vecStart = &idxCulledTolerance[0];
+    const float *dataStart = &allData[0];
+    vec3 *vecColours = &allColours[0];
+    uint64_t idx = 0;
+    uint64_t *idxPtr = &idx;
+    std::for_each(std::execution::par, idxCulledTolerance.begin(), idxCulledTolerance.end(),
+        [vecStart, dataStart, colours, vecColours, idxPtr](uint &item){
+            float pdv = dataStart[item];
+            uint colourIdx = uint(pdv * 10.0f);
+            vec3 pdvColour = colours[colourIdx] * pdv;
+
+            vecColours[item] = pdvColour;
+    });
+
+    genColourBuffer();
+    return 0.0;
+}
+
 double CloudManager::cullSlider() {
     assert(mStatus.hasFirstNotLast(em::INDEX_GEN, em::INDEX_READY));
     steady_clock::time_point begin = steady_clock::now();
@@ -674,20 +721,24 @@ double CloudManager::cullSliderThreaded() {
         std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
     } else {
         //  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
-        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0;
+        uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
         culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
+        theta_size = this->cloudResolution;
         phi_size = this->cloudResolution >> 1;
         culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.CloudCull_y));
 
         // Define lambda for multi-use
-        auto lambda_cull = [layer_size, culled_theta_all, phi_size, culled_phi_f](const uint &item){
+        auto lambda_cull = [layer_size, theta_size, culled_theta_all, phi_size, culled_phi_f](const uint &item){
+                uint layer_pos = (item % layer_size);
+                uint theta_pos = layer_pos / phi_size;
                 uint phi_pos = item % phi_size;
-                bool culled_theta = ((item % layer_size) <= culled_theta_all);
+                bool culled_theta = (layer_pos <= culled_theta_all);
                 bool culled_theta_phis = (phi_pos <= phi_size);
                 bool culled_phi_front = (phi_pos <= culled_phi_f);
+                bool culled_phi_thetas = (theta_pos <= phi_size);
 
-                return !((culled_theta && culled_theta_phis) || (culled_phi_front));
+                return !((culled_theta && culled_theta_phis) || (culled_phi_front && culled_phi_thetas));
             };
 
         // Count unculled vertices
@@ -709,7 +760,7 @@ double CloudManager::cullSliderThreaded() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
-void CloudManager::update(double time) {
+void CloudManager::update([[maybe_unused]] double time) {
     assert(mStatus.hasAll(em::VERT_READY | em::UPD_VBO | em::UPD_EBO));
     //TODO implement for CPU updates over time
 }
@@ -783,7 +834,7 @@ void CloudManager::cloudTestCSV() {
 
 int64_t CloudManager::fact(int n) {
     int64_t prod = n ?: 1;
-    int orig = n;
+    // int orig = n;
 
     while (n > 2) {
         prod *= --n;
@@ -832,7 +883,7 @@ std::complex<double> CloudManager::wavefuncPsi(double radial, std::complex<doubl
     return radial * angular;
 }
 
-double CloudManager::wavefuncRDP(double R, double r, int l) {
+double CloudManager::wavefuncRDP(double R, double r, [[maybe_unused]] int l) {
     double factor = r * r;
 
     /* if (!l) {
@@ -842,7 +893,7 @@ double CloudManager::wavefuncRDP(double R, double r, int l) {
     return R * R * factor;
 }
 
-double CloudManager::wavefuncPDV(std::complex<double> Psi, double r, int l) {
+double CloudManager::wavefuncPDV(std::complex<double> Psi, double r, [[maybe_unused]] int l) {
     double factor = r * r;
 
     /* if (!l) {
@@ -917,15 +968,13 @@ void CloudManager::wavefuncNorms(int max_n) {
 } */
 
 void CloudManager::clearForNext() {
-    mStatus.reset();
-
     dataStaging.assign(this->pixelCount, 0.0);
     allData.assign(this->pixelCount, 0.0f);
     cloudOrbitals.clear();
     this->orbitalIdx = 0;
     this->allPDVMaximum = 0;
     this->atomZ = 1;
-    mStatus.setTo(em::VERT_READY);
+    mStatus.setTo(em::INIT | em::VERT_READY);
 }
 
 void CloudManager::resetManager() {

@@ -18,9 +18,14 @@ layout (push_constant) uniform PushConstants {
 
 void main() {
     /* VBO Variables */
-    float theta = factorsA.x;
-    float phi = factorsA.y;
-    float radius = factorsA.z;
+    float radius = factorsA.x;
+    float theta = factorsA.y;
+    float phi = factorsA.z;
+    // float pi = 3.14159265358979323846264338327959074f;
+    // float two_pi = 2.0f * pi;
+    // float pi_two = pi * 0.5f;
+    // float pi_four = pi * 0.25f;
+    // float pi_eight = pi * 0.125f;
 
     /* Position */
     float posX = radius * sin(phi) * sin(theta);
@@ -48,6 +53,10 @@ void main() {
     };
     uint colourIdx = uint(pdv * 10.0f);
     vec3 pdvColour = colours[colourIdx] * pdv;
+
+    // if (phi < pi && theta < pi) {
+    //     pdvColour = vec3(1.0f, 1.0f, 1.0f);
+    // }
 
     vertColour = vec4(pdvColour, alpha);
     gl_Position = worldState.projMat * worldState.viewMat * worldState.worldMat * vec4(posX, posY, posZ, 1.0f);

@@ -110,21 +110,16 @@ void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRec
     }
 
     if (!cloudManager && canCreate) {
-        // Initialize cloudManager -- will flow to initCloudManager() in PaintGL() for initial uploads since no EBO exists (after thread finishes)
-        cloudManager = new CloudManager(config, *cloudMap, numRecipes);
+        cloudManager = new CloudManager();
         currentManager = cloudManager;
-        futureModel = QtConcurrent::run(&CloudManager::initManager, cloudManager);
-    } else if (cloudManager) {
-        // Inculdes resetManager() and clearForNext() -- will flow to updateCloudBuffers() in PaintGL() since EBO exists (after thread finishes)
-        futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
     }
-    if (cloudManager) {
-        fwModel->setFuture(futureModel);
-        this->max_n = cloudMap->rbegin()->first;
-        int divSciExp = std::abs(floor(log10(config->cloudTolerance)));
-        this->pConstCloud.maxRadius = cm_maxRadius[divSciExp - 1][max_n - 1];
-        emit toggleLoading(true);
-    }
+
+    futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
+    fwModel->setFuture(futureModel);
+    this->max_n = cloudMap->rbegin()->first;
+    int divSciExp = std::abs(floor(log10(config->cloudTolerance)));
+    this->pConstCloud.maxRadius = cm_maxRadius[divSciExp - 1][max_n - 1];
+    emit toggleLoading(true);
 }
 
 void VKWindow::newWaveConfig(AtomixConfig *config) {
@@ -346,19 +341,33 @@ void VKWindow::initWaveModel() {
 }
 
 void VKWindow::initCloudModel() {
-    // Define VBO::Vertex for Atomix Cloud
+    // Define VBO:Vertex:GPU for Atomix Cloud
     BufferCreateInfo cloudVert{};
     cloudVert.binding = 0;
     cloudVert.type = BufferType::VERTEX;
     cloudVert.name = "cloudVertices";
     cloudVert.dataTypes = { DataType::FLOAT_VEC3 };
 
-    // Define VBO::Data for Atomix Cloud
+    // Define VBO:Vertex:CPU for Atomix Cloud
+    BufferCreateInfo cloudVertCPU{};
+    cloudVertCPU.binding = 0;
+    cloudVertCPU.type = BufferType::VERTEX;
+    cloudVertCPU.name = "cloudVerticesCPU";
+    cloudVertCPU.dataTypes = { DataType::FLOAT_VEC3 };
+
+    // Define VBO:Data:GPU for Atomix Cloud
     BufferCreateInfo cloudData{};
     cloudData.binding = 1;
     cloudData.type = BufferType::DATA;
     cloudData.name = "cloudData";
     cloudData.dataTypes = { DataType::FLOAT };
+
+    // Define VBO:Data:CPU for Atomix Cloud
+    BufferCreateInfo cloudDataCPU{};
+    cloudDataCPU.binding = 1;
+    cloudDataCPU.type = BufferType::DATA;
+    cloudDataCPU.name = "cloudDataCPU";
+    cloudDataCPU.dataTypes = { DataType::FLOAT_VEC3 };
 
     // Define IBO for Atomix Cloud
     BufferCreateInfo cloudInd{};
@@ -369,25 +378,37 @@ void VKWindow::initCloudModel() {
     // Define Atomix Cloud Model with above buffers
     ModelCreateInfo cloudModel{};
     cloudModel.name = "cloud";
-    cloudModel.vbos = { &cloudVert, &cloudData };
+    cloudModel.vbos = { &cloudVert, &cloudVertCPU, &cloudData, &cloudDataCPU };
     cloudModel.ibo = &cloudInd;
     cloudModel.ubos = { "WorldState" };
-    cloudModel.vertShaders = { "gpu_harmonics.vert" };
+    cloudModel.vertShaders = { "gpu_harmonics.vert", "gpu_harmonics_test.vert" };
     cloudModel.fragShaders = { "default.frag" };
     cloudModel.pushConstant = "pConstCloud";
     cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
-    cloudModel.bufferCombos = { { 0, 1 } };
+    cloudModel.bufferCombos = { { 0, 2 }, { 1, 3 } };
     cloudModel.offsets = {
         {   .offset = 0,
             .vertShaderIndex = 0,
             .fragShaderIndex = 0,
             .topologyIndex = 0,
-            .bufferComboIndex = 0
+            .bufferComboIndex = 0,
+            .pushConstantIndex = 0
+        },
+        {
+            .offset = 0,
+            .vertShaderIndex = 1,
+            .fragShaderIndex = 0,
+            .topologyIndex = 0,
+            .bufferComboIndex = 1,
+            .pushConstantIndex = -1
         }
     };
     cloudModel.programs = {
         { .name = "default",
           .offsets = { 0 }
+        },
+        { .name = "cpu",
+          .offsets = { 1 }
         }
     };
 
@@ -533,6 +554,10 @@ void VKWindow::mouseReleaseEvent(QMouseEvent *e) {
     }
 }
 
+void VKWindow::keyPressEvent(QKeyEvent *e) {
+    QCoreApplication::sendEvent(this->parent(), e);
+}
+
 void VKWindow::handleHome() {
     initVecsAndMatrices();
     requestUpdate();
@@ -547,10 +572,6 @@ void VKWindow::handlePause() {
         vw_timeStart += vw_timeEnd - vw_timePaused;
     }
     requestUpdate();
-}
-
-void VKWindow::keyPressEvent(QKeyEvent *e) {
-    QCoreApplication::sendEvent(this->parent(), e);
 }
 
 void VKWindow::setColorsWaves(int id, uint colorChoice) {
@@ -575,6 +596,8 @@ void VKWindow::updateExtent(VkExtent2D &renderExtent) {
 }
 
 void VKWindow::updateBuffersAndShaders() {
+    bool threadsFinished = fwModel->isFinished();
+
     // Re-calculate world-state matrices (per-frame)
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     vw_world.m4_world = m4_translation * m4_rotation;
@@ -588,12 +611,12 @@ void VKWindow::updateBuffersAndShaders() {
     pConstWave.time = (vw_timeEnd - vw_timeStart) * 0.001f;
 
     // TODO : This breaks on changeMode(). Do we need CPU/Superposition at all?
-    if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU()) {
+    if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU() && threadsFinished) {
         this->waveManager->update(pConstWave.time);
         this->flGraphState.set(egs::UPDATE_REQUIRED);
     }
     
-    if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED)) {
+    if (this->flGraphState.hasAny(egs::UPDATE_REQUIRED) && threadsFinished) {
         // Capture updates from currentManager
         this->flGraphState.set(currentManager->clearUpdates());
 
@@ -632,16 +655,23 @@ void VKWindow::updateBuffersAndShaders() {
             updBuf.count = currentManager->getVertexCount();
             updBuf.size = currentManager->getVertexSize();
             updBuf.data = currentManager->getVertexData();
-            atomixProg->updateBuffer(updBuf);
+            this->atomixProg->updateBuffer(updBuf);
         }
 
         // Update VBO 2: Data
         if (flGraphState.hasAny(egs::UPD_DATA)) {
-            updBuf.bufferName = vw_currentModel + "Data";
+            std::string bufferCPU = currentManager->getCPU() ? "DataCPU" : "Data";
+            updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::DATA;
-            updBuf.count = currentManager->getDataCount();
-            updBuf.size = currentManager->getDataSize();
-            updBuf.data = currentManager->getDataData();
+            if (currentManager->getCPU()) {
+                updBuf.count = currentManager->getColourCount();
+                updBuf.size = currentManager->getColourSize();
+                updBuf.data = currentManager->getColourData();
+            } else {
+                updBuf.count = currentManager->getDataCount();
+                updBuf.size = currentManager->getDataSize();
+                updBuf.data = currentManager->getDataData();
+            }
             atomixProg->updateBuffer(updBuf);
         }
 
@@ -682,12 +712,12 @@ void VKWindow::updateBuffersAndShaders() {
             this->atomixProg->activateModel(vw_currentModel);
             
             std::string program = "default";
-            if (currentManager == waveManager) {
-                if (waveManager->getCPU()) {
-                    program = "cpu";
-                } else if (waveManager->getSphere()) {
-                    program = "sphere";
-                }
+            if (currentManager->getCPU()) {
+                program = "cpu";
+            } else if (currentManager->getConfig().sphere) {
+                program = "sphere";
+            } else {
+                program = "default";
             }
             this->atomixProg->addModelProgram(vw_currentModel, program);
 
@@ -700,25 +730,6 @@ void VKWindow::updateBuffersAndShaders() {
 
     atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
 }
-
-/* void VKWindow::updateWorldState() {
-    // Re-calculate world-state matrices
-    m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
-    vw_world.m4_world = m4_translation * m4_rotation;
-    vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
-    this->q_TotalRot.normalize();
-
-    atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
-}
-
-void VKWindow::updateTime() {
-    if (!vw_pause) {
-        vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
-    }
-    float time = (vw_timeEnd - vw_timeStart) / 1000.0f;
-
-    pConst.time = time;
-} */
 
 void VKWindow::setBGColour(float colour) {
     vw_bg = colour;

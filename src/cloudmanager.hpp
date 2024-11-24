@@ -73,7 +73,7 @@ const uint cm_maxRadius[4][8] = { { 4, 12, 24, 40, 60,  85, 113, 146 },\
 
 class CloudManager : public Manager {
     public:
-        CloudManager(AtomixConfig *cfg, harmap &inMap, int numRecipes);
+        CloudManager();
         virtual ~CloudManager();
         void newConfig(AtomixConfig *cfg) override;
 
@@ -104,6 +104,7 @@ class CloudManager : public Manager {
         double bakeOrbitalsThreadedAlt();
         double cullTolerance();
         double cullToleranceThreaded();
+        double expandPDVsToColours();
         double cullSlider();
         double cullSliderThreaded();
 
@@ -141,8 +142,6 @@ class CloudManager : public Manager {
 
         BS::thread_pool cloudPool;
 
-        std::vector<vVec3 *> pixelColours;
-        vVec3 allColours;
         dvec pdvStaging;
         uvec idxCulledTolerance;
         uvec idxCulledSlider; // Not needed with threading

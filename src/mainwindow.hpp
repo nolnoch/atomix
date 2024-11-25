@@ -99,9 +99,10 @@ struct AtomixStyle {
         sliderInterval = sliderTicks >> 2;
         groupMaxWidth = dockWidth >> 1;
         borderWidth = (isMacOS) ? 1 : 3;
-        margin = 0;
-        padding = 0;
-        spacing = 0;
+        defaultMargin = 0;
+        defaultPadding = 0;
+        defaultSpacing = 0;
+        listPadding = 20;
     }
 
     void scaleTabWidth(int tabCount) {
@@ -109,18 +110,20 @@ struct AtomixStyle {
     }
 
     void updateStyleSheet() {
+        // Note: WidgetItems must have border defined even as 0px for maging/padding to work
         styleString = QString(
             "QWidget { font-size: %1px; } "
-            "QLabel { font-size: %1px; } "
-            "QLabel#tabDesc { font-size: %2px; } "
             "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; } "
             "QTabBar::tab::selected { font-size: %5px; } "
-            "QLabel#switchOff { font-size: %11px; } "
-            "QLabel#switchOn { font-size: %11px; } "
+            "QLabel { font-size: %1px; } "
+            "QLabel#tabDesc { font-size: %2px; } "
+            "QLabel#switchOff { font-size: %12px; } "
+            "QLabel#switchOn { font-size: %12px; } "
             "QTreeWidget { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; } "
-            "QTreeWidget::item { margin: %8px; padding: %9px; spacing: %10px; } "
-            "QTreeWidget::item::indicator { width: %7px; height: %7px; margin: %8px; padding: %9px; spacing: %10px; } "
-            "QTableWidget::item { font-size: %6px; margin: %8px; padding: %9px; spacing: %10px; } "
+            "QTreeWidget::item { border: 0px; margin: %8px; padding: %9px; spacing: %10px; } "
+            "QTreeWidget::item::indicator { width: %7px; height: %7px; border: 0px; margin: %8px; padding: %9px; spacing: %10px; } "
+            "QTableWidget::item { font-size: %6px; border: 0px; margin: %8px; padding: %9px; spacing: %10px; } "
+            "QListWidget::item { font-size: %6px; border: 0px; margin: %8px; padding: %9px; padding-right: %11px; spacing: %10px; } "
             ).arg(QString::number(baseFont))            // 1
             .arg(QString::number(descFont))             // 2
             .arg(QString::number(tabWidth))             // 3
@@ -128,10 +131,11 @@ struct AtomixStyle {
             .arg(QString::number(tabSelectedFont))      // 5
             .arg(QString::number(treeFont))             // 6
             .arg(QString::number(treeCheckSize))        // 7
-            .arg(QString::number(margin))               // 8
-            .arg(QString::number(padding))              // 9
-            .arg(QString::number(spacing))              // 10
-            .arg(QString::number(switchFont));            // 11
+            .arg(QString::number(defaultMargin))        // 8
+            .arg(QString::number(defaultPadding))       // 9
+            .arg(QString::number(defaultSpacing))       // 10
+            .arg(QString::number(listPadding))          // 11
+            .arg(QString::number(switchFont));          // 12
     }
 
     QString& getStyleSheet() {
@@ -140,7 +144,7 @@ struct AtomixStyle {
 
     uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont, switchFont;
     uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
-    uint margin, padding, spacing;
+    uint defaultMargin, defaultPadding, defaultSpacing, listPadding;
 
     uint dockMin, dockMax, windowWidth, windowHeight;
     double scaleMin, scaleMax, scale;

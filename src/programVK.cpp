@@ -313,8 +313,9 @@ void ProgramVK::addUniformsAndPushConstants() {
                         createBuffer(uni.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[i][j], this->p_uniformBuffersMemory[i][j]);
                         this->p_vdf->vkMapMemory(this->p_dev, this->p_uniformBuffersMemory[i][j], 0, uni.size, 0, &this->p_uniformBufferMappings[i][j]);
                     }
-
+#ifdef DEBUG
                     std::cout << "Uniform '" << uni.name << "' [" << "set: " << uni.set << ", binding: " << uni.binding << ", size: " << uni.size << "] added to program.\n";
+#endif
                 } else {
                     // std::cout << "Uniform " << uni.name << " already exists in program.\n";
                 }
@@ -332,15 +333,18 @@ void ProgramVK::addUniformsAndPushConstants() {
                     pcr->offset = 0;
                     pcr->size = push.size;
                     this->p_pushConsts.push_back(std::pair<uint64_t, void *>(push.size, nullptr));
-
+#ifdef DEBUG
                     std::cout << "Push constant '" << push.name << "' [" << "size: " << push.size << "] added to program.\n";
+#endif
                 } else {
                     // std::cout << "Push constant " << push.name << " already exists in program.\n";
                 }
             }
         }
     }
+#ifdef DEBUG
     std::cout << std::endl;
+#endif
 
     // Descriptor Sets
     for (uint i = 0; i < setCount; i++) {
@@ -512,13 +516,12 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
 
 #ifdef DEBUG
     printModel(model);
-#endif
-
     if (model->valid.validate()) {
         std::cout << "Model added and validated: " << info.name << std::endl;
     } else {
         std::cout << "Model added but not validated: " << info.name << std::endl;
     }
+#endif
 
     return model->id;
 }

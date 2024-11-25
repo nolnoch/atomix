@@ -73,8 +73,10 @@ void MainWindow::init(QRect &screenSize) {
     } else {
         VK_SPIRV_VERSION = 0;
     }
+#ifdef DEBUG
     std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
     std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
+#endif
     
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);
@@ -153,7 +155,7 @@ void MainWindow::postInit(int titlebarHeight) {
 
     QRect entryLoc = entryOrbit->geometry();
     int entryWidth = entryLoc.width();
-    int entryHeight = entryLoc.height();
+    int entryHeight = entryLoc.height() + 2;
 
     slswPara->setMinimumHeight(entryHeight);
     slswSuper->setMinimumHeight(entryHeight);
@@ -278,7 +280,7 @@ void MainWindow::setupDockWaves() {
     buttMorbWaves = new QPushButton("Morb", this);
     buttGroupColors = new QButtonGroup(this);
 
-    QSizePolicy qPolicyExpand = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QVBoxLayout *layDock = new QVBoxLayout;
     QVBoxLayout *layConfigFile = new QVBoxLayout;
@@ -290,7 +292,7 @@ void MainWindow::setupDockWaves() {
     QGroupBox *groupOptions = new QGroupBox("Config Options");
     groupColors = new QGroupBox("Wave Colors");
     groupColors->setEnabled(false);
-    groupOrbits = new QGroupBox("Visible Orbits");
+    groupOrbits = new QGroupBox("Visible Waves");
     groupOrbits->setEnabled(false);
 
     QLabel *labelWaves = new QLabel("<p>Explore stable circular or spherical wave patterns</p>");
@@ -303,7 +305,7 @@ void MainWindow::setupDockWaves() {
     labelWaves->setMargin(12);
     labelWaves->setAlignment(Qt::AlignCenter);
 
-    QLabel *labelOrbit = new QLabel("Number of orbits:");
+    QLabel *labelOrbit = new QLabel("Number of waves:");
     labelOrbit->setObjectName("configLabel");
     QLabel *labelAmp = new QLabel("Amplitude:");
     labelAmp->setObjectName("configLabel");
@@ -340,6 +342,16 @@ void MainWindow::setupDockWaves() {
     /* entryVertex = new QComboBox(this);
     entryFrag = new QComboBox(this); */
 
+    QSizePolicy sp = entryOrbit->sizePolicy();
+    sp.setVerticalStretch(1);
+    entryOrbit->setSizePolicy(sp);
+    entryAmp->setSizePolicy(sp);
+    entryPeriod->setSizePolicy(sp);
+    entryWavelength->setSizePolicy(sp);
+    entryResolution->setSizePolicy(sp);
+    /* entryVertex->setSizePolicy(sp);
+    entryFrag->setSizePolicy(sp); */
+
     entryOrbit->setAlignment(Qt::AlignRight);
     entryAmp->setAlignment(Qt::AlignRight);
     entryPeriod->setAlignment(Qt::AlignRight);
@@ -347,7 +359,7 @@ void MainWindow::setupDockWaves() {
     entryResolution->setAlignment(Qt::AlignRight);
 
     // TODO : This is being resized automatically now. Shouldn't be necessary.
-    int entryHintWidth = 135;
+    int entryHintWidth = 130;
     int entryHintHeight = 27;
 
     slswPara = new SlideSwitch("Para", "Ortho", entryHintWidth, entryHintHeight, this);
@@ -446,8 +458,8 @@ void MainWindow::setupDockWaves() {
     layColorPicker->addWidget(buttColorPeak);
     layColorPicker->addWidget(buttColorBase);
     layColorPicker->addWidget(buttColorTrough);
-    // layColorPicker->setContentsMargins(0, 0, 0, 0);
-    // layColorPicker->setSpacing(5);
+    layColorPicker->setContentsMargins(0, 0, 0, 0);
+    layColorPicker->setSpacing(5);
 
     groupConfig->setLayout(layConfigFile);
     groupOptions->setLayout(layOptionBox);
@@ -467,18 +479,18 @@ void MainWindow::setupDockWaves() {
     layDock->addWidget(groupOrbits);
 
     // layDock->setStretchFactor(labelWaves, 2);
-    /* layDock->setStretchFactor(groupConfig, 1);
+    // layDock->setStretchFactor(groupConfig, 1);
     layDock->setStretchFactor(groupOptions, 6);
     layDock->setStretchFactor(buttMorbWaves, 1);
-    layDock->setStretchFactor(groupColors, 1);
-    layDock->setStretchFactor(groupOrbits, 1); */
+    // layDock->setStretchFactor(groupColors, 1);
+    // layDock->setStretchFactor(groupOrbits, 1);
 
-    buttMorbWaves->setSizePolicy(qPolicyExpand);
+    buttMorbWaves->setSizePolicy(qPolicyExpandA);
 
     layDock->setContentsMargins(0, 0, 0, 0);
+    layDock->setSpacing(10);
+    
     wTabWaves->setLayout(layDock);
-    // wTabWaves->setMinimumWidth(intTabMinWidth);
-    // wTabWaves->setMaximumWidth(intTabMaxWidth);
 }
 
 void MainWindow::setupDockHarmonics() {
@@ -626,7 +638,7 @@ void MainWindow::setupDockHarmonics() {
     layHRecipeButts->addWidget(buttClearRecipes);
     layHRecipeButts->addWidget(buttResetRecipes);
     layHRecipeButts->setContentsMargins(0, 0, 0, 0);
-    layHRecipeButts->setSpacing(0);
+    layHRecipeButts->setSpacing(5);
 
     groupRecipeReporter->setAlignment(Qt::AlignRight);
     groupRecipeReporter->setMaximumWidth(aStyle.groupMaxWidth);
@@ -694,21 +706,20 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->addLayout(laySlideCulling);
     layDockHarmonics->addWidget(groupSlideBackground);
 
-    layDockHarmonics->setStretchFactor(labelHarmonics, 2);
-    layDockHarmonics->setStretchFactor(layOrbitalGrid, 9);
-    layDockHarmonics->setStretchFactor(layHRecipeButts, 1);
-    layDockHarmonics->setStretchFactor(groupGenVertices, 1);
+    // layDockHarmonics->setStretchFactor(labelHarmonics, 2);
+    layDockHarmonics->setStretchFactor(layOrbitalGrid, 7);
+    // layDockHarmonics->setStretchFactor(layHRecipeButts, 1);
+    layDockHarmonics->setStretchFactor(groupGenVertices, 2);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
-    layDockHarmonics->setStretchFactor(laySlideCulling, 1);
-    layDockHarmonics->setStretchFactor(groupSlideBackground, 1);
-    layDockHarmonics->setSpacing(0);
+    // layDockHarmonics->setStretchFactor(laySlideCulling, 1);
+    // layDockHarmonics->setStretchFactor(groupSlideBackground, 1);
 
     buttMorbHarmonics->setSizePolicy(qPolicyExpandA);
 
     layDockHarmonics->setContentsMargins(0, 0, 0, 0);
+    layDockHarmonics->setSpacing(10);
+
     wTabHarmonics->setLayout(layDockHarmonics);
-    // wTabHarmonics->setMinimumWidth(intTabMinWidth);
-    // wTabHarmonics->setMaximumWidth(intTabMaxWidth);
 }
 
 void MainWindow::setupStyleSheet() {
@@ -1178,7 +1189,8 @@ void MainWindow::handleButtColors(int id) {
     int dAlpha = colorChoice.alpha();
     colour |= dAlpha;
 
-    QString colourHex = "#" + QString::fromStdString(std::format("{:08X}", colour));
+    QString rawHex = QString::fromStdString(std::format("{:08X}", colour));
+    QString colourHex = "#" + rawHex.last(2) + rawHex.first(6);
     pmColour->fill(QColor::fromString(colourHex));
     buttGroupColors->button(id)->setIcon(QIcon(*pmColour));
 

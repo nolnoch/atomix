@@ -39,7 +39,10 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+
+#ifdef DEBUG
     std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
+#endif
 
     QDir execDir = QDir(QCoreApplication::applicationDirPath());
     QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release

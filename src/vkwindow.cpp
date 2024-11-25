@@ -928,8 +928,14 @@ void VKRenderer::initResources() {
         std::cout << "Post-Device-Query Reassignment: Vulkan API version: " << version.toString().toStdString() << std::endl;
         std::cout << "Post-Device-Query Reassignment: Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
     }
-
+    
+    const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
+    this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
+    
 #ifdef DEBUG
+    const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
+    std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
+
     QString dev_info;
     int deviceCount = vr_qvw->availablePhysicalDevices().count();
     dev_info += QString::asprintf("Number of physical devices: %d\n", deviceCount);
@@ -979,12 +985,6 @@ void VKRenderer::initResources() {
 
     std::cout << dev_info.toStdString() << std::endl;
 #endif
-    // const int concFrameCount = vr_qvw->concurrentFrameCount();
-    const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
-    this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
-    const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
-
-    std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();

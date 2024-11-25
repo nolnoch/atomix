@@ -281,7 +281,6 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
     string line, key, value, name, answer;
     size_t colon, start, end;
     int changes, errors;
-    bool custom_shader = false;
     map<string, int>::iterator iter;
 
     changes = 0;
@@ -337,8 +336,6 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
                 break;
             case 6:
                 inCfg->vert = value;
-                if (!value.empty())
-                    custom_shader = true;
                 changes++;
                 break;
             case 7:
@@ -359,8 +356,6 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
                 break;
             case 11:
                 inCfg->frag = value;
-                if (!value.empty())
-                    custom_shader = true;
                 changes++;
                 break;
             case 12:
@@ -404,7 +399,6 @@ int ConfigParser::loadConfigFileGUI(string path, AtomixConfig *inCfg) {
         }
     }
 
-label_abort:
     file.close();
     return errors;
 }

@@ -96,10 +96,10 @@ public:
 private:
     bool fileToString();
 
-    unsigned int shaderId;
-    unsigned int shaderType;
     std::string filePath;
     std::string fileName;
+    unsigned int shaderId;
+    unsigned int shaderType;
     std::string sourceStringRaw;
     std::vector<uint32_t> sourceBufferCompiled;
 

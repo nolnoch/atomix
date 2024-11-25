@@ -38,11 +38,7 @@
  * Primary Constructor.
  */
 Shader::Shader(std::string fName, uint type)
-: filePath(fName),
-    shaderId(0),
-    shaderType(type),
-    sourceStringRaw("")
-{
+: filePath(fName), shaderId(0), shaderType(type), sourceStringRaw("") {
     this->fileToString();
 }
 
@@ -163,10 +159,6 @@ bool Shader::reflect() {
         pConst.name = push.name;
         pConst.size = comp.get_declared_struct_size(comp.get_type(push.type_id));
         // std::cout << "Push Constant Buffer " << pConst.name << " -- size: " << pConst.size << std::endl;
-    }
-
-    for (const auto &sampler : res.stage_inputs) {
-        
     }
 
     this->validReflect = true;

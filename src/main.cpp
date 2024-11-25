@@ -31,6 +31,7 @@
 #include "mainwindow.hpp"
 
 AtomixFiles atomixFiles;
+bool isDebug;
 
 
 int main(int argc, char* argv[]) {
@@ -44,7 +45,24 @@ int main(int argc, char* argv[]) {
     std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
 #endif
 
-    QDir execDir = QDir(QCoreApplication::applicationDirPath());
+    // Exe and CLI Parsing
+    QCommandLineParser qParser;
+    qParser.setApplicationDescription(QCoreApplication::applicationName());
+    QCommandLineOption cliVerbose({ "v", "verbose" }, QCoreApplication::translate("main", "Verbose Output"));
+    QCommandLineOption cliAtomixDir("atomix-dir", QCoreApplication::translate("main", "atomix directory (default: application directory)"), "atomix-dir", QCoreApplication::applicationDirPath());
+    qParser.addHelpOption();
+    qParser.addVersionOption();
+    qParser.addOption(cliVerbose);
+    qParser.addOption(cliAtomixDir);
+    qParser.process(app);
+
+    if (qParser.isSet(cliVerbose)) {
+        std::cout << "Verbose Output Enabled" << std::endl;
+        isDebug = true;
+    }
+    QString strAtomixDir = qParser.value(cliAtomixDir);
+
+    QDir execDir = QDir(strAtomixDir);
     QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
     if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
@@ -58,13 +76,6 @@ int main(int argc, char* argv[]) {
     }
     QIcon icoAtomix(QString::fromStdString(atomixFiles.resources()) + QString::fromStdString("icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
-
-    // Exe and CLI Parsing
-    QCommandLineParser qParser;
-    qParser.setApplicationDescription(QCoreApplication::applicationName());
-    qParser.addHelpOption();
-    qParser.addVersionOption();
-    qParser.process(app);
     
     // Surface Format
     QSurfaceFormat qFmt;

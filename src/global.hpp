@@ -50,6 +50,7 @@
 
 extern int VK_MINOR_VERSION;
 extern int VK_SPIRV_VERSION;
+extern bool isDebug;
 
 struct AtomixFiles {
     std::string rootDir;

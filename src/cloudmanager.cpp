@@ -384,18 +384,18 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     std::vector<BS::multi_future<void> *> allRecipeFutures;
     std::vector<std::vector<double> *> vec_top_threads;
     dvec *thread_vec = nullptr;
-    uint thread_loop_limit = this->cm_loop;
-    int thread_vec_limit = this->cm_vecs;
+    int thread_loop_limit = this->cm_loop;
+    uint thread_vec_limit = this->cm_vecs;
     int vecs_to_fill = numOrbitals - 1;
-    int num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
+    uint num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
     bool no_vecs = !num_top_vectors;
-    for (int top = 0; top < num_top_vectors; top++) {
+    for (uint top = 0; top < num_top_vectors; top++) {
         vec_top_threads.push_back(new std::vector<double>);
         (*vec_top_threads[top]).assign(this->pixelCount, 0.0);
     }
     uint recipe_idx = 0;
     uint clearing_vec = 0;
-    uint clearing_fut = 0;
+    int clearing_fut = 0;
     dvec *dataStagingPtr = &this->dataStaging;
     // uint col_max = this->pixelCount;
 
@@ -1183,7 +1183,7 @@ void CloudManager::testThreadingInit() {
             for (uint l = loop_min; l <= loop_max; l += lstep) {
                 this->cm_loop = l;
                 std::vector<double> times(test_max, 0.0);
-                for (int i = test_min; i < test_max; i++) {
+                for (uint i = test_min; i < test_max; i++) {
                     resetManager();
                     createThreaded();
                     double t = bakeOrbitalsThreadedAlt();

@@ -187,7 +187,7 @@ void VKWindow::initCrystalModel() {
     std::copy(vertices.cbegin(), vertices.cend(), std::back_inserter(crystalRingVertices));
     std::copy(indices.cbegin(), indices.cend(), std::back_inserter(crystalRingIndices));
 
-    for (uint32_t i = 0; i < crystalRes; i++) {
+    for (int i = 0; i < crystalRes; i++) {
         double cos_t = cos(i * crystalDegFac);
         double sin_t = sin(i * crystalDegFac);
         crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos_t));

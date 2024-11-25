@@ -24,8 +24,8 @@
 
 #include "mainwindow.hpp"
 
-uint VK_MINOR_VERSION;
-uint VK_SPIRV_VERSION;
+int VK_MINOR_VERSION;
+int VK_SPIRV_VERSION;
 
 
 MainWindow::MainWindow() {

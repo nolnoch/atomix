@@ -19,8 +19,10 @@ o Programmatically limit input on GUI fields
 o Add application icon
 o Implement Vulkan back-end
 o Programmatically ensure that certain config combos are maintained (i.e., superposition -> Parallel & CPU)
+o Fix Harmonics Phi culling
+o Implement CPU vs GPU cloud rendering -- Note: FULL cpu rendering is not really feasible considering the array of possible superposed states
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Allow more than 8 waves? Can currently gen vertices for n<999, but filtered by indices (visible waves bitflag)
-- Implement CPU vs GPU orbital rendering
-- Fix Harmonics Phi culling
 - Energy tab
+- Gravity tab
+- Planck tab

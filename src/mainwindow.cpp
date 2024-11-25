@@ -155,7 +155,7 @@ void MainWindow::postInit(int titlebarHeight) {
 
     QRect entryLoc = entryOrbit->geometry();
     int entryWidth = entryLoc.width();
-    int entryHeight = entryLoc.height() + 2;
+    int entryHeight = entryLoc.height();
 
     slswPara->setMinimumHeight(entryHeight);
     slswSuper->setMinimumHeight(entryHeight);

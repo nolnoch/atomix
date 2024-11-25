@@ -89,6 +89,8 @@ private:
     bool slsw_value = false;
     int fontPx = 12;
     int buttMove = 0;
+    double fontScale = 0.58;
+    double labMoveScale = 0.20;
 
     /* bool enabled = false;
     bool checkable = false;
@@ -116,6 +118,9 @@ private:
 
     QString _strOff = QString("QLabel#switchOff { color: %1; font-size: %2px; }");
     QString _strOn = QString("QLabel#switchOn { color: %1; font-size: %2px; }");
+    QString _strDis = QString("QLabel#switchDis { color: %1; font-size: %2px; }");
+
+    QString strOff, strOn, strDis;
 };
 
 class SlideSwitch::SwitchBackground : public QWidget {
@@ -134,7 +139,8 @@ public:
 
 private:
     SlideSwitch     *parentPtr;
-    QColor          slsb_color;
+    QColor          slsb_color_en;
+    QColor          slsb_color_dis;
     QColor          slsb_pencolor;
     QLinearGradient slsb_linGrad_enabled;
     QLinearGradient slsb_linGrad_disabled;
@@ -167,8 +173,7 @@ private:
     QColor          slsc_color;
     QColor          slsc_pencolor;
     QRadialGradient slsc_radGrad_button;
-    // QLinearGradient _lg;
-    QLinearGradient slsc_linGrad_disabled;
+    QRadialGradient slsc_radGrad_disabled;
 
     bool            slsc_enabled;
 };

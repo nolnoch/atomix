@@ -31,14 +31,20 @@
 SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent)
   : slsw_width(width), slsw_height(height), slsw_duration(100), slsw_enabled(true), slsw_value(false) {
     setParent(parent);
+    this->slsw_borderRadius = slsw_height >> 1;
     /* setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground); */
     this->resize(slsw_width, slsw_height);
     // this->setMinimumSize(QSize(120, 20));
     // this->setBaseSize(QSize(slsw_width, slsw_height));
-    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    // this->sizePolicy().setControlType(QSizePolicy::LineEdit);
-    this->slsw_borderRadius = slsw_height >> 1;
+    QSizePolicy sp = this->sizePolicy();
+    sp.setHorizontalPolicy(QSizePolicy::Preferred);
+    sp.setVerticalPolicy(QSizePolicy::Fixed);
+    sp.setHorizontalStretch(1);
+    sp.setVerticalStretch(1);
+    sp.setControlType(QSizePolicy::LineEdit);
+    this->setSizePolicy(sp);
+    
     this->setCheckable(true);
     
     // Grab Palette from parent context (dark mode vs light mode colours)
@@ -152,14 +158,16 @@ void SlideSwitch::redraw() {
 
 void SlideSwitch::paintEvent(QPaintEvent*) {
     QPainter* painter = new QPainter;
-    painter->begin(this);
-    painter->setRenderHint(QPainter::Antialiasing, true);
-
-    QPen pen(Qt::NoPen);
-    painter->setPen(pen);
-
+    QPen penDark(this->pal.alt.color().darker(120), 0, Qt::SolidLine);
+    QPen penNo(Qt::NoPen);
     int dimWidth = this->width();
     int dimHeight = this->height();
+
+    painter->begin(this);
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setPen(penDark);
+
+    // std::cout << "Widget: " <<dimWidth << ", " << dimHeight << " != " << this->slsw_width << ", " << this->slsw_height << std::endl;
 
     // Set Outer border [constant]
     // painter->setBrush(this->pal.alt);
@@ -176,19 +184,17 @@ void SlideSwitch::paintEvent(QPaintEvent*) {
 
     if (slsw_enabled) {
         // Set Enabled-Off colour
+        painter->setPen(penNo);
         painter->setBrush(this->pal.base);
         painter->drawRoundedRect(2, 2, dimWidth - 4, dimHeight - 4, slsw_borderRadius, slsw_borderRadius);
     } else {
         // Set Disabled colour
+        painter->setPen(penNo);
         painter->setBrush(linGrad_disabled);
         painter->drawRoundedRect(2, 2, dimWidth - 4, dimHeight - 4, slsw_borderRadius, slsw_borderRadius);
     }
     painter->end();
 }
-
-/* void SlideSwitch::mousePressEvent(QMouseEvent*) {
-    this->click();
-} */
 
 void SlideSwitch::setEnabled(bool flag) {
     slsw_enabled = flag;
@@ -385,6 +391,10 @@ void SlideSwitch::SwitchBackground::paintEvent(QPaintEvent*) {
     painter->begin(this);
     painter->setRenderHint(QPainter::Antialiasing, true);
 
+    // int dimWidth = this->width();
+    // int dimHeight = this->height();
+    // std::cout << "Background: " <<dimWidth << ", " << dimHeight << " != " << this->slsb_width << ", " << this->slsb_height << std::endl;
+
     QPen pen(Qt::NoPen);
     painter->setPen(pen);
     painter->setBrush((slsb_enabled) ? slsb_linGrad_enabled : slsb_linGrad_disabled);
@@ -397,9 +407,11 @@ void SlideSwitch::SwitchBackground::setEnabled(bool flag) {
 }
 
 void SlideSwitch::SwitchBackground::updateSize() {
-    this->slsb_width = parentPtr->slsw_width - 4;
-    this->slsb_height = parentPtr->slsw_height - 4;
-    this->slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
+    // this->slsb_width = parentPtr->slsw_width - 4;
+    // this->slsb_height = parentPtr->slsw_height - 4;
+    this->slsb_width = this->width();
+    this->slsb_height = this->height();
+    this->slsb_borderRadius = parentPtr->slsw_borderRadius;
     setFixedHeight(this->slsb_height);
     int cx = this->slsb_width;
     int cy = this->slsb_height;

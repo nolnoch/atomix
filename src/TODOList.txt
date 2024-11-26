@@ -25,6 +25,12 @@ o Implement CPU vs GPU cloud rendering -- Note: FULL cpu rendering is not really
 - Allow more than 8 waves? Can currently gen vertices for n<999, but filtered by indices (visible waves bitflag)
 - Refactor config files to use denser format, saved to file from application
 - Reimplement custom vertex shading through QFileDialog and JIT programVK addition
+[START HERE]
+- Harmonics recipe update (not add) is broken
+- Harmonics selected and locked need vertical item padding (set in parent Widget)
+- SlideSwitch rounded edges are off on MacOS
+- layout spacing is off on MacOS
+[END HERE]
 - Implement MainWindow resizeEvent()
 - Energy tab
 - Gravity tab

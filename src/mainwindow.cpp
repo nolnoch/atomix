@@ -22,6 +22,7 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QFontDatabase>
 #include "mainwindow.hpp"
 
 int VK_MINOR_VERSION;
@@ -36,12 +37,14 @@ void MainWindow::init(QRect &screenSize) {
     cfgParser = new ConfigParser;
     setWindowTitle(tr("atomix"));
     
+    // Window Size and Position on Screen
     double windowRatio = 0.33;
     mw_width = SWIDTH + int((screenSize.width() - SWIDTH) * windowRatio);
     mw_height = SHEIGHT + int((screenSize.height() - SHEIGHT) * windowRatio);
     this->resize(mw_width, mw_height);
     this->move(screenSize.center() - this->frameGeometry().center());
 
+    // Input Validators
     valIntSmall = new QIntValidator();  
     valIntSmall->setRange(1, 8);
     valIntLarge = new QIntValidator();
@@ -51,9 +54,22 @@ void MainWindow::init(QRect &screenSize) {
     valDoubleLarge = new QDoubleValidator();
     valDoubleLarge->setRange(0.001, 999.999, 3);
 
-    lastSliderSentX = 0.0f;
-    lastSliderSentY = 0.0f;
+    // Add Custom Fonts
+    QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
+    QString strFont = "Inconsolata";
+    int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + strFont + "-Regular.ttf");
+    QStringList fontList = QFontDatabase::applicationFontFamilies(id);
+    if (fontList.contains(strFont)) {
+        aStyle.fontInc = QFont(strFont);
+        aStyle.strFontInc = strFont;
+    } else {
+         aStyle.fontInc = QFont(strDefault);
+         aStyle.strFontInc = strDefault;
+    }
 
+    // Stylesheet
+    aStyle.layDockSpace = int(double(mw_height* 0.005));
+    aStyle.morbMargin = aStyle.layDockSpace << 1;
     setupStyleSheet();
 
     // Graphics setup
@@ -73,10 +89,10 @@ void MainWindow::init(QRect &screenSize) {
     } else {
         VK_SPIRV_VERSION = 0;
     }
-if (isDebug) {
-    std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
-    std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
-}
+    if (isDebug) {
+        std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
+        std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
+    }
     
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);
@@ -107,7 +123,7 @@ if (isDebug) {
     loadConfig();
     refreshOrbits();
 
-    // Signal-Slot connections
+    // Signal-Slot Connections
     connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
     connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
@@ -135,7 +151,6 @@ if (isDebug) {
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 
-    // setupStyleSheet();
 }
 
 void MainWindow::postInit(int titlebarHeight) {
@@ -143,8 +158,8 @@ void MainWindow::postInit(int titlebarHeight) {
     mw_titleHeight = titlebarHeight;
 
     QRect mwLoc = this->geometry();
-    // mw_width = mwLoc.width();
-    // mw_height = mwLoc.height() - titlebarHeight;
+    mw_width = mwLoc.width();
+    mw_height = mwLoc.height();
     mw_x = mwLoc.x();
     mw_y = mwLoc.y();
 
@@ -162,24 +177,31 @@ void MainWindow::postInit(int titlebarHeight) {
     int entryWidth = entryLoc.width();
     int entryHeight = entryLoc.height();
 
-    slswPara->setMinimumHeight(entryHeight);
-    slswSuper->setMinimumHeight(entryHeight);
-    slswCPU->setMinimumHeight(entryHeight);
-    slswSphere->setMinimumHeight(entryHeight);
+    slswPara->setFixedHeight(entryHeight);
+    slswSuper->setFixedHeight(entryHeight);
+    slswCPU->setFixedHeight(entryHeight);
+    slswSphere->setFixedHeight(entryHeight);
 
     slswPara->setMaximumWidth(entryWidth);
     slswSuper->setMaximumWidth(entryWidth);
     slswCPU->setMaximumWidth(entryWidth);
     slswSphere->setMaximumWidth(entryWidth);
 
-    slswPara->redraw();
-    slswSuper->redraw();
-    slswCPU->redraw();
-    slswSphere->redraw();
+    // slswPara->redraw();
+    // slswSuper->redraw();
+    // slswCPU->redraw();
+    // slswSphere->redraw();
 
     // TODO : Test on macOS and make dynamic
-    // int dent = treeOrbitalSelect->indentation();
-    // treeOrbitalSelect->setIndentation(15);
+    int treeWidth = treeOrbitalSelect->width();
+    int dent = treeOrbitalSelect->indentation();
+    int indent = int(double(treeWidth) * 0.10);
+    if (indent <= dent) {        
+        treeOrbitalSelect->setIndentation(indent);
+    }
+
+    layDockWaves->setSpacing(aStyle.layDockSpace);
+    layDockHarmonics->setSpacing(0);
 
     setupDetails();
     setupLoading();
@@ -282,6 +304,7 @@ void MainWindow::setupTabs() {
 
 void MainWindow::setupDockWaves() {
     QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    // QSizePolicy qPolicyConstrict = QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     wTabWaves = new QWidget(this);
 
     // Buttons
@@ -292,7 +315,7 @@ void MainWindow::setupDockWaves() {
 
     // Groups
     QGroupBox *groupConfig = new QGroupBox("Config File");
-    QGroupBox *groupOptions = new QGroupBox("Config Options");
+    groupOptions = new QGroupBox("Config Options");
     groupColors = new QGroupBox("Wave Colors");
     groupColors->setEnabled(false);
     groupOrbits = new QGroupBox("Visible Waves");
@@ -414,9 +437,8 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->setColumnStretch(0,6);
     layWaveConfig->setColumnStretch(1,1);
     layWaveConfig->setColumnStretch(2,6);
+    layWaveConfig->setSpacing(aStyle.layDockSpace);
 
-    // QVBoxLayout *layOptionBox = new QVBoxLayout;
-    // layOptionBox->addLayout(layWaveConfig);
     groupOptions->setLayout(layWaveConfig);
     groupOptions->setAlignment(Qt::AlignRight);
 
@@ -481,23 +503,21 @@ void MainWindow::setupDockWaves() {
     buttGroupOrbits->addButton(orbit8, 128);
 
     // Add All Groups and Layouts to Main Tab Layout
-    QVBoxLayout *layDockWaves = new QVBoxLayout;
+    layDockWaves = new QVBoxLayout;
     layDockWaves->addWidget(labelWaves);
-    layDockWaves->addStretch(2);
+    layDockWaves->addStretch(8);
     layDockWaves->addWidget(groupConfig);
     layDockWaves->addWidget(groupOptions);
     layDockWaves->addWidget(buttMorbWaves);
-    layDockWaves->addStretch(2);
+    layDockWaves->addStretch(8);
     layDockWaves->addWidget(groupColors);
     layDockWaves->addWidget(groupOrbits);
 
     layDockWaves->setStretchFactor(groupOptions, 1);
-    layDockWaves->setStretchFactor(buttMorbWaves, 1);
+    layDockWaves->setStretchFactor(buttMorbWaves, 4);
 
     // Set Main Tab Layout
-    layDockWaves->setContentsMargins(0, 0, 0, 0);
-    layDockWaves->setSpacing(10);
-    
+    layDockWaves->setContentsMargins(0, 0, 0, 0);    
     wTabWaves->setLayout(layDockWaves);
 }
 
@@ -568,14 +588,16 @@ void MainWindow::setupDockHarmonics() {
     QStringList headersReport = { "Weight", "Orbital" };
     tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
     tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    tableOrbitalReport->verticalHeader()->setMaximumSectionSize(aStyle.tableFont + 2);
+    // tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     tableOrbitalReport->verticalHeader()->setVisible(false);
     tableOrbitalReport->setShowGrid(false);
     tableOrbitalReport->setSortingEnabled(true);
+    // tableOrbitalReport->setSizeAdjustPolicy(QAbstractScrollArea::AdjustIgnored);
     
     // Locked Orbitals List
     listOrbitalLocked = new QListWidget();
-    listOrbitalLocked->setSpacing(2);
+    listOrbitalLocked->setSpacing(0);
     // listOrbitalLocked->setContentsMargins(0, 0, 0, 0);
 
     // Add Orbital Selection Widgets to Groups (via Layouts)
@@ -634,7 +656,7 @@ void MainWindow::setupDockHarmonics() {
     layHRecipeButts->addWidget(buttClearRecipes);
     layHRecipeButts->addWidget(buttResetRecipes);
     layHRecipeButts->setContentsMargins(0, 0, 0, 0);
-    layHRecipeButts->setSpacing(5);
+    layHRecipeButts->setSpacing(aStyle.layDockSpace);
 
     // Harmonics Configuration Input Widgets
     QLabel *labelCloudResolution = new QLabel("Points rendered per circle");
@@ -661,10 +683,11 @@ void MainWindow::setupDockHarmonics() {
     layGenVertices->setColumnStretch(0, 9);
     layGenVertices->setColumnStretch(1, 1);
     layGenVertices->setColumnStretch(2, 3);
-    layGenVertices->setSpacing(5);
+    layGenVertices->setSpacing(aStyle.layDockSpace);
+    layGenVertices->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
     groupGenVertices->setLayout(layGenVertices);
     groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
-    // layGenVertices->setContentsMargins(5, 5, 5, 5);
+    groupGenVertices->setContentsMargins(0, 0, 0, 0);
 
     // Culling Sliders
     slideCullingX = new QSlider(Qt::Horizontal);
@@ -712,39 +735,34 @@ void MainWindow::setupDockHarmonics() {
     groupSlideBackground->setLayout(laySlideBackground);
 
     // Add All Groups and Layouts to Main Tab Layout
-    QVBoxLayout *layDockHarmonics = new QVBoxLayout;
+    layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
-    layDockHarmonics->addStretch(2);
+    layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(layOrbitalGrid);
     layDockHarmonics->addLayout(layHRecipeButts);
     layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addWidget(buttMorbHarmonics);
-    layDockHarmonics->addStretch(2);
+    layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(laySlideCulling);
     layDockHarmonics->addWidget(groupSlideBackground);
 
-    layDockHarmonics->setStretchFactor(layOrbitalGrid, 7);
+    layDockHarmonics->setStretchFactor(layOrbitalGrid, 8);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
+    layDockHarmonics->setContentsMargins(0, 0, 0, 0);
 
     // Set Main Tab Layout
-    layDockHarmonics->setContentsMargins(0, 0, 0, 0);
-    layDockHarmonics->setSpacing(10);
-
     wTabHarmonics->setLayout(layDockHarmonics);
 }
 
 void MainWindow::setupStyleSheet() {
     aStyle.setWindowSize(mw_width, mw_height);
-    aStyle.setDockWidth(mw_width * 0.2);
-    aStyle.scaleFonts();
-    aStyle.scaleWidgets();
-    aStyle.scaleTabWidth(2);
+    aStyle.setDockWidth(mw_width * 0.2, 2);
     aStyle.updateStyleSheet();
     this->setStyleSheet(aStyle.getStyleSheet());
-if (isDebug) {
-    std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
-}
+    if (isDebug) {
+        std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
+    }
 }
 
 void MainWindow::refreshConfigs() {
@@ -917,16 +935,16 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     buttLockRecipes->setEnabled(true);
     buttClearRecipes->setEnabled(true);
 
-    /* Parent nodes recurse to children while checking/unchecking */
     if (itemChildren) {
+    // Parent nodes recurse to children while checking/unchecking
         for (int i = 0; i < item->childCount(); i++) {
             item->child(i)->setCheckState(0,checked);
         }
 
-    /* Leaf nodes */
     } else {
+    // Leaf nodes
         if (checked) {
-            /* Leaf node checked */
+            // Leaf node checked
             QString strItem = item->text(col);
             QTableWidgetItem *thisOrbital = new QTableWidgetItem(strItem);
             QTableWidgetItem *thisWeight = new QTableWidgetItem("1");
@@ -934,6 +952,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             tableOrbitalReport->setRowCount(intTableRows + 1);
             tableOrbitalReport->setItem(intTableRows, 1, thisOrbital);
             tableOrbitalReport->setItem(intTableRows, 0, thisWeight);
+            tableOrbitalReport->setRowHeight(intTableRows, aStyle.tableFont + 2);
             thisOrbital->setTextAlignment(Qt::AlignCenter);
             thisOrbital->setForeground(Qt::red);
             thisWeight->setTextAlignment(Qt::AlignCenter);
@@ -941,7 +960,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             thisOrbital->setFlags(Qt::ItemNeverHasChildren);
             thisWeight->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
         } else {
-            /* Leaf node unchecked */
+            // Leaf node unchecked
             int intItemRow = tableOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first()->row();
             tableOrbitalReport->removeRow(intItemRow);
 
@@ -983,11 +1002,10 @@ void MainWindow::handleButtLockRecipes() {
         QString strOrbital = thisOrbital->text();
         QString strWeight = thisWeight->text();
         QString strLocked = strWeight + "  *  (" + strOrbital + ")";
-        // QList<QListWidgetItem *> resultsExact = listOrbitalLocked->findItems(strLocked, Qt::MatchExactly);
         QList<QListWidgetItem *> resultsPartial = listOrbitalLocked->findItems(strOrbital, Qt::MatchContains);
 
         if (!resultsPartial.count()) {
-            /* Not even a partial match found -- add new item to harmap */
+            // Not even a partial match found -- add new item to harmap
             QListWidgetItem *newItem = new QListWidgetItem(strLocked, listOrbitalLocked);
             listOrbitalLocked->addItem(newItem);
             newItem->setTextAlignment(Qt::AlignRight);
@@ -1001,8 +1019,8 @@ void MainWindow::handleButtLockRecipes() {
             vecElem->push_back(lm);
             this->numRecipes++;
         } else {
-            /* Partial match found -- update item in harmap */
-            // Update match to new weight
+            // Partial match found -- update item in harmap
+            // Update matched item to new weight
             resultsPartial.first()->setText(strLocked);
 
             // Update harmap item

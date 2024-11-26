@@ -41,9 +41,9 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
-if (isDebug) {
-    std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
-}
+    if (isDebug) {
+        std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
+    }
 
     // Exe and CLI Parsing
     QCommandLineParser qParser;
@@ -63,7 +63,7 @@ if (isDebug) {
     QString strAtomixDir = qParser.value(cliAtomixDir);
 
     QDir execDir = QDir(strAtomixDir);
-    QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
+    QDir atomixDir = QDir(execDir.relativeFilePath("../../"));       // TODO : Set to execDir for release
     if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,

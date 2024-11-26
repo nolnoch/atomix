@@ -77,8 +77,9 @@ struct AtomixStyle {
         windowHeight = height;
     }
 
-    void setDockWidth(int width) {
+    void setDockWidth(int width, int tabCount) {
         dockWidth = width;
+        tabWidth = dockWidth / tabCount;
     }
     
     void scaleFonts() {
@@ -87,8 +88,8 @@ struct AtomixStyle {
         tabSelectedFont = int(round(baseFont * 1.15));
         tabUnselectedFont = int(round(baseFont * 0.90));
         treeFont = baseFont + 1;
-        tableFont = baseFont - 1;
-        listFont = baseFont - 1;
+        tableFont = baseFont + 1;
+        listFont = baseFont + 1;
         morbFont = baseFont + 5;
     }
 
@@ -102,34 +103,36 @@ struct AtomixStyle {
         defaultMargin = 0;
         defaultPadding = 0;
         defaultSpacing = 0;
-        listPadding = 20;
-    }
-
-    void scaleTabWidth(int tabCount) {
-        tabWidth = dockWidth / tabCount;
+        listPadding = baseFont;
     }
 
     void updateStyleSheet() {
-        // Note: WidgetItems must have border defined even as 0px for maging/padding to work
+        scaleFonts();
+        scaleWidgets();
+
+        // Note: WidgetItems must have border defined even as 0px for margin/padding to work
         styleStringList = QStringList({
             "QWidget { font-size: %1px; } "
             "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; } "
             "QTabBar::tab::selected { font-size: %5px; } "
             "QLabel { font-size: %1px; } "
             "QLabel#tabDesc { font-size: %2px; } "
-            "QTreeWidget { font-size: %6px; } "
-            "QTableWidget { font-size: %7px; } "
-            "QListWidget { font-size: %8px; } "
-            "QListWidget::item { border: 0px; padding-right: %9px; } "
-            "QPushButton#morb { font-size: %10px; margin-right: 10px; margin-left: 10px; } "
-            // "QTreeWidget::item::indicator { width: %11px; height: %11px; border: 0px; margin: %7px; padding: %8px; spacing: %9px; } "
+            "QTreeWidget { font-family: %15; font-size: %6px; } "
+            "QTableWidget { font-family: %15; font-size: %7px; } "
+            "QListWidget { font-family: %15; font-size: %8px; border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
+            "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-right: %9px; } "
+            "QPushButton#morb { font-size: %10px; margin-right: %11px; margin-left: %11px; } "
+            // "QTreeWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
+            // "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
+            // "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
+            // "QTreeWidget::item::indicator { width: %15px; height: %15px; border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
         });
 
         genStyleString();
     }
 
     void genStyleString() {
-        styleString = styleStringList.join(" ")
+        strStyle = styleStringList.join(" ")
             .arg(QString::number(baseFont))             // 1
             .arg(QString::number(descFont))             // 2
             .arg(QString::number(tabWidth))             // 3
@@ -139,26 +142,29 @@ struct AtomixStyle {
             .arg(QString::number(tableFont))            // 7
             .arg(QString::number(listFont))             // 8
             .arg(QString::number(listPadding))          // 9
-            .arg(QString::number(morbFont));            // 10
-            // .arg(QString::number(defaultMargin))        // 11
-            // .arg(QString::number(defaultPadding))       // 12
-            // .arg(QString::number(defaultSpacing))       // 13
-            // .arg(QString::number(treeCheckSize));    // 14
+            .arg(QString::number(morbFont))             // 10
+            .arg(QString::number(morbMargin))           // 11
+            .arg(QString::number(defaultMargin))        // 12
+            .arg(QString::number(defaultPadding))       // 13
+            .arg(QString::number(defaultSpacing))       // 14
+            .arg(strFontInc);                           // 15
+            // .arg(QString::number(treeCheckSize));       // 15
     }
 
     QString& getStyleSheet() {
-        return styleString;
+        return strStyle;
     }
 
-    uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont, morbFont;
+    uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont, morbFont, morbMargin;
     uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
-    uint defaultMargin, defaultPadding, defaultSpacing, listPadding;
+    uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
 
     uint dockMin, dockMax, windowWidth, windowHeight;
     double scaleMin, scaleMax, scale;
 
     QStringList styleStringList;
-    QString styleString;
+    QString strStyle, strFontInc;
+    QFont fontInc;
 };
 
 
@@ -227,6 +233,9 @@ private:
     QDoubleValidator *valDoubleSmall = nullptr;
     QDoubleValidator *valDoubleLarge = nullptr;
 
+    QVBoxLayout *layDockWaves = nullptr;
+    QVBoxLayout *layDockHarmonics = nullptr;
+    
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;
     QLineEdit *entryPeriod = nullptr;
@@ -236,8 +245,6 @@ private:
     SlideSwitch *slswSuper = nullptr;
     SlideSwitch *slswCPU = nullptr;
     SlideSwitch *slswSphere = nullptr;
-    /* QComboBox *entryVertex = nullptr;
-    QComboBox *entryFrag = nullptr; */
     QComboBox *comboConfigFile = nullptr;
 
     QButtonGroup *buttGroupConfig = nullptr;
@@ -250,6 +257,7 @@ private:
     QPushButton *buttResetRecipes = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
 
+    QGroupBox *groupOptions = nullptr;
     QGroupBox *groupColors = nullptr;
     QGroupBox *groupOrbits = nullptr;
     QGroupBox *groupRecipeBuilder = nullptr;

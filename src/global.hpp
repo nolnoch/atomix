@@ -57,6 +57,8 @@ struct AtomixFiles {
     std::string shadersDir;
     std::string configsDir;
     std::string resourcesDir;
+    std::string fontsDir;
+    std::string iconsDir;
 
     bool setRoot(const std::string &_root) {
         if (!std::filesystem::exists(std::string(_root + "/shaders"))) {
@@ -67,6 +69,8 @@ struct AtomixFiles {
         shadersDir = rootDir + "shaders/";
         configsDir = rootDir + "configs/";
         resourcesDir = rootDir + "resources/";
+        fontsDir = resourcesDir + "fonts/";
+        iconsDir = resourcesDir + "icons/";
 
         return true;
     }
@@ -75,6 +79,8 @@ struct AtomixFiles {
     constexpr std::string& shaders() { return shadersDir; }
     constexpr std::string& configs() { return configsDir; }
     constexpr std::string& resources() { return resourcesDir; }
+    constexpr std::string& fonts() { return fontsDir; }
+    constexpr std::string& icons() { return iconsDir; }
 };
 
 extern AtomixFiles atomixFiles;

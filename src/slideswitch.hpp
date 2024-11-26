@@ -41,7 +41,7 @@ public:
     explicit SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent = nullptr);
     ~SlideSwitch() override;
 
-    void redraw();
+    // void redraw();
 
     //-- QWidget methods
     // void mousePressEvent(QMouseEvent *) override;
@@ -90,7 +90,7 @@ private:
     int fontPx = 12;
     int buttMove = 0;
     double fontScale = 0.58;
-    double labMoveScale = 0.20;
+    double labMoveScale = 0.18;
 
     /* bool enabled = false;
     bool checkable = false;

@@ -41,15 +41,15 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
-#ifdef DEBUG
+if (isDebug) {
     std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
-#endif
+}
 
     // Exe and CLI Parsing
     QCommandLineParser qParser;
     qParser.setApplicationDescription(QCoreApplication::applicationName());
-    QCommandLineOption cliVerbose({ "v", "verbose" }, QCoreApplication::translate("main", "Verbose Output"));
-    QCommandLineOption cliAtomixDir("atomix-dir", QCoreApplication::translate("main", "atomix directory (default: application directory)"), "atomix-dir", QCoreApplication::applicationDirPath());
+    QCommandLineOption cliVerbose("verbose", QCoreApplication::translate("main", "ALL debug and information messages"));
+    QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QCoreApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: application directory)"), "directory", QCoreApplication::applicationDirPath());
     qParser.addHelpOption();
     qParser.addVersionOption();
     qParser.addOption(cliVerbose);
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     qParser.process(app);
 
     if (qParser.isSet(cliVerbose)) {
-        std::cout << "Verbose Output Enabled" << std::endl;
+        std::cout << "Verbosity Level: 9001 !!!1one" << std::endl;
         isDebug = true;
     }
     QString strAtomixDir = qParser.value(cliAtomixDir);

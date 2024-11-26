@@ -23,6 +23,9 @@ o Fix Harmonics Phi culling
 o Implement CPU vs GPU cloud rendering -- Note: FULL cpu rendering is not really feasible considering the array of possible superposed states
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Allow more than 8 waves? Can currently gen vertices for n<999, but filtered by indices (visible waves bitflag)
+- Refactor config files to use denser format, saved to file from application
+- Reimplement custom vertex shading through QFileDialog and JIT programVK addition
+- Implement MainWindow resizeEvent()
 - Energy tab
 - Gravity tab
 - Planck tab

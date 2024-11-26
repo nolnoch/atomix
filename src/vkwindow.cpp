@@ -610,7 +610,7 @@ void VKWindow::updateBuffersAndShaders() {
     }
     pConstWave.time = (vw_timeEnd - vw_timeStart) * 0.001f;
 
-    // TODO : This breaks on changeMode(). Do we need CPU/Superposition at all?
+    // TODO : This may break if we go from GPU waves to CPU anything
     if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU() && threadsFinished) {
         this->waveManager->update(pConstWave.time);
         this->flGraphState.set(egs::UPDATE_REQUIRED);
@@ -932,7 +932,7 @@ void VKRenderer::initResources() {
     const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
     this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
     
-#ifdef DEBUG
+if (isDebug) {
     const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
     std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
 
@@ -984,7 +984,7 @@ void VKRenderer::initResources() {
     dev_info += QLatin1Char('\n');
 
     std::cout << dev_info.toStdString() << std::endl;
-#endif
+}
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();

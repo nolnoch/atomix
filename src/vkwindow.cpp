@@ -187,7 +187,7 @@ void VKWindow::initCrystalModel() {
     std::copy(vertices.cbegin(), vertices.cend(), std::back_inserter(crystalRingVertices));
     std::copy(indices.cbegin(), indices.cend(), std::back_inserter(crystalRingIndices));
 
-    for (uint32_t i = 0; i < crystalRes; i++) {
+    for (int i = 0; i < crystalRes; i++) {
         double cos_t = cos(i * crystalDegFac);
         double sin_t = sin(i * crystalDegFac);
         crystalRingVertices.push_back(static_cast<float>(crystalRadius * cos_t));
@@ -610,7 +610,7 @@ void VKWindow::updateBuffersAndShaders() {
     }
     pConstWave.time = (vw_timeEnd - vw_timeStart) * 0.001f;
 
-    // TODO : This breaks on changeMode(). Do we need CPU/Superposition at all?
+    // TODO : This may break if we go from GPU waves to CPU anything
     if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU() && threadsFinished) {
         this->waveManager->update(pConstWave.time);
         this->flGraphState.set(egs::UPDATE_REQUIRED);
@@ -928,8 +928,14 @@ void VKRenderer::initResources() {
         std::cout << "Post-Device-Query Reassignment: Vulkan API version: " << version.toString().toStdString() << std::endl;
         std::cout << "Post-Device-Query Reassignment: Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
     }
+    
+    const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
+    this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
+    
+if (isDebug) {
+    const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
+    std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
 
-#ifdef DEBUG
     QString dev_info;
     int deviceCount = vr_qvw->availablePhysicalDevices().count();
     dev_info += QString::asprintf("Number of physical devices: %d\n", deviceCount);
@@ -978,13 +984,7 @@ void VKRenderer::initResources() {
     dev_info += QLatin1Char('\n');
 
     std::cout << dev_info.toStdString() << std::endl;
-#endif
-    // const int concFrameCount = vr_qvw->concurrentFrameCount();
-    const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
-    this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
-    const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
-
-    std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
+}
 
     // Create Program
     AtomixDevice *progDev = new AtomixDevice();

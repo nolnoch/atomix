@@ -156,7 +156,7 @@ class CloudManager : public Manager {
         uint64_t pixelCount = 0;
         
         int orbitalIdx = 0;
-        int numOrbitals = 0;
+        uint numOrbitals = 0;
         int atomZ = 1;
         int max_n = 0;
         float cm_culled = 0;

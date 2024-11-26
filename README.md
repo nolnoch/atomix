@@ -28,10 +28,9 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
   * Number of orbit-waves (for *n*>=1, *n* waves where wave[*n*] has r = *n*)
   * Wave amplitude, period, and wavelength (in radians)
   * Wave resolution (in raw \# of vertices; suggest >360)
-  * Custom vertex shader file selection (there are two; you may specify any)
-  * CPU vs GPU rendering
+  * CPU or GPU rendering
   * Parallel-transverse (coplanar) or orthogonal-transverse wave orientation for circles
-  * Spherical harmonic waves
+  * Spherical waves
 * Mouse and keyboard controls
   * Left-click-drag translates the model up/down/left/right in the window
   * Right-click-drag rotates the model in 3-space
@@ -43,6 +42,14 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
   * Selecting which waves are rendered (n = {1, 2, 3, ...})
   * Selecting colors for base, peak, and trough
 * Second tab for quantum Spherical Harmonics
+  * May superpose any combination of n,l,m states
+  * May slice through vertically and/or horizontally
+  * May adjust brightness of background
+  * May adjust resolution in two dimensions (warning: very high resoltions yield 2+GB buffer sizes. A warning is given if you exceed 1GB.)
+* Additional program features
+  * Screen capture (currently buggy if alpha is used for the model and PNG is desired output)
+  * Verbose execution of binary
+  * Folder selection for non-standard binary location relative to shader files
  
 #### Development Platform and Possible Requirements:
 - Ubuntu 24.04 Noble
@@ -56,13 +63,13 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
 Subtituting real-world values for k = 2pi/l = p/h = E/hc would not be graphically interesting, and I would learn nothing.
 
 Similarly, phase values of wt+p = t/f+p = ht/E+p (?) seem to lie in the complex plane, and I do not hate myself that much, yet. (Update: I think I will actually tackle this.)
+*Editor's Note: He tackled this.*
 
 #### //TODO List
 * ~~Can I make a spherical plane-wave? It's just math, right?~~ Update: I did it!
 * I can use fake constants to simulate input energy to the threshold of stable wave orbits and still complete my original vision for this project.
 * I'm not sure whether to compare any of this to the Bohr-Sommerfeld model. I may revisit that in the future.
-* As tin-foil or ignorant as this may sound, I want to simulate a photon/em wave traveling through 4-space whose electrical and magnetic waves orthogonally project in visible 3-space. It *feels* like the math should work, at least.
-* Fix the colour options
+* ~~Fix the colour options~~ Update: Done
 * ~~Add config to GUI text readout~~ Update: Done
 * ~~Add controls to GUI text readout?~~ Update: Done
 * ~~File pickers for shaders and configs to avoid CLI~~ Update: Done-ish...it automatically loads present files. Need to add path selector.

@@ -49,8 +49,9 @@
 #define SHEIGHT 720
 #define SRATIO 0.80
 
-extern uint VK_MINOR_VERSION;
-extern uint VK_SPIRV_VERSION;
+extern int VK_MINOR_VERSION;
+extern int VK_SPIRV_VERSION;
+extern bool isDebug;
 
 struct AtomixFiles {
     std::string rootDir;

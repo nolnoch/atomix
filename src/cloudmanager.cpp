@@ -385,18 +385,18 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     std::vector<BS::multi_future<void> *> allRecipeFutures;
     std::vector<std::vector<double> *> vec_top_threads;
     dvec *thread_vec = nullptr;
-    uint thread_loop_limit = this->cm_loop;
-    int thread_vec_limit = this->cm_vecs;
+    int thread_loop_limit = this->cm_loop;
+    uint thread_vec_limit = this->cm_vecs;
     int vecs_to_fill = numOrbitals - 1;
-    int num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
+    uint num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
     bool no_vecs = !num_top_vectors;
-    for (int top = 0; top < num_top_vectors; top++) {
+    for (uint top = 0; top < num_top_vectors; top++) {
         vec_top_threads.push_back(new std::vector<double>);
         (*vec_top_threads[top]).assign(this->pixelCount, 0.0);
     }
     uint recipe_idx = 0;
     uint clearing_vec = 0;
-    uint clearing_fut = 0;
+    int clearing_fut = 0;
     dvec *dataStagingPtr = &this->dataStaging;
     // uint col_max = this->pixelCount;
 
@@ -664,7 +664,7 @@ double CloudManager::expandPDVsToColours() {
             vec3 pdvColour = colours[colourIdx] * pdv;
 
             vecColours[item] = pdvColour;
-    });
+        });
 
     genColourBuffer();
     return 0.0;
@@ -721,24 +721,35 @@ double CloudManager::cullSliderThreaded() {
         std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
     } else {
         //  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
-        uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0;
+        uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0, culled_phi_b = 0;
+        float phi_front_pct = 0.0f, phi_back_pct = 0.0f;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
         culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
         theta_size = this->cloudResolution;
         phi_size = this->cloudResolution >> 1;
-        culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.CloudCull_y));
+        if (this->cfg.CloudCull_y > 0.50f) {
+            phi_front_pct = 1.0f;
+            phi_back_pct = (this->cfg.CloudCull_y - 0.50f) * 2.0f;
+        } else {
+            phi_front_pct = this->cfg.CloudCull_y * 2.0f;
+            phi_back_pct = 0.0f;
+        }
+        culled_phi_f = static_cast<uint>(ceil(phi_size * phi_front_pct));
+        culled_phi_b = phi_size - static_cast<uint>(ceil(phi_size * phi_back_pct));
 
         // Define lambda for multi-use
-        auto lambda_cull = [layer_size, theta_size, culled_theta_all, phi_size, culled_phi_f](const uint &item){
+        auto lambda_cull = [layer_size, theta_size, culled_theta_all, phi_size, culled_phi_f, culled_phi_b](const uint &item){
                 uint layer_pos = (item % layer_size);
                 uint theta_pos = layer_pos / phi_size;
                 uint phi_pos = item % phi_size;
                 bool culled_theta = (layer_pos <= culled_theta_all);
                 bool culled_theta_phis = (phi_pos <= phi_size);
                 bool culled_phi_front = (phi_pos <= culled_phi_f);
-                bool culled_phi_thetas = (theta_pos <= phi_size);
+                bool culld_phi_back = (phi_pos >= culled_phi_b);
+                bool culled_phi_thetas_front = (theta_pos <= phi_size);   // phi_size here is theta_size/2
+                bool culled_phi_thetas_back = (theta_pos > phi_size);   // phi_size here is theta_size/2
 
-                return !((culled_theta && culled_theta_phis) || (culled_phi_front && culled_phi_thetas));
+                return !((culled_theta && culled_theta_phis) || (culled_phi_front && culled_phi_thetas_front) || (culld_phi_back && culled_phi_thetas_back));
             };
 
         // Count unculled vertices
@@ -1173,7 +1184,7 @@ void CloudManager::testThreadingInit() {
             for (uint l = loop_min; l <= loop_max; l += lstep) {
                 this->cm_loop = l;
                 std::vector<double> times(test_max, 0.0);
-                for (int i = test_min; i < test_max; i++) {
+                for (uint i = test_min; i < test_max; i++) {
                     resetManager();
                     createThreaded();
                     double t = bakeOrbitalsThreadedAlt();

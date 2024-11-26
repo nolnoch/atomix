@@ -31,6 +31,7 @@
 #include "mainwindow.hpp"
 
 AtomixFiles atomixFiles;
+bool isDebug;
 
 
 int main(int argc, char* argv[]) {
@@ -39,10 +40,30 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
-    std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
 
-    QDir execDir = QDir(QCoreApplication::applicationDirPath());
-    QDir atomixDir = QDir(execDir.relativeFilePath("../../"));       // TODO : Set to execDir for release
+if (isDebug) {
+    std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
+}
+
+    // Exe and CLI Parsing
+    QCommandLineParser qParser;
+    qParser.setApplicationDescription(QCoreApplication::applicationName());
+    QCommandLineOption cliVerbose("verbose", QCoreApplication::translate("main", "ALL debug and information messages"));
+    QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QCoreApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: application directory)"), "directory", QCoreApplication::applicationDirPath());
+    qParser.addHelpOption();
+    qParser.addVersionOption();
+    qParser.addOption(cliVerbose);
+    qParser.addOption(cliAtomixDir);
+    qParser.process(app);
+
+    if (qParser.isSet(cliVerbose)) {
+        std::cout << "Verbosity Level: 9001 !!!1one" << std::endl;
+        isDebug = true;
+    }
+    QString strAtomixDir = qParser.value(cliAtomixDir);
+
+    QDir execDir = QDir(strAtomixDir);
+    QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
     if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,
@@ -55,13 +76,6 @@ int main(int argc, char* argv[]) {
     }
     QIcon icoAtomix(QString::fromStdString(atomixFiles.resources()) + QString::fromStdString("icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
-
-    // Exe and CLI Parsing
-    QCommandLineParser qParser;
-    qParser.setApplicationDescription(QCoreApplication::applicationName());
-    qParser.addHelpOption();
-    qParser.addVersionOption();
-    qParser.process(app);
     
     // Surface Format
     QSurfaceFormat qFmt;

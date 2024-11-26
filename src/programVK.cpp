@@ -66,7 +66,7 @@ void ProgramVK::cleanup() {
     for (auto &descLayout : this->p_setLayouts) {
         this->p_vdf->vkDestroyDescriptorSetLayout(this->p_dev, descLayout, nullptr);
     }
-    for (int i = 0; i < this->p_descSets.size(); i++) {
+    for (uint i = 0; i < this->p_descSets.size(); i++) {
         for (auto &buf : this->p_uniformBuffers[i]) {
             this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
         }
@@ -215,7 +215,7 @@ int ProgramVK::compileAllShaders() {
 
     errors -= this->p_registeredShaders.size();
 
-    for (int i = 0; i < this->p_registeredShaders.size(); i++) {
+    for (uint i = 0; i < this->p_registeredShaders.size(); i++) {
         assert (this->p_registeredShaders[i]->getId() == this->p_compiledShaders[i]->getId());
     }
 
@@ -283,7 +283,7 @@ void ProgramVK::addUniformsAndPushConstants() {
     this->p_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     this->p_uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
     this->p_uniformBufferMappings.resize(MAX_FRAMES_IN_FLIGHT);
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         this->p_descSets[i].resize(setCount, {});
         this->p_uniformBuffers[i].resize(setCount, {});
         this->p_uniformBuffersMemory[i].resize(setCount, {});
@@ -309,12 +309,13 @@ void ProgramVK::addUniformsAndPushConstants() {
                     createDescriptorSetLayout(uni.binding);
                     
                     // Create a uniform buffer with persistent mapping
-                    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                    for (uint i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                         createBuffer(uni.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[i][j], this->p_uniformBuffersMemory[i][j]);
                         this->p_vdf->vkMapMemory(this->p_dev, this->p_uniformBuffersMemory[i][j], 0, uni.size, 0, &this->p_uniformBufferMappings[i][j]);
                     }
-
+if (isDebug) {
                     std::cout << "Uniform '" << uni.name << "' [" << "set: " << uni.set << ", binding: " << uni.binding << ", size: " << uni.size << "] added to program.\n";
+}
                 } else {
                     // std::cout << "Uniform " << uni.name << " already exists in program.\n";
                 }
@@ -332,18 +333,21 @@ void ProgramVK::addUniformsAndPushConstants() {
                     pcr->offset = 0;
                     pcr->size = push.size;
                     this->p_pushConsts.push_back(std::pair<uint64_t, void *>(push.size, nullptr));
-
+if (isDebug) {
                     std::cout << "Push constant '" << push.name << "' [" << "size: " << push.size << "] added to program.\n";
+}
                 } else {
                     // std::cout << "Push constant " << push.name << " already exists in program.\n";
                 }
             }
         }
     }
+if (isDebug) {
     std::cout << std::endl;
+}
 
     // Descriptor Sets
-    for (int i = 0; i < setCount; i++) {
+    for (uint i = 0; i < setCount; i++) {
         createDescriptorSets(sets[i], bindings[i], sizes[i]);
     }
 
@@ -354,9 +358,9 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     assert(this->p_mapDescriptors.size());
     ModelInfo *model;
     VKuint idx = p_models.size();
-#ifdef DEBUG
+if (isDebug) {
     printInfo(&info);
-#endif
+}
 
     // Check for existing model and add if it doesn't exist
     const auto [it, success] = p_mapModels.insert({info.name, idx});
@@ -461,7 +465,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
 
     // Generate index counts for Render objects based on specifed offsets
     std::vector<VKuint> indexCount;
-    for (int i = 0; i < info.offsets.size(); i++) {
+    for (uint i = 0; i < info.offsets.size(); i++) {
         VKuint end = 0;
         if (i < info.offsets.size() - 1) {
             end = info.offsets[i+1].offset;
@@ -472,7 +476,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     }
 
     // Populate Render objects with parameters and final Pipelines
-    for (int i = 0; i < info.offsets.size(); i++) {
+    for (uint i = 0; i < info.offsets.size(); i++) {
         OffsetInfo &off = info.offsets[i];
         model->renders.push_back(new RenderInfo{});
         RenderInfo *render = model->renders.back();
@@ -504,21 +508,20 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
             this->createPipeline(render, model, vs, fs, off.bufferComboIndex, off.topologyIndex);
         }
     }
-    for (int i = 0; i < info.programs.size(); i++) {
+    for (uint i = 0; i < info.programs.size(); i++) {
         model->programs = info.programs;
     }
     model->activePrograms.clear();
     model->valid.renders = true;
 
-#ifdef DEBUG
+if (isDebug) {
     printModel(model);
-#endif
-
     if (model->valid.validate()) {
         std::cout << "Model added and validated: " << info.name << std::endl;
     } else {
         std::cout << "Model added but not validated: " << info.name << std::endl;
     }
+}
 
     return model->id;
 }
@@ -1200,7 +1203,7 @@ void ProgramVK::createPersistentUniformBuffers() {
         if (s->getType() == GL_VERTEX_SHADER) {
             for (const auto &uni : s->getUniforms()) {
                 if (this->p_mapDescriptors.find(uni.name) == this->p_mapDescriptors.end()) {
-                    int j = uni.set;
+                    uint j = uni.set;
                     sets.push_back(j);
                     bindings.push_back(uni.binding);
                     sizes.push_back(uni.size);
@@ -1211,7 +1214,7 @@ void ProgramVK::createPersistentUniformBuffers() {
                     this->p_setLayouts.push_back({});
                     createDescriptorSetLayout(uni.binding);
                     
-                    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                    for (uint i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                         createBuffer(uni.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), this->p_uniformBuffers[i][j], this->p_uniformBuffersMemory[i][j]);
                         this->p_vdf->vkMapMemory(this->p_dev, this->p_uniformBuffersMemory[i][j], 0, uni.size, 0, &this->p_uniformBufferMappings[i][j]);
                     }
@@ -1228,14 +1231,14 @@ void ProgramVK::createPersistentUniformBuffers() {
     this->p_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     this->p_uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
     this->p_uniformBufferMappings.resize(MAX_FRAMES_IN_FLIGHT);
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         this->p_descSets[i].resize(setCount, {});
         this->p_uniformBuffers[i].resize(setCount, {});
         this->p_uniformBuffersMemory[i].resize(setCount, {});
         this->p_uniformBufferMappings[i].resize(setCount, {});
     }
 
-    for (int i = 0; i < setCount; i++) {
+    for (uint i = 0; i < setCount; i++) {
         createDescriptorSets(sets[i], bindings[i], sizes[i]);
     }
 }
@@ -1582,7 +1585,7 @@ VKuint ProgramVK::getShaderIdFromName(const std::string& fileName) {
 }
 
 ModelInfo* ProgramVK::getModelFromName(const std::string& name) {
-    VKuint id = getModelIdFromName(name);
+    VKint id = getModelIdFromName(name);
 
     if (id == -1) {
         throw std::runtime_error("Model " + name + " not found.");
@@ -1598,7 +1601,7 @@ VKint ProgramVK::getModelIdFromName(const std::string& name) {
         std::cout << "Model not found: " << name << std::endl;
     } else {
         id = p_mapModels.at(name);
-        if (id >= p_models.size()) {
+        if (id >= (int) p_models.size()) {
             std::cout << "Invalid model id: " << id << ". Model not found: " << name << std::endl;
         }
     }
@@ -1650,7 +1653,7 @@ void ProgramVK::printModel(ModelInfo *model) {
     if (!model->renders.size()) {
         std::cout << "    No renders." << "\n";
     } else {
-        for (int i = 0; i < model->renders.size(); i++) {
+        for (uint i = 0; i < model->renders.size(); i++) {
             std::cout << "    Render " << i << ": " << "\n";
             std::cout << "        IBO Offset : " << model->renders[i]->iboOffset << "\n";
             std::cout << "        Index Count: " << model->renders[i]->indexCount << "\n";
@@ -1693,7 +1696,7 @@ void ProgramVK::printInfo(ModelCreateInfo *info) {
     }
 
     std::cout << "    Offsets: " << "\n";
-    for (int i = 0; i < info->offsets.size(); i++) {
+    for (uint i = 0; i < info->offsets.size(); i++) {
         auto &offset = info->offsets[i];
         std::cout << "        [" << i << "]: Offset         : " << offset.offset << "\n";
         std::cout << "             Vertex Shader  : " << info->vertShaders[offset.vertShaderIndex] << "\n";

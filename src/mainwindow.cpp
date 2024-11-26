@@ -73,10 +73,10 @@ void MainWindow::init(QRect &screenSize) {
     } else {
         VK_SPIRV_VERSION = 0;
     }
-#ifdef DEBUG
+if (isDebug) {
     std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
     std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
-#endif
+}
     
     vkInst.setApiVersion(version);
     vkInst.setLayers(layers);
@@ -192,13 +192,13 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     this->dInfo.vertex = info->vertex;
     this->dInfo.data = info->data;
     this->dInfo.index = info->index;
-    
     uint64_t total = dInfo.vertex + dInfo.data + dInfo.index;
+    
+    // Simple subroutine to convert bytes to human readable units. This routine is not human-readable.
     std::array<float, 4> bufs = { static_cast<float>(dInfo.vertex), static_cast<float>(dInfo.data), static_cast<float>(dInfo.index), static_cast<float>(total) };
     QList<QString> units = { "B", "KB", "MB", "GB" };
     std::array<int, 4> u = { 0, 0, 0, 0 };
     int div = 1024;
-    
     for (int idx = 0; auto& f : bufs) {
         while (f > div) {
             f /= div;
@@ -231,36 +231,38 @@ void MainWindow::setLoading(bool loading) {
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e) {
-    // TODO : Refactor to switch-case
-    if (e->key() == Qt::Key_Escape) {
-        close();
-    } else if (e->key() == Qt::Key_D) {
-        if (labelDetails->isVisible()) {
-            labelDetails->hide();
-        } else {
-            labelDetails->show();
+    switch (e->key()) {
+        case Qt::Key_Escape:
+            close();
+            break;
+        case Qt::Key_D:
+            labelDetails->setVisible(!labelDetails->isVisible());
+            break;
+        case Qt::Key_P: {
+            if (!vkGraph->supportsGrab()) {
+                std::cout << "Grabbing not supported." << std::endl;
+                break;
+            }
+            QImage image = vkGraph->grab();
+            QFileDialog fd(this, "Save Image");
+            fd.setAcceptMode(QFileDialog::AcceptSave);
+            fd.setDefaultSuffix("png");
+            fd.selectFile("filename.png");
+            if (fd.exec() == QDialog::Accepted) {
+                image.save(fd.selectedFiles().first());
+            }
+            break;
         }
-    } else if (e->key() == Qt::Key_P) {
-        if (!vkGraph->supportsGrab()) {
-            std::cout << "Grabbing not supported." << std::endl;
-            return;
-        }
-        QImage image = vkGraph->grab();
-        QFileDialog fd(this, "Save Image");
-        fd.setAcceptMode(QFileDialog::AcceptSave);
-        fd.setDefaultSuffix("png");
-        fd.selectFile("filename.png");
-        if (fd.exec() == QDialog::Accepted) {
-            image.save(fd.selectedFiles().first());
-        }
-    } else if (e->key() == Qt::Key_Home) {
-        vkGraph->handleHome();
-    } else if (e->key() == Qt::Key_Space) {
-        vkGraph->handlePause();
-    } else {
-        QWidget::keyPressEvent(e);
+        case Qt::Key_Home:
+            vkGraph->handleHome();
+            break;
+        case Qt::Key_Space:
+            vkGraph->handlePause();
+            break;
+        default:
+            QWidget::keyPressEvent(e);
+            break;
     }
-
 }
 
 void MainWindow::setupTabs() {
@@ -279,20 +281,16 @@ void MainWindow::setupTabs() {
 }
 
 void MainWindow::setupDockWaves() {
-    comboConfigFile = new QComboBox(this);
+    QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     wTabWaves = new QWidget(this);
 
+    // Buttons
     buttMorbWaves = new QPushButton("Render Waves", this);
+    buttMorbWaves->setObjectName("morb");
+    buttMorbWaves->setSizePolicy(qPolicyExpandV);
     buttGroupColors = new QButtonGroup(this);
 
-    QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    QVBoxLayout *layDock = new QVBoxLayout;
-    QVBoxLayout *layConfigFile = new QVBoxLayout;
-    QVBoxLayout *layOptionBox = new QVBoxLayout;
-    QHBoxLayout *layOrbitSelect = new QHBoxLayout;
-    QHBoxLayout *layColorPicker = new QHBoxLayout;
-
+    // Groups
     QGroupBox *groupConfig = new QGroupBox("Config File");
     QGroupBox *groupOptions = new QGroupBox("Config Options");
     groupColors = new QGroupBox("Wave Colors");
@@ -300,16 +298,24 @@ void MainWindow::setupDockWaves() {
     groupOrbits = new QGroupBox("Visible Waves");
     groupOrbits->setEnabled(false);
 
+    // Tab Description Label
     QLabel *labelWaves = new QLabel("<p>Explore stable circular or spherical wave patterns</p>");
     labelWaves->setObjectName("tabDesc");
-    labelWaves->setMaximumHeight(aStyle.tabLabelHeight);
-    labelWaves->setMinimumHeight(aStyle.tabLabelHeight);
+    labelWaves->setFixedHeight(aStyle.tabLabelHeight);
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelWaves->setLineWidth(aStyle.borderWidth);
     labelWaves->setMargin(12);
     labelWaves->setAlignment(Qt::AlignCenter);
 
+    // Config Selection Box
+    comboConfigFile = new QComboBox(this);
+    QVBoxLayout *layConfigFile = new QVBoxLayout;
+    layConfigFile->addWidget(comboConfigFile);
+    groupConfig->setLayout(layConfigFile);
+    groupConfig->setAlignment(Qt::AlignRight);
+
+    // Labels
     QLabel *labelOrbit = new QLabel("Number of waves:");
     labelOrbit->setObjectName("configLabel");
     QLabel *labelAmp = new QLabel("Amplitude:");
@@ -329,11 +335,8 @@ void MainWindow::setupDockWaves() {
     labelCPU->setObjectName("configLabel");
     QLabel *labelSphere = new QLabel("Circular vs Spherical:");
     labelSphere->setObjectName("configLabel");
-    /* QLabel *labelVertex = new QLabel("Vertex Shader:");
-    labelVertex->setObjectName("configLabel");
-    QLabel *labelFrag = new QLabel("Fragment Shader:");
-    labelFrag->setObjectName("configLabel"); */
     
+    // LineEdits (entries)
     entryOrbit = new QLineEdit("4");
     entryOrbit->setValidator(valIntSmall);
     entryAmp = new QLineEdit("0.4");
@@ -344,9 +347,26 @@ void MainWindow::setupDockWaves() {
     entryWavelength->setValidator(valDoubleLarge);
     entryResolution = new QLineEdit("180");
     entryResolution->setValidator(valIntLarge);
-    /* entryVertex = new QComboBox(this);
-    entryFrag = new QComboBox(this); */
+    entryOrbit->setAlignment(Qt::AlignRight);
+    entryAmp->setAlignment(Qt::AlignRight);
+    entryPeriod->setAlignment(Qt::AlignRight);
+    entryWavelength->setAlignment(Qt::AlignRight);
+    entryResolution->setAlignment(Qt::AlignRight);
 
+    // SlideSwitches (toggles)
+    // This is being resized both manually and automatically, but it prefers its starting size, so this does matter.
+    int switchWidth = 130;
+    int switchHeight = 27;
+    slswPara = new SlideSwitch("Para", "Ortho", switchWidth, switchHeight, this);
+    slswSuper = new SlideSwitch("On", "Off", switchWidth, switchHeight, this);
+    slswCPU = new SlideSwitch("CPU", "GPU", switchWidth, switchHeight, this);
+    slswSphere = new SlideSwitch("Sphere", "Circle", switchWidth, switchHeight, this);
+    slswPara->setChecked(false);
+    slswSuper->setChecked(false);
+    slswCPU->setChecked(false);
+    slswSphere->setChecked(false);
+
+    // The layout should see these policies match the entry fields and keep them the same size (does it?)
     QSizePolicy sp = entryOrbit->sizePolicy();
     sp.setVerticalStretch(1);
     entryOrbit->setSizePolicy(sp);
@@ -354,29 +374,12 @@ void MainWindow::setupDockWaves() {
     entryPeriod->setSizePolicy(sp);
     entryWavelength->setSizePolicy(sp);
     entryResolution->setSizePolicy(sp);
-    /* entryVertex->setSizePolicy(sp);
-    entryFrag->setSizePolicy(sp); */
+    slswPara->setSizePolicy(sp);
+    slswSuper->setSizePolicy(sp);
+    slswCPU->setSizePolicy(sp);
+    slswSphere->setSizePolicy(sp);
 
-    entryOrbit->setAlignment(Qt::AlignRight);
-    entryAmp->setAlignment(Qt::AlignRight);
-    entryPeriod->setAlignment(Qt::AlignRight);
-    entryWavelength->setAlignment(Qt::AlignRight);
-    entryResolution->setAlignment(Qt::AlignRight);
-
-    // TODO : This is being resized automatically now. Shouldn't be necessary.
-    int entryHintWidth = 130;
-    int entryHintHeight = 27;
-
-    slswPara = new SlideSwitch("Para", "Ortho", entryHintWidth, entryHintHeight, this);
-    slswSuper = new SlideSwitch("On", "Off", entryHintWidth, entryHintHeight, this);
-    slswCPU = new SlideSwitch("CPU", "GPU", entryHintWidth, entryHintHeight, this);
-    slswSphere = new SlideSwitch("Sphere", "Circle", entryHintWidth, entryHintHeight, this);
-
-    slswPara->setChecked(false);
-    slswSuper->setChecked(false);
-    slswCPU->setChecked(false);
-    slswSphere->setChecked(false);
-
+    // Assign switches to button group
     buttGroupConfig = new QButtonGroup();
     buttGroupConfig->setExclusive(false);
     buttGroupConfig->addButton(slswPara, 0);
@@ -384,36 +387,7 @@ void MainWindow::setupDockWaves() {
     buttGroupConfig->addButton(slswCPU, 2);
     buttGroupConfig->addButton(slswSphere, 3);
 
-    QCheckBox *orbit1 = new QCheckBox("1");
-    QCheckBox *orbit2 = new QCheckBox("2");
-    QCheckBox *orbit3 = new QCheckBox("3");
-    QCheckBox *orbit4 = new QCheckBox("4");
-    QCheckBox *orbit5 = new QCheckBox("5");
-    QCheckBox *orbit6 = new QCheckBox("6");
-    QCheckBox *orbit7 = new QCheckBox("7");
-    QCheckBox *orbit8 = new QCheckBox("8");
-    layOrbitSelect->addWidget(orbit1);
-    layOrbitSelect->addWidget(orbit2);
-    layOrbitSelect->addWidget(orbit3);
-    layOrbitSelect->addWidget(orbit4);
-    layOrbitSelect->addWidget(orbit5);
-    layOrbitSelect->addWidget(orbit6);
-    layOrbitSelect->addWidget(orbit7);
-    layOrbitSelect->addWidget(orbit8);
-
-    buttGroupOrbits = new QButtonGroup();
-    buttGroupOrbits->setExclusive(false);
-    buttGroupOrbits->addButton(orbit1, 1);
-    buttGroupOrbits->addButton(orbit2, 2);
-    buttGroupOrbits->addButton(orbit3, 4);
-    buttGroupOrbits->addButton(orbit4, 8);
-    buttGroupOrbits->addButton(orbit5, 16);
-    buttGroupOrbits->addButton(orbit6, 32);
-    buttGroupOrbits->addButton(orbit7, 64);
-    buttGroupOrbits->addButton(orbit8, 128);
-
-    layConfigFile->addWidget(comboConfigFile);
-
+    // Wave Configuration Layout
     QGridLayout *layWaveConfig = new QGridLayout;
     layoutDebug = layWaveConfig;
     layWaveConfig->addWidget(labelOrbit, 0, 0, 1, 1, Qt::AlignLeft);
@@ -440,14 +414,18 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->setColumnStretch(0,6);
     layWaveConfig->setColumnStretch(1,1);
     layWaveConfig->setColumnStretch(2,6);
-    // layWaveConfig->setRowStretch(layWaveConfig->rowCount(),1);
 
-    layOptionBox->addLayout(layWaveConfig);
+    // QVBoxLayout *layOptionBox = new QVBoxLayout;
+    // layOptionBox->addLayout(layWaveConfig);
+    groupOptions->setLayout(layWaveConfig);
+    groupOptions->setAlignment(Qt::AlignRight);
 
+    // Color Picker Buttons
     QPushButton *buttColorPeak = new QPushButton(" Peak");
     QPushButton *buttColorBase = new QPushButton(" Base");
     QPushButton *buttColorTrough = new QPushButton(" Trough");
     
+    // Generate Starting Colours (via Icons via Pixmap)
     pmColour = new QPixmap(aStyle.baseFont, aStyle.baseFont);
     pmColour->fill(QColor::fromString("#FF00FF"));
     buttColorPeak->setIcon(QIcon(*pmColour));
@@ -456,51 +434,81 @@ void MainWindow::setupDockWaves() {
     pmColour->fill(QColor::fromString("#00FFFF"));    
     buttColorTrough->setIcon(QIcon(*pmColour));
 
+    // Assign buttons to button group
     buttGroupColors->addButton(buttColorPeak, 1);
     buttGroupColors->addButton(buttColorBase, 2);
     buttGroupColors->addButton(buttColorTrough, 3);
 
+    // Color Picker Group (via Layout)
+    QHBoxLayout *layColorPicker = new QHBoxLayout;
     layColorPicker->addWidget(buttColorPeak);
     layColorPicker->addWidget(buttColorBase);
     layColorPicker->addWidget(buttColorTrough);
     layColorPicker->setContentsMargins(0, 0, 0, 0);
     layColorPicker->setSpacing(5);
-
-    groupConfig->setLayout(layConfigFile);
-    groupOptions->setLayout(layOptionBox);
     groupColors->setLayout(layColorPicker);
+
+    // Wave Visibility Selection
+    QCheckBox *orbit1 = new QCheckBox("1");
+    QCheckBox *orbit2 = new QCheckBox("2");
+    QCheckBox *orbit3 = new QCheckBox("3");
+    QCheckBox *orbit4 = new QCheckBox("4");
+    QCheckBox *orbit5 = new QCheckBox("5");
+    QCheckBox *orbit6 = new QCheckBox("6");
+    QCheckBox *orbit7 = new QCheckBox("7");
+    QCheckBox *orbit8 = new QCheckBox("8");
+    QHBoxLayout *layOrbitSelect = new QHBoxLayout;
+    layOrbitSelect->addWidget(orbit1);
+    layOrbitSelect->addWidget(orbit2);
+    layOrbitSelect->addWidget(orbit3);
+    layOrbitSelect->addWidget(orbit4);
+    layOrbitSelect->addWidget(orbit5);
+    layOrbitSelect->addWidget(orbit6);
+    layOrbitSelect->addWidget(orbit7);
+    layOrbitSelect->addWidget(orbit8);
     groupOrbits->setLayout(layOrbitSelect);
 
-    groupConfig->setAlignment(Qt::AlignRight);
-    groupOptions->setAlignment(Qt::AlignRight);
+    // Assign checkboxes to button group
+    buttGroupOrbits = new QButtonGroup();
+    buttGroupOrbits->setExclusive(false);
+    buttGroupOrbits->addButton(orbit1, 1);
+    buttGroupOrbits->addButton(orbit2, 2);
+    buttGroupOrbits->addButton(orbit3, 4);
+    buttGroupOrbits->addButton(orbit4, 8);
+    buttGroupOrbits->addButton(orbit5, 16);
+    buttGroupOrbits->addButton(orbit6, 32);
+    buttGroupOrbits->addButton(orbit7, 64);
+    buttGroupOrbits->addButton(orbit8, 128);
 
-    layDock->addWidget(labelWaves);
-    layDock->addStretch(2);
-    layDock->addWidget(groupConfig);
-    layDock->addWidget(groupOptions);
-    layDock->addWidget(buttMorbWaves);
-    layDock->addStretch(2);
-    layDock->addWidget(groupColors);
-    layDock->addWidget(groupOrbits);
+    // Add All Groups and Layouts to Main Tab Layout
+    QVBoxLayout *layDockWaves = new QVBoxLayout;
+    layDockWaves->addWidget(labelWaves);
+    layDockWaves->addStretch(2);
+    layDockWaves->addWidget(groupConfig);
+    layDockWaves->addWidget(groupOptions);
+    layDockWaves->addWidget(buttMorbWaves);
+    layDockWaves->addStretch(2);
+    layDockWaves->addWidget(groupColors);
+    layDockWaves->addWidget(groupOrbits);
 
-    layDock->setStretchFactor(groupOptions, 1);
-    layDock->setStretchFactor(buttMorbWaves, 1);
+    layDockWaves->setStretchFactor(groupOptions, 1);
+    layDockWaves->setStretchFactor(buttMorbWaves, 1);
 
-    buttMorbWaves->setSizePolicy(qPolicyExpandA);
-
-    layDock->setContentsMargins(0, 0, 0, 0);
-    layDock->setSpacing(10);
+    // Set Main Tab Layout
+    layDockWaves->setContentsMargins(0, 0, 0, 0);
+    layDockWaves->setSpacing(10);
     
-    wTabWaves->setLayout(layDock);
+    wTabWaves->setLayout(layDockWaves);
 }
 
 void MainWindow::setupDockHarmonics() {
     QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    wTabHarmonics = new QWidget(this);
     
     // Buttons
-    wTabHarmonics = new QWidget(this);
     buttMorbHarmonics = new QPushButton("Render Cloud", this);
+    buttMorbHarmonics->setObjectName("morb");
     buttMorbHarmonics->setEnabled(recipeLoaded);
     buttMorbHarmonics->setSizePolicy(qPolicyExpandA);
 
@@ -715,7 +723,7 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->addLayout(laySlideCulling);
     layDockHarmonics->addWidget(groupSlideBackground);
 
-    layDockHarmonics->setStretchFactor(layOrbitalGrid, 6);
+    layDockHarmonics->setStretchFactor(layOrbitalGrid, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
 
@@ -734,9 +742,9 @@ void MainWindow::setupStyleSheet() {
     aStyle.scaleTabWidth(2);
     aStyle.updateStyleSheet();
     this->setStyleSheet(aStyle.getStyleSheet());
-#ifdef DEBUG
+if (isDebug) {
     std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
-#endif
+}
 }
 
 void MainWindow::refreshConfigs() {

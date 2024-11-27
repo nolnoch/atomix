@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
     QString strAtomixDir = qParser.value(cliAtomixDir);
 
     QDir execDir = QDir(strAtomixDir);
-    QDir atomixDir = QDir(execDir.relativeFilePath("../../"));       // TODO : Set to execDir for release
+    QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
     if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,
@@ -71,6 +71,7 @@ int main(int argc, char* argv[]) {
             execDir.absolutePath(),
             QFileDialog::ShowDirsOnly
         );
+        if (dir.isEmpty()) {return 0;}
         execDir = QDir(dir);
         atomixFiles.setRoot(dir.toStdString());
     }

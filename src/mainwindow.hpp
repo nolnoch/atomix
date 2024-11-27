@@ -87,7 +87,7 @@ struct AtomixStyle {
         descFont = int(round(baseFont * 1.333));
         tabSelectedFont = int(round(baseFont * 1.15));
         tabUnselectedFont = int(round(baseFont * 0.90));
-        treeFont = baseFont + 1;
+        treeFont = baseFont + 4;
         tableFont = baseFont + 1;
         listFont = baseFont + 1;
         morbFont = baseFont + 5;
@@ -103,7 +103,7 @@ struct AtomixStyle {
         defaultMargin = 0;
         defaultPadding = 0;
         defaultSpacing = 0;
-        listPadding = baseFont;
+        listPadding = layDockSpace;
     }
 
     void updateStyleSheet() {
@@ -119,13 +119,11 @@ struct AtomixStyle {
             "QLabel#tabDesc { font-size: %2px; } "
             "QTreeWidget { font-family: %15; font-size: %6px; } "
             "QTableWidget { font-family: %15; font-size: %7px; } "
-            "QListWidget { font-family: %15; font-size: %8px; border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
-            "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-right: %9px; } "
+            "QListWidget { font-family: %15; font-size: %8px; } "
+            // "QTreeWidget::item { border: 0px; padding-top: 10px; } " <== This works but ruins the formatting
+            "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
+            "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
             "QPushButton#morb { font-size: %10px; margin-right: %11px; margin-left: %11px; } "
-            // "QTreeWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
-            // "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
-            // "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
-            // "QTreeWidget::item::indicator { width: %15px; height: %15px; border: 0px; margin: %12px; padding: %13px; spacing: %14px; } "
         });
 
         genStyleString();
@@ -185,6 +183,7 @@ public slots:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     void setupTabs();
@@ -217,6 +216,9 @@ private:
 
     void printHarmap();
     void printList();
+
+    void _dockResize();
+    void _resize();
 
     AtomixConfig waveConfig;
     AtomixConfig cloudConfig;
@@ -292,7 +294,7 @@ private:
 
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;
-    bool recipeLoaded = false;
+    bool activeModel = false;
 
     int mw_baseFontSize = 0;
     
@@ -304,6 +306,9 @@ private:
     int mw_x = 0;
     int mw_y = 0;
     int mw_titleHeight = 0;
+    int mw_tabWidth = 0;
+    int mw_tabHeight = 0;
+    int mw_tabCount = 0;
 
     QPixmap *pmColour = nullptr;
 

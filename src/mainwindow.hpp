@@ -77,23 +77,24 @@ struct AtomixStyle {
         windowHeight = height;
     }
 
-    void setDockWidth(int width) {
+    void setDockWidth(int width, int tabCount) {
         dockWidth = width;
+        tabWidth = dockWidth / tabCount;
     }
     
     void scaleFonts() {
-        baseFont = int(round(dockWidth * 0.04));
-        descFont = int(round(baseFont * 1.333));
-        tabSelectedFont = int(round(baseFont * 1.15));
-        tabUnselectedFont = int(round(baseFont * 0.90));
-        treeFont = baseFont + 1;
-        tableFont = baseFont - 1;
-        listFont = baseFont - 1;
-        morbFont = baseFont + 5;
+        baseFontSize = int(round(dockWidth * 0.04));
+        descFontSize = int(round(baseFontSize * 1.333));
+        tabSelectedFontSize = int(round(baseFontSize * 1.15));
+        tabUnselectedFontSize = int(round(baseFontSize * 0.90));
+        treeFontSize = baseFontSize + 4;
+        tableFontSize = baseFontSize + 1;
+        listFontSize = baseFontSize + 1;
+        morbFontSize = descFontSize;
     }
 
     void scaleWidgets() {
-        treeCheckSize = int(round(baseFont * 1.5));
+        treeCheckSize = int(round(baseFontSize * 1.5));
         tabLabelHeight = windowHeight / 9;
         sliderTicks = 20;
         sliderInterval = sliderTicks >> 2;
@@ -102,63 +103,65 @@ struct AtomixStyle {
         defaultMargin = 0;
         defaultPadding = 0;
         defaultSpacing = 0;
-        listPadding = 20;
-    }
-
-    void scaleTabWidth(int tabCount) {
-        tabWidth = dockWidth / tabCount;
+        listPadding = layDockSpace;
     }
 
     void updateStyleSheet() {
-        // Note: WidgetItems must have border defined even as 0px for maging/padding to work
+        scaleFonts();
+        scaleWidgets();
+
+        // Note: WidgetItems must have border defined even as 0px for margin/padding to work
         styleStringList = QStringList({
             "QWidget { font-size: %1px; } "
             "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; } "
             "QTabBar::tab::selected { font-size: %5px; } "
             "QLabel { font-size: %1px; } "
             "QLabel#tabDesc { font-size: %2px; } "
-            "QTreeWidget { font-size: %6px; } "
-            "QTableWidget { font-size: %7px; } "
-            "QListWidget { font-size: %8px; } "
-            "QListWidget::item { border: 0px; padding-right: %9px; } "
-            "QPushButton#morb { font-size: %10px; margin-right: 10px; margin-left: 10px; } "
-            // "QTreeWidget::item::indicator { width: %11px; height: %11px; border: 0px; margin: %7px; padding: %8px; spacing: %9px; } "
+            "QTreeWidget { font-family: %9; font-size: %6px; } "
+            "QTableWidget { font-family: %8; font-size: %7px; } "
+            "QListWidget { font-family: %8; font-size: %7px; } "
+            // "QTreeWidget::item { border: 0px; padding-top: 10px; } " <== This works but ruins the formatting
+            // "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
+            // "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
+            "QPushButton#morb { font-size: %10px; margin-right: %11px; margin-left: %11px; } "
         });
 
         genStyleString();
     }
 
     void genStyleString() {
-        styleString = styleStringList.join(" ")
-            .arg(QString::number(baseFont))             // 1
-            .arg(QString::number(descFont))             // 2
+        strStyle = styleStringList.join(" ")
+            .arg(QString::number(baseFontSize))             // 1
+            .arg(QString::number(descFontSize))             // 2
             .arg(QString::number(tabWidth))             // 3
-            .arg(QString::number(tabUnselectedFont))    // 4
-            .arg(QString::number(tabSelectedFont))      // 5
-            .arg(QString::number(treeFont))             // 6
-            .arg(QString::number(tableFont))            // 7
-            .arg(QString::number(listFont))             // 8
-            .arg(QString::number(listPadding))          // 9
-            .arg(QString::number(morbFont));            // 10
-            // .arg(QString::number(defaultMargin))        // 11
-            // .arg(QString::number(defaultPadding))       // 12
-            // .arg(QString::number(defaultSpacing))       // 13
-            // .arg(QString::number(treeCheckSize));    // 14
+            .arg(QString::number(tabUnselectedFontSize))    // 4
+            .arg(QString::number(tabSelectedFontSize))      // 5
+            .arg(QString::number(treeFontSize))             // 6
+            .arg(QString::number(tableFontSize))            // 7
+            .arg(QString::number(listFontSize))             // 8
+            .arg(strFontInc)                            // 9
+            .arg(QString::number(morbFontSize))             // 10
+            .arg(QString::number(morbMargin));          // 11
+            // .arg(QString::number(defaultMargin))        // 12
+            // .arg(QString::number(defaultPadding))       // 13
+            // .arg(QString::number(defaultSpacing))       // 14
+            // .arg(QString::number(listPadding));         // 15
     }
 
     QString& getStyleSheet() {
-        return styleString;
+        return strStyle;
     }
 
-    uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont, morbFont;
+    uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
     uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
-    uint defaultMargin, defaultPadding, defaultSpacing, listPadding;
+    uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
 
     uint dockMin, dockMax, windowWidth, windowHeight;
     double scaleMin, scaleMax, scale;
 
     QStringList styleStringList;
-    QString styleString;
+    QString strStyle, strFontInc;
+    QFont fontInc;
 };
 
 
@@ -179,12 +182,13 @@ public slots:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
-    void setupStyleSheet();
     void refreshConfigs();
     void refreshShaders();
     void loadConfig();
@@ -211,6 +215,19 @@ private:
 
     void printHarmap();
     void printList();
+    
+    void printLayout();
+    void _printLayout(QLayout *layout, int lvl, int idx = 0);
+    void _printChild(QLayoutItem *child, int lvl, int idx = 0, int nameLength = 0);
+
+    void _initStyle();
+    void _initGraphics();
+    void _initWidgets();
+    void _connectSignals();
+    
+    void _setStyle();
+    void _dockResize();
+    void _resize();
 
     AtomixConfig waveConfig;
     AtomixConfig cloudConfig;
@@ -227,6 +244,9 @@ private:
     QDoubleValidator *valDoubleSmall = nullptr;
     QDoubleValidator *valDoubleLarge = nullptr;
 
+    QVBoxLayout *layDockWaves = nullptr;
+    QVBoxLayout *layDockHarmonics = nullptr;
+    
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;
     QLineEdit *entryPeriod = nullptr;
@@ -236,8 +256,6 @@ private:
     SlideSwitch *slswSuper = nullptr;
     SlideSwitch *slswCPU = nullptr;
     SlideSwitch *slswSphere = nullptr;
-    /* QComboBox *entryVertex = nullptr;
-    QComboBox *entryFrag = nullptr; */
     QComboBox *comboConfigFile = nullptr;
 
     QButtonGroup *buttGroupConfig = nullptr;
@@ -250,6 +268,7 @@ private:
     QPushButton *buttResetRecipes = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
 
+    QGroupBox *groupOptions = nullptr;
     QGroupBox *groupColors = nullptr;
     QGroupBox *groupOrbits = nullptr;
     QGroupBox *groupRecipeBuilder = nullptr;
@@ -284,7 +303,7 @@ private:
 
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;
-    bool recipeLoaded = false;
+    bool activeModel = false;
 
     int mw_baseFontSize = 0;
     
@@ -295,7 +314,12 @@ private:
     int mw_height = 0;
     int mw_x = 0;
     int mw_y = 0;
+    int mw_graphWidth = 0;
+    int mw_graphHeight = 0;
     int mw_titleHeight = 0;
+    int mw_tabWidth = 0;
+    int mw_tabHeight = 0;
+    int mw_tabCount = 0;
 
     QPixmap *pmColour = nullptr;
 

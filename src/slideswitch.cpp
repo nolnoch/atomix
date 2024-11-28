@@ -38,7 +38,7 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     // this->setMinimumSize(QSize(120, 20));
     // this->setBaseSize(QSize(slsw_width, slsw_height));
     QSizePolicy sp = this->sizePolicy();
-    sp.setHorizontalPolicy(QSizePolicy::Preferred);
+    sp.setHorizontalPolicy(QSizePolicy::Expanding);
     sp.setVerticalPolicy(QSizePolicy::Fixed);
     sp.setHorizontalStretch(1);
     sp.setVerticalStretch(1);
@@ -136,7 +136,7 @@ SlideSwitch::~SlideSwitch() {
     delete prAnim_backMove;
 }
 
-void SlideSwitch::redraw() {
+/* void SlideSwitch::redraw() {
     slsw_LabelOff->adjustSize();
     slsw_LabelOn->adjustSize();
 
@@ -147,7 +147,7 @@ void SlideSwitch::redraw() {
     int labMove = int(double(slsw_height) * labMoveScale);
     slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
     slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
-}
+} */
 
 void SlideSwitch::paintEvent(QPaintEvent*) {
     QPainter* painter = new QPainter;
@@ -214,7 +214,8 @@ void SlideSwitch::_toggle() {
 
     int xi = buttMove;
     int y  = 0;
-    int xf = this->width() - (slsw_height);
+    // int xf = this->width() - (slsw_height);
+    int xf = this->width() - this->height();
 
     if (slsw_value) {
         final_size = QSize(hback, hback);
@@ -277,12 +278,27 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     slsw_SwitchBackground->updateSize();
     slsw_Button->updateSize();
 
+    // Adjust font size
     fontPx = int(double(slsw_height) * fontScale);
     strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
     strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
     strDis = _strDis.arg(pal.text.color().darker(200).name()).arg(fontPx);
     slsw_LabelOff->setStyleSheet(strOff);
     slsw_LabelOn->setStyleSheet(strOn);
+
+    // Position labels
+    slsw_LabelOff->adjustSize();
+    slsw_LabelOn->adjustSize();
+    int labOffCenter = slsw_LabelOff->width() >> 1;
+    int labOnCenter = slsw_LabelOn->width() >> 1;
+    int switchCenter = slsw_width >> 1;
+    int labMove = ((slsw_height - fontPx) >> 2) + 1;
+    slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
+    slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
+
+    // Position button
+    QPoint newPos((slsw_value) ? (this->width() - this->height()) : buttMove, 0);
+    slsw_Button->move(newPos);
 }
 
 bool SlideSwitch::hitButton(const QPoint &pos) const {

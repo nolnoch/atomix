@@ -215,6 +215,10 @@ private:
 
     void printHarmap();
     void printList();
+    
+    void printLayout();
+    void _printLayout(QLayout *layout, int lvl, int idx = 0);
+    void _printChild(QLayoutItem *child, int lvl, int idx = 0, int nameLength = 0);
 
     void _initStyle();
     void _initGraphics();
@@ -310,6 +314,8 @@ private:
     int mw_height = 0;
     int mw_x = 0;
     int mw_y = 0;
+    int mw_graphWidth = 0;
+    int mw_graphHeight = 0;
     int mw_titleHeight = 0;
     int mw_tabWidth = 0;
     int mw_tabHeight = 0;

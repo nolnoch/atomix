@@ -58,6 +58,14 @@ void MainWindow::postInit(int titlebarHeight) {
     QRect tabLoc = wTabs->geometry();
     mw_tabWidth = tabLoc.width();
     mw_tabHeight = tabLoc.height();
+
+    int tabHeight = mw_height - mw_titleHeight;
+
+    vkGraph->resize(int(double(mw_width) * 0.8), tabHeight);
+    wTabs->widget(0)->resize(int(double(mw_width) * 0.2), tabHeight);
+    wTabs->widget(1)->resize(int(double(mw_width) * 0.2), tabHeight);
+    wTabs->resize(int(double(mw_width) * 0.2), tabHeight);
+    // wTabs->adjustSize();
     
     mw_graphHeight = vkGraph->height();
     mw_graphWidth = vkGraph->width();
@@ -351,7 +359,7 @@ void MainWindow::setupDockWaves() {
     buttColorTrough->setObjectName("buttColorTrough");
     
     // Generate Starting Colours (via Icons via Pixmap)
-    pmColour = new QPixmap(aStyle.baseFont, aStyle.baseFont);
+    pmColour = new QPixmap(aStyle.baseFontSize, aStyle.baseFontSize);
     pmColour->fill(QColor::fromString("#FF00FF"));
     buttColorPeak->setIcon(QIcon(*pmColour));
     pmColour->fill(QColor::fromString("#0000FF"));
@@ -509,7 +517,7 @@ void MainWindow::setupDockHarmonics() {
     tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
     tableOrbitalReport->horizontalHeader()->setStretchLastSection(true);
     tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    tableOrbitalReport->verticalHeader()->setDefaultSectionSize(aStyle.tableFont + 2);
+    tableOrbitalReport->verticalHeader()->setDefaultSectionSize(aStyle.tableFontSize + 2);
     tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tableOrbitalReport->verticalHeader()->setStretchLastSection(true);
     tableOrbitalReport->verticalHeader()->setVisible(false);
@@ -573,6 +581,7 @@ void MainWindow::setupDockHarmonics() {
     buttClearRecipes->setEnabled(false);
     buttClearRecipes->setObjectName("buttClearRecipes");
     buttResetRecipes = new QPushButton("Clear Locked");
+    buttResetRecipes->setObjectName("buttResetRecipes");
     buttResetRecipes->setSizePolicy(qPolicyExpandH);
     buttResetRecipes->setEnabled(false);
 
@@ -592,12 +601,15 @@ void MainWindow::setupDockHarmonics() {
     QLabel *labelMinRDP = new QLabel("Min probability per rendered point");
     labelMinRDP->setObjectName("labelMinRDP");
     entryCloudRes = new QLineEdit(QString::number(cloudConfig.cloudResolution));
+    entryCloudRes->setObjectName("entryCloudRes");
     entryCloudRes->setValidator(valIntLarge);
     entryCloudRes->setAlignment(Qt::AlignRight);
     entryCloudLayers = new QLineEdit(QString::number(cloudConfig.cloudLayDivisor));
+    entryCloudLayers->setObjectName("entryCloudLayers");
     entryCloudLayers->setValidator(valIntLarge);
     entryCloudLayers->setAlignment(Qt::AlignRight);
     entryCloudMinRDP = new QLineEdit(QString::number(cloudConfig.cloudTolerance));
+    entryCloudMinRDP->setObjectName("entryCloudMinRDP");
     entryCloudMinRDP->setValidator(valDoubleSmall);
     entryCloudMinRDP->setAlignment(Qt::AlignRight);
 
@@ -879,7 +891,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             tableOrbitalReport->setRowCount(intTableRows + 1);
             tableOrbitalReport->setItem(intTableRows, 1, thisOrbital);
             tableOrbitalReport->setItem(intTableRows, 0, thisWeight);
-            tableOrbitalReport->setRowHeight(intTableRows, aStyle.tableFont + 2);
+            tableOrbitalReport->setRowHeight(intTableRows, aStyle.tableFontSize + 2);
             thisOrbital->setTextAlignment(Qt::AlignCenter);
             thisOrbital->setForeground(Qt::red);
             thisWeight->setTextAlignment(Qt::AlignCenter);
@@ -1225,7 +1237,7 @@ void MainWindow::printList() {
 }
 
 void MainWindow::printLayout() {
-    std::cout << "Layout: " << "\n";
+    std::cout << "<=====[ Print Layout ]=====>\n" << "\n";
     std::cout << "MainWindow: " << std::setw(4) << mw_width << "x" << std::setw(4) << mw_height << "\n";
     std::cout << "Graph:      " << std::setw(4) << mw_graphWidth << "x" << std::setw(4) << mw_graphHeight << "\n";
     std::cout << "Tabs [" << mw_tabCount << "]:   " << std::setw(4) << mw_tabWidth << "x" << std::setw(4) << mw_tabHeight << "\n";
@@ -1247,8 +1259,9 @@ void MainWindow::_printLayout(QLayout *lay, int lvl, int idx) {
     std::string min = std::to_string(lay->minimumSize().width()) + "x" + std::to_string(lay->minimumSize().height());
     int children = lay->count();
 
-    std::cout << std::string(dent, ' ') << idxDent << "Layout | SizeHint: " << std::setw(9) << hint << " | Layout MinSize : " << std::setw(9) << min << " | Items: " << children << "\n";
-    
+    std::cout << std::string(dent, ' ') << idxDent << "Layout | SizeHint: " << std::left << std::setw(9) << hint << " | Layout MinSize : "
+        << std::setw(9) << min << " | Items: " << children << "\n";
+
     if (!children) {
         return;
     } else {
@@ -1281,12 +1294,12 @@ void MainWindow::_printChild(QLayoutItem *child, int lvl, int idx, int nameLen) 
         bool hasLay = ((lay = widget->layout()) != nullptr);
         std::string hasLayStr = (hasLay) ? " | (Layout)" : "";
 
-        std::cout << std::string(dent, ' ') << idxDent << "Widget: " << std::setw(nameLen) << name << " | SizeHint: " << std::setw(9) << hint << " | MinSize : " << std::setw(9) << min << hasLayStr << "\n";
+        std::cout << std::string(dent, ' ') << idxDent << "Widget: " << std::left << std::setw(nameLen) << name << " | SizeHint: "
+            << std::setw(9) << hint << " | MinSize : " << std::setw(9) << min << hasLayStr << "\n";
         
         if (hasLay) {
             _printLayout(lay, lvl + 1);
         }
-
     } else if (lay) {
         _printLayout(lay, lvl, idx);
     } else {
@@ -1464,16 +1477,6 @@ void MainWindow::_resize() {
             int entryWidth = entryLoc.width();
             int slideWidth = int(double(entryWidth) * 0.75);
             int entryHeight = entryLoc.height();
-
-            /* slswPara->setFixedHeight(entryHeight);
-            slswSuper->setFixedHeight(entryHeight);
-            slswCPU->setFixedHeight(entryHeight);
-            slswSphere->setFixedHeight(entryHeight);
-
-            slswPara->setMaximumWidth(slideWidth);
-            slswSuper->setMaximumWidth(slideWidth);
-            slswCPU->setMaximumWidth(slideWidth);
-            slswSphere->setMaximumWidth(slideWidth); */
 
             slswPara->resize(slideWidth, entryHeight);
             slswSuper->resize(slideWidth, entryHeight);

@@ -83,18 +83,18 @@ struct AtomixStyle {
     }
     
     void scaleFonts() {
-        baseFont = int(round(dockWidth * 0.04));
-        descFont = int(round(baseFont * 1.333));
-        tabSelectedFont = int(round(baseFont * 1.15));
-        tabUnselectedFont = int(round(baseFont * 0.90));
-        treeFont = baseFont + 4;
-        tableFont = baseFont + 1;
-        listFont = baseFont + 1;
-        morbFont = descFont;
+        baseFontSize = int(round(dockWidth * 0.04));
+        descFontSize = int(round(baseFontSize * 1.333));
+        tabSelectedFontSize = int(round(baseFontSize * 1.15));
+        tabUnselectedFontSize = int(round(baseFontSize * 0.90));
+        treeFontSize = baseFontSize + 4;
+        tableFontSize = baseFontSize + 1;
+        listFontSize = baseFontSize + 1;
+        morbFontSize = descFontSize;
     }
 
     void scaleWidgets() {
-        treeCheckSize = int(round(baseFont * 1.5));
+        treeCheckSize = int(round(baseFontSize * 1.5));
         tabLabelHeight = windowHeight / 9;
         sliderTicks = 20;
         sliderInterval = sliderTicks >> 2;
@@ -131,16 +131,16 @@ struct AtomixStyle {
 
     void genStyleString() {
         strStyle = styleStringList.join(" ")
-            .arg(QString::number(baseFont))             // 1
-            .arg(QString::number(descFont))             // 2
+            .arg(QString::number(baseFontSize))             // 1
+            .arg(QString::number(descFontSize))             // 2
             .arg(QString::number(tabWidth))             // 3
-            .arg(QString::number(tabUnselectedFont))    // 4
-            .arg(QString::number(tabSelectedFont))      // 5
-            .arg(QString::number(treeFont))             // 6
-            .arg(QString::number(tableFont))            // 7
-            .arg(QString::number(listFont))             // 8
+            .arg(QString::number(tabUnselectedFontSize))    // 4
+            .arg(QString::number(tabSelectedFontSize))      // 5
+            .arg(QString::number(treeFontSize))             // 6
+            .arg(QString::number(tableFontSize))            // 7
+            .arg(QString::number(listFontSize))             // 8
             .arg(strFontInc)                            // 9
-            .arg(QString::number(morbFont))             // 10
+            .arg(QString::number(morbFontSize))             // 10
             .arg(QString::number(morbMargin));          // 11
             // .arg(QString::number(defaultMargin))        // 12
             // .arg(QString::number(defaultPadding))       // 13
@@ -152,7 +152,7 @@ struct AtomixStyle {
         return strStyle;
     }
 
-    uint baseFont, tabSelectedFont, tabUnselectedFont, descFont, treeFont, tableFont, listFont, morbFont, morbMargin;
+    uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
     uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
     uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
 

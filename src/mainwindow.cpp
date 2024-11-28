@@ -37,130 +37,19 @@ void MainWindow::init(QRect &screenSize) {
     setWindowTitle(tr("atomix"));
     
     // Window Size and Position on Screen
-    double windowRatio = 0.33;
+    double windowRatio = 0.3333333333333333;
     mw_width = SWIDTH + int((screenSize.width() - SWIDTH) * windowRatio);
     mw_height = SHEIGHT + int((screenSize.height() - SHEIGHT) * windowRatio);
     this->resize(mw_width, mw_height);
     this->move(screenSize.center() - this->frameGeometry().center());
 
-    // Input Validators
-    valIntSmall = new QIntValidator();  
-    valIntSmall->setRange(1, 8);
-    valIntLarge = new QIntValidator();
-    valIntLarge->setRange(1, 999);
-    valDoubleSmall = new QDoubleValidator();
-    valDoubleSmall->setRange(0.0001, 0.9999, 4);
-    valDoubleLarge = new QDoubleValidator();
-    valDoubleLarge->setRange(0.001, 999.999, 3);
+    _initStyle();
 
-    // Add Custom Fonts
-    QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
-    QString strFont = "Inconsolata";
-    int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + strFont + "-Regular.ttf");
-    QStringList fontList = QFontDatabase::applicationFontFamilies(id);
-    if (fontList.contains(strFont)) {
-        aStyle.fontInc = QFont(strFont);
-        aStyle.strFontInc = strFont;
-    } else {
-         aStyle.fontInc = QFont(strDefault);
-         aStyle.strFontInc = strDefault;
-    }
+    _initGraphics();
 
-    // Stylesheet
-    aStyle.layDockSpace = int(double(mw_height* 0.005));
-    aStyle.morbMargin = aStyle.layDockSpace << 1;
-    mw_tabWidth = mw_width * 0.2;
-    mw_tabCount = 2;
-    setupStyleSheet();
+    _initWidgets();
 
-    // Graphics setup
-#ifdef USING_QVULKAN
-    // Vulkan
-    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
-    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
-    
-    QVersionNumber version = vkInst.supportedApiVersion();
-    VK_MINOR_VERSION = version.minorVersion();
-    if (VK_MINOR_VERSION >= 3) {
-        VK_SPIRV_VERSION = 6;
-    } else if (VK_MINOR_VERSION == 2) {
-        VK_SPIRV_VERSION = 5;
-    } else if (VK_MINOR_VERSION == 1) {
-        VK_SPIRV_VERSION = 3;
-    } else {
-        VK_SPIRV_VERSION = 0;
-    }
-    if (isDebug) {
-        std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
-        std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
-    }
-    
-    vkInst.setApiVersion(version);
-    vkInst.setLayers(layers);
-    vkInst.setExtensions(extensions);
-    if (!vkInst.create()) {
-        qFatal("Failed to create Vulkan Instance: %d", vkInst.errorCode());
-    }
-    
-    vkGraph = new VKWindow(this, cfgParser);
-    vkGraph->setVulkanInstance(&vkInst);
-    graph = QWidget::createWindowContainer(vkGraph);
-    setCentralWidget(graph);
-    // this->setMaximumWidth(mw_width);
-    graphWin = vkGraph;
-#elifdef USING_QOPENGL
-    // OpenGL
-    glGraph = new GWidget(this, cfgParser);
-    setCentralWidget(glGraph);
-    graph = glGraph;
-    graphWin = glGraph;
-#endif
-
-    // Setup Dock GUI
-    setupTabs();
-    this->addDockWidget(Qt::RightDockWidgetArea, dockTabs);
-    refreshConfigs();
-    refreshShaders();
-    loadConfig();
-    refreshOrbits();
-
-    // Signal-Slot Connections
-    connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
-    connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
-    connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
-#ifdef USING_QVULKAN
-    connect(buttGroupOrbits, &QButtonGroup::idToggled, vkGraph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
-#elifdef USING_QOPENGL
-    connect(buttGroupOrbits, &QButtonGroup::idToggled, glGraph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
-#endif
-    connect(buttGroupConfig, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
-    connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
-    connect(buttLockRecipes, &QPushButton::clicked, this, &MainWindow::handleButtLockRecipes);
-    connect(entryOrbit, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
-    connect(entryPeriod, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
-    connect(entryWavelength, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
-    connect(entryResolution, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
-    connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
-    connect(entryCloudLayers, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
-    connect(entryCloudRes, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
-    connect(entryCloudMinRDP, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
-    connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
-    connect(buttResetRecipes, &QPushButton::clicked, this, &MainWindow::handleButtResetRecipes);
-    connect(buttClearRecipes, &QPushButton::clicked, this, &MainWindow::handleButtClearRecipes);
-    connect(entryCloudLayers, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
-    connect(entryCloudRes, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
-    connect(entryCloudMinRDP, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
-    connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
-    connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleDoubleClick);
-    connect(tableOrbitalReport, &QTableWidget::cellChanged, this, &MainWindow::handleWeightChange);
-    connect(slideCullingX, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingX);
-    connect(slideCullingY, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingY);
-    connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
-    connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
-    connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
-    // connect(wTabs, &QTabWidget::resizeEvent, this, &MainWindow::handleTabChange);
-    // Learn about and use EventFilters
-    // https://doc.qt.io/qt-6/eventsandfilters.html
+    _connectSignals();
 }
 
 void MainWindow::postInit(int titlebarHeight) {
@@ -169,11 +58,15 @@ void MainWindow::postInit(int titlebarHeight) {
     QRect tabLoc = wTabs->geometry();
     mw_tabWidth = tabLoc.width();
     mw_tabHeight = tabLoc.height();
+    // int graphHeight = vkGraph->height();
 
     _resize();
     
     setupDetails();
     setupLoading();
+
+    wTabs->installEventFilter(this);
+    // wTabs->setMaximumWidth(QWIDGETSIZE_MAX);
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -266,27 +159,39 @@ void MainWindow::resizeEvent(QResizeEvent *e) {
     mw_x = mwLoc.x();
     mw_y = mwLoc.y();
 
-    // _dockResize(); // TODO : Move this to signal/slot
+    // aStyle.dockWidth = int(mw_width * 0.2);
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+    if (obj == wTabs && event->type() == QEvent::Resize) {
+        _dockResize();
+    }
+
+    return false;
 }
 
 void MainWindow::setupTabs() {
     dockTabs = new QDockWidget(this);
-    dockTabs->setContentsMargins(0, 0, 0, 0);
+    dockTabs->setAllowedAreas(Qt::RightDockWidgetArea);
+    // dockTabs->setContentsMargins(0, 0, 0, 0);
+    
     wTabs = new QTabWidget(this);
-
-    wTabs->setMaximumWidth(aStyle.dockWidth);
     wTabs->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
+
+    // wTabs->setMaximumWidth(aStyle.dockWidth);
+    wTabs->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    // wTabs->setFixedWidth(aStyle.dockWidth);
 
     setupDockWaves();
     setupDockHarmonics();
     wTabs->addTab(wTabWaves, tr("Waves"));
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
     dockTabs->setWidget(wTabs);
+    this->addDockWidget(Qt::RightDockWidgetArea, dockTabs);
 }
 
 void MainWindow::setupDockWaves() {
     QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    // QSizePolicy qPolicyConstrict = QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     wTabWaves = new QWidget(this);
 
     // Buttons
@@ -374,15 +279,16 @@ void MainWindow::setupDockWaves() {
     // The layout should see these policies match the entry fields and keep them the same size (does it?)
     QSizePolicy sp = entryOrbit->sizePolicy();
     sp.setVerticalStretch(1);
+    sp.setHorizontalStretch(1);
     entryOrbit->setSizePolicy(sp);
     entryAmp->setSizePolicy(sp);
     entryPeriod->setSizePolicy(sp);
     entryWavelength->setSizePolicy(sp);
     entryResolution->setSizePolicy(sp);
-    slswPara->setSizePolicy(sp);
-    slswSuper->setSizePolicy(sp);
-    slswCPU->setSizePolicy(sp);
-    slswSphere->setSizePolicy(sp);
+    // slswPara->setSizePolicy(sp);
+    // slswSuper->setSizePolicy(sp);
+    // slswCPU->setSizePolicy(sp);
+    // slswSphere->setSizePolicy(sp);
 
     // Assign switches to button group
     buttGroupConfig = new QButtonGroup();
@@ -505,7 +411,8 @@ void MainWindow::setupDockWaves() {
 
 void MainWindow::setupDockHarmonics() {
     QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     wTabHarmonics = new QWidget(this);
     
     // Buttons
@@ -535,6 +442,7 @@ void MainWindow::setupDockHarmonics() {
 
     // Orbital Selection Tree
     treeOrbitalSelect = new QTreeWidget();
+    treeOrbitalSelect->setSizePolicy(qPolicyExpandA);
     treeOrbitalSelect->setSortingEnabled(true);
     QStringList strlistTreeHeaders = { "Orbital" };
     treeOrbitalSelect->setHeaderLabels(strlistTreeHeaders);
@@ -566,19 +474,23 @@ void MainWindow::setupDockHarmonics() {
 
     // Selected Orbital Reporting Table
     tableOrbitalReport = new QTableWidget();
+    tableOrbitalReport->setSizePolicy(qPolicyExpandA);
     tableOrbitalReport->setColumnCount(2);
     QStringList headersReport = { "Weight", "Orbital" };
     tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
+    tableOrbitalReport->horizontalHeader()->setStretchLastSection(true);
     tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    tableOrbitalReport->verticalHeader()->setMaximumSectionSize(aStyle.tableFont + 2);
-    // tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    tableOrbitalReport->verticalHeader()->setDefaultSectionSize(aStyle.tableFont + 2);
+    tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    tableOrbitalReport->verticalHeader()->setStretchLastSection(true);
     tableOrbitalReport->verticalHeader()->setVisible(false);
     tableOrbitalReport->setShowGrid(false);
     tableOrbitalReport->setSortingEnabled(true);
-    // tableOrbitalReport->setSizeAdjustPolicy(QAbstractScrollArea::AdjustIgnored);
+    tableOrbitalReport->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     
     // Locked Orbitals List
     listOrbitalLocked = new QListWidget();
+    listOrbitalLocked->setSizePolicy(qPolicyExpandA);
     listOrbitalLocked->setSpacing(0);
     // listOrbitalLocked->setContentsMargins(0, 0, 0, 0);
 
@@ -598,14 +510,14 @@ void MainWindow::setupDockHarmonics() {
 
     // Configure Orbital Selection Groups
     groupRecipeReporter->setAlignment(Qt::AlignRight);
-    groupRecipeReporter->setMaximumWidth(aStyle.groupMaxWidth);
+    // groupRecipeReporter->setMaximumWidth(aStyle.groupMaxWidth);
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777 }");
     groupRecipeReporter->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeBuilder->setAlignment(Qt::AlignLeft);
-    groupRecipeBuilder->setMaximumWidth(aStyle.groupMaxWidth);
+    // groupRecipeBuilder->setMaximumWidth(aStyle.groupMaxWidth);
     groupRecipeBuilder->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeLocked->setAlignment(Qt::AlignRight);
-    groupRecipeLocked->setMaximumWidth(aStyle.groupMaxWidth);
+    // groupRecipeLocked->setMaximumWidth(aStyle.groupMaxWidth);
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     groupRecipeLocked->layout()->setContentsMargins(0, 0, 0, 0);
 
@@ -737,16 +649,6 @@ void MainWindow::setupDockHarmonics() {
 
     // Set Main Tab Layout
     wTabHarmonics->setLayout(layDockHarmonics);
-}
-
-void MainWindow::setupStyleSheet() {
-    aStyle.setWindowSize(mw_width, mw_height);
-    aStyle.setDockWidth(mw_tabWidth, mw_tabCount);
-    aStyle.updateStyleSheet();
-    this->setStyleSheet(aStyle.getStyleSheet());
-    if (isDebug) {
-        std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
-    }
 }
 
 void MainWindow::refreshConfigs() {
@@ -947,18 +849,19 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             // Leaf node unchecked
             int intItemRow = tableOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first()->row();
             tableOrbitalReport->removeRow(intItemRow);
-
-            if (!tableOrbitalReport->rowCount()) {
-                // Disable buttons if list is now empty
-                buttLockRecipes->setEnabled(false);
-                buttClearRecipes->setEnabled(true);
-            }
         }
     }
 
     /* ALL Nodes make it here */
-    // Since a change has been made here, set title to yellow to show unlocked recipes
-    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
+    // Update button and group style to match current state
+    if (!tableOrbitalReport->rowCount()) {
+        buttLockRecipes->setEnabled(false);
+        buttClearRecipes->setEnabled(true);
+        buttLockRecipes->setStyleSheet("");
+        groupRecipeReporter->setStyleSheet("");
+    } else {
+        groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
+    }
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent
     while (ptrParent) {
@@ -989,7 +892,7 @@ void MainWindow::handleButtLockRecipes() {
 
         QString strOrbital = thisOrbital->text();
         QString strWeight = thisWeight->text();
-        QString strLocked = strWeight + "  *  ( " + strOrbital + " )";
+        QString strLocked = strWeight + "  *  < " + strOrbital + " >";
         QList<QListWidgetItem *> resultsPartial = listOrbitalLocked->findItems(strOrbital, Qt::MatchContains);
 
         if (!resultsPartial.count()) {
@@ -1082,6 +985,9 @@ void MainWindow::handleButtMorbWaves() {
     if (listOrbitalLocked->count()) {
         buttMorbHarmonics->setEnabled(true);
     }
+
+    wTabs->setMaximumWidth(QWIDGETSIZE_MAX);
+    wTabs->resize(int(double(mw_width) * 0.2), mw_tabHeight);
 }
 
 void MainWindow::handleButtMorbHarmonics() {
@@ -1277,6 +1183,145 @@ void MainWindow::printList() {
     std::cout << std::endl;
 }
 
+void MainWindow::_initStyle() {
+    // Add Custom Fonts
+    QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
+    QString strFont = "Inconsolata";
+    int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + strFont + "-Regular.ttf");
+    QStringList fontList = QFontDatabase::applicationFontFamilies(id);
+    if (fontList.contains(strFont)) {
+        aStyle.fontInc = QFont(strFont);
+        aStyle.strFontInc = strFont;
+    } else {
+         aStyle.fontInc = QFont(strDefault);
+         aStyle.strFontInc = strDefault;
+    }
+
+    // Stylesheet
+    aStyle.layDockSpace = int(double(mw_height* 0.005));
+    aStyle.morbMargin = aStyle.layDockSpace << 1;
+    mw_tabWidth = mw_width * 0.2;
+    mw_tabCount = 2;
+
+    _setStyle();
+}
+
+void MainWindow::_initGraphics() {
+#ifdef USING_QVULKAN
+
+    // Vulkan
+    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
+    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
+    
+    QVersionNumber version = vkInst.supportedApiVersion();
+    VK_MINOR_VERSION = version.minorVersion();
+    if (VK_MINOR_VERSION >= 3) {
+        VK_SPIRV_VERSION = 6;
+    } else if (VK_MINOR_VERSION == 2) {
+        VK_SPIRV_VERSION = 5;
+    } else if (VK_MINOR_VERSION == 1) {
+        VK_SPIRV_VERSION = 3;
+    } else {
+        VK_SPIRV_VERSION = 0;
+    }
+    if (isDebug) {
+        std::cout << "Vulkan API version: " << version.toString().toStdString() << std::endl;
+        std::cout << "Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
+    }
+    
+    vkInst.setApiVersion(version);
+    vkInst.setLayers(layers);
+    vkInst.setExtensions(extensions);
+    if (!vkInst.create()) {
+        qFatal("Failed to create Vulkan Instance: %d", vkInst.errorCode());
+    }
+    
+    vkGraph = new VKWindow(this, cfgParser);
+    vkGraph->setVulkanInstance(&vkInst);
+    graph = QWidget::createWindowContainer(vkGraph);
+    graph->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    setCentralWidget(graph);
+
+#elifdef USING_QOPENGL
+
+    // OpenGL
+    glGraph = new GWidget(this, cfgParser);
+    setCentralWidget(glGraph);
+    graph = glGraph;
+
+#endif
+}
+
+void MainWindow::_initWidgets() {
+    // Input Validators
+    valIntSmall = new QIntValidator();  
+    valIntSmall->setRange(1, 8);
+    valIntLarge = new QIntValidator();
+    valIntLarge->setRange(1, 999);
+    valDoubleSmall = new QDoubleValidator();
+    valDoubleSmall->setRange(0.0001, 0.9999, 4);
+    valDoubleLarge = new QDoubleValidator();
+    valDoubleLarge->setRange(0.001, 999.999, 3);
+
+    // Setup Dock GUI
+    setupTabs();
+    
+    refreshConfigs();
+    refreshShaders();
+    loadConfig();
+    refreshOrbits();
+}
+
+void MainWindow::_connectSignals() {
+    // Signal-Slot Connections
+    connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
+    connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
+    connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
+#ifdef USING_QVULKAN
+    connect(buttGroupOrbits, &QButtonGroup::idToggled, vkGraph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
+#elifdef USING_QOPENGL
+    connect(buttGroupOrbits, &QButtonGroup::idToggled, glGraph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
+#endif
+    connect(buttGroupConfig, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
+    connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
+    connect(buttLockRecipes, &QPushButton::clicked, this, &MainWindow::handleButtLockRecipes);
+    connect(entryOrbit, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
+    connect(entryPeriod, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
+    connect(entryWavelength, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
+    connect(entryResolution, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
+    connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);
+    connect(entryCloudLayers, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
+    connect(entryCloudRes, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
+    connect(entryCloudMinRDP, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
+    connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
+    connect(buttResetRecipes, &QPushButton::clicked, this, &MainWindow::handleButtResetRecipes);
+    connect(buttClearRecipes, &QPushButton::clicked, this, &MainWindow::handleButtClearRecipes);
+    connect(entryCloudLayers, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
+    connect(entryCloudRes, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
+    connect(entryCloudMinRDP, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
+    connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
+    connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleDoubleClick);
+    connect(tableOrbitalReport, &QTableWidget::cellChanged, this, &MainWindow::handleWeightChange);
+    connect(slideCullingX, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingX);
+    connect(slideCullingY, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingY);
+    connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
+    // connect(wTabs, &QTabWidget::resizeEvent, this, &MainWindow::handleTabChange);
+    // Learn about and use EventFilters
+    // https://doc.qt.io/qt-6/eventsandfilters.html
+}
+
+void MainWindow::_setStyle() {
+    aStyle.setWindowSize(mw_width, mw_height);
+    aStyle.setDockWidth(mw_tabWidth, mw_tabCount);
+    aStyle.updateStyleSheet();
+    this->setStyleSheet(aStyle.getStyleSheet());
+    if (isDebug) {
+        std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
+    }
+}
+
 void MainWindow::_dockResize() {
     QRect tabLoc = wTabs->geometry();
     mw_tabWidth = tabLoc.width();
@@ -1285,7 +1330,8 @@ void MainWindow::_dockResize() {
     // Update Stylesheet
     aStyle.layDockSpace = int(double(mw_tabHeight * 0.005));
     aStyle.morbMargin = aStyle.layDockSpace << 1;
-    setupStyleSheet();
+
+    _setStyle();
 
     _resize();
 }
@@ -1305,31 +1351,34 @@ void MainWindow::_resize() {
             // Resize SlideSwitches to match entry boxes
             QRect entryLoc = entryOrbit->geometry();
             int entryWidth = entryLoc.width();
+            int slideWidth = int(double(entryWidth) * 0.75);
             int entryHeight = entryLoc.height();
 
-            slswPara->setFixedHeight(entryHeight);
+            /* slswPara->setFixedHeight(entryHeight);
             slswSuper->setFixedHeight(entryHeight);
             slswCPU->setFixedHeight(entryHeight);
             slswSphere->setFixedHeight(entryHeight);
 
-            slswPara->setMaximumWidth(entryWidth);
-            slswSuper->setMaximumWidth(entryWidth);
-            slswCPU->setMaximumWidth(entryWidth);
-            slswSphere->setMaximumWidth(entryWidth);
+            slswPara->setMaximumWidth(slideWidth);
+            slswSuper->setMaximumWidth(slideWidth);
+            slswCPU->setMaximumWidth(slideWidth);
+            slswSphere->setMaximumWidth(slideWidth); */
+
+            slswPara->resize(slideWidth, entryHeight);
+            slswSuper->resize(slideWidth, entryHeight);
+            slswCPU->resize(slideWidth, entryHeight);
+            slswSphere->resize(slideWidth, entryHeight);
 
         } else if (currentTabIdx == 1) {                        // [Harmonics]
+            // Pull in orbital tree items (for smaller resolutions)
+            int treeWidth = treeOrbitalSelect->width();
+            int indent = int(double(treeWidth) * 0.10);
+            treeOrbitalSelect->setIndentation(indent);
+            
             // Resize selected recipe table headers to account for scrollbar
             int colWidth = (tableOrbitalReport->width() - 15) >> 1;
             tableOrbitalReport->setColumnWidth(0, colWidth);
             tableOrbitalReport->setColumnWidth(1, colWidth);
-
-            // Pull in orbital tree items (for smaller resolutions)
-            int treeWidth = treeOrbitalSelect->width();
-            int dent = treeOrbitalSelect->indentation();
-            int indent = int(double(treeWidth) * 0.10);
-            if (indent <= dent) {        
-                treeOrbitalSelect->setIndentation(indent);
-            }
         }
 
         i++;

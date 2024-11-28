@@ -90,7 +90,7 @@ struct AtomixStyle {
         treeFont = baseFont + 4;
         tableFont = baseFont + 1;
         listFont = baseFont + 1;
-        morbFont = baseFont + 5;
+        morbFont = descFont;
     }
 
     void scaleWidgets() {
@@ -117,12 +117,12 @@ struct AtomixStyle {
             "QTabBar::tab::selected { font-size: %5px; } "
             "QLabel { font-size: %1px; } "
             "QLabel#tabDesc { font-size: %2px; } "
-            "QTreeWidget { font-family: %15; font-size: %6px; } "
-            "QTableWidget { font-family: %15; font-size: %7px; } "
-            "QListWidget { font-family: %15; font-size: %8px; } "
+            "QTreeWidget { font-family: %9; font-size: %6px; } "
+            "QTableWidget { font-family: %8; font-size: %7px; } "
+            "QListWidget { font-family: %8; font-size: %7px; } "
             // "QTreeWidget::item { border: 0px; padding-top: 10px; } " <== This works but ruins the formatting
-            "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
-            "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
+            // "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
+            // "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
             "QPushButton#morb { font-size: %10px; margin-right: %11px; margin-left: %11px; } "
         });
 
@@ -139,14 +139,13 @@ struct AtomixStyle {
             .arg(QString::number(treeFont))             // 6
             .arg(QString::number(tableFont))            // 7
             .arg(QString::number(listFont))             // 8
-            .arg(QString::number(listPadding))          // 9
+            .arg(strFontInc)                            // 9
             .arg(QString::number(morbFont))             // 10
-            .arg(QString::number(morbMargin))           // 11
-            .arg(QString::number(defaultMargin))        // 12
-            .arg(QString::number(defaultPadding))       // 13
-            .arg(QString::number(defaultSpacing))       // 14
-            .arg(strFontInc);                           // 15
-            // .arg(QString::number(treeCheckSize));       // 15
+            .arg(QString::number(morbMargin));          // 11
+            // .arg(QString::number(defaultMargin))        // 12
+            // .arg(QString::number(defaultPadding))       // 13
+            // .arg(QString::number(defaultSpacing))       // 14
+            // .arg(QString::number(listPadding));         // 15
     }
 
     QString& getStyleSheet() {
@@ -184,12 +183,12 @@ public slots:
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
-    void setupStyleSheet();
     void refreshConfigs();
     void refreshShaders();
     void loadConfig();
@@ -217,6 +216,12 @@ private:
     void printHarmap();
     void printList();
 
+    void _initStyle();
+    void _initGraphics();
+    void _initWidgets();
+    void _connectSignals();
+    
+    void _setStyle();
     void _dockResize();
     void _resize();
 

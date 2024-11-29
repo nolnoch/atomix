@@ -98,7 +98,6 @@ struct AtomixStyle {
         tabLabelHeight = windowHeight / 9;
         sliderTicks = 20;
         sliderInterval = sliderTicks >> 2;
-        groupMaxWidth = dockWidth >> 1;
         borderWidth = (isMacOS) ? 1 : 3;
         defaultMargin = 0;
         defaultPadding = 0;
@@ -133,19 +132,15 @@ struct AtomixStyle {
         strStyle = styleStringList.join(" ")
             .arg(QString::number(baseFontSize))             // 1
             .arg(QString::number(descFontSize))             // 2
-            .arg(QString::number(tabWidth))             // 3
+            .arg(QString::number(tabWidth))                 // 3
             .arg(QString::number(tabUnselectedFontSize))    // 4
             .arg(QString::number(tabSelectedFontSize))      // 5
             .arg(QString::number(treeFontSize))             // 6
             .arg(QString::number(tableFontSize))            // 7
             .arg(QString::number(listFontSize))             // 8
-            .arg(strFontInc)                            // 9
+            .arg(strFontInc)                                // 9
             .arg(QString::number(morbFontSize))             // 10
-            .arg(QString::number(morbMargin));          // 11
-            // .arg(QString::number(defaultMargin))        // 12
-            // .arg(QString::number(defaultPadding))       // 13
-            // .arg(QString::number(defaultSpacing))       // 14
-            // .arg(QString::number(listPadding));         // 15
+            .arg(QString::number(morbMargin));              // 11
     }
 
     QString& getStyleSheet() {
@@ -153,7 +148,7 @@ struct AtomixStyle {
     }
 
     uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
-    uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
+    uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
     uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
 
     uint dockMin, dockMax, windowWidth, windowHeight;

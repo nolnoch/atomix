@@ -461,18 +461,17 @@ void MainWindow::setupDockHarmonics() {
     groupRecipeBuilder->setObjectName("groupRecipeBuilder");
     groupRecipeReporter = new QGroupBox("Selected Orbitals");
     groupRecipeReporter->setObjectName("groupRecipeReporter");
-    groupRecipeLocked = new QGroupBox("Locked Orbitals");
-    groupRecipeLocked->setObjectName("groupRecipeLocked");
+    /* groupRecipeLocked = new QGroupBox("Locked Orbitals");
+    groupRecipeLocked->setObjectName("groupRecipeLocked"); */
 
     // Tab Description Label
     QLabel *labelHarmonics = new QLabel("Generate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)");
     labelHarmonics->setObjectName("tabDesc");
-    labelHarmonics->setMaximumHeight(aStyle.tabLabelHeight);
-    labelHarmonics->setMinimumHeight(aStyle.tabLabelHeight);
+    labelHarmonics->setFixedHeight(aStyle.tabLabelHeight);
     labelHarmonics->setWordWrap(true);
     labelHarmonics->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelHarmonics->setLineWidth(aStyle.borderWidth);
-    labelHarmonics->setMargin(12);
+    labelHarmonics->setMargin(aStyle.layDockSpace * 3);
     labelHarmonics->setAlignment(Qt::AlignCenter);
 
     // Orbital Selection Tree
@@ -515,22 +514,20 @@ void MainWindow::setupDockHarmonics() {
     tableOrbitalReport->setColumnCount(2);
     QStringList headersReport = { "Weight", "Orbital" };
     tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
-    tableOrbitalReport->horizontalHeader()->setStretchLastSection(true);
     tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    tableOrbitalReport->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     tableOrbitalReport->verticalHeader()->setDefaultSectionSize(aStyle.tableFontSize + 2);
     tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    tableOrbitalReport->verticalHeader()->setStretchLastSection(true);
     tableOrbitalReport->verticalHeader()->setVisible(false);
     tableOrbitalReport->setShowGrid(false);
     tableOrbitalReport->setSortingEnabled(true);
     tableOrbitalReport->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     
-    // Locked Orbitals List
+    /* // Locked Orbitals List
     listOrbitalLocked = new QListWidget();
     listOrbitalLocked->setObjectName("listOrbitalLocked");
     listOrbitalLocked->setSizePolicy(qPolicyExpandA);
-    listOrbitalLocked->setSpacing(0);
-    // listOrbitalLocked->setContentsMargins(0, 0, 0, 0);
+    listOrbitalLocked->setSpacing(0); */
 
     // Add Orbital Selection Widgets to Groups (via Layouts)
     QVBoxLayout *layRecipeBuilder = new QVBoxLayout;
@@ -541,41 +538,35 @@ void MainWindow::setupDockHarmonics() {
     layRecipeReporter->addWidget(tableOrbitalReport);
     layRecipeReporter->setContentsMargins(0, 0, 0, 0);
     groupRecipeReporter->setLayout(layRecipeReporter);
-    QVBoxLayout *layRecipeLocked = new QVBoxLayout;
+    /* QVBoxLayout *layRecipeLocked = new QVBoxLayout;
     layRecipeLocked->addWidget(listOrbitalLocked);
     layRecipeLocked->setContentsMargins(0, 0, 0, 0);
-    groupRecipeLocked->setLayout(layRecipeLocked);
+    groupRecipeLocked->setLayout(layRecipeLocked); */
 
     // Configure Orbital Selection Groups
-    groupRecipeReporter->setAlignment(Qt::AlignRight);
-    // groupRecipeReporter->setMaximumWidth(aStyle.groupMaxWidth);
-    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777 }");
-    groupRecipeReporter->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeBuilder->setAlignment(Qt::AlignLeft);
-    // groupRecipeBuilder->setMaximumWidth(aStyle.groupMaxWidth);
-    groupRecipeBuilder->layout()->setContentsMargins(0, 0, 0, 0);
-    groupRecipeLocked->setAlignment(Qt::AlignRight);
+    groupRecipeBuilder->setSizePolicy(qPolicyExpandA);
+    groupRecipeReporter->setAlignment(Qt::AlignRight);
+    groupRecipeReporter->setSizePolicy(qPolicyExpandA);
+    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777 }");
+    
+    /*groupRecipeLocked->setAlignment(Qt::AlignRight);
     // groupRecipeLocked->setMaximumWidth(aStyle.groupMaxWidth);
+    groupRecipeLocked->setSizePolicy(qPolicyExpandA);
     groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
-    groupRecipeLocked->layout()->setContentsMargins(0, 0, 0, 0);
+    groupRecipeLocked->layout()->setContentsMargins(0, 0, 0, 0); */
 
-    // Add Orbital Selection Groups to Grid Layout
-    QGridLayout *layOrbitalGrid = new QGridLayout;
-    layOrbitalGrid->addWidget(groupRecipeBuilder, 0, 0, 2, 1);
-    layOrbitalGrid->addWidget(groupRecipeReporter, 0, 1, 1, 1);
-    layOrbitalGrid->addWidget(groupRecipeLocked, 1, 1, 1, 1);
-    layOrbitalGrid->setContentsMargins(0, 0, 0, 0);
-    layOrbitalGrid->setSpacing(0);
-    layOrbitalGrid->setColumnStretch(0, 1);
-    layOrbitalGrid->setColumnStretch(1, 1);
-    layOrbitalGrid->setRowStretch(0, 4);
-    layOrbitalGrid->setRowStretch(1, 3);
+    // Add Orbital Selection Groups to HBox Layout
+    QHBoxLayout *layHOrbital = new QHBoxLayout;
+    layHOrbital->addWidget(groupRecipeBuilder, 1);
+    layHOrbital->addWidget(groupRecipeReporter, 1);
+    layHOrbital->setSpacing(aStyle.layDockSpace);
 
     // Orbital Selection Buttons
-    buttLockRecipes = new QPushButton("Lock Selection");
+    /* buttLockRecipes = new QPushButton("Lock Selection");
     buttLockRecipes->setSizePolicy(qPolicyExpandH);
     buttLockRecipes->setEnabled(false);
-    buttLockRecipes->setObjectName("buttLockRecipes");
+    buttLockRecipes->setObjectName("buttLockRecipes"); */
     buttClearRecipes = new QPushButton("Clear Selection");
     buttClearRecipes->setSizePolicy(qPolicyExpandH);
     buttClearRecipes->setEnabled(false);
@@ -587,10 +578,10 @@ void MainWindow::setupDockHarmonics() {
 
     // Add Orbital Selection Buttons to Layout
     QHBoxLayout *layHRecipeButts = new QHBoxLayout;
-    layHRecipeButts->addWidget(buttLockRecipes);
+    // layHRecipeButts->addWidget(buttLockRecipes);
     layHRecipeButts->addWidget(buttClearRecipes);
     layHRecipeButts->addWidget(buttResetRecipes);
-    layHRecipeButts->setContentsMargins(0, 0, 0, 0);
+    // layHRecipeButts->setContentsMargins(0, 0, 0, 0);
     layHRecipeButts->setSpacing(aStyle.layDockSpace);
 
     // Harmonics Configuration Input Widgets
@@ -621,9 +612,9 @@ void MainWindow::setupDockHarmonics() {
     layGenVertices->addWidget(entryCloudLayers, 0, 2, 1, 1);
     layGenVertices->addWidget(entryCloudRes, 1, 2, 1, 1);
     layGenVertices->addWidget(entryCloudMinRDP, 2, 2, 1, 1);
-    layGenVertices->setColumnStretch(0, 9);
+    layGenVertices->setColumnStretch(0, 15);
     layGenVertices->setColumnStretch(1, 1);
-    layGenVertices->setColumnStretch(2, 3);
+    layGenVertices->setColumnStretch(2, 5);
     layGenVertices->setSpacing(aStyle.layDockSpace);
     layGenVertices->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
     groupGenVertices->setLayout(layGenVertices);
@@ -687,7 +678,7 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(1);
-    layDockHarmonics->addLayout(layOrbitalGrid);
+    layDockHarmonics->addLayout(layHOrbital);
     layDockHarmonics->addLayout(layHRecipeButts);
     layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addWidget(buttMorbHarmonics);
@@ -695,10 +686,20 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->addLayout(laySlideCulling);
     layDockHarmonics->addWidget(groupSlideBackground);
 
-    layDockHarmonics->setStretchFactor(layOrbitalGrid, 8);
+    layDockHarmonics->setStretchFactor(layHOrbital, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
     layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
     layDockHarmonics->setContentsMargins(0, 0, 0, 0);
+
+    int tab = aStyle.dockWidth;
+    int half = tab >> 1;
+    int third = tab / 3;
+    /* this->groupRecipeBuilder->setMaximumWidth(half);
+    this->groupRecipeReporter->setMaximumWidth(half);
+    this->buttClearRecipes->setMaximumWidth(third);
+    this->buttLockRecipes->setMaximumWidth(third);
+    this->buttResetRecipes->setMaximumWidth(third); */
+    this->groupGenVertices->setMaximumWidth(tab);
 
     // Set Main Tab Layout
     wTabHarmonics->setLayout(layDockHarmonics);
@@ -986,7 +987,7 @@ void MainWindow::handleButtLockRecipes() {
     buttMorbHarmonics->setEnabled(true);
 
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #77FF77; }");
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #77FF77; }");
+    // groupRecipeLocked->setStyleSheet("QGroupBox { color: #77FF77; }");
 }
 
 void MainWindow::handleButtClearRecipes() {
@@ -1007,7 +1008,7 @@ void MainWindow::handleButtResetRecipes() {
     mapCloudRecipesLocked.clear();
     this->numRecipes = 0;
 
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
+    // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     buttMorbHarmonics->setEnabled(false);
     buttLockRecipes->setEnabled(true);
 }
@@ -1094,7 +1095,7 @@ void MainWindow::handleButtMorbHarmonics() {
     glGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
 #endif
 
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
+    // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupHSlideCulling->setEnabled(true);
     groupVSlideCulling->setEnabled(true);
@@ -1431,9 +1432,6 @@ void MainWindow::_connectSignals() {
     connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
-    // connect(wTabs, &QTabWidget::resizeEvent, this, &MainWindow::handleTabChange);
-    // Learn about and use EventFilters
-    // https://doc.qt.io/qt-6/eventsandfilters.html
 }
 
 void MainWindow::_setStyle() {
@@ -1488,11 +1486,6 @@ void MainWindow::_resize() {
             int treeWidth = treeOrbitalSelect->width();
             int indent = int(double(treeWidth) * 0.10);
             treeOrbitalSelect->setIndentation(indent);
-            
-            // Resize selected recipe table headers to account for scrollbar
-            int colWidth = (tableOrbitalReport->width() - 15) >> 1;
-            tableOrbitalReport->setColumnWidth(0, colWidth);
-            tableOrbitalReport->setColumnWidth(1, colWidth);
         }
 
         i++;

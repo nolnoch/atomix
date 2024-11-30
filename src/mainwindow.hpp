@@ -116,13 +116,12 @@ struct AtomixStyle {
             "QTabBar::tab::selected { font-size: %5px; } "
             "QLabel { font-size: %1px; } "
             "QLabel#tabDesc { font-size: %2px; } "
-            "QTreeWidget { font-family: %9; font-size: %6px; } "
+            "QTreeWidget { font-family: %8; font-size: %6px; } "
             "QTableWidget { font-family: %8; font-size: %7px; } "
-            "QListWidget { font-family: %8; font-size: %7px; } "
             // "QTreeWidget::item { border: 0px; padding-top: 10px; } " <== This works but ruins the formatting
             // "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
             // "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
-            "QPushButton#morb { font-size: %10px; margin-right: %11px; margin-left: %11px; } "
+            "QPushButton#morb { font-size: %9px; margin-right: %10px; margin-left: %10px; } "
         });
 
         genStyleString();
@@ -137,10 +136,9 @@ struct AtomixStyle {
             .arg(QString::number(tabSelectedFontSize))      // 5
             .arg(QString::number(treeFontSize))             // 6
             .arg(QString::number(tableFontSize))            // 7
-            .arg(QString::number(listFontSize))             // 8
-            .arg(strFontInc)                                // 9
-            .arg(QString::number(morbFontSize))             // 10
-            .arg(QString::number(morbMargin));              // 11
+            .arg(strFontInc)                                // 8
+            .arg(QString::number(morbFontSize))             // 9
+            .arg(QString::number(morbMargin));              // 10
     }
 
     QString& getStyleSheet() {
@@ -157,6 +155,20 @@ struct AtomixStyle {
     QStringList styleStringList;
     QString strStyle, strFontInc;
     QFont fontInc;
+};
+
+class SortableOrbital : public QTableWidgetItem {
+
+public:
+    SortableOrbital(int type = QTableWidgetItem::Type) : QTableWidgetItem(type) {}
+    SortableOrbital(QString &text, int type = QTableWidgetItem::Type) : QTableWidgetItem(text, type) {}
+    ~SortableOrbital() override = default;
+
+    bool operator<(const QTableWidgetItem &other) const override {
+        int textVal = this->text().simplified().replace(" ", "").toInt();
+        int otherTextVal = other.text().simplified().replace(" ", "").toInt();
+        return (textVal < otherTextVal);
+    }
 };
 
 
@@ -208,6 +220,8 @@ private:
     void handleSlideReleased();
     void handleSlideBackground(int val);
 
+    int findHarmapItem(int n, int l, int m);
+    int getHarmapSize();
     void printHarmap();
     void printList();
     
@@ -258,7 +272,6 @@ private:
     QButtonGroup *buttGroupColors = nullptr;
 
     QPushButton *buttMorbWaves = nullptr;
-    QPushButton *buttLockRecipes = nullptr;
     QPushButton *buttClearRecipes = nullptr;
     QPushButton *buttResetRecipes = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
@@ -269,12 +282,10 @@ private:
     QGroupBox *groupRecipeBuilder = nullptr;
     QGroupBox *groupRecipeReporter = nullptr;
     QGroupBox *groupGenVertices = nullptr;
-    QGroupBox *groupRecipeLocked = nullptr;
     QGroupBox *groupHSlideCulling = nullptr;
     QGroupBox *groupVSlideCulling = nullptr;
     QGroupBox *groupSlideBackground = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
-    QListWidget *listOrbitalLocked = nullptr;
     QTableWidget *tableOrbitalReport = nullptr;
     QLineEdit *entryCloudLayers = nullptr;
     QLineEdit *entryCloudRes = nullptr;
@@ -320,9 +331,6 @@ private:
 
     AtomixInfo dInfo;
     AtomixStyle aStyle;
-
-    QLabel *labelDebug = nullptr;
-    QGridLayout *layoutDebug = nullptr;
 };
 
 #endif

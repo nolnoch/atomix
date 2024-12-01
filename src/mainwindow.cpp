@@ -486,20 +486,26 @@ void MainWindow::setupDockHarmonics() {
     QTreeWidgetItem *lastL = nullptr;
     QTreeWidgetItem *thisItem = nullptr;
     for (int n = 1; n <= MAX_ORBITS; n++) {
-        QStringList treeitemParentN = { QString("%1 _ _").arg(n), QString::number(n), QString("-"), QString("-") };
-        thisItem = new QTreeWidgetItem(treeOrbitalSelect, treeitemParentN);
+        // QStringList treeitemParentN = { QString("%1 _ _").arg(n), QString::number(n), QString("-"), QString("-") };
+        QString strParentN = QString("%1 _ _").arg(n);
+        thisItem = new QTreeWidgetItem(treeOrbitalSelect);
+        thisItem->setText(0, strParentN);
         thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
         thisItem->setCheckState(0, Qt::Unchecked);
         lastN = thisItem;
         for (int l = 0; l < n; l++) {
-            QStringList treeitemParentL = { QString("%1 %2 _").arg(n).arg(l), QString::number(n), QString::number(l), QString("-") };
-            thisItem = new QTreeWidgetItem(lastN, treeitemParentL);
+            // QStringList treeitemParentL = { QString("%1 %2 _").arg(n).arg(l), QString::number(n), QString::number(l), QString("-") };
+            QString strParentL = QString("%1 %2 _").arg(n).arg(l);
+            thisItem = new QTreeWidgetItem(lastN);
+            thisItem->setText(0, strParentL);
             thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
             thisItem->setCheckState(0, Qt::Unchecked);
             lastL = thisItem;
             for (int m_l = l; m_l >= 0; m_l--) {
-                QStringList treeitemFinal = { QString("%1 %2 %3").arg(n).arg(l).arg(m_l), QString::number(n), QString::number(l), QString::number(m_l) };
-                thisItem = new QTreeWidgetItem(lastL, treeitemFinal);
+                // QStringList treeitemFinal = { QString("%1 %2 %3").arg(n).arg(l).arg(m_l), QString::number(n), QString::number(l), QString::number(m_l) };
+                QString strFinal = QString("%1 %2 %3").arg(n).arg(l).arg(m_l);
+                thisItem = new QTreeWidgetItem(lastL);
+                thisItem->setText(0, strFinal);
                 thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
                 thisItem->setCheckState(0, Qt::Unchecked);
             }
@@ -916,6 +922,18 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
                 this->mapCloudRecipesLocked[n].erase(this->mapCloudRecipesLocked[n].begin() + v);
                 this->numRecipes--;
             }
+
+            if (tableOrbitalReport->rowCount() == 1 && tableOrbitalReport->item(0, 0)->text() == "0") {
+                QMessageBox dialogConfim(this);
+                dialogConfim.setText("The only weighted orbital cannot be zero. Removing remaining orbital.");
+                dialogConfim.setFont(fontDebug);
+                dialogConfim.setStandardButtons(QMessageBox::Ok);
+                dialogConfim.setDefaultButton(QMessageBox::Ok);
+                dialogConfim.exec();
+
+                QString strOrbital = tableOrbitalReport->item(0, 1)->text();
+                treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
+            }
         }
     }
 
@@ -1107,7 +1125,7 @@ void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
     // Haha weight change *cries in 38*
     QTableWidgetItem *thisOrbital = tableOrbitalReport->item(row, 1);
     QTableWidgetItem *thisWeight = tableOrbitalReport->item(row, 0);
-
+    
     QString strOrbital = thisOrbital->text();
     QString strWeight = thisWeight->text();
 
@@ -1116,8 +1134,22 @@ void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
     int l = strlistItem.at(1).toInt();
     int m = strlistItem.at(2).toInt();
     int w = strWeight.toInt();
-    std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
 
+    if (w == 0) {
+        if (tableOrbitalReport->rowCount() == 1) {
+            QMessageBox dialogConfim(this);
+            dialogConfim.setText("The only weighted orbital cannot be zero. Removing this orbital.");
+            dialogConfim.setFont(fontDebug);
+            dialogConfim.setStandardButtons(QMessageBox::Ok);
+            dialogConfim.setDefaultButton(QMessageBox::Ok);
+            dialogConfim.exec();
+
+            treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
+        }
+        return;
+    }
+
+    std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
     // Look for partial match and update weight
     if (int v = findHarmapItem(n, l, m); v != -1) {
         vecElem->at(v).z = w;

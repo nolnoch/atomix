@@ -103,18 +103,18 @@ void VKWindow::initWindow() {
     this->vw_init = true;
 }
 
-void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
+void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool generator) {
     flGraphState.set(egs::CLOUD_MODE);
     if (flGraphState.hasAny(eWaveFlags)) {
         changeModes(false);
     }
 
-    if (!cloudManager && canCreate) {
+    if (!cloudManager) {
         cloudManager = new CloudManager();
         currentManager = cloudManager;
     }
 
-    futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
+    futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes, generator);
     fwModel->setFuture(futureModel);
     this->max_n = cloudMap->rbegin()->first;
     int divSciExp = std::abs(floor(log10(config->cloudTolerance)));

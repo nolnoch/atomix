@@ -27,15 +27,13 @@ o Add radial culling
 - Refactor config files to use denser format, saved to file from application
 - Reimplement custom vertex shading through QFileDialog and JIT programVK addition
 - Implement MainWindow resizeEvent()
-
 - Energy tab
 - Gravity tab
 - Planck tab
 [GENERAL END]
 
 [IMMEDIATE START]
-- Handle case of 0 weight in recipes
-- Move Clear button to left 0.25 of Render button
+- Move Clear button to left 1/4 of Render button
 - SlideSwitch rounded edges are off on MacOS
 - layout spacing is off on MacOS
 [IMMEDIATE END]

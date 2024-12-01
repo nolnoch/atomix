@@ -38,6 +38,7 @@
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QFormLayout>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QTreeWidget>
@@ -49,6 +50,8 @@
 #include <QIcon>
 #include <QSignalBlocker>
 #include <QThread>
+#include <QFontDatabase>
+
 #include "slideswitch.hpp"
 #include "configparser.hpp"
 
@@ -62,24 +65,35 @@ const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;
 
 struct AtomixStyle {
-    void setConstraintsRatio(double min, double max) {
-        scaleMin = min;
-        scaleMax = max;
-    }
-
-    void setConstraintsPixel(int min, int max) {
-        dockMin = min;
-        dockMax = max;
-    }
-    
     void setWindowSize(int width, int height) {
         windowWidth = width;
         windowHeight = height;
     }
 
-    void setDockWidth(int width, int tabCount) {
+    void setDockSize(int width, int height, int tabCount) {
         dockWidth = width;
-        tabWidth = dockWidth / tabCount;
+        dockHeight = height;
+        tabLabelWidth = dockWidth / tabCount;
+
+        layDockSpace = int(double(dockHeight * 0.005));
+        morbMargin = layDockSpace << 1;
+
+        halfDock = dockWidth >> 1;
+        quarterDock = halfDock >> 1;
+    }
+
+    void setFont(QString font) {
+        QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
+
+        int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + font + "-Regular.ttf");
+        QStringList fontList = QFontDatabase::applicationFontFamilies(id);
+        if (fontList.contains(font)) {
+            fontInc = QFont(font);
+            strFontInc = font;
+        } else {
+            fontInc = QFont(strDefault);
+            strFontInc = strDefault;
+        }
     }
     
     void scaleFonts() {
@@ -131,7 +145,7 @@ struct AtomixStyle {
         strStyle = styleStringList.join(" ")
             .arg(QString::number(baseFontSize))             // 1
             .arg(QString::number(descFontSize))             // 2
-            .arg(QString::number(tabWidth))                 // 3
+            .arg(QString::number(tabLabelWidth))            // 3
             .arg(QString::number(tabUnselectedFontSize))    // 4
             .arg(QString::number(tabSelectedFontSize))      // 5
             .arg(QString::number(treeFontSize))             // 6
@@ -146,11 +160,10 @@ struct AtomixStyle {
     }
 
     uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
-    uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
+    uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
     uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
 
-    uint dockMin, dockMax, windowWidth, windowHeight;
-    double scaleMin, scaleMax, scale;
+    uint windowWidth, windowHeight, dockWidth, dockHeight, halfDock, quarterDock;
 
     QStringList styleStringList;
     QString strStyle, strFontInc;
@@ -178,7 +191,7 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
     void init(QRect &windowSize);
-    void postInit(int titlebarHeight);
+    void postInit();
 
 signals:
     void changeRenderedOrbits(uint selectedOrbits);

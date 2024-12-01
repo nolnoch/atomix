@@ -95,11 +95,12 @@ int main(int argc, char* argv[]) {
     
     mainWindow.setWindowTitle(QCoreApplication::applicationName());
     mainWindow.init(dispXY);
-
-    // Engage
+    
+    // I would like the ship to go.
     app.processEvents();
+    // Now.
     mainWindow.show();
-    mainWindow.postInit(QApplication::style()->pixelMetric(QStyle::PM_TitleBarHeight));
+    mainWindow.postInit();
     
     return app.exec();
 }

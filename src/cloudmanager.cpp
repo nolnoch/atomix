@@ -58,7 +58,7 @@ void CloudManager::receiveCloudMap(harmap *inMap, int numRecipes) {
     this->max_n = cloudOrbitals.rbegin()->first;
 }
 
-void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes) {
+void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes, bool generator) {
     cm_proc_coarse.lock();
 
     if (mStatus.hasNone(em::INIT)) {
@@ -69,16 +69,27 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
         cm_proc_coarse.unlock();
         return;
     }
+
+    // Check for relevant config or map changes -- slider changes can be processed without altering config
+    bool widerRadius = false;
+    bool newMap = false;
+    bool newDivisor = false;
+    bool newResolution = false;
+    bool newTolerance = false;
+    bool newCulling = false;
+    bool higherMaxN = false;
+
+    if (generator) {
+        widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
+        newMap = cloudOrbitals != (*inMap);
+        newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
+        newResolution = (this->cloudResolution != config->cloudResolution);
+        newTolerance = (this->cloudTolerance != config->cloudTolerance);
+        higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap->rbegin()->first > this->max_n);
+    }
+    newCulling = (this->cfg.CloudCull_x != config->CloudCull_x) || (this->cfg.CloudCull_y != config->CloudCull_y) || (this->cfg.CloudCull_rIn != config->CloudCull_rIn) || (this->cfg.CloudCull_rOut != config->CloudCull_rOut);
     
-    // Check for relevant config changes OR for recipes to require larger radius
-    bool widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
-    bool newMap = cloudOrbitals != (*inMap);
-    bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
-    bool newResolution = (this->cloudResolution != config->cloudResolution);
-    bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
-    bool newCulling = (this->cfg.CloudCull_x != config->CloudCull_x) || (this->cfg.CloudCull_y != config->CloudCull_y) || (this->cfg.CloudCull_rIn != config->CloudCull_rIn) || (this->cfg.CloudCull_rOut != config->CloudCull_rOut);
-    bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap->rbegin()->first > this->max_n);
-    bool configChanged = (newDivisor || newResolution || newTolerance || newCulling);
+    bool configChanged = (newDivisor || newResolution || newTolerance);
     bool newVerticesRequired = (newDivisor || newResolution || higherMaxN || widerRadius);
 
     // Resest or clear if necessary
@@ -91,7 +102,13 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     // Update config
     if (configChanged) {
         this->newConfig(config);
+    } else if (newCulling) {
+        this->cfg.CloudCull_x = config->CloudCull_x;
+        this->cfg.CloudCull_y = config->CloudCull_y;
+        this->cfg.CloudCull_rIn = config->CloudCull_rIn;
+        this->cfg.CloudCull_rOut = config->CloudCull_rOut;
     }
+
     // Mark for vecsAndMatrices update if map (orbital recipe) has changed
     if (newMap) {
         this->receiveCloudMap(inMap, numRecipes);

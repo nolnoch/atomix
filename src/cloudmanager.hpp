@@ -68,7 +68,7 @@ class CloudManager : public Manager {
         void newConfig(AtomixConfig *cfg) override;
 
         void initManager() override final;
-        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes);
+        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes, bool generator = true);
         
         void cloudTest(int n_max);
         void cloudTestCSV();

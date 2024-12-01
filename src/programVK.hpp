@@ -129,6 +129,7 @@ struct BufferCreateInfo {
     BufferType type = BufferType::VERTEX;
     VKuint set = 0;
     VKuint binding = 0;
+    uint64_t offset = 0;
     uint64_t count = 0;
     uint64_t size = 0;
     const void *data = nullptr;
@@ -139,6 +140,7 @@ struct BufferUpdateInfo {
     std::string modelName;
     std::string bufferName;
     BufferType type = BufferType::VERTEX;
+    uint64_t offset = 0;
     uint64_t count = 0;
     uint64_t size = 0;
     const void *data = nullptr;
@@ -205,7 +207,7 @@ struct RenderInfo {
     std::vector<VKuint> uboIndices;
     VKint pushConst = 0;
     VKuint pipeLayoutIndex = 0;
-    VkDeviceSize iboOffset = 0;
+    VkDeviceSize indexOffset = 0;
     uint64_t indexCount = 0;
 };
 
@@ -297,7 +299,7 @@ public:
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags memProperties);
 
-    void updateBuffer(std::string bufferName, VKuint64 count, VKuint64 size, const void *data);
+    void updateBuffer(std::string bufferName, VKuint64 offset, VKuint64 count, VKuint64 size, const void *data);
     void updateBuffer(BufferUpdateInfo &info);
     void updateUniformBuffer(uint32_t currentImage, std::string uboName, VKuint uboSize, const void *uboData);
     void updatePushConstant(std::string name, const void *data, VKuint size = 0);
@@ -323,7 +325,7 @@ public:
 
 
 private:
-    void _updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data);
+    void _updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 offset, const VKuint64 count, const VKuint64 size, const void *data);
 
     const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 

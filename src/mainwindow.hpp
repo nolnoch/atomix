@@ -217,6 +217,7 @@ private:
     void handleWeightChange(int row, int col);
     void handleSlideCullingX(int val);
     void handleSlideCullingY(int val);
+    void handleSlideCullingR(int val);
     void handleSlideReleased();
     void handleSlideBackground(int val);
 
@@ -284,6 +285,7 @@ private:
     QGroupBox *groupGenVertices = nullptr;
     QGroupBox *groupHSlideCulling = nullptr;
     QGroupBox *groupVSlideCulling = nullptr;
+    QGroupBox *groupRSlideCulling = nullptr;
     QGroupBox *groupSlideBackground = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
     QTableWidget *tableOrbitalReport = nullptr;
@@ -293,6 +295,7 @@ private:
     QSlider *slideBackground = nullptr;
     QSlider *slideCullingX = nullptr;
     QSlider *slideCullingY = nullptr;
+    QSlider *slideCullingR = nullptr;
 
     QLabel *labelDetails = nullptr;
     QProgressBar *pbLoading = nullptr;
@@ -315,6 +318,8 @@ private:
     
     float lastSliderSentX = 0.0f;
     float lastSliderSentY = 0.0f;
+    float lastSliderSentRIn = 0.0f;
+    float lastSliderSentROut = 0.0f;
 
     int mw_width = 0;
     int mw_height = 0;

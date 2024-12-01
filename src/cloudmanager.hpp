@@ -149,6 +149,7 @@ class CloudManager : public Manager {
         uint numOrbitals = 0;
         int atomZ = 1;
         int max_n = 0;
+        int opt_max_radius = 0;
         float cm_culled = 0;
         const int MAX_SHELLS = 8;
 

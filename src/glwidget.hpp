@@ -63,7 +63,7 @@ enum egs {
     UPD_SHAD_F =        1 << 6,     // Update Fragment Shader
     UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated
     UPD_DATA =          1 << 8,     // Cloud RDPs need to be loaded into VBO #2
-    UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
+    UPD_IBO =           1 << 9,     // Cloud EBO needs to be updated
     UPD_UNI_COLOUR =    1 << 10,     // [Wave] Colour Uniforms need to be updated
     UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
     UPD_MATRICES =      1 << 12,    // Needs initVecsAndMatrices() to reset position and view
@@ -73,7 +73,7 @@ enum egs {
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
 const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
-const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_EBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
+const uint eUpdateFlags = egs::UPD_SHAD_V | egs::UPD_SHAD_F | egs::UPD_VBO | egs::UPD_DATA | egs::UPD_IBO | egs::UPD_UNI_COLOUR | egs::UPD_UNI_MATHS | egs::UPD_MATRICES | egs::UPDATE_REQUIRED;
 
 
 class GWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {

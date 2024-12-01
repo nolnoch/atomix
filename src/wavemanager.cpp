@@ -101,7 +101,7 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
         resetManager();
         this->newConfig(config);
         this->create();
-        mStatus.set(em::UPD_VBO | em::UPD_EBO);
+        mStatus.set(em::UPD_VBO | em::UPD_IBO);
     } else {
         this->newConfig(config);
     }
@@ -195,7 +195,7 @@ uint WaveManager::selectWaves(int id, bool checked) {
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
 
-    return em::UPD_EBO;
+    return em::UPD_IBO;
 }
 
 void WaveManager::circleWaveGPU(int idx) {

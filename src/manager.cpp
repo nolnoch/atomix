@@ -43,6 +43,8 @@ void Manager::newConfig(AtomixConfig *config) {
     this->cfg.cloudTolerance = config->cloudTolerance;
     this->cfg.CloudCull_x = config->CloudCull_x;
     this->cfg.CloudCull_y = config->CloudCull_y;
+    this->cfg.CloudCull_rIn = config->CloudCull_rIn;
+    this->cfg.CloudCull_rOut = config->CloudCull_rOut;
 }
 
 void Manager::resetManager() {
@@ -107,7 +109,7 @@ void Manager::genIndexBuffer() {
     this->indexCount = setIndexCount();
     this->indexSize = setIndexSize();
 
-    this->mStatus.set(em::UPD_EBO);
+    this->mStatus.set(em::UPD_IBO);
 }
 
 /*

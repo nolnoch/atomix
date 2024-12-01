@@ -57,12 +57,16 @@ class Manager {
 
         uint getVertexCount();
         uint getVertexSize();
+        uint getVertexOffset() { return this->vertexOffset; };
         uint getDataCount();
         uint getDataSize();
+        uint getDataOffset() { return this->dataOffset; };
         uint getColourCount();
         uint getColourSize();
+        uint getColourOffset() { return this->colourOffset; };
         uint getIndexCount();
         uint getIndexSize();
+        uint getIndexOffset() { return this->indexOffset; };
         
         const float* getVertexData();
         const float* getDataData();
@@ -108,12 +112,16 @@ class Manager {
         
         uint64_t vertexCount = 0;
         uint64_t vertexSize = 0;
+        uint64_t vertexOffset = 0;
         uint64_t dataCount = 0;
         uint64_t dataSize = 0;
+        uint64_t dataOffset = 0;
         uint64_t colourCount = 0;
         uint64_t colourSize = 0;
+        uint64_t colourOffset = 0;
         uint64_t indexCount = 0;
         uint64_t indexSize = 0;
+        uint64_t indexOffset = 0;
 
         double deg_fac = 0;
         double m_time = 0;
@@ -130,16 +138,17 @@ class Manager {
             UPD_SHAD_F =        1 << 6,     // Update Fragment Shader
             UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated
             UPD_DATA =          1 << 8,     // Cloud RDPs need to be loaded into VBO #2
-            UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
-            UPD_UNI_COLOUR =    1 << 10,    // [Wave] Colour Uniforms need to be updated
-            UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
-            UPD_PUSH_CONST =    1 << 12,    // Push Constants need to be updated
-            UPD_MATRICES =      1 << 13,    // Needs initVecsAndMatrices() to reset position and view
-            UPDATE_REQUIRED =   1 << 14,    // An update must execute on next render
+            UPD_IBO =           1 << 9,     // Cloud IBO needs to be updated
+            UPD_IDXOFF =        1 << 10,    // Index Offset/Count need to be updated
+            UPD_UNI_COLOUR =    1 << 11,    // [Wave] Colour Uniforms need to be updated
+            UPD_UNI_MATHS =     1 << 12,    // [Wave] Maths Uniforms need to be updated
+            UPD_PUSH_CONST =    1 << 13,    // Push Constants need to be updated
+            UPD_MATRICES =      1 << 14,    // Needs initVecsAndMatrices() to reset position and view
+            UPDATE_REQUIRED =   1 << 15,    // An update must execute on next render
         };
 
         const uint eUpdateFlags = -1 << 5;
-        const uint eInitFlags = em::UPD_VBO | em::UPD_EBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS | em::UPD_PUSH_CONST | em::UPD_MATRICES;
+        const uint eInitFlags = em::UPD_VBO | em::UPD_IBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS | em::UPD_PUSH_CONST | em::UPD_MATRICES;
 };
 
 #endif

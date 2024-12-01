@@ -78,7 +78,7 @@ void MainWindow::postInit(int titlebarHeight) {
     wTabs->installEventFilter(this);
     // wTabs->setMaximumWidth(QWIDGETSIZE_MAX);
 
-    printLayout();
+    // printLayout();
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -175,7 +175,7 @@ void MainWindow::resizeEvent(QResizeEvent *e) {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-    if (obj == wTabs && event->type() == QEvent::Resize) {
+    if ((obj == wTabs) && (event->type() == QEvent::Resize)) {
         _dockResize();
     }
 
@@ -611,6 +611,13 @@ void MainWindow::setupDockHarmonics() {
     slideCullingY->setMaximum(aStyle.sliderTicks);
     slideCullingY->setTickInterval(aStyle.sliderInterval);
     slideCullingY->setTickPosition(QSlider::TicksAbove);
+    slideCullingR = new QSlider(Qt::Horizontal);
+    slideCullingR->setObjectName("slideCullingR");
+    slideCullingR->setMinimum(0);
+    slideCullingR->setMaximum(aStyle.sliderTicks << 1);
+    slideCullingR->setTickInterval(aStyle.sliderInterval);
+    slideCullingR->setTickPosition(QSlider::TicksBelow);
+    slideCullingR->setValue(aStyle.sliderTicks);
     slideBackground = new QSlider(Qt::Horizontal);
     slideBackground->setObjectName("slideBackground");
     slideBackground->setMinimum(0);
@@ -627,6 +634,10 @@ void MainWindow::setupDockHarmonics() {
     layVCulling->addWidget(slideCullingY);
     layVCulling->setContentsMargins(0, 0, 0, 0);
     layVCulling->setSpacing(0);
+    QHBoxLayout *layRCulling = new QHBoxLayout;
+    layRCulling->addWidget(slideCullingR);
+    layRCulling->setContentsMargins(0, 0, 0, 0);
+    layRCulling->setSpacing(0);
     QHBoxLayout *laySlideBackground = new QHBoxLayout;
     laySlideBackground->addWidget(slideBackground);
     laySlideBackground->setContentsMargins(0, 0, 0, 0);
@@ -647,9 +658,21 @@ void MainWindow::setupDockHarmonics() {
     laySlideCulling->addWidget(groupVSlideCulling);
     laySlideCulling->setContentsMargins(0, 0, 0, 0);
     laySlideCulling->setSpacing(0);
+    
+    groupRSlideCulling = new QGroupBox("Radial Culling");
+    groupRSlideCulling->setObjectName("groupRSlideCulling");
+    groupRSlideCulling->setLayout(layRCulling);
+    groupRSlideCulling->setContentsMargins(0, 0, 0, 0);
+    groupRSlideCulling->setEnabled(false);
     groupSlideBackground = new QGroupBox("Background Brightness");
     groupSlideBackground->setObjectName("groupSlideBackground");
     groupSlideBackground->setLayout(laySlideBackground);
+    groupSlideBackground->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout *laySlideRadialBG = new QHBoxLayout;
+    laySlideRadialBG->addWidget(groupRSlideCulling);
+    laySlideRadialBG->addWidget(groupSlideBackground);
+    laySlideRadialBG->setContentsMargins(0, 0, 0, 0);
+    laySlideRadialBG->setSpacing(0);
 
     // Add All Groups and Layouts to Main Tab Layout
     layDockHarmonics = new QVBoxLayout;
@@ -661,7 +684,7 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->addWidget(buttMorbHarmonics);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(laySlideCulling);
-    layDockHarmonics->addWidget(groupSlideBackground);
+    layDockHarmonics->addLayout(laySlideRadialBG);
 
     layDockHarmonics->setStretchFactor(layHOrbital, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
@@ -1018,9 +1041,6 @@ void MainWindow::handleButtMorbWaves() {
     if (numRecipes > 0) {
         buttMorbHarmonics->setEnabled(true);
     }
-
-    wTabs->setMaximumWidth(QWIDGETSIZE_MAX);
-    wTabs->resize(int(double(mw_width) * 0.2), mw_tabHeight);
 }
 
 void MainWindow::handleButtMorbHarmonics() {
@@ -1078,6 +1098,7 @@ void MainWindow::handleButtMorbHarmonics() {
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupHSlideCulling->setEnabled(true);
     groupVSlideCulling->setEnabled(true);
+    groupRSlideCulling->setEnabled(true);
     buttMorbHarmonics->setEnabled(false);
     activeModel = true;
 }
@@ -1193,10 +1214,28 @@ void MainWindow::handleSlideCullingY(int val) {
     this->cloudConfig.CloudCull_y = pct;
 }
 
+void MainWindow::handleSlideCullingR(int val) {
+    int range = aStyle.sliderTicks;
+    int newVal = 0;
+
+    if (val < range) {
+        newVal = range - val;
+        this->cloudConfig.CloudCull_rIn = (float(newVal) / float(range));
+        this->cloudConfig.CloudCull_rOut = 0.0f;
+    } else if (val > range) {
+        newVal = val - range;
+        this->cloudConfig.CloudCull_rOut = (float(newVal) / float(range));
+        this->cloudConfig.CloudCull_rIn = 0.0f;
+    } else {
+        this->cloudConfig.CloudCull_rIn = 0.0f;
+        this->cloudConfig.CloudCull_rOut = 0.0f;
+    }
+}
+
 void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
-    if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY)) {
+    if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY) || (this->cloudConfig.CloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.CloudCull_rOut != lastSliderSentROut)) {
 #ifdef USING_QVULKAN
         vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
 #elifdef USING_QOPENGL
@@ -1204,6 +1243,8 @@ void MainWindow::handleSlideReleased() {
 #endif
         lastSliderSentX = this->cloudConfig.CloudCull_x;
         lastSliderSentY = this->cloudConfig.CloudCull_y;
+        lastSliderSentRIn = this->cloudConfig.CloudCull_rIn;
+        lastSliderSentROut = this->cloudConfig.CloudCull_rOut;
     }
 }
 
@@ -1444,8 +1485,10 @@ void MainWindow::_connectSignals() {
     connect(tableOrbitalReport, &QTableWidget::cellChanged, this, &MainWindow::handleWeightChange);
     connect(slideCullingX, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingX);
     connect(slideCullingY, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingY);
+    connect(slideCullingR, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingR);
     connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideCullingR, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 }
 

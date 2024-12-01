@@ -27,6 +27,7 @@ o Add radial culling
 - Refactor config files to use denser format, saved to file from application
 - Reimplement custom vertex shading through QFileDialog and JIT programVK addition
 - Implement MainWindow resizeEvent()
+- Move ProgressBar to StatusBar
 - Energy tab
 - Gravity tab
 - Planck tab

@@ -25,6 +25,7 @@
 #include <iostream>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QStackedWidget>
+#include <QFontMetrics>
 #include "slideswitch.hpp"
 
 
@@ -34,16 +35,14 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     this->slsw_borderRadius = slsw_height >> 1;
     /* setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground); */
-    this->resize(slsw_width, slsw_height);
+    // this->resize(slsw_width, slsw_height);
     // this->setMinimumSize(QSize(120, 20));
-    // this->setBaseSize(QSize(slsw_width, slsw_height));
     QSizePolicy sp = this->sizePolicy();
-    sp.setHorizontalPolicy(QSizePolicy::Expanding);
-    sp.setVerticalPolicy(QSizePolicy::Fixed);
-    sp.setHorizontalStretch(1);
-    sp.setVerticalStretch(1);
-    sp.setControlType(QSizePolicy::LineEdit);
+    sp.setHorizontalPolicy(QSizePolicy::Preferred);
+    sp.setVerticalPolicy(QSizePolicy::Expanding);
+    // sp.setControlType(QSizePolicy::LineEdit);
     this->setSizePolicy(sp);
+    // this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     
     this->setCheckable(true);
     
@@ -80,7 +79,6 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     slsw_offcolor = this->pal.base.color();
     slsw_oncolor = this->pal.high.color();
     slsw_SwitchBackground = new SwitchBackground(slsw_oncolor, this);
-    // int circleRad = slsw_height;
     slsw_Button = new SwitchCircle(slsw_height, this);
     
     // Create animations
@@ -99,20 +97,13 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     text = strFalse;
     slsw_LabelOff->setObjectName("switchOff");
     slsw_LabelOn->setObjectName("switchOn");
-    fontPx = int(double(slsw_height) * fontScale);
-    strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
-    strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
-    strDis = _strDis.arg(pal.text.color().darker(200).name()).arg(fontPx);
+    strOff = _strOff.arg(pal.text.color().name());
+    strOn = _strOn.arg(pal.textHigh.color().name());
+    strDis = _strDis.arg(pal.text.color().darker(200).name());
     slsw_LabelOff->setStyleSheet(strOff);
     slsw_LabelOn->setStyleSheet(strOn);
-
-    // Position labels
-    int labOffCenter = slsw_LabelOff->sizeHint().width() >> 1;
-    int labOnCenter = slsw_LabelOn->sizeHint().width() >> 1;
-    int switchCenter = slsw_width >> 1;
-    int labMove = int(double(slsw_height) * labMoveScale);
-    slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
-    slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
+    
+    _adjust();
 
     // Last touches
     slsw_SwitchBackground->resize(slsw_height - 1, slsw_height - 1);
@@ -135,19 +126,6 @@ SlideSwitch::~SlideSwitch() {
     delete prAnim_buttMove;
     delete prAnim_backMove;
 }
-
-/* void SlideSwitch::redraw() {
-    slsw_LabelOff->adjustSize();
-    slsw_LabelOn->adjustSize();
-
-    // Position labels
-    int labOffCenter = slsw_LabelOff->width() >> 1;
-    int labOnCenter = slsw_LabelOn->width() >> 1;
-    int switchCenter = slsw_width >> 1;
-    int labMove = int(double(slsw_height) * labMoveScale);
-    slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
-    slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
-} */
 
 void SlideSwitch::paintEvent(QPaintEvent*) {
     QPainter* painter = new QPainter;
@@ -194,6 +172,34 @@ void SlideSwitch::setValue(bool flag) {
 
 bool SlideSwitch::value() const {
     return slsw_value;
+}
+
+QSize SlideSwitch::sizeHint() const {
+    // Calculate ideal size based on text and font size
+    QFontMetrics fm(slsw_LabelOff->font());
+    int minHeight = fm.height() + (slsw_margin << 1);
+
+    int offWidth = fm.horizontalAdvance(slsw_LabelOff->text());
+    int onWidth = fm.horizontalAdvance(slsw_LabelOn->text());
+    int padding = minHeight * 2.5;
+    int minWidth = std::max(offWidth, onWidth) + padding;
+    
+
+    return QSize(minWidth, minHeight);
+}
+
+QSize SlideSwitch::minimumSizeHint() const {
+    // Calculate minimum size based on text and font size
+    QFontMetrics fm(slsw_LabelOff->font());
+    int minHeight = fm.height() + (slsw_margin << 1);
+
+    int offWidth = fm.horizontalAdvance(slsw_LabelOff->text());
+    int onWidth = fm.horizontalAdvance(slsw_LabelOn->text());
+    int padding = minHeight * 2.5;
+    int minWidth = std::max(offWidth, onWidth) + padding;
+    
+
+    return QSize(minWidth, minHeight);
 }
 
 void SlideSwitch::_toggle() {
@@ -273,30 +279,14 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     this->slsw_width  = newSize.width();
     this->slsw_height = newSize.height();
     this->slsw_borderRadius = (this->slsw_height >> 1);
-    buttMove = int(double(slsw_height) * 0.06);
 
     slsw_SwitchBackground->updateSize();
     slsw_Button->updateSize();
 
-    // Adjust font size
-    fontPx = int(double(slsw_height) * fontScale);
-    strOff = _strOff.arg(pal.text.color().name()).arg(fontPx);
-    strOn = _strOn.arg(pal.textHigh.color().name()).arg(fontPx);
-    strDis = _strDis.arg(pal.text.color().darker(200).name()).arg(fontPx);
-    slsw_LabelOff->setStyleSheet(strOff);
-    slsw_LabelOn->setStyleSheet(strOn);
-
-    // Position labels
-    slsw_LabelOff->adjustSize();
-    slsw_LabelOn->adjustSize();
-    int labOffCenter = slsw_LabelOff->width() >> 1;
-    int labOnCenter = slsw_LabelOn->width() >> 1;
-    int switchCenter = slsw_width >> 1;
-    int labMove = ((slsw_height - fontPx) >> 2) + 1;
-    slsw_LabelOff->move(switchCenter - labOffCenter, labMove);
-    slsw_LabelOn->move(switchCenter - labOnCenter, labMove);
+    _adjust();
 
     // Position button
+    buttMove = int(double(slsw_height) * 0.06);
     QPoint newPos((slsw_value) ? (this->width() - this->height()) : buttMove, 0);
     slsw_Button->move(newPos);
 }
@@ -315,6 +305,24 @@ void SlideSwitch::nextCheckState() {
 
 void SlideSwitch::checkStateSet() {
     this->setValue(isChecked());
+}
+
+void SlideSwitch::_adjust() {
+    // Adjust font size
+    slsw_font.setPixelSize(this->font().pixelSize());
+    slsw_LabelOff->setFont(slsw_font);
+    slsw_LabelOn->setFont(slsw_font);
+
+    // Adjust labels
+    QFontMetrics fm(slsw_LabelOff->font());
+    slsw_LabelOff->adjustSize();
+    slsw_LabelOn->adjustSize();
+    int labOffCenter = slsw_LabelOff->sizeHint().width() >> 1;
+    int labOnCenter = slsw_LabelOn->sizeHint().width() >> 1;
+    int switchCenter = slsw_width >> 1;
+    slsw_margin = fm.height() >> 2;
+    slsw_LabelOff->move(switchCenter - labOffCenter, slsw_margin);
+    slsw_LabelOn->move(switchCenter - labOnCenter, slsw_margin);
 }
 
 void SlideSwitch::_update() {

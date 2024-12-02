@@ -1,3 +1,4 @@
+[GENERAL START]
 o Resize VBO when/if CloudConfig changes
 o Commit to new vertex/resolution scaling or fix above
 o Multithreading (ughhh, but very necessary)...[holy crap, I figured it out -- 98% reduction in time!]
@@ -21,14 +22,18 @@ o Implement Vulkan back-end
 o Programmatically ensure that certain config combos are maintained (i.e., superposition -> Parallel & CPU)
 o Fix Harmonics Phi culling
 o Implement CPU vs GPU cloud rendering -- Note: FULL cpu rendering is not really feasible considering the array of possible superposed states
+o Add radial culling
+o Implement MainWindow resizeEvent()
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Refactor config files to use denser format, saved to file from application
 - Reimplement custom vertex shading through QFileDialog and JIT programVK addition
-[START HERE]
-- SlideSwitch rounded edges are off on MacOS
-- layout spacing is off on MacOS
-[END HERE]
-- Implement MainWindow resizeEvent()
+- Move ProgressBar to StatusBar
 - Energy tab
 - Gravity tab
 - Planck tab
+[GENERAL END]
+
+[IMMEDIATE START]
+- SlideSwitch rounded edges are off on MacOS
+- layout spacing is off on MacOS
+[IMMEDIATE END]

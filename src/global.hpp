@@ -97,12 +97,12 @@ struct BitFlag {
     void toggle(uint flag) {
         bf ^= flag;
     }
-    void setC(uint flag, bool condition) {
+    void condSet(uint flag, bool condition) {
         if (condition) {
             set(flag);
         }
     }
-    void toggleC(uint flag, bool condition) {
+    void condToggle(uint flag, bool condition) {
         if (condition) {
             toggle(flag);
         }

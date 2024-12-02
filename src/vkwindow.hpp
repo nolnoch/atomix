@@ -96,17 +96,19 @@ enum egs {
     UPD_SHAD_F =        1 << 6,     // Update Fragment Shader
     UPD_VBO =           1 << 7,     // Cloud VBO needs to be updated
     UPD_DATA =          1 << 8,     // Cloud RDPs need to be loaded into VBO #2
-    UPD_EBO =           1 << 9,     // Cloud EBO needs to be updated
-    UPD_UNI_COLOUR =    1 << 10,    // [Wave] Colour Uniforms need to be updated
-    UPD_UNI_MATHS =     1 << 11,    // [Wave] Maths Uniforms need to be updated
-    UPD_PUSH_CONST =    1 << 12,    // Push Constants need to be updated
-    UPD_MATRICES =      1 << 13,    // Needs initVecsAndMatrices() to reset position and view
-    UPDATE_REQUIRED =   1 << 14,    // An update must execute on next render
+    UPD_IBO =           1 << 9,     // Cloud IBO needs to be updated
+    UPD_IDXOFF =        1 << 10,    // Cloud index offset needs to be updated
+    UPD_UNI_COLOUR =    1 << 11,    // [Wave] Colour Uniforms need to be updated
+    UPD_UNI_MATHS =     1 << 12,    // [Wave] Maths Uniforms need to be updated
+    UPD_PUSH_CONST =    1 << 13,    // Push Constants need to be updated
+    UPD_MATRICES =      1 << 14,    // Needs initVecsAndMatrices() to reset position and view
+    UPDATE_REQUIRED =   1 << 15,    // An update must execute on next render
 };
 
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
 const uint eCloudFlags = egs::CLOUD_MODE | egs::CLOUD_RENDER;
 const uint eModeFlags = egs::WAVE_MODE | egs::CLOUD_MODE;
+const uint eRenderFlags = egs::WAVE_RENDER | egs::CLOUD_RENDER;
 const uint eUpdateFlags = uint(-1) << 4;
 
 class VKWindow;

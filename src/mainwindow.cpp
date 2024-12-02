@@ -22,7 +22,6 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <QFontDatabase>
 #include "mainwindow.hpp"
 
 int VK_MINOR_VERSION;
@@ -50,35 +49,28 @@ void MainWindow::init(QRect &screenSize) {
     _initWidgets();
 
     _connectSignals();
+
+    // printLayout();
 }
 
-void MainWindow::postInit(int titlebarHeight) {
-    mw_titleHeight = titlebarHeight;
-
+void MainWindow::postInit() {
     QRect tabLoc = wTabs->geometry();
     mw_tabWidth = tabLoc.width();
     mw_tabHeight = tabLoc.height();
-
-    int tabHeight = mw_height - mw_titleHeight;
-
-    vkGraph->resize(int(double(mw_width) * 0.8), tabHeight);
-    wTabs->widget(0)->resize(int(double(mw_width) * 0.2), tabHeight);
-    wTabs->widget(1)->resize(int(double(mw_width) * 0.2), tabHeight);
-    wTabs->resize(int(double(mw_width) * 0.2), tabHeight);
-    // wTabs->adjustSize();
     
     mw_graphHeight = vkGraph->height();
     mw_graphWidth = vkGraph->width();
 
-    _resize();
-    
+    _setStyle();
+
+    treeOrbitalSelect->setIndentation(int(treeOrbitalSelect->width() * 0.10));
+    layDockWaves->setSpacing(aStyle.layDockSpace);
+    layDockHarmonics->setSpacing(aStyle.layDockSpace);
+
     setupDetails();
     setupLoading();
 
-    wTabs->installEventFilter(this);
-    // wTabs->setMaximumWidth(QWIDGETSIZE_MAX);
-
-    printLayout();
+    dockTabs->installEventFilter(this);
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -170,13 +162,12 @@ void MainWindow::resizeEvent(QResizeEvent *e) {
     mw_height = mwLoc.height();
     mw_x = mwLoc.x();
     mw_y = mwLoc.y();
-
-    // aStyle.dockWidth = int(mw_width * 0.2);
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-    if (obj == wTabs && event->type() == QEvent::Resize) {
+    if ((obj == dockTabs) && (event->type() == QEvent::Resize)) {
         _dockResize();
+        return true;
     }
 
     return false;
@@ -185,14 +176,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 void MainWindow::setupTabs() {
     dockTabs = new QDockWidget(this);
     dockTabs->setAllowedAreas(Qt::RightDockWidgetArea);
-    // dockTabs->setContentsMargins(0, 0, 0, 0);
     
     wTabs = new QTabWidget(this);
     wTabs->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
-
-    // wTabs->setMaximumWidth(aStyle.dockWidth);
-    wTabs->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    // wTabs->setFixedWidth(aStyle.dockWidth);
+    // wTabs->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     setupDockWaves();
     setupDockHarmonics();
@@ -200,6 +187,8 @@ void MainWindow::setupTabs() {
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
     dockTabs->setWidget(wTabs);
     this->addDockWidget(Qt::RightDockWidgetArea, dockTabs);
+
+    mw_tabCount = wTabs->count();
 }
 
 void MainWindow::setupDockWaves() {
@@ -213,19 +202,19 @@ void MainWindow::setupDockWaves() {
     buttGroupColors = new QButtonGroup(this);
 
     // Groups
-    QGroupBox *groupConfig = new QGroupBox("Config File");
+    QGroupBox *groupConfig = new QGroupBox("Config File", this);
     groupConfig->setObjectName("groupConfig");
-    groupOptions = new QGroupBox("Config Options");
+    groupOptions = new QGroupBox("Config Options", this);
     groupOptions->setObjectName("groupOptions");
-    groupColors = new QGroupBox("Wave Colors");
+    groupColors = new QGroupBox("Wave Colors", this);
     groupColors->setObjectName("groupColors");
     groupColors->setEnabled(false);
-    groupOrbits = new QGroupBox("Visible Waves");
+    groupOrbits = new QGroupBox("Visible Waves", this);
     groupOrbits->setObjectName("groupOrbits");
     groupOrbits->setEnabled(false);
 
     // Tab Description Label
-    QLabel *labelWaves = new QLabel("<p>Explore stable circular or spherical wave patterns</p>");
+    QLabel *labelWaves = new QLabel("<p>Explore stable circular or spherical wave patterns</p>", this);
     labelWaves->setObjectName("tabDesc");
     labelWaves->setFixedHeight(aStyle.tabLabelHeight);
     labelWaves->setWordWrap(true);
@@ -240,26 +229,6 @@ void MainWindow::setupDockWaves() {
     layConfigFile->addWidget(comboConfigFile);
     groupConfig->setLayout(layConfigFile);
     groupConfig->setAlignment(Qt::AlignRight);
-
-    // Labels
-    QLabel *labelOrbit = new QLabel("Number of waves:");
-    labelOrbit->setObjectName("configLabel");
-    QLabel *labelAmp = new QLabel("Amplitude:");
-    labelAmp->setObjectName("configLabel");
-    QLabel *labelPeriod = new QLabel("Period (N * pi):");
-    labelPeriod->setObjectName("configLabel");
-    QLabel *labelWavelength = new QLabel("Wavelength (N * pi):");
-    labelWavelength->setObjectName("configLabel");
-    QLabel *labelResolution = new QLabel("Resolution:");
-    labelResolution->setObjectName("configLabel");
-    QLabel *labelOrthoPara = new QLabel("Orthogonal vs Parallel:");
-    labelOrthoPara->setObjectName("configLabel");
-    QLabel *labelSuper = new QLabel("Superposition:");
-    labelSuper->setObjectName("configLabel");
-    QLabel *labelCPU = new QLabel("GPU vs CPU:");
-    labelCPU->setObjectName("configLabel");
-    QLabel *labelSphere = new QLabel("Circular vs Spherical:");
-    labelSphere->setObjectName("configLabel");
     
     // LineEdits (entries)
     entryOrbit = new QLineEdit("4");
@@ -284,9 +253,8 @@ void MainWindow::setupDockWaves() {
     entryResolution->setAlignment(Qt::AlignRight);
 
     // SlideSwitches (toggles)
-    // This is being resized both manually and automatically, but it prefers its starting size, so this does matter.
-    int switchWidth = 130;
-    int switchHeight = 27;
+    int switchWidth = 100;
+    int switchHeight = 20;
     slswPara = new SlideSwitch("Para", "Ortho", switchWidth, switchHeight, this);
     slswSuper = new SlideSwitch("On", "Off", switchWidth, switchHeight, this);
     slswCPU = new SlideSwitch("CPU", "GPU", switchWidth, switchHeight, this);
@@ -300,18 +268,8 @@ void MainWindow::setupDockWaves() {
     slswCPU->setChecked(false);
     slswSphere->setChecked(false);
 
-    // The layout should see these policies match the entry fields and keep them the same size (does it?)
-    QSizePolicy sp = entryOrbit->sizePolicy();
-    sp.setVerticalStretch(1);
-    sp.setHorizontalStretch(1);
-    entryOrbit->setSizePolicy(sp);
-    entryAmp->setSizePolicy(sp);
-    entryPeriod->setSizePolicy(sp);
-    entryWavelength->setSizePolicy(sp);
-    entryResolution->setSizePolicy(sp);
-
     // Assign switches to button group
-    buttGroupConfig = new QButtonGroup();
+    buttGroupConfig = new QButtonGroup(this);
     buttGroupConfig->setExclusive(false);
     buttGroupConfig->addButton(slswPara, 0);
     buttGroupConfig->addButton(slswSuper, 1);
@@ -319,43 +277,31 @@ void MainWindow::setupDockWaves() {
     buttGroupConfig->addButton(slswSphere, 3);
 
     // Wave Configuration Layout
-    QGridLayout *layWaveConfig = new QGridLayout;
-    layoutDebug = layWaveConfig;
-    layWaveConfig->addWidget(labelOrbit, 0, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelAmp, 1, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelPeriod, 2, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelWavelength, 3, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelResolution, 4, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelOrthoPara, 5, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelSuper, 6, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelCPU, 7, 0, 1, 1, Qt::AlignLeft);
-    layWaveConfig->addWidget(labelSphere, 8, 0, 1, 1, Qt::AlignLeft);
-
-    layWaveConfig->addWidget(entryOrbit, 0, 2, 1, 1, Qt::AlignRight);
-    layWaveConfig->addWidget(entryAmp, 1, 2, 1, 1, Qt::AlignRight);
-    layWaveConfig->addWidget(entryPeriod, 2, 2, 1, 1, Qt::AlignRight);
-    layWaveConfig->addWidget(entryWavelength, 3, 2, 1, 1, Qt::AlignRight);
-    layWaveConfig->addWidget(entryResolution, 4, 2, 1, 1, Qt::AlignRight);
-
-    layWaveConfig->addWidget(slswPara, 5, 2, 1, 1, Qt::AlignRight);
-    layWaveConfig->addWidget(slswSuper, 6, 2, 1, 1, Qt::AlignRight);
-    layWaveConfig->addWidget(slswCPU, 7, 2, 1, 1, Qt::AlignRight);
-    layWaveConfig->addWidget(slswSphere, 8, 2, 1, 1, Qt::AlignRight);
-
-    layWaveConfig->setColumnStretch(0,6);
-    layWaveConfig->setColumnStretch(1,1);
-    layWaveConfig->setColumnStretch(2,6);
-    layWaveConfig->setSpacing(aStyle.layDockSpace);
-
+    QFormLayout *layWaveConfig = new QFormLayout;
+    layWaveConfig->addRow("Number of waves:", entryOrbit);
+    layWaveConfig->addRow("Amplitude:", entryAmp);
+    layWaveConfig->addRow("Period:", entryPeriod);
+    layWaveConfig->addRow("Wavelength:", entryWavelength);
+    layWaveConfig->addRow("Resolution:", entryResolution);
+    layWaveConfig->addRow("Orthogonal/Parallel:", slswPara);
+    layWaveConfig->addRow("Superposition:", slswSuper);
+    layWaveConfig->addRow("CPU/GPU:", slswCPU);
+    layWaveConfig->addRow("Sphere/Circle:", slswSphere);
+    layWaveConfig->setLabelAlignment(Qt::AlignRight);
+    layWaveConfig->setRowWrapPolicy(QFormLayout::DontWrapRows);
+    layWaveConfig->setHorizontalSpacing(aStyle.layDockSpace << 2);
+    layWaveConfig->setVerticalSpacing(aStyle.layDockSpace << 1);
+    layWaveConfig->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+    layWaveConfig->setFormAlignment(Qt::AlignCenter);
     groupOptions->setLayout(layWaveConfig);
     groupOptions->setAlignment(Qt::AlignRight);
 
     // Color Picker Buttons
-    QPushButton *buttColorPeak = new QPushButton(" Peak");
+    QPushButton *buttColorPeak = new QPushButton(" Peak", this);
     buttColorPeak->setObjectName("buttColorPeak");
-    QPushButton *buttColorBase = new QPushButton(" Base");
+    QPushButton *buttColorBase = new QPushButton(" Base", this);
     buttColorBase->setObjectName("buttColorBase");
-    QPushButton *buttColorTrough = new QPushButton(" Trough");
+    QPushButton *buttColorTrough = new QPushButton(" Trough", this);
     buttColorTrough->setObjectName("buttColorTrough");
     
     // Generate Starting Colours (via Icons via Pixmap)
@@ -382,14 +328,14 @@ void MainWindow::setupDockWaves() {
     groupColors->setLayout(layColorPicker);
 
     // Wave Visibility Selection
-    QCheckBox *orbit1 = new QCheckBox("1");
-    QCheckBox *orbit2 = new QCheckBox("2");
-    QCheckBox *orbit3 = new QCheckBox("3");
-    QCheckBox *orbit4 = new QCheckBox("4");
-    QCheckBox *orbit5 = new QCheckBox("5");
-    QCheckBox *orbit6 = new QCheckBox("6");
-    QCheckBox *orbit7 = new QCheckBox("7");
-    QCheckBox *orbit8 = new QCheckBox("8");
+    QCheckBox *orbit1 = new QCheckBox("1", this);
+    QCheckBox *orbit2 = new QCheckBox("2", this);
+    QCheckBox *orbit3 = new QCheckBox("3", this);
+    QCheckBox *orbit4 = new QCheckBox("4", this);
+    QCheckBox *orbit5 = new QCheckBox("5", this);
+    QCheckBox *orbit6 = new QCheckBox("6", this);
+    QCheckBox *orbit7 = new QCheckBox("7", this);
+    QCheckBox *orbit8 = new QCheckBox("8", this);
     orbit1->setObjectName("orbit1");
     orbit2->setObjectName("orbit2");
     orbit3->setObjectName("orbit3");
@@ -410,7 +356,7 @@ void MainWindow::setupDockWaves() {
     groupOrbits->setLayout(layOrbitSelect);
 
     // Assign checkboxes to button group
-    buttGroupOrbits = new QButtonGroup();
+    buttGroupOrbits = new QButtonGroup(this);
     buttGroupOrbits->setExclusive(false);
     buttGroupOrbits->addButton(orbit1, 1);
     buttGroupOrbits->addButton(orbit2, 2);
@@ -436,13 +382,12 @@ void MainWindow::setupDockWaves() {
     layDockWaves->setStretchFactor(buttMorbWaves, 4);
 
     // Set Main Tab Layout
-    layDockWaves->setContentsMargins(0, 0, 0, 0);    
     wTabWaves->setLayout(layDockWaves);
 }
 
 void MainWindow::setupDockHarmonics() {
     QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    // QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     // QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     wTabHarmonics = new QWidget(this);
     
@@ -452,85 +397,85 @@ void MainWindow::setupDockHarmonics() {
     buttMorbHarmonics->setEnabled(false);
     buttMorbHarmonics->setSizePolicy(qPolicyExpandA);
     buttMorbHarmonics->setAutoDefault(true);
+    buttClearHarmonics = new QPushButton("Clear", this);
+    buttClearHarmonics->setSizePolicy(qPolicyExpandA);
+    buttClearHarmonics->setEnabled(false);
+    buttClearHarmonics->setObjectName("buttClearHarmonics");
 
     // Groups
-    groupGenVertices = new QGroupBox();
+    groupGenVertices = new QGroupBox(this);
     groupGenVertices->setObjectName("groupGenVertices");
     groupGenVertices->setAlignment(Qt::AlignRight);
-    groupRecipeBuilder = new QGroupBox("Orbital Selector");
+    groupRecipeBuilder = new QGroupBox("Orbital Selector", this);
     groupRecipeBuilder->setObjectName("groupRecipeBuilder");
-    groupRecipeReporter = new QGroupBox("Selected Orbitals");
+    groupRecipeReporter = new QGroupBox("Selected Orbitals", this);
     groupRecipeReporter->setObjectName("groupRecipeReporter");
-    groupRecipeLocked = new QGroupBox("Locked Orbitals");
-    groupRecipeLocked->setObjectName("groupRecipeLocked");
+    /* groupRecipeLocked = new QGroupBox("Locked Orbitals", this);
+    groupRecipeLocked->setObjectName("groupRecipeLocked"); */
 
     // Tab Description Label
-    QLabel *labelHarmonics = new QLabel("Generate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)");
+    QLabel *labelHarmonics = new QLabel("Generate atomic orbital probability clouds for (<i>n</i>, <i>l</i>, <i>m<sub>l</sub></i>)", this);
     labelHarmonics->setObjectName("tabDesc");
-    labelHarmonics->setMaximumHeight(aStyle.tabLabelHeight);
-    labelHarmonics->setMinimumHeight(aStyle.tabLabelHeight);
+    labelHarmonics->setFixedHeight(aStyle.tabLabelHeight);
     labelHarmonics->setWordWrap(true);
     labelHarmonics->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelHarmonics->setLineWidth(aStyle.borderWidth);
-    labelHarmonics->setMargin(12);
+    labelHarmonics->setMargin(aStyle.layDockSpace * 3);
     labelHarmonics->setAlignment(Qt::AlignCenter);
 
     // Orbital Selection Tree
-    treeOrbitalSelect = new QTreeWidget();
+    treeOrbitalSelect = new QTreeWidget(this);
     treeOrbitalSelect->setObjectName("treeOrbitalSelect");
-    treeOrbitalSelect->setSizePolicy(qPolicyExpandA);
-    treeOrbitalSelect->setSortingEnabled(true);
-    QStringList strlistTreeHeaders = { "Orbital" };
-    treeOrbitalSelect->setHeaderLabels(strlistTreeHeaders);
-    treeOrbitalSelect->header()->setDefaultAlignment(Qt::AlignCenter);
-
+    treeOrbitalSelect->setColumnCount(1);
+    
     QTreeWidgetItem *lastN = nullptr;
     QTreeWidgetItem *lastL = nullptr;
     QTreeWidgetItem *thisItem = nullptr;
     for (int n = 1; n <= MAX_ORBITS; n++) {
-        QStringList treeitemParentN = { QString("%1 _ _").arg(n), QString::number(n), QString("-"), QString("-") };
-        thisItem = new QTreeWidgetItem(treeOrbitalSelect, treeitemParentN);
+        QString strParentN = QString("%1 _ _").arg(n);
+        thisItem = new QTreeWidgetItem(treeOrbitalSelect);
+        thisItem->setText(0, strParentN);
         thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
         thisItem->setCheckState(0, Qt::Unchecked);
         lastN = thisItem;
         for (int l = 0; l < n; l++) {
-            QStringList treeitemParentL = { QString("%1 %2 _").arg(n).arg(l), QString::number(n), QString::number(l), QString("-") };
-            thisItem = new QTreeWidgetItem(lastN, treeitemParentL);
+            QString strParentL = QString("%1 %2 _").arg(n).arg(l);
+            thisItem = new QTreeWidgetItem(lastN);
+            thisItem->setText(0, strParentL);
             thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
             thisItem->setCheckState(0, Qt::Unchecked);
             lastL = thisItem;
             for (int m_l = l; m_l >= 0; m_l--) {
-                QStringList treeitemFinal = { QString("%1 %2 %3").arg(n).arg(l).arg(m_l), QString::number(n), QString::number(l), QString::number(m_l) };
-                thisItem = new QTreeWidgetItem(lastL, treeitemFinal);
+                QString strFinal = QString("%1 %2 %3").arg(n).arg(l).arg(m_l);
+                thisItem = new QTreeWidgetItem(lastL);
+                thisItem->setText(0, strFinal);
                 thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
                 thisItem->setCheckState(0, Qt::Unchecked);
             }
         }
     }
+    treeOrbitalSelect->setSortingEnabled(true);
+    treeOrbitalSelect->setHeaderLabels({ "Orbital" });
+    treeOrbitalSelect->header()->setDefaultAlignment(Qt::AlignCenter);
+    treeOrbitalSelect->header()->setSectionResizeMode(QHeaderView::Stretch);
+    treeOrbitalSelect->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    treeOrbitalSelect->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    treeOrbitalSelect->setSizePolicy(qPolicyExpandA);
 
     // Selected Orbital Reporting Table
-    tableOrbitalReport = new QTableWidget();
+    tableOrbitalReport = new QTableWidget(this);
     tableOrbitalReport->setObjectName("tableOrbitalReport");
     tableOrbitalReport->setSizePolicy(qPolicyExpandA);
     tableOrbitalReport->setColumnCount(2);
-    QStringList headersReport = { "Weight", "Orbital" };
-    tableOrbitalReport->setHorizontalHeaderLabels(headersReport);
-    tableOrbitalReport->horizontalHeader()->setStretchLastSection(true);
-    tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    tableOrbitalReport->setHorizontalHeaderLabels({ "Weight", "Orbital" });
+    tableOrbitalReport->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     tableOrbitalReport->verticalHeader()->setDefaultSectionSize(aStyle.tableFontSize + 2);
     tableOrbitalReport->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    tableOrbitalReport->verticalHeader()->setStretchLastSection(true);
     tableOrbitalReport->verticalHeader()->setVisible(false);
     tableOrbitalReport->setShowGrid(false);
-    tableOrbitalReport->setSortingEnabled(true);
+    tableOrbitalReport->sortByColumn(1, Qt::SortOrder::DescendingOrder);
     tableOrbitalReport->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    
-    // Locked Orbitals List
-    listOrbitalLocked = new QListWidget();
-    listOrbitalLocked->setObjectName("listOrbitalLocked");
-    listOrbitalLocked->setSizePolicy(qPolicyExpandA);
-    listOrbitalLocked->setSpacing(0);
-    // listOrbitalLocked->setContentsMargins(0, 0, 0, 0);
+    tableOrbitalReport->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     // Add Orbital Selection Widgets to Groups (via Layouts)
     QVBoxLayout *layRecipeBuilder = new QVBoxLayout;
@@ -541,65 +486,21 @@ void MainWindow::setupDockHarmonics() {
     layRecipeReporter->addWidget(tableOrbitalReport);
     layRecipeReporter->setContentsMargins(0, 0, 0, 0);
     groupRecipeReporter->setLayout(layRecipeReporter);
-    QVBoxLayout *layRecipeLocked = new QVBoxLayout;
-    layRecipeLocked->addWidget(listOrbitalLocked);
-    layRecipeLocked->setContentsMargins(0, 0, 0, 0);
-    groupRecipeLocked->setLayout(layRecipeLocked);
 
     // Configure Orbital Selection Groups
-    groupRecipeReporter->setAlignment(Qt::AlignRight);
-    // groupRecipeReporter->setMaximumWidth(aStyle.groupMaxWidth);
-    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777 }");
-    groupRecipeReporter->layout()->setContentsMargins(0, 0, 0, 0);
     groupRecipeBuilder->setAlignment(Qt::AlignLeft);
-    // groupRecipeBuilder->setMaximumWidth(aStyle.groupMaxWidth);
-    groupRecipeBuilder->layout()->setContentsMargins(0, 0, 0, 0);
-    groupRecipeLocked->setAlignment(Qt::AlignRight);
-    // groupRecipeLocked->setMaximumWidth(aStyle.groupMaxWidth);
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
-    groupRecipeLocked->layout()->setContentsMargins(0, 0, 0, 0);
+    groupRecipeBuilder->setSizePolicy(qPolicyExpandA);
+    groupRecipeReporter->setAlignment(Qt::AlignRight);
+    groupRecipeReporter->setSizePolicy(qPolicyExpandA);
+    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777 }");
 
-    // Add Orbital Selection Groups to Grid Layout
-    QGridLayout *layOrbitalGrid = new QGridLayout;
-    layOrbitalGrid->addWidget(groupRecipeBuilder, 0, 0, 2, 1);
-    layOrbitalGrid->addWidget(groupRecipeReporter, 0, 1, 1, 1);
-    layOrbitalGrid->addWidget(groupRecipeLocked, 1, 1, 1, 1);
-    layOrbitalGrid->setContentsMargins(0, 0, 0, 0);
-    layOrbitalGrid->setSpacing(0);
-    layOrbitalGrid->setColumnStretch(0, 1);
-    layOrbitalGrid->setColumnStretch(1, 1);
-    layOrbitalGrid->setRowStretch(0, 4);
-    layOrbitalGrid->setRowStretch(1, 3);
-
-    // Orbital Selection Buttons
-    buttLockRecipes = new QPushButton("Lock Selection");
-    buttLockRecipes->setSizePolicy(qPolicyExpandH);
-    buttLockRecipes->setEnabled(false);
-    buttLockRecipes->setObjectName("buttLockRecipes");
-    buttClearRecipes = new QPushButton("Clear Selection");
-    buttClearRecipes->setSizePolicy(qPolicyExpandH);
-    buttClearRecipes->setEnabled(false);
-    buttClearRecipes->setObjectName("buttClearRecipes");
-    buttResetRecipes = new QPushButton("Clear Locked");
-    buttResetRecipes->setObjectName("buttResetRecipes");
-    buttResetRecipes->setSizePolicy(qPolicyExpandH);
-    buttResetRecipes->setEnabled(false);
-
-    // Add Orbital Selection Buttons to Layout
-    QHBoxLayout *layHRecipeButts = new QHBoxLayout;
-    layHRecipeButts->addWidget(buttLockRecipes);
-    layHRecipeButts->addWidget(buttClearRecipes);
-    layHRecipeButts->addWidget(buttResetRecipes);
-    layHRecipeButts->setContentsMargins(0, 0, 0, 0);
-    layHRecipeButts->setSpacing(aStyle.layDockSpace);
+    // Add Orbital Selection Groups to HBox Layout
+    QHBoxLayout *layHOrbital = new QHBoxLayout;
+    layHOrbital->addWidget(groupRecipeBuilder, 1);
+    layHOrbital->addWidget(groupRecipeReporter, 1);
+    layHOrbital->setSpacing(aStyle.layDockSpace);
 
     // Harmonics Configuration Input Widgets
-    QLabel *labelCloudResolution = new QLabel("Points rendered per circle");
-    labelCloudResolution->setObjectName("labelCloudResolution");
-    QLabel *labelCloudLayers = new QLabel("Layers per step in radius");
-    labelCloudLayers->setObjectName("labelCloudLayers");
-    QLabel *labelMinRDP = new QLabel("Min probability per rendered point");
-    labelMinRDP->setObjectName("labelMinRDP");
     entryCloudRes = new QLineEdit(QString::number(cloudConfig.cloudResolution));
     entryCloudRes->setObjectName("entryCloudRes");
     entryCloudRes->setValidator(valIntLarge);
@@ -614,36 +515,49 @@ void MainWindow::setupDockHarmonics() {
     entryCloudMinRDP->setAlignment(Qt::AlignRight);
 
     // Add Harmonics Configuration Widgets to Group (via Layouts)
-    QGridLayout *layGenVertices = new QGridLayout;
-    layGenVertices->addWidget(labelCloudLayers, 0, 0, 1, 1);
-    layGenVertices->addWidget(labelCloudResolution, 1, 0, 1, 1);
-    layGenVertices->addWidget(labelMinRDP, 2, 0, 1, 1);
-    layGenVertices->addWidget(entryCloudLayers, 0, 2, 1, 1);
-    layGenVertices->addWidget(entryCloudRes, 1, 2, 1, 1);
-    layGenVertices->addWidget(entryCloudMinRDP, 2, 2, 1, 1);
-    layGenVertices->setColumnStretch(0, 9);
-    layGenVertices->setColumnStretch(1, 1);
-    layGenVertices->setColumnStretch(2, 3);
-    layGenVertices->setSpacing(aStyle.layDockSpace);
-    layGenVertices->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
+    QFormLayout *layGenVertices = new QFormLayout;
+    layGenVertices->addRow("Point resolution:", entryCloudRes);
+    layGenVertices->addRow("Layer resolution:", entryCloudLayers);
+    layGenVertices->addRow("Minimum probability:", entryCloudMinRDP);
+    layGenVertices->setLabelAlignment(Qt::AlignRight);
+    layGenVertices->setRowWrapPolicy(QFormLayout::DontWrapRows);
+    layGenVertices->setHorizontalSpacing(aStyle.layDockSpace << 2);
+    layGenVertices->setVerticalSpacing(aStyle.layDockSpace << 1);
+    layGenVertices->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+    layGenVertices->setFormAlignment(Qt::AlignCenter);
     groupGenVertices->setLayout(layGenVertices);
     groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
-    groupGenVertices->setContentsMargins(0, 0, 0, 0);
+    // groupGenVertices->setContentsMargins(0, 0, 0, 0);
+
+    // Add Orbital Selection Buttons to Layout
+    QHBoxLayout *layHarmButts = new QHBoxLayout;
+    layHarmButts->addWidget(buttMorbHarmonics);
+    layHarmButts->addWidget(buttClearHarmonics);
+    // layHarmButts->setSpacing(aStyle.layDockSpace);
+    layHarmButts->setStretch(0, 3);
+    layHarmButts->setStretch(1, 1);
 
     // Culling Sliders
-    slideCullingX = new QSlider(Qt::Horizontal);
+    slideCullingX = new QSlider(Qt::Horizontal, this);
     slideCullingX->setObjectName("slideCullingX");
     slideCullingX->setMinimum(0);
     slideCullingX->setMaximum(aStyle.sliderTicks);
     slideCullingX->setTickInterval(aStyle.sliderInterval);
     slideCullingX->setTickPosition(QSlider::TicksAbove);
-    slideCullingY = new QSlider(Qt::Horizontal);
+    slideCullingY = new QSlider(Qt::Horizontal, this);
     slideCullingY->setObjectName("slideCullingY");
     slideCullingY->setMinimum(0);
     slideCullingY->setMaximum(aStyle.sliderTicks);
     slideCullingY->setTickInterval(aStyle.sliderInterval);
     slideCullingY->setTickPosition(QSlider::TicksAbove);
-    slideBackground = new QSlider(Qt::Horizontal);
+    slideCullingR = new QSlider(Qt::Horizontal, this);
+    slideCullingR->setObjectName("slideCullingR");
+    slideCullingR->setMinimum(0);
+    slideCullingR->setMaximum(aStyle.sliderTicks << 1);
+    slideCullingR->setTickInterval(aStyle.sliderInterval);
+    slideCullingR->setTickPosition(QSlider::TicksBelow);
+    slideCullingR->setValue(aStyle.sliderTicks);
+    slideBackground = new QSlider(Qt::Horizontal, this);
     slideBackground->setObjectName("slideBackground");
     slideBackground->setMinimum(0);
     slideBackground->setMaximum(aStyle.sliderTicks);
@@ -659,17 +573,21 @@ void MainWindow::setupDockHarmonics() {
     layVCulling->addWidget(slideCullingY);
     layVCulling->setContentsMargins(0, 0, 0, 0);
     layVCulling->setSpacing(0);
+    QHBoxLayout *layRCulling = new QHBoxLayout;
+    layRCulling->addWidget(slideCullingR);
+    layRCulling->setContentsMargins(0, 0, 0, 0);
+    layRCulling->setSpacing(0);
     QHBoxLayout *laySlideBackground = new QHBoxLayout;
     laySlideBackground->addWidget(slideBackground);
     laySlideBackground->setContentsMargins(0, 0, 0, 0);
     laySlideBackground->setSpacing(0);
 
-    groupHSlideCulling = new QGroupBox("Theta Culling");
+    groupHSlideCulling = new QGroupBox("Theta Culling", this);
     groupHSlideCulling->setObjectName("groupHSlideCulling");
     groupHSlideCulling->setLayout(layHCulling);
     groupHSlideCulling->setContentsMargins(0, 0, 0, 0);
     groupHSlideCulling->setEnabled(false);
-    groupVSlideCulling = new QGroupBox("Phi Culling");
+    groupVSlideCulling = new QGroupBox("Phi Culling", this);
     groupVSlideCulling->setObjectName("groupVSlideCulling");
     groupVSlideCulling->setLayout(layVCulling);
     groupVSlideCulling->setContentsMargins(0, 0, 0, 0);
@@ -679,26 +597,36 @@ void MainWindow::setupDockHarmonics() {
     laySlideCulling->addWidget(groupVSlideCulling);
     laySlideCulling->setContentsMargins(0, 0, 0, 0);
     laySlideCulling->setSpacing(0);
-    groupSlideBackground = new QGroupBox("Background Brightness");
+    
+    groupRSlideCulling = new QGroupBox("Radial Culling", this);
+    groupRSlideCulling->setObjectName("groupRSlideCulling");
+    groupRSlideCulling->setLayout(layRCulling);
+    groupRSlideCulling->setContentsMargins(0, 0, 0, 0);
+    groupRSlideCulling->setEnabled(false);
+    groupSlideBackground = new QGroupBox("Background Brightness", this);
     groupSlideBackground->setObjectName("groupSlideBackground");
     groupSlideBackground->setLayout(laySlideBackground);
+    groupSlideBackground->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout *laySlideRadialBG = new QHBoxLayout;
+    laySlideRadialBG->addWidget(groupRSlideCulling);
+    laySlideRadialBG->addWidget(groupSlideBackground);
+    laySlideRadialBG->setContentsMargins(0, 0, 0, 0);
+    laySlideRadialBG->setSpacing(0);
 
     // Add All Groups and Layouts to Main Tab Layout
     layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(1);
-    layDockHarmonics->addLayout(layOrbitalGrid);
-    layDockHarmonics->addLayout(layHRecipeButts);
+    layDockHarmonics->addLayout(layHOrbital);
     layDockHarmonics->addWidget(groupGenVertices);
-    layDockHarmonics->addWidget(buttMorbHarmonics);
+    layDockHarmonics->addLayout(layHarmButts);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(laySlideCulling);
-    layDockHarmonics->addWidget(groupSlideBackground);
+    layDockHarmonics->addLayout(laySlideRadialBG);
 
-    layDockHarmonics->setStretchFactor(layOrbitalGrid, 8);
+    layDockHarmonics->setStretchFactor(layHOrbital, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
-    layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
-    layDockHarmonics->setContentsMargins(0, 0, 0, 0);
+    layDockHarmonics->setStretchFactor(layHarmButts, 1);
 
     // Set Main Tab Layout
     wTabHarmonics->setLayout(layDockHarmonics);
@@ -846,7 +774,7 @@ void MainWindow::handleComboCfg() {
 }
 
 void MainWindow::handleConfigChanged() {
-    if (listOrbitalLocked->count()) {
+    if (numRecipes) {
         buttMorbHarmonics->setEnabled(true);
     }
 }
@@ -857,122 +785,143 @@ void MainWindow::handleDoubleClick(QTreeWidgetItem *item, int col) {
     
     /* Leaf Nodes */
     if (!itemChildren) {
-        if (checked) {
-            item->setCheckState(col, Qt::Unchecked);
-        } else {
-            item->setCheckState(col, Qt::Checked);
-        }
+        item->setCheckState(col, (checked) ? Qt::Unchecked : Qt::Checked);
     }
 }
 
 void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
+    tableOrbitalReport->setSortingEnabled(false);
+    const QSignalBlocker blocker(tableOrbitalReport);
+
     QTreeWidgetItem *ptrParent = item->parent();
     Qt::CheckState checked = item->checkState(col);
     int itemChildren = item->childCount();
 
-    // Enable button(s) since a change has been made
-    buttLockRecipes->setEnabled(true);
-    buttClearRecipes->setEnabled(true);
-
     if (itemChildren) {
-    // Parent nodes recurse to children while checking/unchecking
+        // Parent nodes recurse to children while checking/unchecking
         for (int i = 0; i < item->childCount(); i++) {
             item->child(i)->setCheckState(0,checked);
         }
 
     } else {
-    // Leaf nodes
+        // Leaf nodes
+        QString strItem = item->text(col);
+        QString strWeight = "1";
+        QStringList strlistItem = strItem.split(u' ');
+        int n = strlistItem.at(0).toInt();
+        int l = strlistItem.at(1).toInt();
+        int m = strlistItem.at(2).toInt();
+        
         if (checked) {
-            // Leaf node checked
-            QString strItem = item->text(col);
-            QTableWidgetItem *thisOrbital = new QTableWidgetItem(strItem);
-            QTableWidgetItem *thisWeight = new QTableWidgetItem("1");
+            // Add orbital to table
+            QTableWidgetItem *thisOrbital = new SortableOrbital(strItem);
+            QTableWidgetItem *thisWeight = new SortableOrbital(strWeight);
             int intTableRows = tableOrbitalReport->rowCount();
             tableOrbitalReport->setRowCount(intTableRows + 1);
             tableOrbitalReport->setItem(intTableRows, 1, thisOrbital);
             tableOrbitalReport->setItem(intTableRows, 0, thisWeight);
             tableOrbitalReport->setRowHeight(intTableRows, aStyle.tableFontSize + 2);
             thisOrbital->setTextAlignment(Qt::AlignCenter);
-            thisOrbital->setForeground(Qt::red);
+            thisOrbital->setForeground(Qt::white);
             thisWeight->setTextAlignment(Qt::AlignCenter);
-            thisWeight->setForeground(Qt::yellow);
+            thisWeight->setForeground(Qt::gray);
             thisOrbital->setFlags(Qt::ItemNeverHasChildren);
             thisWeight->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
+
+            // Add orbital to harmap
+            ivec3 lmw = ivec3(l, m, 1);
+            mapCloudRecipesLocked[n].push_back(lmw);
+            this->numRecipes++;
+
+            // Because adding, enable buttons
+            if (!intTableRows) {
+                buttClearHarmonics->setEnabled(true);
+                buttMorbHarmonics->setEnabled(true);
+                groupRecipeReporter->setStyleSheet("");
+            }
+
         } else {
-            // Leaf node unchecked
-            int intItemRow = tableOrbitalReport->findItems(item->text(col), Qt::MatchExactly).first()->row();
+            // Remove orbital from table
+            int intItemRow = tableOrbitalReport->findItems(strItem, Qt::MatchExactly).first()->row();
             tableOrbitalReport->removeRow(intItemRow);
+
+            // Remove orbital from harmap
+            if (int v = findHarmapItem(n, l, m); v >= -1) {
+                this->mapCloudRecipesLocked[n].erase(this->mapCloudRecipesLocked[n].begin() + v);
+                this->numRecipes--;
+            }
+
+            // Because removing, handle zero-weighted orbitals and empty table cases
+            if (int c = tableOrbitalReport->rowCount(); c <= 1) {
+                if (c == 1 && tableOrbitalReport->item(0, 0)->text() == "0") {
+                    QMessageBox dialogConfim(this);
+                    dialogConfim.setText("The only weighted orbital cannot be zero. Removing remaining orbital.");
+                    dialogConfim.setFont(fontDebug);
+                    dialogConfim.setStandardButtons(QMessageBox::Ok);
+                    dialogConfim.setDefaultButton(QMessageBox::Ok);
+                    dialogConfim.exec();
+
+                    QString strOrbital = tableOrbitalReport->item(0, 1)->text();
+                    treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
+                } else if (c == 0) {
+                    buttMorbHarmonics->setEnabled(false);
+                    buttClearHarmonics->setEnabled(false);
+                    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
+                }
+            }
         }
     }
 
     /* ALL Nodes make it here */
-    // Update button and group style to match current state
-    if (!tableOrbitalReport->rowCount()) {
-        buttLockRecipes->setEnabled(false);
-        buttClearRecipes->setEnabled(true);
-        buttLockRecipes->setStyleSheet("");
-        groupRecipeReporter->setStyleSheet("");
-    } else {
-        groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
-    }
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent
     while (ptrParent) {
         int intSiblings = ptrParent->childCount();
-        int intSiblingsSame = 0;
+        bool homo = false;
 
         for (int i = 0; i < intSiblings; i++) {
-            if (ptrParent->child(i)->checkState(col) == checked) {
-                intSiblingsSame++;
+            if (ptrParent->child(i)->checkState(col) != checked) {
+                break;
+            }
+            
+            if (i == intSiblings - 1) {
+                homo = true;
             }
         }
         const QSignalBlocker blocker(treeOrbitalSelect);
-        ptrParent->setCheckState(col, (intSiblingsSame == intSiblings) ? checked : Qt::PartiallyChecked);
+        ptrParent->setCheckState(col, (homo) ? checked : Qt::PartiallyChecked);
         ptrParent = ptrParent->parent();
     }
+
+    tableOrbitalReport->setSortingEnabled(true);
 }
 
 void MainWindow::handleButtLockRecipes() {
     const QSignalBlocker blocker(tableOrbitalReport);
 
-    buttLockRecipes->setStyleSheet("");
-
     for (int i = 0; i < tableOrbitalReport->rowCount(); i++) {
         QTableWidgetItem *thisOrbital = tableOrbitalReport->item(i, 1);
         QTableWidgetItem *thisWeight = tableOrbitalReport->item(i, 0);
-        thisOrbital->setForeground(Qt::white);
-        thisWeight->setForeground(Qt::white);
+        // thisOrbital->setForeground(Qt::white);
+        // thisWeight->setForeground(Qt::white);
 
         QString strOrbital = thisOrbital->text();
         QString strWeight = thisWeight->text();
-        QString strLocked = strWeight + "  *  < " + strOrbital + " >";
-        QList<QListWidgetItem *> resultsPartial = listOrbitalLocked->findItems(strOrbital, Qt::MatchContains);
 
-        if (!resultsPartial.count()) {
-            // Not even a partial match found -- add new item to list
-            QListWidgetItem *newItem = new QListWidgetItem(strLocked, listOrbitalLocked);
-            listOrbitalLocked->addItem(newItem);
-            newItem->setTextAlignment(Qt::AlignCenter);
+        QStringList strlistItem = strOrbital.split(u' ');
+        int n = strlistItem.at(0).toInt();
+        int l = strlistItem.at(1).toInt();
+        int m = strlistItem.at(2).toInt();
+        int w = strWeight.toInt();
+        ivec3 lmw = ivec3(l, m, w);
+        std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
 
+        if (std::find(vecElem->begin(), vecElem->end(), lmw) == vecElem->end()) {
             // Add item to harmap
-            QStringList strlistItem = strOrbital.split(u' ');
-            int n = strlistItem.at(0).toInt();
-            int w = strWeight.toInt();
-            std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
-            ivec3 lm = ivec3(strlistItem.at(1).toInt(), strlistItem.at(2).toInt(), w);
-            vecElem->push_back(lm);
+            vecElem->push_back(lmw);
             this->numRecipes++;
         } else {
-            // Partial match found -- update item in harmap
-            // Update matched item to new weight
-            resultsPartial.first()->setText(strLocked);
-
-            // Update harmap item
-            QStringList strlistItem = strOrbital.split(u' ');
-            int n = strlistItem.at(0).toInt();
-            int l = strlistItem.at(1).toInt();
-            int m = strlistItem.at(2).toInt();
-            int w = strWeight.toInt();
+            // Look for partial match and update weight
             for (auto& vecElem : mapCloudRecipesLocked[n]) {
                 if (vecElem.x == l && vecElem.y == m) {
                     vecElem.z = w;
@@ -981,12 +930,10 @@ void MainWindow::handleButtLockRecipes() {
             }
         }
     }
-    buttLockRecipes->setEnabled(false);
-    buttResetRecipes->setEnabled(true);
+    // buttResetRecipes->setEnabled(true);
     buttMorbHarmonics->setEnabled(true);
 
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #77FF77; }");
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #77FF77; }");
 }
 
 void MainWindow::handleButtClearRecipes() {
@@ -1003,13 +950,11 @@ void MainWindow::handleButtClearRecipes() {
 }
 
 void MainWindow::handleButtResetRecipes() {
-    listOrbitalLocked->clear();
     mapCloudRecipesLocked.clear();
     this->numRecipes = 0;
 
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
+    // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     buttMorbHarmonics->setEnabled(false);
-    buttLockRecipes->setEnabled(true);
 }
 
 void MainWindow::handleButtMorbWaves() {
@@ -1022,8 +967,8 @@ void MainWindow::handleButtMorbWaves() {
     waveConfig.superposition = slswSuper->value();
     waveConfig.cpu = slswCPU->value();
     waveConfig.sphere = slswSphere->value();
-    /* waveConfig.vert = entryVertex->currentText().toStdString();
-    waveConfig.frag = entryFrag->currentText().toStdString(); */
+
+    printLayout();
 
     refreshOrbits();
 
@@ -1035,18 +980,15 @@ void MainWindow::handleButtMorbWaves() {
 
     groupColors->setEnabled(true);
     groupOrbits->setEnabled(true);
-    if (listOrbitalLocked->count()) {
+    if (numRecipes > 0) {
         buttMorbHarmonics->setEnabled(true);
     }
-
-    wTabs->setMaximumWidth(QWIDGETSIZE_MAX);
-    wTabs->resize(int(double(mw_width) * 0.2), mw_tabHeight);
 }
 
 void MainWindow::handleButtMorbHarmonics() {
     cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
     cloudConfig.cloudResolution = entryCloudRes->text().toInt();
-    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toFloat();
+    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
 
     uint vertex, data, index;
     uint64_t total;
@@ -1094,18 +1036,52 @@ void MainWindow::handleButtMorbHarmonics() {
     glGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
 #endif
 
-    groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
+    // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupHSlideCulling->setEnabled(true);
     groupVSlideCulling->setEnabled(true);
+    groupRSlideCulling->setEnabled(true);
     buttMorbHarmonics->setEnabled(false);
     activeModel = true;
 }
 
-void MainWindow::handleWeightChange([[maybe_unused]] int row, [[maybe_unused]] int col) {
+void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
     // Haha weight change *cries in 38*
-    buttLockRecipes->setEnabled(true);
-    buttLockRecipes->setStyleSheet("QPushButton { color: #FFFF77; }");
+    QTableWidgetItem *thisOrbital = tableOrbitalReport->item(row, 1);
+    QTableWidgetItem *thisWeight = tableOrbitalReport->item(row, 0);
+    
+    QString strOrbital = thisOrbital->text();
+    QString strWeight = thisWeight->text();
+
+    QStringList strlistItem = strOrbital.split(u' ');
+    int n = strlistItem.at(0).toInt();
+    int l = strlistItem.at(1).toInt();
+    int m = strlistItem.at(2).toInt();
+    int w = strWeight.toInt();
+
+    if (w == 0) {
+        if (tableOrbitalReport->rowCount() == 1) {
+            QMessageBox dialogConfim(this);
+            dialogConfim.setText("The only weighted orbital cannot be zero. Removing this orbital.");
+            dialogConfim.setFont(fontDebug);
+            dialogConfim.setStandardButtons(QMessageBox::Ok);
+            dialogConfim.setDefaultButton(QMessageBox::Ok);
+            dialogConfim.exec();
+
+            treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
+        }
+        return;
+    }
+
+    std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
+    // Look for partial match and update weight
+    if (int v = findHarmapItem(n, l, m); v != -1) {
+        vecElem->at(v).z = w;
+    }
+    
+    thisWeight->setForeground(Qt::yellow);
+    
+    buttMorbHarmonics->setEnabled(true);
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
 }
 
@@ -1194,10 +1170,28 @@ void MainWindow::handleSlideCullingY(int val) {
     this->cloudConfig.CloudCull_y = pct;
 }
 
+void MainWindow::handleSlideCullingR(int val) {
+    int range = aStyle.sliderTicks;
+    int newVal = 0;
+
+    if (val < range) {
+        newVal = range - val;
+        this->cloudConfig.CloudCull_rIn = (float(newVal) / float(range));
+        this->cloudConfig.CloudCull_rOut = 0.0f;
+    } else if (val > range) {
+        newVal = val - range;
+        this->cloudConfig.CloudCull_rOut = (float(newVal) / float(range));
+        this->cloudConfig.CloudCull_rIn = 0.0f;
+    } else {
+        this->cloudConfig.CloudCull_rIn = 0.0f;
+        this->cloudConfig.CloudCull_rOut = 0.0f;
+    }
+}
+
 void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
-    if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY)) {
+    if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY) || (this->cloudConfig.CloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.CloudCull_rOut != lastSliderSentROut)) {
 #ifdef USING_QVULKAN
         vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
 #elifdef USING_QOPENGL
@@ -1205,6 +1199,8 @@ void MainWindow::handleSlideReleased() {
 #endif
         lastSliderSentX = this->cloudConfig.CloudCull_x;
         lastSliderSentY = this->cloudConfig.CloudCull_y;
+        lastSliderSentRIn = this->cloudConfig.CloudCull_rIn;
+        lastSliderSentROut = this->cloudConfig.CloudCull_rOut;
     }
 }
 
@@ -1214,6 +1210,24 @@ void MainWindow::handleSlideBackground(int val) {
 #elifdef USING_QOPENGL
     glGraph->setBGColour((static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks)));
 #endif
+}
+
+int MainWindow::findHarmapItem(int n, int l, int m) {
+    for (int i = 0; i < (int)this->mapCloudRecipesLocked[n].size(); i++) {
+        ivec3 vecElem = mapCloudRecipesLocked[n][i];
+        if (vecElem.x == l && vecElem.y == m) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int MainWindow::getHarmapSize() {
+    int totalSize = 0;
+    for (auto k : mapCloudRecipesLocked) {
+        totalSize += k.second.size();
+    }
+    return totalSize;
 }
 
 void MainWindow::printHarmap() {
@@ -1308,24 +1322,13 @@ void MainWindow::_printChild(QLayoutItem *child, int lvl, int idx, int nameLen) 
 }
 
 void MainWindow::_initStyle() {
-    // Add Custom Fonts
-    QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
-    QString strFont = "Inconsolata";
-    int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + strFont + "-Regular.ttf");
-    QStringList fontList = QFontDatabase::applicationFontFamilies(id);
-    if (fontList.contains(strFont)) {
-        aStyle.fontInc = QFont(strFont);
-        aStyle.strFontInc = strFont;
-    } else {
-         aStyle.fontInc = QFont(strDefault);
-         aStyle.strFontInc = strDefault;
-    }
+    // Add custom font(s)
+    aStyle.setFont("Inconsolata");
 
-    // Stylesheet
-    aStyle.layDockSpace = int(double(mw_height* 0.005));
-    aStyle.morbMargin = aStyle.layDockSpace << 1;
-    mw_tabWidth = mw_width * 0.2;
-    mw_tabCount = 2;
+    // Set defaults because we haven't added tabs or shown the window yet
+    mw_tabWidth = int(mw_width * 0.2);
+    mw_tabHeight = mw_height - this->style()->pixelMetric(QStyle::PM_TitleBarHeight);
+    mw_tabCount = 8;
 
     _setStyle();
 }
@@ -1363,14 +1366,14 @@ void MainWindow::_initGraphics() {
     vkGraph = new VKWindow(this, cfgParser);
     vkGraph->setVulkanInstance(&vkInst);
     graph = QWidget::createWindowContainer(vkGraph);
-    graph->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    setCentralWidget(graph);
+    graph->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    this->setCentralWidget(graph);
 
 #elifdef USING_QOPENGL
 
     // OpenGL
     glGraph = new GWidget(this, cfgParser);
-    setCentralWidget(glGraph);
+    this->setCentralWidget(glGraph);
     graph = glGraph;
 
 #endif
@@ -1408,7 +1411,6 @@ void MainWindow::_connectSignals() {
 #endif
     connect(buttGroupConfig, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
-    connect(buttLockRecipes, &QPushButton::clicked, this, &MainWindow::handleButtLockRecipes);
     connect(entryOrbit, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
     connect(entryPeriod, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
     connect(entryWavelength, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
@@ -1418,8 +1420,7 @@ void MainWindow::_connectSignals() {
     connect(entryCloudRes, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
     connect(entryCloudMinRDP, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
-    connect(buttResetRecipes, &QPushButton::clicked, this, &MainWindow::handleButtResetRecipes);
-    connect(buttClearRecipes, &QPushButton::clicked, this, &MainWindow::handleButtClearRecipes);
+    connect(buttClearHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtClearRecipes);
     connect(entryCloudLayers, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
     connect(entryCloudRes, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
     connect(entryCloudMinRDP, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
@@ -1428,21 +1429,22 @@ void MainWindow::_connectSignals() {
     connect(tableOrbitalReport, &QTableWidget::cellChanged, this, &MainWindow::handleWeightChange);
     connect(slideCullingX, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingX);
     connect(slideCullingY, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingY);
+    connect(slideCullingR, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingR);
     connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideCullingR, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
-    // connect(wTabs, &QTabWidget::resizeEvent, this, &MainWindow::handleTabChange);
-    // Learn about and use EventFilters
-    // https://doc.qt.io/qt-6/eventsandfilters.html
 }
 
 void MainWindow::_setStyle() {
     aStyle.setWindowSize(mw_width, mw_height);
-    aStyle.setDockWidth(mw_tabWidth, mw_tabCount);
+    aStyle.setDockSize(mw_tabWidth, mw_tabHeight, mw_tabCount);
     aStyle.updateStyleSheet();
+    
     this->setStyleSheet(aStyle.getStyleSheet());
+    
     if (isDebug) {
-        std::cout << "\nStyleSheet:\n" << aStyle.getStyleSheet().toStdString() << "\n" << std::endl;
+        aStyle.printStyleSheet();
     }
 }
 
@@ -1451,13 +1453,11 @@ void MainWindow::_dockResize() {
     mw_tabWidth = tabLoc.width();
     mw_tabHeight = tabLoc.height();
 
-    // Update Stylesheet
-    aStyle.layDockSpace = int(double(mw_tabHeight * 0.005));
-    aStyle.morbMargin = aStyle.layDockSpace << 1;
-
     _setStyle();
 
-    _resize();
+    layDockWaves->setSpacing(aStyle.layDockSpace);
+    layDockHarmonics->setSpacing(aStyle.layDockSpace);
+    treeOrbitalSelect->setIndentation(aStyle.fontWidth << 1);
 }
 
 void MainWindow::_resize() {
@@ -1472,34 +1472,15 @@ void MainWindow::_resize() {
 
         wTabs->setCurrentIndex(currentTabIdx);
         if (currentTabIdx == 0) {                               // [Waves]
-            // Resize SlideSwitches to match entry boxes
-            QRect entryLoc = entryOrbit->geometry();
-            int entryWidth = entryLoc.width();
-            int slideWidth = int(double(entryWidth) * 0.75);
-            int entryHeight = entryLoc.height();
-
-            slswPara->resize(slideWidth, entryHeight);
-            slswSuper->resize(slideWidth, entryHeight);
-            slswCPU->resize(slideWidth, entryHeight);
-            slswSphere->resize(slideWidth, entryHeight);
-
+            // We don't need to do anything here, anymore
         } else if (currentTabIdx == 1) {                        // [Harmonics]
-            // Pull in orbital tree items (for smaller resolutions)
-            int treeWidth = treeOrbitalSelect->width();
-            int indent = int(double(treeWidth) * 0.10);
-            treeOrbitalSelect->setIndentation(indent);
-            
-            // Resize selected recipe table headers to account for scrollbar
-            int colWidth = (tableOrbitalReport->width() - 15) >> 1;
-            tableOrbitalReport->setColumnWidth(0, colWidth);
-            tableOrbitalReport->setColumnWidth(1, colWidth);
+            // We don't need to do anything here, anymore
         }
 
         i++;
     }
 
-    layDockWaves->setSpacing(aStyle.layDockSpace);
-    layDockHarmonics->setSpacing(aStyle.layDockSpace);
+    
 
     assert(startingTabIdx == currentTabIdx);
 }

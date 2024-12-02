@@ -103,18 +103,18 @@ void VKWindow::initWindow() {
     this->vw_init = true;
 }
 
-void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool canCreate) {
+void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, int numRecipes, bool generator) {
     flGraphState.set(egs::CLOUD_MODE);
     if (flGraphState.hasAny(eWaveFlags)) {
         changeModes(false);
     }
 
-    if (!cloudManager && canCreate) {
+    if (!cloudManager) {
         cloudManager = new CloudManager();
         currentManager = cloudManager;
     }
 
-    futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes);
+    futureModel = QtConcurrent::run(&CloudManager::receiveCloudMapAndConfig, cloudManager, config, cloudMap, numRecipes, generator);
     fwModel->setFuture(futureModel);
     this->max_n = cloudMap->rbegin()->first;
     int divSciExp = std::abs(floor(log10(config->cloudTolerance)));
@@ -652,6 +652,7 @@ void VKWindow::updateBuffersAndShaders() {
             std::string bufferCPU = currentManager->getCPU() ? "VerticesCPU" : "Vertices";
             updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::VERTEX;
+            updBuf.offset = currentManager->getVertexOffset();
             updBuf.count = currentManager->getVertexCount();
             updBuf.size = currentManager->getVertexSize();
             updBuf.data = currentManager->getVertexData();
@@ -664,10 +665,12 @@ void VKWindow::updateBuffersAndShaders() {
             updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::DATA;
             if (currentManager->getCPU()) {
+                updBuf.offset = currentManager->getColourOffset();
                 updBuf.count = currentManager->getColourCount();
                 updBuf.size = currentManager->getColourSize();
                 updBuf.data = currentManager->getColourData();
             } else {
+                updBuf.offset = currentManager->getDataOffset();
                 updBuf.count = currentManager->getDataCount();
                 updBuf.size = currentManager->getDataSize();
                 updBuf.data = currentManager->getDataData();
@@ -676,12 +679,13 @@ void VKWindow::updateBuffersAndShaders() {
         }
 
         // Update EBO: Indices
-        if (flGraphState.hasAny(egs::UPD_EBO)) {
+        if (flGraphState.hasAny(egs::UPD_IBO | egs::UPD_IDXOFF)) {
             updBuf.bufferName = vw_currentModel + "Indices";
             updBuf.type = BufferType::INDEX;
+            updBuf.offset = currentManager->getIndexOffset();
             updBuf.count = currentManager->getIndexCount();
             updBuf.size = currentManager->getIndexSize();
-            updBuf.data = currentManager->getIndexData();
+            updBuf.data = (flGraphState.hasAny(egs::UPD_IDXOFF)) ? 0 : currentManager->getIndexData();
             atomixProg->updateBuffer(updBuf);
         }
 

@@ -51,8 +51,6 @@ void CloudManager::newConfig(AtomixConfig *config) {
     this->cloudTolerance = cfg.cloudTolerance;
     this->deg_fac = TWO_PI / this->cloudResolution;
     this->cfg.vert = "gpu_harmonics.vert";
-    // TODO : Remove this after debugging
-    // this->cfg.cpu = true;
 }
 
 void CloudManager::receiveCloudMap(harmap *inMap, int numRecipes) {
@@ -61,7 +59,7 @@ void CloudManager::receiveCloudMap(harmap *inMap, int numRecipes) {
     this->max_n = cloudOrbitals.rbegin()->first;
 }
 
-void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes) {
+void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes, bool generator) {
     cm_proc_coarse.lock();
 
     if (mStatus.hasNone(em::INIT)) {
@@ -72,16 +70,27 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
         cm_proc_coarse.unlock();
         return;
     }
+
+    // Check for relevant config or map changes -- slider changes can be processed without altering config
+    bool widerRadius = false;
+    bool newMap = false;
+    bool newDivisor = false;
+    bool newResolution = false;
+    bool newTolerance = false;
+    bool newCulling = false;
+    bool higherMaxN = false;
+
+    if (generator) {
+        widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
+        newMap = cloudOrbitals != (*inMap);
+        newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
+        newResolution = (this->cloudResolution != config->cloudResolution);
+        newTolerance = (this->cloudTolerance != config->cloudTolerance);
+        higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap->rbegin()->first > this->max_n);
+    }
+    newCulling = (this->cfg.CloudCull_x != config->CloudCull_x) || (this->cfg.CloudCull_y != config->CloudCull_y) || (this->cfg.CloudCull_rIn != config->CloudCull_rIn) || (this->cfg.CloudCull_rOut != config->CloudCull_rOut);
     
-    // Check for relevant config changes OR for recipes to require larger radius
-    bool widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
-    bool newMap = cloudOrbitals != (*inMap);
-    bool newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
-    bool newResolution = (this->cloudResolution != config->cloudResolution);
-    bool newTolerance = (this->cloudTolerance != config->cloudTolerance);
-    bool newCulling = (this->cfg.CloudCull_x != config->CloudCull_x) || (this->cfg.CloudCull_y != config->CloudCull_y);
-    bool higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap->rbegin()->first > this->max_n);
-    bool configChanged = (newDivisor || newResolution || newTolerance || newCulling);
+    bool configChanged = (newDivisor || newResolution || newTolerance);
     bool newVerticesRequired = (newDivisor || newResolution || higherMaxN || widerRadius);
 
     // Resest or clear if necessary
@@ -94,7 +103,13 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     // Update config
     if (configChanged) {
         this->newConfig(config);
+    } else if (newCulling) {
+        this->cfg.CloudCull_x = config->CloudCull_x;
+        this->cfg.CloudCull_y = config->CloudCull_y;
+        this->cfg.CloudCull_rIn = config->CloudCull_rIn;
+        this->cfg.CloudCull_rOut = config->CloudCull_rOut;
     }
+
     // Mark for vecsAndMatrices update if map (orbital recipe) has changed
     if (newMap) {
         this->receiveCloudMap(inMap, numRecipes);
@@ -150,7 +165,7 @@ double CloudManager::create() {
     steady_clock::time_point begin = steady_clock::now();
 
     this->max_n = cloudOrbitals.rbegin()->first;
-    int opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
+    this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
     double deg_fac_local = this->deg_fac;
@@ -205,12 +220,12 @@ double CloudManager::createThreaded() {
 
     this->max_n = cloudOrbitals.rbegin()->first;
     int div_local = this->cloudLayerDivisor;
-    int opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, div_local);
+    this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, div_local);
     int theta_max_local = this->cloudResolution;
     int phi_max_local = this->cloudResolution >> 1;
     int layer_size = theta_max_local * phi_max_local;
     double deg_fac_local = this->deg_fac;
-    this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
+    this->pixelCount = this->opt_max_radius * theta_max_local * phi_max_local;
     bool isGPU = !cfg.cpu;
 
     /*  Memory -- Begin --- This memory-carving portion takes 94% of create() total time  */
@@ -267,8 +282,7 @@ void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
     double deg_fac_local = this->deg_fac;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
-    int divSciExp = std::abs(floor(log10(this->cloudTolerance)));
-    int opt_max_radius = cm_maxRadius[divSciExp - 1][max_n - 1] * this->cloudLayerDivisor;
+    this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
     double orbNorm = this->norm_constY[DSQ(l, m_l)];
 
     for (int k = 1; k <= opt_max_radius; k++) {
@@ -405,11 +419,14 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     int div_local = this->cloudLayerDivisor;
     int phi_max_local = this->cloudResolution >> 1;
     int theta_max_local = this->cloudResolution;
-    int opt_max_radius = cm_maxRadius[(static_cast<int>(std::abs(floor(log10(this->cloudTolerance)))) - 1)][this->max_n - 1] * div_local + 1;
+    this->opt_max_radius = this->getMaxRadius(this->cloudTolerance, this->max_n) * div_local + 1;
+    int opt_max_radius_local = this->opt_max_radius;
 
     /*  Compute -- Begin
-        This section contains 62%-98% of the total execution time of cloud generation!
-        For that reason, I'm unrolling all the pretty functions that go into this calc. */
+        This section contains 62%-98% of the total execution time of cloud generation,
+        which can easily scale into Ne+1 minutes for high resolutions. For that reason,
+        I'm unrolling all the pretty functions that go into this calc (hyperoptimization).
+    */
     // steady_clock::time_point inner_begin = steady_clock::now();
     // Recipe Loop
     for (auto const &[key, val] : cloudOrbitals) {
@@ -435,11 +452,11 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
 
             // Divide up the Layers loop into chunks and spawn threads to handle those chunks, from the thread pool
             int top_start = 1, top_end = 1;
-            while (top_end < opt_max_radius) {
-                if (opt_max_radius - top_end >= thread_loop_limit) {
+            while (top_end < opt_max_radius_local) {
+                if (opt_max_radius_local - top_end >= thread_loop_limit) {
                     top_end = top_start + thread_loop_limit;
                 } else {
-                    top_end = opt_max_radius;
+                    top_end = opt_max_radius_local;
                 }
 
                 // Spawn thread for each chunk
@@ -714,31 +731,56 @@ double CloudManager::cullSliderThreaded() {
     cm_proc_fine.lock();
     steady_clock::time_point begin = steady_clock::now();
 
-    if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
-        //  Default -- sliders are not culling, so copy idxCulledTolerance directly to allIndices! 
-        allIndices.resize(this->cm_pixels);
-        allIndices.assign(this->cm_pixels, 0);
-        std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
-    } else {
-        //  Other -- sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
-        uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0, culled_phi_b = 0;
-        float phi_front_pct = 0.0f, phi_back_pct = 0.0f;
-        layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
-        culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
-        theta_size = this->cloudResolution;
-        phi_size = this->cloudResolution >> 1;
-        if (this->cfg.CloudCull_y > 0.50f) {
-            phi_front_pct = 1.0f;
-            phi_back_pct = (this->cfg.CloudCull_y - 0.50f) * 2.0f;
-        } else {
-            phi_front_pct = this->cfg.CloudCull_y * 2.0f;
-            phi_back_pct = 0.0f;
-        }
-        culled_phi_f = static_cast<uint>(ceil(phi_size * phi_front_pct));
-        culled_phi_b = phi_size - static_cast<uint>(ceil(phi_size * phi_back_pct));
+    bool visible = !bool(int(this->cfg.CloudCull_x) + int(this->cfg.CloudCull_y) + int(this->cfg.CloudCull_rIn) + int(this->cfg.CloudCull_rOut));
+    bool rin = (this->cfg.CloudCull_rIn);
+    bool rout = (this->cfg.CloudCull_rOut);
+    bool radial = (rin || rout);
+    bool angular = ((this->cfg.CloudCull_x) || (this->cfg.CloudCull_y));
+    bool untouched  = !(angular || radial);
 
-        // Define lambda for multi-use
-        auto lambda_cull = [layer_size, theta_size, culled_theta_all, phi_size, culled_phi_f, culled_phi_b](const uint &item){
+    uint radial_layers = this->opt_max_radius;
+    if (radial) {
+        radial_layers *= (rin) ? (1.0f - this->cfg.CloudCull_rIn) : this->cfg.CloudCull_rOut;
+    }
+    uint64_t rad_threshold = radial_layers * this->cloudResolution * (this->cloudResolution >> 1);
+
+    if (visible) {
+        if (untouched) {
+            //  Default -- X/Y sliders are not culling, so copy idxCulledTolerance directly to allIndices! 
+            allIndices.resize(this->cm_pixels);
+            allIndices.assign(this->cm_pixels, 0);
+            std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
+
+            /* if (radial) {
+                if (rin) {
+                    this->indexOffset = 0;
+                    this->indexCount = rad_threshold;
+                } else {
+                    this->indexOffset = rad_threshold;
+                    this->indexCount = allIndices.size() - rad_threshold;
+                }
+                mStatus.condSet(em::UPD_IDXOFF, mStatus.hasAll(em::INIT));
+            } */
+        } else {
+            //  Other -- X/Y sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
+            uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0, culled_phi_b = 0;
+            float phi_front_pct = 0.0f, phi_back_pct = 0.0f;
+            layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
+            culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
+            theta_size = this->cloudResolution;
+            phi_size = this->cloudResolution >> 1;
+            if (this->cfg.CloudCull_y > 0.50f) {
+                phi_front_pct = 1.0f;
+                phi_back_pct = (this->cfg.CloudCull_y - 0.50f) * 2.0f;
+            } else {
+                phi_front_pct = this->cfg.CloudCull_y * 2.0f;
+                phi_back_pct = 0.0f;
+            }
+            culled_phi_f = static_cast<uint>(ceil(phi_size * phi_front_pct));
+            culled_phi_b = phi_size - static_cast<uint>(ceil(phi_size * phi_back_pct));
+
+            // Define lambda for multi-use
+            auto lambda_cull = [layer_size, theta_size, culled_theta_all, phi_size, culled_phi_f, culled_phi_b, rad_threshold, rin, rout](const uint &item){
                 uint layer_pos = (item % layer_size);
                 uint theta_pos = layer_pos / phi_size;
                 uint phi_pos = item % phi_size;
@@ -748,31 +790,38 @@ double CloudManager::cullSliderThreaded() {
                 bool culld_phi_back = (phi_pos >= culled_phi_b);
                 bool culled_phi_thetas_front = (theta_pos <= phi_size);   // phi_size here is theta_size/2
                 bool culled_phi_thetas_back = (theta_pos > phi_size);   // phi_size here is theta_size/2
+                bool culled_radial_in = rin && (item > rad_threshold);
+                bool culled_radial_out = rout && (item < rad_threshold);
 
-                return !((culled_theta && culled_theta_phis) || (culled_phi_front && culled_phi_thetas_front) || (culld_phi_back && culled_phi_thetas_back));
+                bool theta_culled = (culled_theta && culled_theta_phis);
+                bool phi_culled = (culled_phi_front && culled_phi_thetas_front) || (culld_phi_back && culled_phi_thetas_back);
+                bool radial_culled = (culled_radial_in || culled_radial_out);
+
+                return !(theta_culled || phi_culled || radial_culled);
             };
 
-        // Count unculled vertices
-        uint pix_final = std::count_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), lambda_cull);
+            // Count unculled vertices
+            uint pix_final = std::count_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), lambda_cull);
 
-        // Resize allIndices. ***Note: resize does NOT change capacity, so full size is still reserved!
-        allIndices.resize(pix_final);
-        allIndices.assign(pix_final, 0);
+            // Resize allIndices. ***Note: resize does NOT change capacity, so full size is still reserved!
+            allIndices.resize(pix_final);
+            allIndices.assign(pix_final, 0);
 
-        // Copy only unculled vertices to allIndices
-        std::copy_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin(), lambda_cull);
+            // Copy only unculled vertices to allIndices
+            std::copy_if(std::execution::par_unseq, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin(), lambda_cull);
+        }
     }
 
     /*  Exit  */
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
+    this->indexCount *= uint64_t(visible);
     steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
-    return (std::chrono::duration<double, std::milli>(end - begin).count());
+    return std::chrono::duration<double, std::milli>(end - begin).count();
 }
 
 void CloudManager::update([[maybe_unused]] double time) {
-    assert(mStatus.hasAll(em::VERT_READY | em::UPD_VBO | em::UPD_EBO));
     //TODO implement for CPU updates over time
 }
 
@@ -1034,12 +1083,14 @@ uint CloudManager::getColourSize() {
 }
 
 uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
-    return getMaxRadius(tolerance, n_max) * divisor;
+    uint maxRadius = getMaxRadius(tolerance, n_max);
+    return maxRadius * divisor;
 }
 
 uint CloudManager::getMaxRadius(double tolerance, int n_max) {
-    int divSciExp = std::abs(floor(log10(tolerance)));
-    return cm_maxRadius[divSciExp - 1][n_max - 1];
+    uint divSciExp = std::abs(floor(log10(tolerance)));
+    uint maxRadius = cm_maxRadius[divSciExp - 1][n_max - 1];
+    return maxRadius;
 }
 
 /*
@@ -1055,7 +1106,7 @@ bool CloudManager::hasVertices() {
 }
 
 bool CloudManager::hasBuffers() {
-    return (this->mStatus.hasAny(em::UPD_EBO));
+    return (this->mStatus.hasAny(em::UPD_IBO));
 }
 
 /*

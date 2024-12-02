@@ -592,7 +592,7 @@ void GWidget::updateBuffersAndShaders() {
     }
 
     /* EBO: Indices */
-    if (flGraphState.hasAny(egs::UPD_EBO)) {
+    if (flGraphState.hasAny(egs::UPD_IBO)) {
         if (currentManager->getIndexCount() > currentProg->getSize("indices")) {
             // std::cout << "Resizing EBO from " << currentProg->getSize("indices") << " to " << currentManager->getIndexCount() << std::endl;
             currentProg->resizeEBONamed("indices", currentManager->getIndexCount(), currentManager->getIndexSize(), currentManager->getIndexData(), static_dynamic);

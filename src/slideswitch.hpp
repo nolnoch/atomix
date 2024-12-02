@@ -41,10 +41,7 @@ public:
     explicit SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent = nullptr);
     ~SlideSwitch() override;
 
-    // void redraw();
-
     //-- QWidget methods
-    // void mousePressEvent(QMouseEvent *) override;
     void paintEvent(QPaintEvent* event) override;
     void setEnabled(bool);
 
@@ -54,7 +51,8 @@ public:
 
     //-- Getters
     bool value() const;
-    QSize sizeHint() const override { return QSize(slsw_width, slsw_height); }
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 public slots:
     void _toggleBG();
@@ -71,6 +69,7 @@ protected:
 private:
     class SwitchCircle;
     class SwitchBackground;
+    void _adjust();
     void _update();
     void _toggle();
 
@@ -89,7 +88,7 @@ private:
     bool slsw_value = false;
     int fontPx = 12;
     int buttMove = 0;
-    double fontScale = 0.58;
+    double fontScale = 0.50;
     double labMoveScale = 0.18;
 
     /* bool enabled = false;
@@ -116,10 +115,11 @@ private:
         QBrush light;
     } pal;
 
-    QString _strOff = QString("QLabel#switchOff { color: %1; font-size: %2px; }");
-    QString _strOn = QString("QLabel#switchOn { color: %1; font-size: %2px; }");
-    QString _strDis = QString("QLabel#switchDis { color: %1; font-size: %2px; }");
-
+    QFont slsw_font;
+    int slsw_margin = 0;
+    QString _strOff = QString("QLabel#switchOff { color: %1; }");
+    QString _strOn = QString("QLabel#switchOn { color: %1; }");
+    QString _strDis = QString("QLabel#switchDis { color: %1; }");
     QString strOff, strOn, strDis;
 };
 

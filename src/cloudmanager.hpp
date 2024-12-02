@@ -78,7 +78,7 @@ class CloudManager : public Manager {
         void newConfig(AtomixConfig *cfg) override;
 
         void initManager() override final;
-        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes);
+        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes, bool generator = true);
         
         void cloudTest(int n_max);
         void cloudTestCSV();
@@ -159,6 +159,7 @@ class CloudManager : public Manager {
         uint numOrbitals = 0;
         int atomZ = 1;
         int max_n = 0;
+        int opt_max_radius = 0;
         float cm_culled = 0;
         const int MAX_SHELLS = 8;
 
@@ -174,7 +175,7 @@ class CloudManager : public Manager {
 
         int cloudResolution = 0;
         int cloudLayerDivisor = 0;
-        float cloudTolerance = 0.05f;
+        double cloudTolerance = 0.05;
 
         uint printCounter = 0;
 };

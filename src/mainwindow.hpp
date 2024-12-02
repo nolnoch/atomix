@@ -38,6 +38,7 @@
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QFormLayout>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QTreeWidget>
@@ -49,6 +50,9 @@
 #include <QIcon>
 #include <QSignalBlocker>
 #include <QThread>
+#include <QFontDatabase>
+#include <QFontMetrics>
+
 #include "slideswitch.hpp"
 #include "configparser.hpp"
 
@@ -62,24 +66,35 @@ const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;
 
 struct AtomixStyle {
-    void setConstraintsRatio(double min, double max) {
-        scaleMin = min;
-        scaleMax = max;
-    }
-
-    void setConstraintsPixel(int min, int max) {
-        dockMin = min;
-        dockMax = max;
-    }
-    
     void setWindowSize(int width, int height) {
         windowWidth = width;
         windowHeight = height;
     }
 
-    void setDockWidth(int width, int tabCount) {
+    void setDockSize(int width, int height, int tabCount) {
         dockWidth = width;
-        tabWidth = dockWidth / tabCount;
+        dockHeight = height;
+        tabLabelWidth = dockWidth / tabCount;
+
+        layDockSpace = int(double(dockHeight * 0.005));
+        morbMargin = layDockSpace << 1;
+
+        halfDock = dockWidth >> 1;
+        quarterDock = halfDock >> 1;
+    }
+
+    void setFont(QString font) {
+        QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
+
+        int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + font + "-Regular.ttf");
+        QStringList fontList = QFontDatabase::applicationFontFamilies(id);
+        if (fontList.contains(font)) {
+            fontInc = QFont(font);
+            strFontInc = font;
+        } else {
+            fontInc = QFont(strDefault);
+            strFontInc = strDefault;
+        }
     }
     
     void scaleFonts() {
@@ -91,6 +106,11 @@ struct AtomixStyle {
         tableFontSize = baseFontSize + 1;
         listFontSize = baseFontSize + 1;
         morbFontSize = descFontSize;
+
+        fontInc.setPixelSize(treeFontSize);
+        QFontMetrics fm(fontInc);
+        fontWidth = fm.horizontalAdvance("W");
+        fontHeight = fm.height();
     }
 
     void scaleWidgets() {
@@ -98,7 +118,6 @@ struct AtomixStyle {
         tabLabelHeight = windowHeight / 9;
         sliderTicks = 20;
         sliderInterval = sliderTicks >> 2;
-        groupMaxWidth = dockWidth >> 1;
         borderWidth = (isMacOS) ? 1 : 3;
         defaultMargin = 0;
         defaultPadding = 0;
@@ -117,13 +136,9 @@ struct AtomixStyle {
             "QTabBar::tab::selected { font-size: %5px; } "
             "QLabel { font-size: %1px; } "
             "QLabel#tabDesc { font-size: %2px; } "
-            "QTreeWidget { font-family: %9; font-size: %6px; } "
+            "QTreeWidget { font-family: %8; font-size: %6px; } "
             "QTableWidget { font-family: %8; font-size: %7px; } "
-            "QListWidget { font-family: %8; font-size: %7px; } "
-            // "QTreeWidget::item { border: 0px; padding-top: 10px; } " <== This works but ruins the formatting
-            // "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
-            // "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
-            "QPushButton#morb { font-size: %10px; margin-right: %11px; margin-left: %11px; } "
+            "QPushButton#morb { font-size: %9px; } "
         });
 
         genStyleString();
@@ -133,35 +148,46 @@ struct AtomixStyle {
         strStyle = styleStringList.join(" ")
             .arg(QString::number(baseFontSize))             // 1
             .arg(QString::number(descFontSize))             // 2
-            .arg(QString::number(tabWidth))             // 3
+            .arg(QString::number(tabLabelWidth))            // 3
             .arg(QString::number(tabUnselectedFontSize))    // 4
             .arg(QString::number(tabSelectedFontSize))      // 5
             .arg(QString::number(treeFontSize))             // 6
             .arg(QString::number(tableFontSize))            // 7
-            .arg(QString::number(listFontSize))             // 8
-            .arg(strFontInc)                            // 9
-            .arg(QString::number(morbFontSize))             // 10
-            .arg(QString::number(morbMargin));          // 11
-            // .arg(QString::number(defaultMargin))        // 12
-            // .arg(QString::number(defaultPadding))       // 13
-            // .arg(QString::number(defaultSpacing))       // 14
-            // .arg(QString::number(listPadding));         // 15
+            .arg(strFontInc)                                // 8
+            .arg(QString::number(morbFontSize));            // 9
     }
 
     QString& getStyleSheet() {
         return strStyle;
     }
 
+    void printStyleSheet() {
+        std::cout << "\nStyleSheet:\n" << strStyle.toStdString() << "\n" << std::endl;
+    }
+
     uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
-    uint dockWidth, tabWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, groupMaxWidth, treeCheckSize;
+    uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
     uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
 
-    uint dockMin, dockMax, windowWidth, windowHeight;
-    double scaleMin, scaleMax, scale;
+    uint windowWidth, windowHeight, dockWidth, dockHeight, halfDock, quarterDock;
 
     QStringList styleStringList;
     QString strStyle, strFontInc;
     QFont fontInc;
+    int fontWidth, fontHeight;
+};
+
+class SortableOrbital : public QTableWidgetItem {
+public:
+    SortableOrbital(int type = QTableWidgetItem::Type) : QTableWidgetItem(type) {}
+    SortableOrbital(QString &text, int type = QTableWidgetItem::Type) : QTableWidgetItem(text, type) {}
+    ~SortableOrbital() override = default;
+
+    bool operator<(const QTableWidgetItem &other) const override {
+        int textVal = this->text().simplified().replace(" ", "").toInt();
+        int otherTextVal = other.text().simplified().replace(" ", "").toInt();
+        return (textVal < otherTextVal);
+    }
 };
 
 
@@ -171,7 +197,7 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
     void init(QRect &windowSize);
-    void postInit(int titlebarHeight);
+    void postInit();
 
 signals:
     void changeRenderedOrbits(uint selectedOrbits);
@@ -210,9 +236,12 @@ private:
     void handleWeightChange(int row, int col);
     void handleSlideCullingX(int val);
     void handleSlideCullingY(int val);
+    void handleSlideCullingR(int val);
     void handleSlideReleased();
     void handleSlideBackground(int val);
 
+    int findHarmapItem(int n, int l, int m);
+    int getHarmapSize();
     void printHarmap();
     void printList();
     
@@ -263,9 +292,7 @@ private:
     QButtonGroup *buttGroupColors = nullptr;
 
     QPushButton *buttMorbWaves = nullptr;
-    QPushButton *buttLockRecipes = nullptr;
-    QPushButton *buttClearRecipes = nullptr;
-    QPushButton *buttResetRecipes = nullptr;
+    QPushButton *buttClearHarmonics = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
 
     QGroupBox *groupOptions = nullptr;
@@ -274,12 +301,11 @@ private:
     QGroupBox *groupRecipeBuilder = nullptr;
     QGroupBox *groupRecipeReporter = nullptr;
     QGroupBox *groupGenVertices = nullptr;
-    QGroupBox *groupRecipeLocked = nullptr;
     QGroupBox *groupHSlideCulling = nullptr;
     QGroupBox *groupVSlideCulling = nullptr;
+    QGroupBox *groupRSlideCulling = nullptr;
     QGroupBox *groupSlideBackground = nullptr;
     QTreeWidget *treeOrbitalSelect = nullptr;
-    QListWidget *listOrbitalLocked = nullptr;
     QTableWidget *tableOrbitalReport = nullptr;
     QLineEdit *entryCloudLayers = nullptr;
     QLineEdit *entryCloudRes = nullptr;
@@ -287,6 +313,7 @@ private:
     QSlider *slideBackground = nullptr;
     QSlider *slideCullingX = nullptr;
     QSlider *slideCullingY = nullptr;
+    QSlider *slideCullingR = nullptr;
 
     QLabel *labelDetails = nullptr;
     QProgressBar *pbLoading = nullptr;
@@ -309,6 +336,8 @@ private:
     
     float lastSliderSentX = 0.0f;
     float lastSliderSentY = 0.0f;
+    float lastSliderSentRIn = 0.0f;
+    float lastSliderSentROut = 0.0f;
 
     int mw_width = 0;
     int mw_height = 0;
@@ -325,9 +354,6 @@ private:
 
     AtomixInfo dInfo;
     AtomixStyle aStyle;
-
-    QLabel *labelDebug = nullptr;
-    QGridLayout *layoutDebug = nullptr;
 };
 
 #endif

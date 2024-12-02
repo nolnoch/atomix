@@ -486,7 +486,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         }
         render->vboOffsets.resize(model->vbos.size(), 0);
         
-        render->iboOffset = off.offset;
+        render->indexOffset = off.offset;
         render->indexCount = indexCount[i];
         
         if (info.pushConstant.empty()) {
@@ -1310,16 +1310,13 @@ void ProgramVK::createDescriptorSetLayout(VKuint binding) {
     }
 }
 
-void ProgramVK::updateBuffer(std::string bufferName, VKuint64 bufferCount, VKuint64 bufferSize, const void *bufferData) {
+void ProgramVK::updateBuffer(std::string bufferName, VKuint64 bufferOffset, VKuint64 bufferCount, VKuint64 bufferSize, const void *bufferData) {
     VKuint idx = this->p_mapBuffers[bufferName];
     BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
     ModelInfo *model = this->p_models[this->p_mapBufferToModel[bufferName]];
     const BufferType type = bufferInfo->type;
-    VKuint64 count = bufferCount;
-    VKuint64 size = bufferSize;
-    const void *data = bufferData;
 
-    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data);
+    this->_updateBuffer(idx, bufferInfo, model, type, bufferOffset, bufferCount, bufferSize, bufferData);
 }
 
 void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
@@ -1327,14 +1324,15 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
     BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
     ModelInfo *model = this->p_models[this->p_mapBufferToModel[info.bufferName]];
     const BufferType type = info.type;
+    VKuint64 offset = info.offset;
     VKuint64 count = info.count;
     VKuint64 size = info.size;
     const void *data = info.data;
 
-    this->_updateBuffer(idx, bufferInfo, model, type, count, size, data);
+    this->_updateBuffer(idx, bufferInfo, model, type, offset, count, size, data);
 }
 
-void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 count, const VKuint64 size, const void *data) {
+void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 offset, const VKuint64 count, const VKuint64 size, const void *data) {
     bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
     bool isIBO = (type == BufferType::INDEX);
     
@@ -1349,6 +1347,7 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
         if (isIBO) {
             for (auto &prog : model->programs) {
                 for (auto &renderIdx : prog.offsets) {
+                    model->renders[renderIdx]->indexOffset = offset;
                     model->renders[renderIdx]->indexCount = count;
                 }
             }
@@ -1359,19 +1358,12 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
 
     } else {
         if (bufferInfo->size >= size) {
-            // Model was already initialized, and buffer is large enough to update in place
-            bufferInfo->count = count;
-            bufferInfo->size = size;
-            bufferInfo->data = data;
-            
-            this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data, false);
-
-            if (isIBO) {
-                for (auto &prog : model->activePrograms) {
-                    for (auto &renderIdx : model->programs[prog].offsets) {
-                        model->renders[renderIdx]->indexCount = count;
-                    }
-                }
+            // Model was already initialized, and buffer is large enough to update in place            
+            if (data != 0) {
+                bufferInfo->count = count;
+                bufferInfo->size = size;
+                bufferInfo->data = data;
+                this->stageAndCopyBuffer(this->p_buffers[idx], this->p_buffersMemory[idx], type, size, data, false);
             }
             
         } else {
@@ -1409,14 +1401,18 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
                 std::replace(model->vbos.begin(), model->vbos.end(), idx, newIdx);
             } else if (isIBO) {
                 model->ibo = newIdx;
-                for (auto &prog : model->activePrograms) {
-                    for (auto &renderIdx : model->programs[prog].offsets) {
-                        model->renders[renderIdx]->indexCount = count;
-                    }
-                }
             }
 
             this->p_mapZombieIndices[frame].push_back(idx);
+        }
+
+        if (isIBO) {
+            for (auto &prog : model->activePrograms) {
+                for (auto &renderIdx : model->programs[prog].offsets) {
+                    model->renders[renderIdx]->indexOffset = offset;
+                    model->renders[renderIdx]->indexCount = count;
+                }
+            }
         }
     }
 }
@@ -1511,7 +1507,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
                 if (render->pushConst >= 0) {
                     this->p_vdf->vkCmdPushConstants(cmdBuff, this->p_pipeLayouts[model->pipeLayouts[render->pipeLayoutIndex]], VK_SHADER_STAGE_VERTEX_BIT, 0, this->p_pushConsts[render->pushConst].first, this->p_pushConsts[render->pushConst].second);
                 }
-                this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->iboOffset, 0, 0);
+                this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->indexOffset, 0, 0);
             }
         }
         
@@ -1655,7 +1651,7 @@ void ProgramVK::printModel(ModelInfo *model) {
     } else {
         for (uint i = 0; i < model->renders.size(); i++) {
             std::cout << "    Render " << i << ": " << "\n";
-            std::cout << "        IBO Offset : " << model->renders[i]->iboOffset << "\n";
+            std::cout << "        IBO Offset : " << model->renders[i]->indexOffset << "\n";
             std::cout << "        Index Count: " << model->renders[i]->indexCount << "\n";
         }
     }

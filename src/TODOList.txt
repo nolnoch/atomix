@@ -34,7 +34,6 @@ o Implement MainWindow resizeEvent()
 [GENERAL END]
 
 [IMMEDIATE START]
-- Move Clear button to left 1/4 of Render button
 - SlideSwitch rounded edges are off on MacOS
 - layout spacing is off on MacOS
 [IMMEDIATE END]

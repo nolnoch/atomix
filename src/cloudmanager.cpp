@@ -1082,12 +1082,14 @@ uint CloudManager::getColourSize() {
 }
 
 uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
-    return getMaxRadius(tolerance, n_max) * divisor;
+    uint maxRadius = getMaxRadius(tolerance, n_max);
+    return maxRadius * divisor;
 }
 
 uint CloudManager::getMaxRadius(double tolerance, int n_max) {
-    int divSciExp = std::abs(floor(log10(tolerance)));
-    return cm_maxRadius[divSciExp - 1][n_max - 1];
+    uint divSciExp = std::abs(floor(log10(tolerance)));
+    uint maxRadius = cm_maxRadius[divSciExp - 1][n_max - 1];
+    return maxRadius;
 }
 
 /*

@@ -23,10 +23,10 @@ o Programmatically ensure that certain config combos are maintained (i.e., super
 o Fix Harmonics Phi culling
 o Implement CPU vs GPU cloud rendering -- Note: FULL cpu rendering is not really feasible considering the array of possible superposed states
 o Add radial culling
+o Implement MainWindow resizeEvent()
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Refactor config files to use denser format, saved to file from application
 - Reimplement custom vertex shading through QFileDialog and JIT programVK addition
-- Implement MainWindow resizeEvent()
 - Move ProgressBar to StatusBar
 - Energy tab
 - Gravity tab

@@ -132,9 +132,6 @@ struct AtomixStyle {
             "QLabel#tabDesc { font-size: %2px; } "
             "QTreeWidget { font-family: %8; font-size: %6px; } "
             "QTableWidget { font-family: %8; font-size: %7px; } "
-            // "QTreeWidget::item { border: 0px; padding-top: 10px; } " <== This works but ruins the formatting
-            // "QTableWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
-            // "QListWidget::item { border: 0px; margin: %12px; padding: %13px; spacing: %14px; padding-top: %9px; } "
             "QPushButton#morb { font-size: %9px; margin-right: %10px; margin-left: %10px; } "
         });
 
@@ -159,6 +156,10 @@ struct AtomixStyle {
         return strStyle;
     }
 
+    void printStyleSheet() {
+        std::cout << "\nStyleSheet:\n" << strStyle.toStdString() << "\n" << std::endl;
+    }
+
     uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
     uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
     uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
@@ -171,7 +172,6 @@ struct AtomixStyle {
 };
 
 class SortableOrbital : public QTableWidgetItem {
-
 public:
     SortableOrbital(int type = QTableWidgetItem::Type) : QTableWidgetItem(type) {}
     SortableOrbital(QString &text, int type = QTableWidgetItem::Type) : QTableWidgetItem(text, type) {}

@@ -309,7 +309,8 @@ void SlideSwitch::checkStateSet() {
 
 void SlideSwitch::_adjust() {
     // Adjust font size
-    slsw_font.setPixelSize(this->font().pixelSize());
+    int pxSize = (this->font().pixelSize() > 0) ? this->font().pixelSize() : 17;
+    slsw_font.setPixelSize(pxSize);
     slsw_LabelOff->setFont(slsw_font);
     slsw_LabelOn->setFont(slsw_font);
 

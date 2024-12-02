@@ -382,13 +382,12 @@ void MainWindow::setupDockWaves() {
     layDockWaves->setStretchFactor(buttMorbWaves, 4);
 
     // Set Main Tab Layout
-    layDockWaves->setContentsMargins(0, 0, 0, 0);    
     wTabWaves->setLayout(layDockWaves);
 }
 
 void MainWindow::setupDockHarmonics() {
     QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    // QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     // QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     wTabHarmonics = new QWidget(this);
     
@@ -398,6 +397,10 @@ void MainWindow::setupDockHarmonics() {
     buttMorbHarmonics->setEnabled(false);
     buttMorbHarmonics->setSizePolicy(qPolicyExpandA);
     buttMorbHarmonics->setAutoDefault(true);
+    buttClearHarmonics = new QPushButton("Clear", this);
+    buttClearHarmonics->setSizePolicy(qPolicyExpandA);
+    buttClearHarmonics->setEnabled(false);
+    buttClearHarmonics->setObjectName("buttClearHarmonics");
 
     // Groups
     groupGenVertices = new QGroupBox(this);
@@ -497,22 +500,6 @@ void MainWindow::setupDockHarmonics() {
     layHOrbital->addWidget(groupRecipeReporter, 1);
     layHOrbital->setSpacing(aStyle.layDockSpace);
 
-    // Orbital Selection Buttons
-    buttClearRecipes = new QPushButton("Clear Selection", this);
-    buttClearRecipes->setSizePolicy(qPolicyExpandH);
-    buttClearRecipes->setEnabled(false);
-    buttClearRecipes->setObjectName("buttClearRecipes");
-    buttResetRecipes = new QPushButton("Clear Locked", this);
-    buttResetRecipes->setObjectName("buttResetRecipes");
-    buttResetRecipes->setSizePolicy(qPolicyExpandH);
-    buttResetRecipes->setEnabled(false);
-
-    // Add Orbital Selection Buttons to Layout
-    QHBoxLayout *layHRecipeButts = new QHBoxLayout;
-    layHRecipeButts->addWidget(buttClearRecipes);
-    layHRecipeButts->addWidget(buttResetRecipes);
-    layHRecipeButts->setSpacing(aStyle.layDockSpace);
-
     // Harmonics Configuration Input Widgets
     entryCloudRes = new QLineEdit(QString::number(cloudConfig.cloudResolution));
     entryCloudRes->setObjectName("entryCloudRes");
@@ -541,6 +528,14 @@ void MainWindow::setupDockHarmonics() {
     groupGenVertices->setLayout(layGenVertices);
     groupGenVertices->setStyleSheet("QGroupBox { color: #FF7777; }");
     // groupGenVertices->setContentsMargins(0, 0, 0, 0);
+
+    // Add Orbital Selection Buttons to Layout
+    QHBoxLayout *layHarmButts = new QHBoxLayout;
+    layHarmButts->addWidget(buttMorbHarmonics);
+    layHarmButts->addWidget(buttClearHarmonics);
+    // layHarmButts->setSpacing(aStyle.layDockSpace);
+    layHarmButts->setStretch(0, 3);
+    layHarmButts->setStretch(1, 1);
 
     // Culling Sliders
     slideCullingX = new QSlider(Qt::Horizontal, this);
@@ -623,17 +618,15 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(layHOrbital);
-    // layDockHarmonics->addLayout(layHRecipeButts);
     layDockHarmonics->addWidget(groupGenVertices);
-    layDockHarmonics->addWidget(buttMorbHarmonics);
+    layDockHarmonics->addLayout(layHarmButts);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(laySlideCulling);
     layDockHarmonics->addLayout(laySlideRadialBG);
 
     layDockHarmonics->setStretchFactor(layHOrbital, 7);
     layDockHarmonics->setStretchFactor(groupGenVertices, 1);
-    layDockHarmonics->setStretchFactor(buttMorbHarmonics, 1);
-    layDockHarmonics->setContentsMargins(0, 0, 0, 0);
+    layDockHarmonics->setStretchFactor(layHarmButts, 1);
 
     // Set Main Tab Layout
     wTabHarmonics->setLayout(layDockHarmonics);
@@ -840,6 +833,13 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             mapCloudRecipesLocked[n].push_back(lmw);
             this->numRecipes++;
 
+            // Because adding, enable buttons
+            if (!intTableRows) {
+                buttClearHarmonics->setEnabled(true);
+                buttMorbHarmonics->setEnabled(true);
+                groupRecipeReporter->setStyleSheet("");
+            }
+
         } else {
             // Remove orbital from table
             int intItemRow = tableOrbitalReport->findItems(strItem, Qt::MatchExactly).first()->row();
@@ -851,32 +851,28 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
                 this->numRecipes--;
             }
 
-            if (tableOrbitalReport->rowCount() == 1 && tableOrbitalReport->item(0, 0)->text() == "0") {
-                QMessageBox dialogConfim(this);
-                dialogConfim.setText("The only weighted orbital cannot be zero. Removing remaining orbital.");
-                dialogConfim.setFont(fontDebug);
-                dialogConfim.setStandardButtons(QMessageBox::Ok);
-                dialogConfim.setDefaultButton(QMessageBox::Ok);
-                dialogConfim.exec();
+            // Because removing, handle zero-weighted orbitals and empty table cases
+            if (int c = tableOrbitalReport->rowCount(); c <= 1) {
+                if (c == 1 && tableOrbitalReport->item(0, 0)->text() == "0") {
+                    QMessageBox dialogConfim(this);
+                    dialogConfim.setText("The only weighted orbital cannot be zero. Removing remaining orbital.");
+                    dialogConfim.setFont(fontDebug);
+                    dialogConfim.setStandardButtons(QMessageBox::Ok);
+                    dialogConfim.setDefaultButton(QMessageBox::Ok);
+                    dialogConfim.exec();
 
-                QString strOrbital = tableOrbitalReport->item(0, 1)->text();
-                treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
+                    QString strOrbital = tableOrbitalReport->item(0, 1)->text();
+                    treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
+                } else if (c == 0) {
+                    buttMorbHarmonics->setEnabled(false);
+                    buttClearHarmonics->setEnabled(false);
+                    groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
+                }
             }
         }
     }
 
     /* ALL Nodes make it here */
-    // Update button and group style to match current state
-    if (tableOrbitalReport->rowCount()) {
-        buttClearRecipes->setEnabled(true);
-        // buttResetRecipes->setEnabled(true);
-        buttMorbHarmonics->setEnabled(true);
-        groupRecipeReporter->setStyleSheet("");
-        // tableOrbitalReport->sortByColumn(1, Qt::SortOrder::DescendingOrder);
-    } else {
-        buttMorbHarmonics->setEnabled(false);
-        groupRecipeReporter->setStyleSheet("QGroupBox { color: #FF7777; }");
-    }
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent
     while (ptrParent) {
@@ -934,7 +930,7 @@ void MainWindow::handleButtLockRecipes() {
             }
         }
     }
-    buttResetRecipes->setEnabled(true);
+    // buttResetRecipes->setEnabled(true);
     buttMorbHarmonics->setEnabled(true);
 
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #77FF77; }");
@@ -993,8 +989,6 @@ void MainWindow::handleButtMorbHarmonics() {
     cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
     cloudConfig.cloudResolution = entryCloudRes->text().toInt();
     cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
-
-    
 
     uint vertex, data, index;
     uint64_t total;
@@ -1426,8 +1420,7 @@ void MainWindow::_connectSignals() {
     connect(entryCloudRes, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
     connect(entryCloudMinRDP, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
-    connect(buttResetRecipes, &QPushButton::clicked, this, &MainWindow::handleButtResetRecipes);
-    connect(buttClearRecipes, &QPushButton::clicked, this, &MainWindow::handleButtClearRecipes);
+    connect(buttClearHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtClearRecipes);
     connect(entryCloudLayers, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
     connect(entryCloudRes, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
     connect(entryCloudMinRDP, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);
@@ -1464,7 +1457,7 @@ void MainWindow::_dockResize() {
 
     layDockWaves->setSpacing(aStyle.layDockSpace);
     layDockHarmonics->setSpacing(aStyle.layDockSpace);
-    treeOrbitalSelect->setIndentation(int(treeOrbitalSelect->width() * 0.10));
+    treeOrbitalSelect->setIndentation(aStyle.fontWidth << 1);
 }
 
 void MainWindow::_resize() {

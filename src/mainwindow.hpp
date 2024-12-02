@@ -51,6 +51,7 @@
 #include <QSignalBlocker>
 #include <QThread>
 #include <QFontDatabase>
+#include <QFontMetrics>
 
 #include "slideswitch.hpp"
 #include "configparser.hpp"
@@ -105,6 +106,11 @@ struct AtomixStyle {
         tableFontSize = baseFontSize + 1;
         listFontSize = baseFontSize + 1;
         morbFontSize = descFontSize;
+
+        fontInc.setPixelSize(treeFontSize);
+        QFontMetrics fm(fontInc);
+        fontWidth = fm.horizontalAdvance("W");
+        fontHeight = fm.height();
     }
 
     void scaleWidgets() {
@@ -132,7 +138,7 @@ struct AtomixStyle {
             "QLabel#tabDesc { font-size: %2px; } "
             "QTreeWidget { font-family: %8; font-size: %6px; } "
             "QTableWidget { font-family: %8; font-size: %7px; } "
-            "QPushButton#morb { font-size: %9px; margin-right: %10px; margin-left: %10px; } "
+            "QPushButton#morb { font-size: %9px; } "
         });
 
         genStyleString();
@@ -148,8 +154,7 @@ struct AtomixStyle {
             .arg(QString::number(treeFontSize))             // 6
             .arg(QString::number(tableFontSize))            // 7
             .arg(strFontInc)                                // 8
-            .arg(QString::number(morbFontSize))             // 9
-            .arg(QString::number(morbMargin));              // 10
+            .arg(QString::number(morbFontSize));            // 9
     }
 
     QString& getStyleSheet() {
@@ -169,6 +174,7 @@ struct AtomixStyle {
     QStringList styleStringList;
     QString strStyle, strFontInc;
     QFont fontInc;
+    int fontWidth, fontHeight;
 };
 
 class SortableOrbital : public QTableWidgetItem {
@@ -286,8 +292,7 @@ private:
     QButtonGroup *buttGroupColors = nullptr;
 
     QPushButton *buttMorbWaves = nullptr;
-    QPushButton *buttClearRecipes = nullptr;
-    QPushButton *buttResetRecipes = nullptr;
+    QPushButton *buttClearHarmonics = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
 
     QGroupBox *groupOptions = nullptr;

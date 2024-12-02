@@ -165,7 +165,7 @@ class CloudManager : public Manager {
 
         int cloudResolution = 0;
         int cloudLayerDivisor = 0;
-        float cloudTolerance = 0.05f;
+        double cloudTolerance = 0.05;
 
         uint printCounter = 0;
 };

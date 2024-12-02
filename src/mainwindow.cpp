@@ -992,7 +992,9 @@ void MainWindow::handleButtMorbWaves() {
 void MainWindow::handleButtMorbHarmonics() {
     cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
     cloudConfig.cloudResolution = entryCloudRes->text().toInt();
-    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toFloat();
+    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
+
+    
 
     uint vertex, data, index;
     uint64_t total;

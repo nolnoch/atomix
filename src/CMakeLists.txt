@@ -9,7 +9,7 @@ set(USING_QVULKAN 1)
 set(MACOS 0)
 
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
-# set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 if(DEFINED USING_QVULKAN)
     find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Concurrent)

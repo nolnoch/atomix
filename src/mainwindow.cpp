@@ -834,11 +834,9 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             this->numRecipes++;
 
             // Because adding, enable buttons
-            if (!intTableRows) {
-                buttClearHarmonics->setEnabled(true);
-                buttMorbHarmonics->setEnabled(true);
-                groupRecipeReporter->setStyleSheet("");
-            }
+            buttClearHarmonics->setEnabled(true);
+            buttMorbHarmonics->setEnabled(true);
+            groupRecipeReporter->setStyleSheet("");
 
         } else {
             // Remove orbital from table

@@ -593,8 +593,8 @@ void MainWindow::setupDockHarmonics() {
     groupVSlideCulling->setContentsMargins(0, 0, 0, 0);
     groupVSlideCulling->setEnabled(false);
     QHBoxLayout *laySlideCulling = new QHBoxLayout;
-    laySlideCulling->addWidget(groupHSlideCulling);
-    laySlideCulling->addWidget(groupVSlideCulling);
+    laySlideCulling->addWidget(groupHSlideCulling, 1);
+    laySlideCulling->addWidget(groupVSlideCulling, 1);
     laySlideCulling->setContentsMargins(0, 0, 0, 0);
     laySlideCulling->setSpacing(0);
     
@@ -608,8 +608,8 @@ void MainWindow::setupDockHarmonics() {
     groupSlideBackground->setLayout(laySlideBackground);
     groupSlideBackground->setContentsMargins(0, 0, 0, 0);
     QHBoxLayout *laySlideRadialBG = new QHBoxLayout;
-    laySlideRadialBG->addWidget(groupRSlideCulling);
-    laySlideRadialBG->addWidget(groupSlideBackground);
+    laySlideRadialBG->addWidget(groupRSlideCulling, 1);
+    laySlideRadialBG->addWidget(groupSlideBackground, 1);
     laySlideRadialBG->setContentsMargins(0, 0, 0, 0);
     laySlideRadialBG->setSpacing(0);
 
@@ -1479,8 +1479,6 @@ void MainWindow::_resize() {
 
         i++;
     }
-
-    
 
     assert(startingTabIdx == currentTabIdx);
 }

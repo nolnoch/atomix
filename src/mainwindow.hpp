@@ -84,7 +84,7 @@ struct AtomixStyle {
     }
 
     void setFonts(QFont baseFont, QString monoFont) {
-        QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
+        QString strMonoDefault = (isMacOS) ? "Monaco" : "Monospace";
 
         int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + monoFont + "-Regular.ttf");
         QStringList fontList = QFontDatabase::applicationFontFamilies(id);
@@ -92,8 +92,8 @@ struct AtomixStyle {
             fontMono = QFont(monoFont);
             strFontInc = monoFont;
         } else {
-            fontMono = QFont(strDefault);
-            strFontInc = strDefault;
+            fontMono = QFont(strMonoDefault);
+            strFontInc = strMonoDefault;
         }
 
         fontAtomix = baseFont;

@@ -22,19 +22,24 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
+#include <QSysInfo>
 #include <QtWidgets/QApplication>
-#include <QSurfaceFormat>
-#include <QScreen>
 #include <QCommandLineParser>
-#include <QFont>
+#include <QSurfaceFormat>
 #include "mainwindow.hpp"
+
 
 AtomixFiles atomixFiles;
 bool isDebug;
+bool isMacOS;
 
 
 int main(int argc, char* argv[]) {
+    // Platform
+    QString arch = QSysInfo::currentCpuArchitecture();
+    QString os = QSysInfo::prettyProductName();
+    isMacOS = os.contains("macOS");
+
     // Application
     QApplication::setStyle("Fusion");
     QApplication app (argc, argv);
@@ -42,10 +47,6 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
-
-    if (isDebug) {
-        std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
-    }
 
     // Exe and CLI Parsing
     QCommandLineParser qParser;
@@ -58,12 +59,20 @@ int main(int argc, char* argv[]) {
     qParser.addOption(cliAtomixDir);
     qParser.process(app);
 
+    // CLI option results
     if (qParser.isSet(cliVerbose)) {
         std::cout << "Verbosity Level: 9001 !!!1one" << std::endl;
         isDebug = true;
     }
     QString strAtomixDir = qParser.value(cliAtomixDir);
 
+    // Debug Info
+    if (isDebug) {
+        std::cout << "OS: " << os.toStdString() << " (" << arch.toStdString() << ")" << std::endl;
+        std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
+    }
+
+    // Set atomix directory and icon
     QDir execDir = QDir(strAtomixDir);
     QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
     if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {

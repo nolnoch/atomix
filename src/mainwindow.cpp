@@ -730,8 +730,6 @@ void MainWindow::refreshOrbits() {
 }
 
 void MainWindow::setupDetails() {
-    fontDebug.setStyleHint(QFont::Monospace);
-    fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
     QString strDetails = QString("Position:      %1\n"\
                                  "View|Near:     %2\n"\
                                  "View|Far:      %3\n\n"\
@@ -741,7 +739,7 @@ void MainWindow::setupDetails() {
                                  "Buffer|Total:  %7\n"\
                                  ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
     labelDetails = new QLabel(graph);
-    labelDetails->setFont(fontDebug);
+    labelDetails->setFont(aStyle.fontMono);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     labelDetails->raise();

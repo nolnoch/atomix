@@ -44,6 +44,8 @@ extern int VK_MINOR_VERSION;
 extern int VK_SPIRV_VERSION;
 extern bool isDebug;
 extern bool isMacOS;
+extern bool isProfiling;
+
 
 struct AtomixFiles {
     std::string rootDir;

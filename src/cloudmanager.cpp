@@ -137,8 +137,10 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
         cm_times[3] = cullSliderThreaded();
     }
     
-    std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
-    this->printTimes();
+    if (isProfiling) {
+        std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
+        this->printTimes();
+    }
 
     cm_proc_coarse.unlock();
 }
@@ -150,8 +152,10 @@ void CloudManager::initManager() {
     if (cfg.cpu) expandPDVsToColours();
     cm_times[3] = cullSliderThreaded();
 
-    std::cout << "Init() -- Functions took:\n";
-    this->printTimes();
+    if (isProfiling) {
+        std::cout << "Init() -- Functions took:\n";
+        this->printTimes();
+    }
 
     mStatus.set(em::UPD_MATRICES);
 }

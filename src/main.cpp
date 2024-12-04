@@ -32,6 +32,7 @@
 AtomixFiles atomixFiles;
 bool isDebug;
 bool isMacOS;
+bool isProfiling;
 
 
 int main(int argc, char* argv[]) {
@@ -53,16 +54,22 @@ int main(int argc, char* argv[]) {
     qParser.setApplicationDescription(QCoreApplication::applicationName());
     QCommandLineOption cliVerbose("verbose", QCoreApplication::translate("main", "ALL debug and information messages"));
     QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QCoreApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: application directory)"), "directory", QCoreApplication::applicationDirPath());
+    QCommandLineOption cliProfiling({ "p", "profiling" }, QCoreApplication::translate("main", "enable profiling"));
     qParser.addHelpOption();
     qParser.addVersionOption();
     qParser.addOption(cliVerbose);
     qParser.addOption(cliAtomixDir);
+    qParser.addOption(cliProfiling);
     qParser.process(app);
 
     // CLI option results
     if (qParser.isSet(cliVerbose)) {
         std::cout << "Verbosity Level: 9001 !!!1one" << std::endl;
         isDebug = true;
+    }
+    if (qParser.isSet(cliProfiling)) {
+        std::cout << "Profiling Enabled" << std::endl;
+        isProfiling = true;
     }
     QString strAtomixDir = qParser.value(cliAtomixDir);
 

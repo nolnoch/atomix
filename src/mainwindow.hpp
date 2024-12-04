@@ -58,7 +58,7 @@
 
 #ifdef USING_QVULKAN
     #include "vkwindow.hpp"
-#elifdef USING_QOPENGL
+#elif defined(USING_QOPENGL)
     #include "glwidget.hpp"
 #endif
 
@@ -76,25 +76,27 @@ struct AtomixStyle {
         dockHeight = height;
         tabLabelWidth = dockWidth / tabCount;
 
-        layDockSpace = int(double(dockHeight * 0.005));
+        layDockSpace = int(double(dockHeight * 0.01));
         morbMargin = layDockSpace << 1;
 
         halfDock = dockWidth >> 1;
         quarterDock = halfDock >> 1;
     }
 
-    void setFont(QString font) {
+    void setFonts(QFont baseFont, QString monoFont) {
         QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
 
-        int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + font + "-Regular.ttf");
+        int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + monoFont + "-Regular.ttf");
         QStringList fontList = QFontDatabase::applicationFontFamilies(id);
-        if (fontList.contains(font)) {
-            fontInc = QFont(font);
-            strFontInc = font;
+        if (fontList.contains(monoFont)) {
+            fontMono = QFont(monoFont);
+            strFontInc = monoFont;
         } else {
-            fontInc = QFont(strDefault);
+            fontMono = QFont(strDefault);
             strFontInc = strDefault;
         }
+
+        fontAtomix = baseFont;
     }
     
     void scaleFonts() {
@@ -102,15 +104,20 @@ struct AtomixStyle {
         descFontSize = int(round(baseFontSize * 1.333));
         tabSelectedFontSize = int(round(baseFontSize * 1.15));
         tabUnselectedFontSize = int(round(baseFontSize * 0.90));
-        treeFontSize = baseFontSize + 4;
+        treeFontSize = baseFontSize + 1;
         tableFontSize = baseFontSize + 1;
         listFontSize = baseFontSize + 1;
         morbFontSize = descFontSize;
 
-        fontInc.setPixelSize(treeFontSize);
-        QFontMetrics fm(fontInc);
-        fontWidth = fm.horizontalAdvance("W");
-        fontHeight = fm.height();
+        fontAtomix.setPixelSize(baseFontSize);
+        QFontMetrics fmA(fontAtomix);
+        fontAtomixWidth = fmA.horizontalAdvance("W");
+        fontAtomixHeight = fmA.height();
+
+        fontMono.setPixelSize(treeFontSize);
+        QFontMetrics fmM(fontMono);
+        fontMonoWidth = fmM.horizontalAdvance("W");
+        fontMonoHeight = fmM.height();
     }
 
     void scaleWidgets() {
@@ -122,7 +129,6 @@ struct AtomixStyle {
         defaultMargin = 0;
         defaultPadding = 0;
         defaultSpacing = 0;
-        listPadding = layDockSpace;
     }
 
     void updateStyleSheet() {
@@ -130,31 +136,53 @@ struct AtomixStyle {
         scaleWidgets();
 
         // Note: WidgetItems must have border defined even as 0px for margin/padding to work
-        styleStringList = QStringList({
-            "QWidget { font-size: %1px; } "
-            "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; } "
-            "QTabBar::tab::selected { font-size: %5px; } "
-            "QLabel { font-size: %1px; } "
-            "QLabel#tabDesc { font-size: %2px; } "
-            "QTreeWidget { font-family: %8; font-size: %6px; } "
-            "QTableWidget { font-family: %8; font-size: %7px; } "
-            "QPushButton#morb { font-size: %9px; } "
-        });
+        if (qtStyle == "macos") {
+            styleStringList = QStringList({
+                "QWidget { font-size: %1px; } "
+                "QDockWidget::title { border: 1px hidden gray; } "
+                "QTabWidget { border: none; } "
+                "QLabel#tabDesc { font-size: %2px; } "
+                // "QGroupBox::title { subcontrol-position: top right; padding:2 4px; } "
+                "QTreeWidget { font-family: %5; font-size: %3px; } "
+                "QTableWidget { font-family: %5; font-size: %4px; } "
+                "QPushButton#morb { font-size: %6px; } "
+            });
+        } else if (qtStyle == "fusion") {
+            styleStringList = QStringList({
+                "QWidget { font-size: %1px; } "
+                "QTabBar::tab { height: 40px; width: %3px; font-size: %4px; } "
+                "QTabBar::tab::selected { font-size: %5px; } "
+                "QLabel#tabDesc { font-size: %2px; } "
+                "QTreeWidget { font-family: %8; font-size: %6px; } "
+                "QTableWidget { font-family: %8; font-size: %7px; } "
+                "QPushButton#morb { font-size: %9px; } "
+            });
+        }
 
         genStyleString();
     }
 
     void genStyleString() {
-        strStyle = styleStringList.join(" ")
-            .arg(QString::number(baseFontSize))             // 1
-            .arg(QString::number(descFontSize))             // 2
-            .arg(QString::number(tabLabelWidth))            // 3
-            .arg(QString::number(tabUnselectedFontSize))    // 4
-            .arg(QString::number(tabSelectedFontSize))      // 5
-            .arg(QString::number(treeFontSize))             // 6
-            .arg(QString::number(tableFontSize))            // 7
-            .arg(strFontInc)                                // 8
-            .arg(QString::number(morbFontSize));            // 9
+        if (qtStyle == "macos") {
+            strStyle = styleStringList.join(" ")
+                .arg(QString::number(baseFontSize))             // 1
+                .arg(QString::number(descFontSize))             // 2
+                .arg(QString::number(treeFontSize))             // 3
+                .arg(QString::number(tableFontSize))            // 4
+                .arg(strFontInc)                                // 5
+                .arg(QString::number(morbFontSize));            // 6
+        } else if (qtStyle == "fusion") {
+            strStyle = styleStringList.join(" ")
+                .arg(QString::number(baseFontSize))             // 1
+                .arg(QString::number(descFontSize))             // 2
+                .arg(QString::number(tabLabelWidth))            // 3
+                .arg(QString::number(tabUnselectedFontSize))    // 4
+                .arg(QString::number(tabSelectedFontSize))      // 5
+                .arg(QString::number(treeFontSize))             // 6
+                .arg(QString::number(tableFontSize))            // 7
+                .arg(strFontInc)                                // 8
+                .arg(QString::number(morbFontSize));            // 9
+        }
     }
 
     QString& getStyleSheet() {
@@ -165,6 +193,8 @@ struct AtomixStyle {
         std::cout << "\nStyleSheet:\n" << strStyle.toStdString() << "\n" << std::endl;
     }
 
+    QString qtStyle;
+
     uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
     uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
     uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
@@ -173,8 +203,8 @@ struct AtomixStyle {
 
     QStringList styleStringList;
     QString strStyle, strFontInc;
-    QFont fontInc;
-    int fontWidth, fontHeight;
+    QFont fontMono, fontAtomix;
+    int fontMonoWidth, fontMonoHeight, fontAtomixWidth, fontAtomixHeight;
 };
 
 class SortableOrbital : public QTableWidgetItem {
@@ -322,7 +352,7 @@ private:
     VKWindow *vkGraph = nullptr;
     QVulkanInstance vkInst;
     QWidget *vkWinWidWrapper = nullptr;
-#elifdef USING_QOPENGL
+#elif defined(USING_QOPENGL)
     GWidget *glGraph = nullptr;
 #endif
     QWidget *graph = nullptr;

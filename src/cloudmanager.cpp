@@ -25,9 +25,9 @@
 #include "cloudmanager.hpp"
 #include <ranges>
 
-/*  std::execution (via TBB) and Qt both use the emit keyword, so undef for this file to avoid conflicts  */
+//  std::execution (via TBB) and Qt both use the emit keyword, so undef for this file to avoid conflicts 
 #undef emit
-#include <execution>
+#include <oneapi/dpl/execution>
 
 
 CloudManager::CloudManager() {

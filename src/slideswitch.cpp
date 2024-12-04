@@ -32,7 +32,10 @@
 SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent)
   : slsw_width(width), slsw_height(height), slsw_duration(100), slsw_enabled(true), slsw_value(false) {
     setParent(parent);
-    this->slsw_borderRadius = slsw_height >> 1;
+    slsw_extend = 4;
+    slsw_extend2 = slsw_extend << 1;
+    this->slsw_sub_height = slsw_height - slsw_extend2;
+    this->slsw_borderRadius = slsw_sub_height >> 1;
     /* setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground); */
     // this->resize(slsw_width, slsw_height);
@@ -55,21 +58,21 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     this->pal.light = this->palette().brush(QPalette::Light);
     
     // Set linear gradients (not currently used much)
-    int width2 = slsw_width >> 1;
-    linGrad_border = QLinearGradient(width2, 0, width2, slsw_height);
+    int midline = slsw_width >> 1;
+    linGrad_border = QLinearGradient(midline, 0, midline, slsw_height);
     linGrad_border.setColorAt(0, QColor(this->pal.alt.color().lighter(120)));
     linGrad_border.setColorAt(0.40, QColor(this->pal.alt.color()));
     linGrad_border.setColorAt(0.60, QColor(this->pal.alt.color()));
     linGrad_border.setColorAt(1, QColor(this->pal.alt.color().lighter(120)));
 
-    linGrad_enabledOff = QLinearGradient(width2, 0, width2, slsw_height);
+    linGrad_enabledOff = QLinearGradient(midline, 0, midline, slsw_height);
     linGrad_enabledOff.setColorAt(0, QColor(this->pal.base.color().lighter(140)));
     linGrad_enabledOff.setColorAt(0.35, QColor(this->pal.base.color().lighter(120)));
     linGrad_enabledOff.setColorAt(0.50, QColor(this->pal.base.color()));
     linGrad_enabledOff.setColorAt(0.65, QColor(this->pal.base.color().lighter(120)));
     linGrad_enabledOff.setColorAt(1, QColor(this->pal.base.color().lighter(140)));
 
-    linGrad_disabled = QLinearGradient(width2, 0, width2, slsw_height);
+    linGrad_disabled = QLinearGradient(midline, 0, midline, slsw_height);
     linGrad_disabled.setColorAt(0, QColor(Qt::lightGray));
     linGrad_disabled.setColorAt(0.40, QColor(Qt::darkGray));
     linGrad_disabled.setColorAt(0.60, QColor(Qt::darkGray));
@@ -107,8 +110,9 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
 
     // Last touches
     slsw_SwitchBackground->resize(slsw_height - 1, slsw_height - 1);
-    slsw_SwitchBackground->move(1, 1);
-    buttMove = int(double(slsw_height) * 0.06);
+    slsw_SwitchBackground->move(0, 1);
+    // buttMove = int(double(slsw_height) * 0.06);
+    buttMove = 0;
     slsw_Button->move(buttMove, 0);
 
     slsw_SwitchBackground->hide();
@@ -129,16 +133,18 @@ SlideSwitch::~SlideSwitch() {
 
 void SlideSwitch::paintEvent(QPaintEvent*) {
     QPainter* painter = new QPainter;
-    QPen penDark(this->pal.alt.color().darker(160), 0, Qt::SolidLine);
-    QPen penNo(Qt::NoPen);
-    int radius = this->height() >> 1;
-    QRect rect = QRect(1, 0, this->width() - 2, this->height());
+    QPen penDark(this->pal.base.color().darker(160), 1, Qt::SolidLine);
+    // QPen penDebug(Qt::green, 1, Qt::SolidLine);
+    QRect rect;
 
     painter->begin(this);
     painter->setRenderHint(QPainter::Antialiasing, true);
+
     painter->setPen(penDark);
     painter->setBrush(this->pal.base);
-    painter->drawRoundedRect(rect.translated(0.5, 0.5), radius, radius);
+    rect = QRect(2, slsw_extend, slsw_width - 4, slsw_sub_height);
+    painter->drawRoundedRect(rect, slsw_borderRadius, slsw_borderRadius);
+
     painter->end();
 }
 
@@ -177,13 +183,15 @@ bool SlideSwitch::value() const {
 QSize SlideSwitch::sizeHint() const {
     // Calculate ideal size based on text and font size
     QFontMetrics fm(slsw_LabelOff->font());
-    int minHeight = fm.height() + (slsw_margin << 1);
+    int fmHeight = fm.height();
+    int minHeight = fmHeight + (slsw_margin << 1);
 
     int offWidth = fm.horizontalAdvance(slsw_LabelOff->text());
     int onWidth = fm.horizontalAdvance(slsw_LabelOn->text());
-    int padding = minHeight * 2.5;
+    int padding = minHeight * 3;
     int minWidth = std::max(offWidth, onWidth) + padding;
     
+    minHeight += slsw_extend2;
 
     return QSize(minWidth, minHeight);
 }
@@ -191,13 +199,15 @@ QSize SlideSwitch::sizeHint() const {
 QSize SlideSwitch::minimumSizeHint() const {
     // Calculate minimum size based on text and font size
     QFontMetrics fm(slsw_LabelOff->font());
-    int minHeight = fm.height() + (slsw_margin << 1);
+    int fmHeight = fm.height();
+    int minHeight = fmHeight + (slsw_margin << 1);
 
     int offWidth = fm.horizontalAdvance(slsw_LabelOff->text());
     int onWidth = fm.horizontalAdvance(slsw_LabelOn->text());
-    int padding = minHeight * 2.5;
+    int padding = minHeight * 3;
     int minWidth = std::max(offWidth, onWidth) + padding;
-    
+
+    minHeight += slsw_extend2;
 
     return QSize(minWidth, minHeight);
 }
@@ -216,16 +226,16 @@ void SlideSwitch::_toggle() {
     // Movement values
     int hback = slsw_borderRadius >> 1;
     QSize initial_size(hback, hback);
-    QSize final_size(this->width() - hback, hback);
+    QSize final_size(slsw_width - hback, hback);
 
     int xi = buttMove;
     int y  = 0;
     // int xf = this->width() - (slsw_height);
-    int xf = this->width() - this->height();
+    int xf = slsw_width - slsw_height;
 
     if (slsw_value) {
         final_size = QSize(hback, hback);
-        initial_size = QSize(this->width() - hback, hback);
+        initial_size = QSize(slsw_width - hback, hback);
 
         xi = xf;
         xf = buttMove;
@@ -278,7 +288,9 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     QSize newSize = event->size();
     this->slsw_width  = newSize.width();
     this->slsw_height = newSize.height();
-    this->slsw_borderRadius = (this->slsw_height >> 1);
+
+    this->slsw_sub_height = this->slsw_height - this->slsw_extend2;
+    this->slsw_borderRadius = this->slsw_sub_height >> 1;
 
     slsw_SwitchBackground->updateSize();
     slsw_Button->updateSize();
@@ -286,7 +298,8 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     _adjust();
 
     // Position button
-    buttMove = int(double(slsw_height) * 0.06);
+    // buttMove = int(double(slsw_height) * 0.06);
+    buttMove = 0;
     QPoint newPos((slsw_value) ? (this->width() - this->height()) : buttMove, 0);
     slsw_Button->move(newPos);
 }
@@ -321,9 +334,9 @@ void SlideSwitch::_adjust() {
     int labOffCenter = slsw_LabelOff->sizeHint().width() >> 1;
     int labOnCenter = slsw_LabelOn->sizeHint().width() >> 1;
     int switchCenter = slsw_width >> 1;
-    slsw_margin = fm.height() >> 2;
-    slsw_LabelOff->move(switchCenter - labOffCenter, slsw_margin);
-    slsw_LabelOn->move(switchCenter - labOnCenter, slsw_margin);
+    // slsw_margin = (fm.height() >> 2);
+    slsw_LabelOff->move(switchCenter - labOffCenter, slsw_margin + slsw_extend);
+    slsw_LabelOn->move(switchCenter - labOnCenter, slsw_margin + slsw_extend);
 }
 
 void SlideSwitch::_update() {
@@ -351,8 +364,9 @@ SlideSwitch::SwitchBackground::SwitchBackground(QColor color, SlideSwitch *paren
   : QWidget(parent), parentPtr(parent), slsb_color_en(color) {
     slsb_color_dis = parentPtr->pal.base.color();
     this->slsb_width = parentPtr->slsw_width - 4;
-    this->slsb_height = parentPtr->slsw_height - 4;
-    this->slsb_borderRadius = parentPtr->slsw_borderRadius - 2;
+    this->slsb_height = parentPtr->slsw_sub_height - 4;
+    this->slsb_borderRadius = this->slsb_height >> 1;
+    this->slsb_offset = parentPtr->slsw_extend;
     setFixedSize(this->slsb_width, this->slsb_height);
     int cx = this->slsb_width;
     int cy = this->slsb_height;
@@ -382,15 +396,17 @@ SlideSwitch::SwitchBackground::~SwitchBackground() {
 }
 
 void SlideSwitch::SwitchBackground::paintEvent(QPaintEvent*) {
-    QRect rect = QRect(1, 0, this->width(), this->height());
     QPainter* painter = new QPainter;
     QPen penNo(Qt::NoPen);
 
     painter->begin(this);
     painter->setRenderHint(QPainter::Antialiasing, true);
+
     painter->setPen(penNo);
     painter->setBrush((slsb_enabled) ? slsb_linGrad_enabled : slsb_linGrad_disabled);
-    painter->drawRoundedRect(rect.translated(0.5, 0.5), slsb_borderRadius, slsb_borderRadius);
+    QRect rect = QRect(1, 0, slsb_width - 2, slsb_height);
+    painter->drawRoundedRect(rect, slsb_borderRadius, slsb_borderRadius);
+
     painter->end();
 }
 
@@ -400,8 +416,8 @@ void SlideSwitch::SwitchBackground::setEnabled(bool flag) {
 
 void SlideSwitch::SwitchBackground::updateSize() {
     this->slsb_width = parentPtr->slsw_width - 2;
-    this->slsb_height = parentPtr->slsw_height - 2;
-    this->slsb_borderRadius = parentPtr->slsw_borderRadius;
+    this->slsb_height = parentPtr->slsw_sub_height;
+    this->slsb_borderRadius = this->slsb_height >> 1;
     setFixedSize(this->slsb_width, this->slsb_height);
     int cx = this->slsb_width;
     int cy = this->slsb_height;
@@ -411,7 +427,7 @@ void SlideSwitch::SwitchBackground::updateSize() {
     slsb_linGrad_disabled.setStart(cx, 0);
     slsb_linGrad_disabled.setFinalStop(cx, cy);
 
-    this->move(1,1);
+    this->move(1,slsb_offset);
 }
 
 SlideSwitch::SwitchCircle::SwitchCircle(int radius, SlideSwitch *parent)
@@ -472,8 +488,8 @@ void SlideSwitch::SwitchCircle::setEnabled(bool flag) {
 void SlideSwitch::SwitchCircle::updateSize() {
     int circleRad = parentPtr->slsw_height;
     slsc_buttRadius = circleRad;
-    int buttRad = slsc_buttRadius >> 1;
 
+    int buttRad = slsc_buttRadius >> 1;
     setFixedSize(circleRad, circleRad);
     slsc_radGrad_button.setCenter(buttRad, buttRad);
     slsc_radGrad_button.setFocalPoint(buttRad, buttRad);

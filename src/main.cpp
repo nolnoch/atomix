@@ -36,7 +36,9 @@ bool isDebug;
 
 int main(int argc, char* argv[]) {
     // Application
+    QApplication::setStyle("Fusion");
     QApplication app (argc, argv);
+    // app.setStyle("Fusion");
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
@@ -95,7 +97,7 @@ int main(int argc, char* argv[]) {
     
     mainWindow.setWindowTitle(QCoreApplication::applicationName());
     mainWindow.init(dispXY);
-    
+
     // I would like the ship to go.
     app.processEvents();
     // Now.

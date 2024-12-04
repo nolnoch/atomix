@@ -44,11 +44,8 @@ void MainWindow::init(QRect &screenSize) {
     this->move(screenSize.center() - this->frameGeometry().center());
 
     _initStyle();
-
     _initGraphics();
-
     _initWidgets();
-
     _connectSignals();
 }
 
@@ -65,9 +62,6 @@ void MainWindow::postInit() {
     layDockWaves->setSpacing(aStyle.layDockSpace);
     layDockHarmonics->setSpacing(aStyle.layDockSpace);
     treeOrbitalSelect->setIndentation(aStyle.fontMonoWidth << 1);
-
-    // treeOrbitalSelect->header()->resizeSections(QHeaderView::Stretch);
-    // tableOrbitalReport->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
     setupDetails();
     setupLoading();
@@ -222,7 +216,7 @@ void MainWindow::setupDockWaves() {
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelWaves->setLineWidth(aStyle.borderWidth);
-    labelWaves->setMargin(12);
+    labelWaves->setMargin(aStyle.layDockSpace);
     labelWaves->setAlignment(Qt::AlignCenter);
 
     // Config Selection Box
@@ -289,10 +283,10 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->addRow("Superposition:", slswSuper);
     layWaveConfig->addRow("CPU/GPU:", slswCPU);
     layWaveConfig->addRow("Sphere/Circle:", slswSphere);
-    layWaveConfig->setLabelAlignment(Qt::AlignRight);
     layWaveConfig->setRowWrapPolicy(QFormLayout::DontWrapRows);
     layWaveConfig->setHorizontalSpacing(aStyle.layDockSpace);
     layWaveConfig->setVerticalSpacing(aStyle.layDockSpace);
+    layWaveConfig->setLabelAlignment(Qt::AlignRight);
     layWaveConfig->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
     layWaveConfig->setFormAlignment(Qt::AlignCenter);
     groupOptions->setLayout(layWaveConfig);
@@ -400,8 +394,6 @@ void MainWindow::setupDockWaves() {
 
 void MainWindow::setupDockHarmonics() {
     QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    // QSizePolicy qPolicyExpandH = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     wTabHarmonics = new QWidget(this);
     
     // Buttons
@@ -430,7 +422,7 @@ void MainWindow::setupDockHarmonics() {
     labelHarmonics->setWordWrap(true);
     labelHarmonics->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelHarmonics->setLineWidth(aStyle.borderWidth);
-    labelHarmonics->setMargin(aStyle.layDockSpace * 3);
+    labelHarmonics->setMargin(aStyle.layDockSpace);
     labelHarmonics->setAlignment(Qt::AlignCenter);
 
     // Orbital Selection Tree

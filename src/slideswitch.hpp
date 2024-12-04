@@ -80,12 +80,15 @@ private:
     QColor slsw_pencolor;
     QColor slsw_offcolor;
     QColor slsw_oncolor;
-    int slsw_borderRadius = 12;
     int slsw_width = 160;
     int slsw_height = 26;
     int slsw_duration = 100;
     bool slsw_enabled = true;
     bool slsw_value = false;
+    int slsw_sub_height = 18;
+    int slsw_borderRadius = 12;
+    int slsw_extend = 4;
+    int slsw_extend2 = 8;
     int fontPx = 12;
     int buttMove = 0;
     double fontScale = 0.50;
@@ -116,7 +119,7 @@ private:
     } pal;
 
     QFont slsw_font;
-    int slsw_margin = 0;
+    int slsw_margin = 2;
     QString _strOff = QString("QLabel#switchOff { color: %1; }");
     QString _strOn = QString("QLabel#switchOn { color: %1; }");
     QString _strDis = QString("QLabel#switchDis { color: %1; }");
@@ -147,6 +150,7 @@ private:
     int             slsb_borderRadius;
     int             slsb_height;
     int             slsb_width;
+    int             slsb_offset = 0;
 
     bool            slsb_enabled;
 };

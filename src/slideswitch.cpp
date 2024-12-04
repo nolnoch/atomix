@@ -107,8 +107,9 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
 
     // Last touches
     slsw_SwitchBackground->resize(slsw_height - 1, slsw_height - 1);
-    slsw_SwitchBackground->move(1, 1);
-    buttMove = int(double(slsw_height) * 0.06);
+    slsw_SwitchBackground->move(0, 1);
+    // buttMove = int(double(slsw_height) * 0.06);
+    buttMove = 0;
     slsw_Button->move(buttMove, 0);
 
     slsw_SwitchBackground->hide();
@@ -129,16 +130,19 @@ SlideSwitch::~SlideSwitch() {
 
 void SlideSwitch::paintEvent(QPaintEvent*) {
     QPainter* painter = new QPainter;
-    QPen penDark(this->pal.alt.color().darker(160), 0, Qt::SolidLine);
+    QPen penDark(this->pal.base.color().darker(160), 1, Qt::SolidLine);
     QPen penNo(Qt::NoPen);
+    QRect rect;
     int radius = this->height() >> 1;
-    QRect rect = QRect(1, 0, this->width() - 2, this->height());
 
     painter->begin(this);
     painter->setRenderHint(QPainter::Antialiasing, true);
+
     painter->setPen(penDark);
     painter->setBrush(this->pal.base);
-    painter->drawRoundedRect(rect.translated(0.5, 0.5), radius, radius);
+    rect = QRect(2, 0, this->width() - 2, this->height());
+    painter->drawRoundedRect(rect, radius, radius);
+
     painter->end();
 }
 
@@ -286,7 +290,8 @@ void SlideSwitch::resizeEvent(QResizeEvent* event) {
     _adjust();
 
     // Position button
-    buttMove = int(double(slsw_height) * 0.06);
+    // buttMove = int(double(slsw_height) * 0.06);
+    buttMove = 0;
     QPoint newPos((slsw_value) ? (this->width() - this->height()) : buttMove, 0);
     slsw_Button->move(newPos);
 }
@@ -382,15 +387,17 @@ SlideSwitch::SwitchBackground::~SwitchBackground() {
 }
 
 void SlideSwitch::SwitchBackground::paintEvent(QPaintEvent*) {
-    QRect rect = QRect(1, 0, this->width(), this->height());
     QPainter* painter = new QPainter;
     QPen penNo(Qt::NoPen);
 
     painter->begin(this);
     painter->setRenderHint(QPainter::Antialiasing, true);
+
     painter->setPen(penNo);
     painter->setBrush((slsb_enabled) ? slsb_linGrad_enabled : slsb_linGrad_disabled);
-    painter->drawRoundedRect(rect.translated(0.5, 0.5), slsb_borderRadius, slsb_borderRadius);
+    QRect rect = QRect(1, 0, this->width(), this->height());
+    painter->drawRoundedRect(rect, slsb_borderRadius, slsb_borderRadius);
+
     painter->end();
 }
 
@@ -401,7 +408,7 @@ void SlideSwitch::SwitchBackground::setEnabled(bool flag) {
 void SlideSwitch::SwitchBackground::updateSize() {
     this->slsb_width = parentPtr->slsw_width - 2;
     this->slsb_height = parentPtr->slsw_height - 2;
-    this->slsb_borderRadius = parentPtr->slsw_borderRadius;
+    this->slsb_borderRadius = this->slsb_height >> 1;
     setFixedSize(this->slsb_width, this->slsb_height);
     int cx = this->slsb_width;
     int cy = this->slsb_height;

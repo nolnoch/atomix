@@ -36,7 +36,9 @@ bool isDebug;
 
 int main(int argc, char* argv[]) {
     // Application
+    QApplication::setStyle("Fusion");
     QApplication app (argc, argv);
+    // app.setStyle("Fusion");
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
@@ -63,7 +65,7 @@ int main(int argc, char* argv[]) {
     QString strAtomixDir = qParser.value(cliAtomixDir);
 
     QDir execDir = QDir(strAtomixDir);
-    QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
+    QDir atomixDir = QDir(execDir.relativeFilePath("../../"));       // TODO : Set to execDir for release
     if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,
@@ -95,6 +97,8 @@ int main(int argc, char* argv[]) {
     
     mainWindow.setWindowTitle(QCoreApplication::applicationName());
     mainWindow.init(dispXY);
+
+    std::cout << QApplication::style()->name().toStdString() << std::endl;
     
     // I would like the ship to go.
     app.processEvents();

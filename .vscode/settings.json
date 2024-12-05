@@ -1,12 +1,6 @@
 {
     "cmake.sourceDirectory": "/home/braer/dev/atomix",
     "cmake.buildDirectory": "/home/braer/dev/atomix/build",
-    "cmake.configureArgs": [
-        "-DCMAKE_PREFIX_PATH=/home/braer/Qt/6.8.0/gcc_64",
-        "-DXKB_INCLUDE_DIR=/usr/include/xcb",
-        "-DXKB_LIBRARY=/usr"
-    ],
-    "C_Cpp.default.compilerPath": "/usr/bin/g++",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "C_Cpp.errorSquiggles": "enabled",
     "files.associations": {

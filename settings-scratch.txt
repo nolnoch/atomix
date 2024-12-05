@@ -1,7 +1,12 @@
+    "editor.fontFamily": "InconsolataGO Nerd Font Mono",
+    "editor.fontSize": 17,
+    "editor.fontWeight": 400,
+    "editor.fontLigatures": true,
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.function": "sameLine",
     "workbench.externalBrowser": "edge",
     "workbench.colorCustomizations": {
         "[Default Dark Modern]": {
-            "editor.background": "#1c1c1f",
+            "editor.background": "#1a1a1e",
         }
     },
     "editor.tokenColorCustomizations": {

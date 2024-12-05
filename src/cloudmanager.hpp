@@ -64,8 +64,7 @@ class CloudManager : public Manager {
         virtual ~CloudManager();
         void newConfig(AtomixConfig *cfg) override;
 
-        void initManager() override final;
-        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes, bool generator = true);
+        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, bool generator = true);
         
         void cloudTest(int n_max);
         void cloudTestCSV();
@@ -82,13 +81,13 @@ class CloudManager : public Manager {
         void testThreadingInit();
 
     private:
-        void receiveCloudMap(harmap *inMap, int numRecipes);
+        void initManager() override final;
+        void receiveCloudMap(harmap *inMap);
 
         double create() override final;
         double createThreaded();
         double bakeOrbitals();
         double bakeOrbitalsThreaded();
-        double bakeOrbitalsThreadedAlt();
         double cullTolerance();
         double cullToleranceThreaded();
         double expandPDVsToColours();
@@ -115,6 +114,7 @@ class CloudManager : public Manager {
         
         int setColourCount();
         int setColourSize();
+        int countMapRecipes(harmap *inMap);
 
         void printBuffer(fvec buf, std::string name);
         void printBuffer(uvec buf, std::string name);

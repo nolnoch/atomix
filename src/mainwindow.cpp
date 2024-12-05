@@ -1020,7 +1020,7 @@ void MainWindow::handleButtMorbHarmonics() {
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
     }
 
-    vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
+    vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, true);
 
     // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
@@ -1174,7 +1174,7 @@ void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
     if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY) || (this->cloudConfig.CloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.CloudCull_rOut != lastSliderSentROut)) {
-        vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
+        vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, false);
 
         lastSliderSentX = this->cloudConfig.CloudCull_x;
         lastSliderSentY = this->cloudConfig.CloudCull_y;

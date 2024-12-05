@@ -31,18 +31,43 @@
 #include <oneapi/dpl/execution>
 
 
+/**
+ * @brief Construct a new CloudManager object.
+ *
+ * @details
+ * This constructor will determine the number of hardware threads available on the system
+ * and set the thread pool size for the cloud rendering process to that number.
+ *
+ * @todo
+ * Adjust the thread pool size based on the complexity of the cloud data.
+ */
 CloudManager::CloudManager() {
     this->cm_pool = std::thread::hardware_concurrency();
     this->cm_loop = 1;
     this->cm_vecs = 0;
 }
 
+/**
+ * @brief Destruct a CloudManager object.
+ *
+ * @details
+ * This destructor will purge any active tasks in the cloud thread pool and wait for
+ * all tasks to finish before clearing the cloud rendering data.
+ */
 CloudManager::~CloudManager() {
     cloudPool.purge();
     cloudPool.wait();
     resetManager();
 }
 
+/**
+ * @brief Set the configuration for the cloud rendering process.
+ *
+ * @details
+ * This function is called internally when a new configuration is set.
+ *
+ * @param config A pointer to the new configuration.
+ */
 void CloudManager::newConfig(AtomixConfig *config) {
     Manager::newConfig(config);
 
@@ -53,18 +78,37 @@ void CloudManager::newConfig(AtomixConfig *config) {
     this->cfg.vert = "gpu_harmonics.vert";
 }
 
-void CloudManager::receiveCloudMap(harmap *inMap, int numRecipes) {
+/**
+ * @brief Receive a new orbital map for the cloud rendering process.
+ *
+ * @details
+ * This function is called by the VKWindow class when a new orbital map is set.
+ *
+ * @param inMap A pointer to the new orbital map.
+ */
+void CloudManager::receiveCloudMap(harmap *inMap) {
     this->cloudOrbitals = *inMap;
-    this->numOrbitals = numRecipes;
+    this->numOrbitals = countMapRecipes(inMap);
     this->max_n = cloudOrbitals.rbegin()->first;
 }
 
-void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, int numRecipes, bool generator) {
+/**
+ * @brief Update the cloud rendering manager with a new configuration and orbital map.
+ *
+ * @details
+ * This function is called by the VKWindow class when a new configuration is set.
+ * It checks for relevant config or map changes and updates the manager accordingly.
+ *
+ * @param config A pointer to the new configuration.
+ * @param inMap A pointer to the new orbital map.
+ * @param generator True if this may generate a new cloud render, False if only culling.
+ */
+void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, bool generator) {
     cm_proc_coarse.lock();
 
     if (mStatus.hasNone(em::INIT)) {
         newConfig(config);
-        receiveCloudMap(inMap, numRecipes);
+        receiveCloudMap(inMap);
         initManager();
         mStatus.set(em::INIT);
         cm_proc_coarse.unlock();
@@ -112,7 +156,7 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
 
     // Mark for vecsAndMatrices update if map (orbital recipe) has changed
     if (newMap) {
-        this->receiveCloudMap(inMap, numRecipes);
+        this->receiveCloudMap(inMap);
         mStatus.set(em::UPD_MATRICES);
     }
 
@@ -124,7 +168,7 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     // Re-gen PDVs for new map or if otherwise necessary
     if (newVerticesRequired || newMap) {
         mStatus.clear(em::DATA_READY);
-        cm_times[1] = bakeOrbitalsThreadedAlt();
+        cm_times[1] = bakeOrbitalsThreaded();
     }
     // Re-cull the indices for tolerance or if otherwise necessary
     if (newVerticesRequired || newMap || newTolerance) {
@@ -146,9 +190,17 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     cm_proc_coarse.unlock();
 }
 
+
+/**
+ * @brief Initialize the cloud rendering process.
+ *
+ * @details
+ * Called internally to create the first cloud render only. Future updates will
+ * be handled by the receiveCloudMapAndConfig function.
+ */
 void CloudManager::initManager() {
     cm_times[0] = createThreaded();
-    cm_times[1] = bakeOrbitalsThreadedAlt();
+    cm_times[1] = bakeOrbitalsThreaded();
     cm_times[2] = cullToleranceThreaded();
     if (cfg.cpu) expandPDVsToColours();
     cm_times[3] = cullSliderThreaded();
@@ -164,6 +216,19 @@ void CloudManager::initManager() {
 // #pragma GCC push_options
 // #pragma GCC optimize ("O3")
 
+/**
+ * @brief Generates the vertices and colour data for the cloud render (no threading).
+ *
+ * @details
+ * Generates the vertices and colour data for the cloud render. This is the second-most
+ * time-consuming part of the cloud rendering process. The function first finds the
+ * maximum radius for the given tolerance and then iterates over all the required
+ * vertices, creating the positions and initialising the colour data. The
+ * wavefunction norms are also calculated here. The function then sets the
+ * `em::VERT_READY` status and sets up the vertex array.
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::create() {
     assert(mStatus.hasNone(em::VERT_READY));
     steady_clock::time_point begin = steady_clock::now();
@@ -202,8 +267,6 @@ double CloudManager::create() {
         }
     }
     // auto endInner = steady_clock::now();
-    // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
-    // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
 
     dataStaging.insert(dataStaging.end(), pixelCount, 0.0);
     allData.insert(allData.end(), pixelCount, 0.0f);
@@ -214,9 +277,21 @@ double CloudManager::create() {
     mStatus.advance(em::INIT, em::VERT_READY);
     genVertexArray();
     steady_clock::time_point end = steady_clock::now();
+    // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
+    // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+/**
+ * @brief Generate the vertices and colour data for the cloud render in separate threads.
+ *
+ * @details
+ * This function is the same as `create()`, but it is designed to execute in parallel.
+ * It is used for generating the initial cloud render when the cloud manager is first
+ * initialized.
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::createThreaded() {
     assert(mStatus.hasNone(em::VERT_READY));
     cm_proc_fine.lock();
@@ -246,7 +321,7 @@ double CloudManager::createThreaded() {
     wavefuncNorms(MAX_SHELLS);
     // auto endInner = steady_clock::now();
     // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
-    // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
+    // std::cout << "Create Memory Loop took: " << createTime << " ms" << std::endl;
 
     /*  Compute -- Begin --- This compute portion takes only 6% of create() total time  */
     // auto beginInner = steady_clock::now();
@@ -282,6 +357,25 @@ double CloudManager::createThreaded() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+/**
+ * @brief Populate the dataStaging array with an orbital probability distribution.
+ *
+ * @details
+ * This function is called by bakeOrbitals() to populate the dataStaging array with a
+ * probability distribution of the orbital with the given (n, l, m_l) quantum numbers and
+ * weight.
+ *
+ * The function uses the wavefuncRadial() and wavefuncAngExp() functions to compute the
+ * radial and angular-exponential parts of the wavefunction. The angular part is then used
+ * with the Legendre polynomial using wavefuncAngLeg(). The two parts are then combined into
+ * the full angular portion and used to compute the probability density value (PDV) of each
+ * point in the dataStaging array.
+ *
+ * @param n The principal quantum number of the orbital.
+ * @param l The orbital angular momentum of the orbital.
+ * @param m_l The z-component of the orbital angular momentum of the orbital.
+ * @param weight The weight of the orbital in the probability distribution.
+ */
 void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
     double deg_fac_local = this->deg_fac;
     int phi_max_local = this->cloudResolution >> 1;
@@ -309,6 +403,18 @@ void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
     }
 }
 
+/**
+ * @brief Bakes the orbital recipes to generate the cloud data.
+ *
+ * @details
+ * Iterates through the stored recipes, grouped by N, and calls the
+ * genOrbital function for each. The genOrbital function generates the
+ * cloud data for each orbital and stores it in the dataStaging vector.
+ * The final maximum value of the accumulated vector is stored in
+ * allPDVMaximum.
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::bakeOrbitals() {
     assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
     steady_clock::time_point begin = steady_clock::now();
@@ -327,74 +433,30 @@ double CloudManager::bakeOrbitals() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+/**
+ * @brief Threading-optimized version of bakeOrbitals, using chunked multithreading with a thread pool.
+ * 
+ * This version of bakeOrbitals is an attempt at optimizing the cloud generation process by dividing
+ * the work into chunks and spawning threads to handle those chunks, from the thread pool.
+ * 
+ * This function was written to divide the work across orbital recipes first, using temporary staging
+ * vectors to store the results of each recipe. Because these vectors can be very large (~GB), they are
+ * limited in count and used in a FIFO queue, where as each recipe is completed, higher priority threads
+ * are invoked to collapse the temp vector into the final vector, and the temp vector is then reused
+ * for another recipe.
+ * 
+ * Within each recipe, lower priority threads are assigned chunks (a subset of the total radial layers
+ * in the model for that recipe), which yield to the higher priority threads when that recipe is completed.
+ * 
+ * In practice, after extensive profiling, the ideal number of threads to use is always the max/default,
+ * the ideal number of temporary vectors to use is always 0, and the ideal chunk size is always 1 layer per thread.
+ * 
+ * While this function may be updated to use a different work division strategy in future, the current
+ * strategy yields a 98% reduction in runtime compared to the single-threaded bakeOrbitals function (6min -> 7sec).
+ * 
+ * @return The time taken to generate the cloud in milliseconds.
+ */
 double CloudManager::bakeOrbitalsThreaded() {
-    assert(mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
-    cm_proc_fine.lock();
-    steady_clock::time_point begin = steady_clock::now();
-
-    // this->printRecipes();
-
-    /*  This section contains 62%-98% of the total execution time of cloud generation! */
-    const double totalRecipes = static_cast<double>(this->numOrbitals);
-    const double *vecStaging = &this->dataStaging[0];
-    const vVec3 *vecVertices = &this->allVertices;
-    const harmap *mapRecipes = &this->cloudOrbitals;
-    std::unordered_map<int, double> *ncR = &this->norm_constR;
-    std::unordered_map<int, double> *ncY = &this->norm_constY;
-    std::for_each(std::execution::par_unseq, dataStaging.begin(), dataStaging.end(),
-        [totalRecipes, vecStaging, vecVertices, mapRecipes, ncR, ncY](double &item){
-            std::ptrdiff_t i = &item - vecStaging;
-            double final_pdv = 0;
-            double theta = (*vecVertices)[i].x;
-            double phi = (*vecVertices)[i].y;
-            double radius = (*vecVertices)[i].z;
-
-            for (auto const &[key, val] : (*mapRecipes)) {
-                int n = key;
-                for (auto const &v : val) {
-                    int l = v.x;
-                    int m_l = v.y;
-                    double weight = v.z / totalRecipes;
-
-                    double rho = 2.0 * radius / static_cast<double>(n);
-                    double rhol = 1.0;
-                    int l_times = l;
-                    while (l_times-- > 0) {
-                        rhol *= rho;
-                    }
-                    double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho * 0.5) * (*ncR)[DSQ(n, l)];
-                    std::complex<double> Y = exp(std::complex<double>{0,1} * static_cast<double>(m_l) * theta) * legp(l, abs(m_l), cos(phi)) * (*ncY)[DSQ(l, m_l)];
-                    std::complex<double> Psi = R * Y;
-
-                    double pdv = (std::conj(Psi) * Psi).real() * radius * radius;;
-                    final_pdv += pdv * weight;
-                }
-            }
-            item = final_pdv;
-        });
-    
-    // End: check actual max value of accumulated vector
-    this->allPDVMaximum = *std::max_element(std::execution::par, dataStaging.cbegin(), dataStaging.cend());
-
-    // End: Populate allData with normalized PDVs [** as FLOATS **], leaving dataStaging untouched
-    double pdvMax = this->allPDVMaximum;
-    std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),
-        [pdvMax](const double &item){
-            return static_cast<float>(item / pdvMax);
-        });
-    
-    // End: dataStaging is not needed after this
-    dataStaging.clear();
-
-    mStatus.set(em::DATA_READY);
-    genDataBuffer();
-
-    steady_clock::time_point end = steady_clock::now();
-    cm_proc_fine.unlock();
-    return (std::chrono::duration<double, std::milli>(end - begin).count());
-}
-
-double CloudManager::bakeOrbitalsThreadedAlt() {
     assert(mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
     cm_proc_fine.lock();
     steady_clock::time_point begin = steady_clock::now();
@@ -444,6 +506,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             uint top_idx = (num_top_vectors) ? (recipe_idx % num_top_vectors) : 0;
             // std::cout << "Recipe: (" << n << l << m_l << ")" << std::endl;
 
+            // If this is the last recipe, or if there are no temp vectors, use the final vector for all threads
             if ((++recipe_idx == numOrbitals) || no_vecs) {
                 thread_vec = dataStagingPtr;                // 6/6
             } else {
@@ -598,6 +661,17 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+/**
+ * @brief Set all PDVs below the tolerance to zero, and store indices of non-zero PDVs in idxCulledTolerance.
+ *
+ * @details
+ * A PDV has been generated for every vertex in the mesh. This function culls all PDVs
+ * below the tolerance and stores the indices of non-zero PDVs in idxCulledTolerance
+ * in order to greatly reduce the size of the data buffer and the number of vertices
+ * that need to be rendered.
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::cullTolerance() {
     // assert(mStatus.hasFirstNotLast(em::DATA_READY, (em::INDEX_GEN | em::INDEX_READY)));
     steady_clock::time_point begin = steady_clock::now();
@@ -619,6 +693,19 @@ double CloudManager::cullTolerance() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+/**
+ * @brief Set all PDVs below the tolerance to zero, and store indices of non-zero PDVs in idxCulledTolerance.
+ *
+ * @details
+ * A PDV has been generated for every vertex in the mesh. This function culls all PDVs
+ * below the tolerance and stores the indices of non-zero PDVs in idxCulledTolerance
+ * in order to greatly reduce the size of the data buffer and the number of vertices
+ * that need to be rendered.
+ * 
+ * This function is a parallelized version of cullTolerance().
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::cullToleranceThreaded() {
     assert(mStatus.hasFirstNotLast(em::DATA_READY, em::INDEX_GEN));
     cm_proc_fine.lock();
@@ -656,6 +743,17 @@ double CloudManager::cullToleranceThreaded() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+/**
+ * @brief Expand the PDVs to colours, and generate a colour buffer.
+ *
+ * @details
+ * This function takes the PDVs and expands them into a colour representation.
+ * The colours are chosen from a palette of 11 different colours, with the
+ * PDV value determining the shade of the colour. The colours are then stored
+ * in a buffer and a vertex buffer is generated.
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::expandPDVsToColours() {
     allColours.resize(allVertices.size());
     allColours.assign(allVertices.size(), vec3(0.0f, 0.0f, 0.0f));
@@ -691,6 +789,20 @@ double CloudManager::expandPDVsToColours() {
     return 0.0;
 }
 
+/**
+ * @brief Cull the cloud data based on the slider values.
+ *
+ * @details
+ * This function takes the culling values from the sliders and removes the
+ * corresponding vertices from the cloud data. The remaining vertices are then
+ * stored in the allIndices vector.
+ * 
+ * The vertices and indices are generated as:
+ * (Layers = [R] * resolution) * [Phi] (pi * resolution) * [Theta] (2pi * resolution).
+ * Model may be culled by r, theta, and phi.
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::cullSlider() {
     assert(mStatus.hasFirstNotLast(em::INDEX_GEN, em::INDEX_READY));
     steady_clock::time_point begin = steady_clock::now();
@@ -730,6 +842,14 @@ double CloudManager::cullSlider() {
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
+/**
+ * @brief Same as `cullSlider()`, but uses parallel processing to sort and copy indices of non-culled vertices.
+ *
+ * @details
+ * This function is a parallelized version of `cullSlider()`.
+ *
+ * @return The time taken to complete the function in milliseconds.
+ */
 double CloudManager::cullSliderThreaded() {
     assert(mStatus.hasFirstNotLast(em::INDEX_GEN, em::INDEX_READY));
     cm_proc_fine.lock();
@@ -829,6 +949,14 @@ void CloudManager::update([[maybe_unused]] double time) {
     //TODO implement for CPU updates over time
 }
 
+    /**
+     * @brief cloudTest(int n_max)
+     * 
+     * Prints the complete list of orbital indices for given n_max to the console.
+     * Also checks for and prints any duplicate indices.
+     * 
+     * @param n_max The maximum principal quantum number to generate indices for.
+     */
 void CloudManager::cloudTest(int n_max) {
     int idx = 0;
 
@@ -856,6 +984,20 @@ void CloudManager::cloudTest(int n_max) {
     std::cout << "Duplicates " << ((it == cloudMap.end()) ? "NOT found!" : "found.") << std::endl;
 }
 
+    /**
+     * @brief cloudTestCSV
+     * 
+     * This function is designed to spit out a CSV file that contains the maximum
+     * probability density of each orbital for 250 points along the radial axis.
+     * The CSV contains the orbital quantum numbers (n, l, ml) for each row,
+     * followed by the maximum probability density for each of the 250 radial points.
+     * The output is a single, long row with no delimiters between the quantum numbers
+     * and the probability densities. The output is not formatted for human readability.
+     * 
+     * @todo This function should be refactored to emit a header row with the
+     *       quantum numbers and the radial points, and to emit a delimiter between
+     *       the quantum numbers and the probability densities.
+     */
 void CloudManager::cloudTestCSV() {
     for (int n = 1; n <= 8; n++) {
         for (int l = 0; l <= n-1; l++) {
@@ -895,6 +1037,15 @@ void CloudManager::cloudTestCSV() {
 
 }
 
+    /**
+     * @brief Compute the factorial of a given integer `n`.
+     *
+     * This function takes an integer `n` as input and returns its factorial.
+     * The function uses a simple iterative approach to compute the factorial.
+     *
+     * @param[in] n The integer to compute the factorial of.
+     * @returns The factorial of `n`, which is the product of all positive integers less than or equal to `n`.
+     */
 int64_t CloudManager::fact(int n) {
     int64_t prod = n ?: 1;
     // int orig = n;
@@ -911,6 +1062,20 @@ int64_t CloudManager::fact(int n) {
     return prod;
 }
 
+    /**
+     * @brief Compute the radial wavefunction for the given quantum numbers.
+     *
+     * This function takes the principal quantum number `n` and the orbital angular momentum `l`
+     * and returns the radial wavefunction evaluated at the given radius `r`.
+     * The radial wavefunction is given by the formula:
+     * R_{nl}(r) = N_{nl} * L_{n-l-1}^{2l+1}(r/n) * e^{-r/n} * (r/n)^l
+     * where L is the associated Laguerre polynomial and N is the normalization constant.
+     *
+     * @param[in] n The principal quantum number.
+     * @param[in] l The orbital angular momentum.
+     * @param[in] r The radius at which to evaluate the wavefunction.
+     * @returns The radial wavefunction evaluated at `r`.
+     */
 double CloudManager::wavefuncRadial(int n, int l, double r) {
     double rho = 2.0 * r / static_cast<double>(n);
 
@@ -921,6 +1086,19 @@ double CloudManager::wavefuncRadial(int n, int l, double r) {
     return laguerre * rhol * expFunc * this->norm_constR[DSQ(n, l)];
 }
 
+    /**
+     * @brief Compute the angular wavefunction for the given quantum numbers.
+     *
+     * This function takes the orbital angular momentum `l` and the z-component of the
+     * orbital angular momentum `m_l` and returns the angular wavefunction evaluated at
+     * the given polar angle `theta` and azimuthal angle `phi`.
+     *
+     * @param[in] l The orbital angular momentum.
+     * @param[in] m_l The z-component of the orbital angular momentum.
+     * @param[in] theta The polar angle at which to evaluate the wavefunction.
+     * @param[in] phi The azimuthal angle at which to evaluate the wavefunction.
+     * @returns The angular wavefunction evaluated at `(theta, phi)`.
+     */
 std::complex<double> CloudManager::wavefuncAngular(int l, int m_l, double theta, double phi) {
     using namespace std::complex_literals;
     std::complex<double> ibase = 1i;
@@ -932,16 +1110,51 @@ std::complex<double> CloudManager::wavefuncAngular(int l, int m_l, double theta,
     return expFunc * legendre * this->norm_constY[DSQ(l, m_l)];
 }
 
+    /**
+     * @brief Compute the angular wavefunction exponential term.
+     *
+     * This function takes the z-component of the orbital angular momentum `m_l` and the
+     * polar angle `theta` and returns the exponential term of the angular wavefunction.
+     * The exponential term is given by the formula:
+     * e^(i*m_l*theta)
+     *
+     * @param[in] m_l The z-component of the orbital angular momentum.
+     * @param[in] theta The polar angle at which to evaluate the wavefunction.
+     * @returns The exponential term of the angular wavefunction evaluated at `(m_l, theta)`.
+     */
 std::complex<double> CloudManager::wavefuncAngExp(int m_l, double theta) {
     using namespace std::complex_literals;
     std::complex<double> ibase = 1i;
     return exp(ibase * (m_l * theta));
 }
 
+    /**
+     * @brief Compute the associated Legendre polynomial term of the angular wavefunction.
+     *
+     * This function takes the orbital angular momentum `l` and the z-component of the
+     * orbital angular momentum `m_l` and returns the associated Legendre polynomial term
+     * of the angular wavefunction evaluated at the given azimuthal angle `phi`.
+     *
+     * @param[in] l The orbital angular momentum.
+     * @param[in] m_l The z-component of the orbital angular momentum.
+     * @param[in] phi The azimuthal angle at which to evaluate the wavefunction.
+     * @returns The associated Legendre polynomial term of the angular wavefunction evaluated at `(l, m_l, phi)`.
+     */
 double CloudManager::wavefuncAngLeg(int l, int m_l, double phi) {
     return legp(l, abs(m_l), cos(phi));
 }
 
+    /**
+     * @brief Compute the probability density value of the orbital wavefunction.
+     *
+     * This function takes the radial wavefunction term `radial` and the angular
+     * wavefunction term `angular` and returns the probability density value of the
+     * orbital wavefunction evaluated at the given point.
+     *
+     * @param[in] radial The radial wavefunction term.
+     * @param[in] angular The angular wavefunction term.
+     * @returns The probability density value of the orbital wavefunction evaluated at `(radial, angular)`.
+     */
 std::complex<double> CloudManager::wavefuncPsi(double radial, std::complex<double> angular) {
     return radial * angular;
 }
@@ -956,6 +1169,18 @@ double CloudManager::wavefuncRDP(double R, double r, [[maybe_unused]] int l) {
     return R * R * factor;
 }
 
+    /**
+     * @brief Compute the probability density value of the orbital wavefunction.
+     *
+     * This function takes the wavefunction term `Psi` and the radial distance `r`
+     * and returns the probability density value of the orbital wavefunction
+     * evaluated at the given radial distance.
+     *
+     * @param[in] Psi The wavefunction term.
+     * @param[in] r The radial distance at which to evaluate the wavefunction.
+     * @param[in] l The orbital angular momentum.
+     * @returns The probability density value of the orbital wavefunction evaluated at `(Psi, r, l)`.
+     */
 double CloudManager::wavefuncPDV(std::complex<double> Psi, double r, [[maybe_unused]] int l) {
     double factor = r * r;
 
@@ -980,6 +1205,16 @@ double CloudManager::wavefuncPsi2(int n, int l, int m_l, double r, double theta,
     return (std::conj(Psi) * Psi).real() * factor;
 }
 
+    /**
+     * @brief Compute the normalizing constants for the orbital wavefunctions.
+     *
+     * This function takes the maximum principal quantum number `max_n` and
+     * computes the normalizing constants for all orbital wavefunctions with
+     * n <= max_n. The constants are stored in the `norm_constR` and `norm_constY`
+     * maps of the CloudManager object.
+     *
+     * @param[in] max_n The maximum principal quantum number.
+     */
 void CloudManager::wavefuncNorms(int max_n) {
     int max_l = max_n - 1;
 
@@ -1005,6 +1240,12 @@ void CloudManager::wavefuncNorms(int max_n) {
     }
 }
 
+    /**
+     * @brief Reset the cloud rendering process for the next frame.
+     *
+     * Clear all data buffers, reset the orbital index, and reset the atom's
+     * atomic number.
+     */
 void CloudManager::clearForNext() {
     dataStaging.assign(this->pixelCount, 0.0);
     allData.assign(this->pixelCount, 0.0f);
@@ -1015,6 +1256,14 @@ void CloudManager::clearForNext() {
     mStatus.setTo(em::INIT | em::VERT_READY);
 }
 
+    /**
+     * @brief Reset the cloud rendering process to its initial state.
+     *
+     * Reset the cloud rendering process to its initial state, clearing all
+     * data buffers, resetting the orbital index, and resetting the atom's
+     * atomic number. This function is generally only called once, when the
+     * CloudManager object is created.
+     */
 void CloudManager::resetManager() {
     Manager::resetManager();
 
@@ -1046,15 +1295,48 @@ void CloudManager::resetManager() {
  *  Getters -- Size
  */
 
+    /**
+     * @brief Get the size of the colour data buffer in bytes.
+     *
+     * @return The size of the colour data buffer in bytes.
+     */
 uint CloudManager::getColourSize() {
     return this->colourSize;
 }
 
+    /**
+     * @brief Calculates the maximum layer for a given tolerance, n_max, and divisor.
+     *
+     * @details
+     * The maximum layer is calculated by finding the appropriate row in the
+     * cm_maxRadius table and returning the value at n_max - 1, multiplied by
+     * the divisor. The row is chosen based on the absolute value of the floor
+     * of the base-10 logarithm of the tolerance.
+     *
+     * @param tolerance The tolerance to calculate the maximum layer for.
+     * @param n_max The n_max to calculate the maximum layer for.
+     * @param divisor The divisor to multiply the maximum radius by.
+     * @return The maximum layer for the given tolerance, n_max, and divisor.
+     */
 uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
     uint maxRadius = getMaxRadius(tolerance, n_max);
     return maxRadius * divisor;
 }
 
+    /**
+     * @brief Calculates the maximum radius for a given tolerance and n_max.
+     *
+     * @details
+     * The maximum radius is calculated by finding the appropriate row in the
+     * cm_maxRadius table and returning the value at n_max - 1. The row is
+     * chosen based on the absolute value of the floor of the base-10 logarithm
+     * of the tolerance.
+     *
+     * @param tolerance The tolerance to calculate the maximum radius for.
+     * @param n_max The n_max to calculate the maximum radius for.
+     *
+     * @return The maximum radius for the given tolerance and n_max.
+     */
 uint CloudManager::getMaxRadius(double tolerance, int n_max) {
     uint divSciExp = std::abs(floor(log10(tolerance)));
     uint maxRadius = cm_maxRadius[divSciExp - 1][n_max - 1];
@@ -1069,10 +1351,24 @@ uint CloudManager::getMaxRadius(double tolerance, int n_max) {
  *  Getters -- Data
  */
 
+/**
+ * @brief Checks if the vertices have been generated.
+ *
+ * This means that the vertices have been calculated and stored in the member variable allVertices.
+ *
+ * @return True if the vertices have been created, false otherwise
+ */
 bool CloudManager::hasVertices() {
     return (this->mStatus.hasAny(em::VERT_READY));
 }
 
+/**
+ * @brief Checks if the buffers for the CloudManager have been generated.
+ *
+ * This means that the vertex buffer object, index buffer object, and colour buffer object have been allocated and filled.
+ *
+ * @return True if the buffers have been created, false otherwise
+ */
 bool CloudManager::hasBuffers() {
     return (this->mStatus.hasAny(em::UPD_IBO));
 }
@@ -1081,6 +1377,16 @@ bool CloudManager::hasBuffers() {
  *  Setters -- Size
  */
 
+/**
+ * @brief Calculate the size of the colour data in bytes.
+ *
+ * @details
+ * The size is calculated as the product of the number of chunks and the size of each chunk.
+ * The number of chunks is either the value of `colourCount` if it is not zero, or the result of
+ * `setColourCount()`. The size of each chunk is the size of a `glm::vec3`.
+ *
+ * @return The size of the colour data in bytes.
+ */
 int CloudManager::setColourSize() {
     int chunks = colourCount ?: setColourCount();
     int chunkSize = sizeof(glm::vec3);
@@ -1097,10 +1403,34 @@ int CloudManager::setColourCount() {
     return allColours.size();
 }
 
+/**
+ * @brief Count the total number of recipes in a harmap.
+ *
+ * @details
+ * This function is used to update the CloudManager's count of recipes when the user
+ * changes the orbital map. It is called by receiveCloudMapAndConfig() and
+ * receiveCloudMap().
+ *
+ * @param inMap Pointer to the orbital map.
+ * @return The total number of recipes in the map.
+ */
+int CloudManager::countMapRecipes(harmap *inMap) {
+    int count = 0;
+    for (const auto &key : *inMap) {
+        count += key.second.size();
+    }
+    return count;
+}
+
 /*
  *  Printers
  */
 
+/**
+ * @brief Prints all orbital recipes to the console, with N and L (ml) values.
+ *
+ * Prints the values of all orbital recipes, with N, L and ml values. Used for debugging.
+ */
 void CloudManager::printRecipes() {
     for (const auto &key : this->cloudOrbitals) {
         for (const auto &v : key.second) {
@@ -1110,10 +1440,30 @@ void CloudManager::printRecipes() {
     std::cout << std::endl;
 }
 
+/**
+ * @brief Prints the maximum radial distance probability value for the given orbital to the console as a CSV line.
+ *
+ * Prints the values of n, l, ml and the maximum radial distance probability value for the given orbital to the console in a CSV line format.
+ * The line is terminated by a newline character.
+ *
+ * @param n The principal quantum number.
+ * @param l The orbital angular momentum quantum number.
+ * @param m_l The magnetic quantum number.
+ * @param maxRDP The maximum radial distance probability value for the given orbital.
+ */
 void CloudManager::printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP) {
     std::cout << n << "," << l << "," << m_l << "," << maxRDP << "\n";
 }
 
+/**
+ * @brief Prints the contents of the given floating-point vector to the console as a line of text.
+ *
+ * Prints the contents of the given floating-point vector to the console as a line of text, with each element of the vector separated by a space.
+ * The line is terminated by a newline character.
+ *
+ * @param buf The vector of floating-point numbers to be printed.
+ * @param name The name of the file to write to.
+ */
 void CloudManager::printBuffer(fvec buf, std::string name) {
     std::ofstream outfile(name);
 
@@ -1128,6 +1478,15 @@ void CloudManager::printBuffer(fvec buf, std::string name) {
     }
 }
 
+/**
+ * @brief Prints the contents of the given unsigned integer vector to the console as a line of text.
+ *
+ * Prints the contents of the given unsigned integer vector to the console as a line of text, with each element of the vector separated by a space.
+ * The line is terminated by a newline character.
+ *
+ * @param buf The vector of unsigned integers to be printed.
+ * @param name The name of the file to write to.
+ */
 void CloudManager::printBuffer(uvec buf, std::string name) {
     std::ofstream outfile(name);
 
@@ -1142,6 +1501,15 @@ void CloudManager::printBuffer(uvec buf, std::string name) {
     }
 }
 
+    /**
+     * @brief Prints the elapsed time for each stage of the cloud manager processing.
+     *
+     * Prints the elapsed time for each stage of the cloud manager processing, in milliseconds.
+     * The output is in the format "stage: nn.nn ms\n", where "stage" is the name of the stage and
+     * "nn.nn" is the elapsed time in milliseconds.
+     *
+     * @note This function resets the elapsed time counters after printing.
+     */
 void CloudManager::printTimes() {
     for (auto [lab, t] : std::views::zip(cm_labels, cm_times)) {
         if (t) {
@@ -1152,6 +1520,16 @@ void CloudManager::printTimes() {
     this->cm_times.fill(0.0);
 }
 
+    /**
+     * @brief A long-running test function for the threading performance of baking orbitals.
+     *
+     * This function is a test for the performance of `bakeOrbitalsThreaded()` with different
+     * numbers of threads, temporary vectors, and loop iterations. It will take a long time to run
+     * and will print out the total time expected for the test.
+     *
+     * @warning This function is not intended to be called in normal use and is only for testing
+     * purposes.
+     */
 void CloudManager::testThreadingInit() {
     cm_proc_coarse.lock();
 
@@ -1182,7 +1560,7 @@ void CloudManager::testThreadingInit() {
     this->cm_vecs = 2;
 
     double testtime = createThreaded();
-    testtime += (bakeOrbitalsThreadedAlt() * 1.5);
+    testtime += (bakeOrbitalsThreaded() * 1.5);
     cullToleranceThreaded();
     cullSliderThreaded();
 
@@ -1206,7 +1584,7 @@ void CloudManager::testThreadingInit() {
                 for (uint i = test_min; i < test_max; i++) {
                     resetManager();
                     createThreaded();
-                    double t = bakeOrbitalsThreadedAlt();
+                    double t = bakeOrbitalsThreaded();
                     times.push_back(t);
                 }
                 double avg_t = std::accumulate(times.cbegin(), times.cend(), 0.0) / truns;

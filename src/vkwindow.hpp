@@ -188,7 +188,7 @@ signals:
     void forwardKeyEvent(QKeyEvent *e);
 
 public slots:
-    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, int numRecipes, bool canCreate = true);
+    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, bool canCreate = true);
     void newWaveConfig(AtomixConfig *cfg);
     void selectRenderedWaves(int id, bool checked);
 

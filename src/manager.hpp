@@ -48,7 +48,6 @@ class Manager {
         Manager(){};
         virtual ~Manager(){ resetManager(); };
         virtual void newConfig(AtomixConfig *config);
-        virtual void initManager() {};
 
         virtual double create() { return 0.0; };
         virtual void update(double time) {m_time = time;};
@@ -82,6 +81,7 @@ class Manager {
         void printVertices();
 
     protected:
+        virtual void initManager() {};
         virtual void resetManager();
         virtual void clearForNext();
 

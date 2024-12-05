@@ -67,6 +67,7 @@ void MainWindow::postInit() {
     setupLoading();
 
     dockTabs->installEventFilter(this);
+    statBar->showMessage(tr("Ready"));
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -108,9 +109,11 @@ void MainWindow::updateDetails(AtomixInfo *info) {
 
 void MainWindow::setLoading(bool loading) {
     if (loading) {
-        pbLoading->show();
+        statBar->clearMessage();
+        statBar->insertWidget(0, pbLoading, 1);
     } else {
-        pbLoading->hide();
+        statBar->removeWidget(pbLoading);
+        statBar->showMessage(tr("Ready"));
     }
 }
 
@@ -729,14 +732,21 @@ void MainWindow::refreshOrbits() {
     }
 }
 
+void MainWindow::setupStatusBar() {
+    statBar = this->statusBar();
+    statBar->setObjectName("statusBar");
+    statBar->show();
+    // statusBar->setSizeGripEnabled(false);
+}
+
 void MainWindow::setupDetails() {
-    QString strDetails = QString("Position:      %1\n"\
-                                 "View|Near:     %2\n"\
-                                 "View|Far:      %3\n\n"\
-                                 "Buffer|Vertex: %4\n"\
-                                 "Buffer|Data:   %5\n"\
-                                 "Buffer|Index:  %6\n"\
-                                 "Buffer|Total:  %7\n"\
+    QString strDetails = QString("Position:      %1\n"
+                                 "View|Near:     %2\n"
+                                 "View|Far:      %3\n\n"
+                                 "Buffer|Vertex: %4\n"
+                                 "Buffer|Data:   %5\n"
+                                 "Buffer|Index:  %6\n"
+                                 "Buffer|Total:  %7\n"
                                  ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
     labelDetails = new QLabel(graph);
     labelDetails->setFont(aStyle.fontMono);
@@ -758,17 +768,17 @@ void MainWindow::setupLoading() {
     pbLoading->setMaximum(0);
     pbLoading->setTextVisible(true);
 
-    int lh = pbLoading->sizeHint().height();
+    /* int lh = pbLoading->sizeHint().height();
     int gh = mw_y + mw_titleHeight + mw_height + 12;
     int gw = this->centralWidget()->width();
     pbLoading->resize(gw, lh);
-    pbLoading->move(mw_x, gh - lh);
+    pbLoading->move(mw_x, gh - lh); */
 
-    pbLoading->setAttribute(Qt::WA_NoSystemBackground);
+    /* pbLoading->setAttribute(Qt::WA_NoSystemBackground);
     pbLoading->setAttribute(Qt::WA_TranslucentBackground);
-    pbLoading->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
+    pbLoading->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow); */
 
-    pbLoading->raise();
+    /* pbLoading->raise(); */
 }
 
 void MainWindow::handleComboCfg() {
@@ -1361,6 +1371,8 @@ void MainWindow::_initWidgets() {
     refreshShaders();
     loadConfig();
     refreshOrbits();
+
+    setupStatusBar();
 }
 
 void MainWindow::_connectSignals() {

@@ -46,6 +46,7 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QProgressBar>
+#include <QtWidgets/QStatusBar>
 #include <QPixmap>
 #include <QIcon>
 #include <QSignalBlocker>
@@ -246,6 +247,7 @@ private:
     void refreshShaders();
     void loadConfig();
     void refreshOrbits();
+    void setupStatusBar();
     void setupDetails();
     void setupLoading();
 
@@ -342,6 +344,7 @@ private:
     QSlider *slideCullingY = nullptr;
     QSlider *slideCullingR = nullptr;
 
+    QStatusBar *statBar = nullptr;
     QLabel *labelDetails = nullptr;
     QProgressBar *pbLoading = nullptr;
 

@@ -50,23 +50,15 @@ void MainWindow::init(QRect &screenSize) {
 }
 
 void MainWindow::postInit() {
-    QRect tabLoc = wTabs->geometry();
-    mw_tabWidth = tabLoc.width();
-    mw_tabHeight = tabLoc.height();
-    
     mw_graphHeight = vkGraph->height();
     mw_graphWidth = vkGraph->width();
 
-    _setStyle();
+    wTabs->resize(int(mw_width * 0.20), aStyle.dockHeight);
 
-    layDockWaves->setSpacing(aStyle.layDockSpace);
-    layDockHarmonics->setSpacing(aStyle.layDockSpace);
-    treeOrbitalSelect->setIndentation(aStyle.fontMonoWidth << 1);
+    _dockResize();
 
-    setupDetails();
-    setupLoading();
+    wTabs->installEventFilter(this);
 
-    dockTabs->installEventFilter(this);
     statBar->showMessage(tr("Ready"));
 }
 
@@ -81,7 +73,7 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     
     // Simple subroutine to convert bytes to human readable units. This routine is not human-readable.
     std::array<float, 4> bufs = { static_cast<float>(dInfo.vertex), static_cast<float>(dInfo.data), static_cast<float>(dInfo.index), static_cast<float>(total) };
-    QList<QString> units = { "B", "KB", "MB", "GB" };
+    QList<QString> units = { " B", "KB", "MB", "GB" };
     std::array<int, 4> u = { 0, 0, 0, 0 };
     int div = 1024;
     for (int idx = 0; auto& f : bufs) {
@@ -92,14 +84,9 @@ void MainWindow::updateDetails(AtomixInfo *info) {
         idx++;
     }
     
-    QString strDetails = QString("Position:      %1\n"
-                                 "View|Near:     %2\n"
-                                 "View|Far:      %3\n\n"
-                                 "Buffer|Vertex: %4 %7\n"
-                                 "Buffer|Data:   %5 %8\n"
-                                 "Buffer|Index:  %6 %9\n"
-                                 "Buffer|Total:  %10 %11\n"
-                                 ).arg(dInfo.pos).arg(dInfo.near).arg(dInfo.far)\
+    QString strDetails = QString("Distance:  %1 | Near:      %2 | Far:       %3 |\n"
+                                 "Vertex: %4 %7 | Data:   %5 %8 | Index:  %6 %9 | Total:  %10 %11"
+                                 ).arg(dInfo.pos, 9, 'f', 2, ' ').arg(dInfo.near, 9, 'f', 2, ' ').arg(dInfo.far, 9, 'f', 2, ' ')\
                                  .arg(bufs[0], 9, 'f', 2, ' ').arg(bufs[1], 9, 'f', 2, ' ').arg(bufs[2], 9, 'f', 2, ' ')\
                                  .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
                                  .arg(bufs[3], 9, 'f', 2, ' ').arg(units[u[3]]);
@@ -107,14 +94,31 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     labelDetails->adjustSize();
 }
 
-void MainWindow::setLoading(bool loading) {
+void MainWindow::showLoading(bool loading) {
+    if (this->isLoading == loading) return;
+    this->isLoading = loading;
+    
     if (loading) {
-        statBar->clearMessage();
-        statBar->insertWidget(0, pbLoading, 1);
+        // statBar->clearMessage();
+        statBar->addWidget(pbLoading, 1);
+        pbLoading->show();
     } else {
         statBar->removeWidget(pbLoading);
-        statBar->showMessage(tr("Ready"));
     }
+}
+
+void MainWindow::showDetails() {
+    showDebug = !showDebug;
+    if (showDebug) {
+        statBar->addPermanentWidget(labelDetails, 0);
+        labelDetails->show();
+    } else {
+        statBar->removeWidget(labelDetails);
+    }
+}
+
+void MainWindow::showReady() {
+    statBar->showMessage(tr("Ready"));
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e) {
@@ -123,14 +127,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
             close();
             break;
         case Qt::Key_D:
-            showDebug = !showDebug;
-            if (showDebug) {
-                statBar->clearMessage();
-                statBar->insertWidget(0, labelDetails, 1);
-            } else {
-                statBar->removeWidget(labelDetails);
-                statBar->showMessage(tr("Ready"));
-            }
+            showDetails();
             break;
         case Qt::Key_P: {
             if (!vkGraph->supportsGrab()) {
@@ -171,7 +168,7 @@ void MainWindow::resizeEvent(QResizeEvent *e) {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-    if ((obj == dockTabs) && (event->type() == QEvent::Resize)) {
+    if ((obj == wTabs) && (event->type() == QEvent::Resize)) {
         _dockResize();
         return true;
     }
@@ -742,31 +739,21 @@ void MainWindow::refreshOrbits() {
 void MainWindow::setupStatusBar() {
     statBar = this->statusBar();
     statBar->setObjectName("statusBar");
-    // statBar->show();
-    // statusBar->setSizeGripEnabled(false);
+    statBar->setFont(aStyle.fontMonoStatus);
 }
 
 void MainWindow::setupDetails() {
-    QString strDetails = QString("Position:      %1\n"
-                                 "View|Near:     %2\n"
-                                 "View|Far:      %3\n\n"
-                                 "Buffer|Vertex: %4\n"
-                                 "Buffer|Data:   %5\n"
-                                 "Buffer|Index:  %6\n"
-                                 "Buffer|Total:  %7\n"
-                                 ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
     labelDetails = new QLabel(graph);
-    labelDetails->setFont(aStyle.fontMono);
-    labelDetails->setText(strDetails);
-    labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    labelDetails->adjustSize();
+    labelDetails->setObjectName("labelDetails");
+    labelDetails->setFont(aStyle.fontMonoStatus);
+    labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 }
 
 void MainWindow::setupLoading() {
     pbLoading = new QProgressBar(graph);
     pbLoading->setMinimum(0);
     pbLoading->setMaximum(0);
-    pbLoading->setTextVisible(true);
+    pbLoading->setTextVisible(false);
 }
 
 void MainWindow::handleComboCfg() {
@@ -1361,12 +1348,14 @@ void MainWindow::_initWidgets() {
     refreshOrbits();
 
     setupStatusBar();
+    setupDetails();
+    setupLoading();
 }
 
 void MainWindow::_connectSignals() {
     // Signal-Slot Connections
-    connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
-    connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
+    connect(vkGraph, &VKWindow::detailsChanged, this, &MainWindow::updateDetails);
+    connect(vkGraph, &VKWindow::toggleLoading, this, &MainWindow::showLoading);
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, vkGraph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
     connect(buttGroupConfig, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
@@ -1418,6 +1407,12 @@ void MainWindow::_dockResize() {
     layDockWaves->setSpacing(aStyle.layDockSpace);
     layDockHarmonics->setSpacing(aStyle.layDockSpace);
     treeOrbitalSelect->setIndentation(aStyle.fontMonoWidth << 1);
+
+    if (showDebug) {
+        labelDetails->setFont(aStyle.fontMonoStatus);
+        labelDetails->adjustSize();
+    }
+    statBar->setFont(aStyle.fontMonoStatus);
 }
 
 void MainWindow::_resize() {

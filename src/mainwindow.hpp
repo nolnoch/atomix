@@ -88,13 +88,14 @@ struct AtomixStyle {
         QStringList fontList = QFontDatabase::applicationFontFamilies(id);
         if (fontList.contains(monoFont)) {
             fontMono = QFont(monoFont);
-            strFontInc = monoFont;
+            strFontMono = monoFont;
         } else {
             fontMono = QFont(strMonoDefault);
-            strFontInc = strMonoDefault;
+            strFontMono = strMonoDefault;
         }
 
         fontAtomix = baseFont;
+        fontMonoStatus = fontMono;
     }
     
     void scaleFonts() {
@@ -104,8 +105,8 @@ struct AtomixStyle {
         tabUnselectedFontSize = int(round(baseFontSize * 0.90));
         treeFontSize = baseFontSize + 1;
         tableFontSize = baseFontSize + 1;
-        listFontSize = baseFontSize + 1;
         morbFontSize = descFontSize;
+        statusFontSize = baseFontSize + 3;
 
         fontAtomix.setPixelSize(baseFontSize);
         QFontMetrics fmA(fontAtomix);
@@ -116,6 +117,8 @@ struct AtomixStyle {
         QFontMetrics fmM(fontMono);
         fontMonoWidth = fmM.horizontalAdvance("W");
         fontMonoHeight = fmM.height();
+
+        fontMonoStatus.setPixelSize(statusFontSize);
     }
 
     void scaleWidgets() {
@@ -154,6 +157,7 @@ struct AtomixStyle {
                 "QTreeWidget { font-family: %8; font-size: %6px; } "
                 "QTableWidget { font-family: %8; font-size: %7px; } "
                 "QPushButton#morb { font-size: %9px; } "
+                // "QStatusBar QLabel { font-family: %8; font-size: %10px; } "
             });
         }
 
@@ -167,7 +171,7 @@ struct AtomixStyle {
                 .arg(QString::number(descFontSize))             // 2
                 .arg(QString::number(treeFontSize))             // 3
                 .arg(QString::number(tableFontSize))            // 4
-                .arg(strFontInc)                                // 5
+                .arg(strFontMono)                                // 5
                 .arg(QString::number(morbFontSize));            // 6
         } else if (qtStyle == "fusion") {
             strStyle = styleStringList.join(" ")
@@ -178,8 +182,9 @@ struct AtomixStyle {
                 .arg(QString::number(tabSelectedFontSize))      // 5
                 .arg(QString::number(treeFontSize))             // 6
                 .arg(QString::number(tableFontSize))            // 7
-                .arg(strFontInc)                                // 8
+                .arg(strFontMono)                                // 8
                 .arg(QString::number(morbFontSize));            // 9
+                // .arg(QString::number(statusFontSize));          // 10
         }
     }
 
@@ -193,15 +198,15 @@ struct AtomixStyle {
 
     QString qtStyle;
 
-    uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, listFontSize, morbFontSize, morbMargin;
-    uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
+    uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, morbFontSize, statusFontSize;
+    uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize, morbMargin;
     uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
 
     uint windowWidth, windowHeight, dockWidth, dockHeight, halfDock, quarterDock;
 
     QStringList styleStringList;
-    QString strStyle, strFontInc;
-    QFont fontMono, fontAtomix;
+    QString strStyle, strFontMono;
+    QFont fontMono, fontMonoStatus, fontAtomix;
     int fontMonoWidth, fontMonoHeight, fontAtomixWidth, fontAtomixHeight;
 };
 
@@ -232,7 +237,7 @@ signals:
 
 public slots:
     void updateDetails(AtomixInfo *info);
-    void setLoading(bool loading);
+    void showLoading(bool loading);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -250,6 +255,8 @@ private:
     void setupStatusBar();
     void setupDetails();
     void setupLoading();
+    void showDetails();
+    void showReady();
 
     void handleComboCfg();
     void handleConfigChanged();
@@ -357,6 +364,7 @@ private:
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;
     bool activeModel = false;
+    bool isLoading = false;
     bool showDebug = false;
 
     int mw_baseFontSize = 0;

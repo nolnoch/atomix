@@ -92,13 +92,13 @@ void MainWindow::updateDetails(AtomixInfo *info) {
         idx++;
     }
     
-    QString strDetails = QString("Position:      %1\n"\
-                                 "View|Near:     %2\n"\
-                                 "View|Far:      %3\n\n"\
-                                 "Buffer|Vertex: %4 %7\n"\
-                                 "Buffer|Data:   %5 %8\n"\
-                                 "Buffer|Index:  %6 %9\n"\
-                                 "Buffer|Total:  %10 %11\n"\
+    QString strDetails = QString("Position:      %1\n"
+                                 "View|Near:     %2\n"
+                                 "View|Far:      %3\n\n"
+                                 "Buffer|Vertex: %4 %7\n"
+                                 "Buffer|Data:   %5 %8\n"
+                                 "Buffer|Index:  %6 %9\n"
+                                 "Buffer|Total:  %10 %11\n"
                                  ).arg(dInfo.pos).arg(dInfo.near).arg(dInfo.far)\
                                  .arg(bufs[0], 9, 'f', 2, ' ').arg(bufs[1], 9, 'f', 2, ' ').arg(bufs[2], 9, 'f', 2, ' ')\
                                  .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
@@ -123,7 +123,14 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
             close();
             break;
         case Qt::Key_D:
-            labelDetails->setVisible(!labelDetails->isVisible());
+            showDebug = !showDebug;
+            if (showDebug) {
+                statBar->clearMessage();
+                statBar->insertWidget(0, labelDetails, 1);
+            } else {
+                statBar->removeWidget(labelDetails);
+                statBar->showMessage(tr("Ready"));
+            }
             break;
         case Qt::Key_P: {
             if (!vkGraph->supportsGrab()) {
@@ -735,7 +742,7 @@ void MainWindow::refreshOrbits() {
 void MainWindow::setupStatusBar() {
     statBar = this->statusBar();
     statBar->setObjectName("statusBar");
-    statBar->show();
+    // statBar->show();
     // statusBar->setSizeGripEnabled(false);
 }
 
@@ -752,14 +759,7 @@ void MainWindow::setupDetails() {
     labelDetails->setFont(aStyle.fontMono);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    labelDetails->raise();
     labelDetails->adjustSize();
-
-    labelDetails->move(mw_x + 10, mw_y + 50);
-    
-    labelDetails->setAttribute(Qt::WA_NoSystemBackground);
-    labelDetails->setAttribute(Qt::WA_TranslucentBackground);
-    labelDetails->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow);
 }
 
 void MainWindow::setupLoading() {
@@ -767,18 +767,6 @@ void MainWindow::setupLoading() {
     pbLoading->setMinimum(0);
     pbLoading->setMaximum(0);
     pbLoading->setTextVisible(true);
-
-    /* int lh = pbLoading->sizeHint().height();
-    int gh = mw_y + mw_titleHeight + mw_height + 12;
-    int gw = this->centralWidget()->width();
-    pbLoading->resize(gw, lh);
-    pbLoading->move(mw_x, gh - lh); */
-
-    /* pbLoading->setAttribute(Qt::WA_NoSystemBackground);
-    pbLoading->setAttribute(Qt::WA_TranslucentBackground);
-    pbLoading->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::CoverWindow); */
-
-    /* pbLoading->raise(); */
 }
 
 void MainWindow::handleComboCfg() {

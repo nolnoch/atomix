@@ -357,6 +357,7 @@ private:
     harmap mapCloudRecipesLocked;
     int numRecipes = 0;
     bool activeModel = false;
+    bool showDebug = false;
 
     int mw_baseFontSize = 0;
     

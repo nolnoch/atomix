@@ -2,12 +2,6 @@
     "env": {
         "myIncludePath": [
             "${workspaceFolder}"
-        ],
-        "myDefines": [
-            "USING_QVULKAN=1",
-            "USING_QOPENGL=1",
-            "WINNIX=0",
-            "MACOS=1"
         ]
     },
     "configurations": [
@@ -16,7 +10,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/home/braer/Qt/6.8.0/gcc_64/include/**",
-                "/usr/include/**"
+                "/usr/include/**",
+                "/opt/intel/oneapi/2025.0/include/**"
             ],
             "defines": ["${myDefines}"],
             "cStandard": "c23",

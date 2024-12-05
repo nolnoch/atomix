@@ -34,6 +34,6 @@ o Implement MainWindow resizeEvent()
 [GENERAL END]
 
 [IMMEDIATE START]
-- SlideSwitch rounded edges are off on MacOS
-- layout spacing is off on MacOS
+- Merge mac branch into master (replace #defines with bool platform switch and homogenize library calls)
+- Implement StatusBar to replace Loading and details
 [IMMEDIATE END]

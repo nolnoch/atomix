@@ -25,9 +25,9 @@
 #include "cloudmanager.hpp"
 #include <ranges>
 
-/*  std::execution (via TBB) and Qt both use the emit keyword, so undef for this file to avoid conflicts  */
+// std::execution (via TBB) and Qt both use the emit keyword, so undef for this file to avoid conflicts 
 #undef emit
-// #include <execution>
+#include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 
 
@@ -119,40 +119,44 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     // Re-gen vertices for new config values if necessary
     if (newVerticesRequired) {
         mStatus.clear(em::VERT_READY);
-        cm_times[0] = (cm_threading) ? createThreaded() : create();
+        cm_times[0] = createThreaded();
     }
     // Re-gen PDVs for new map or if otherwise necessary
     if (newVerticesRequired || newMap) {
         mStatus.clear(em::DATA_READY);
-        cm_times[1] = (cm_threading) ? bakeOrbitalsThreadedAlt() : bakeOrbitals();
+        cm_times[1] = bakeOrbitalsThreadedAlt();
     }
     // Re-cull the indices for tolerance or if otherwise necessary
     if (newVerticesRequired || newMap || newTolerance) {
         mStatus.clear(em::INDEX_GEN);
-        cm_times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
+        cm_times[2] = cullToleranceThreaded();
         if (cfg.cpu) expandPDVsToColours();
     }
     // Re-cull the indices for slider position or if otherwise necessary
     if (newVerticesRequired || newMap || newTolerance || newCulling) {
         mStatus.clear(em::INDEX_READY);
-        cm_times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
+        cm_times[3] = cullSliderThreaded();
     }
     
-    // std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
-    // this->printTimes();
+    if (isProfiling) {
+        std::cout << "receiveCloudMapAndConfig() -- Functions took:\n";
+        this->printTimes();
+    }
 
     cm_proc_coarse.unlock();
 }
 
 void CloudManager::initManager() {
-    cm_times[0] = (cm_threading) ? createThreaded() : create();
-    cm_times[1] = (cm_threading) ? bakeOrbitalsThreadedAlt() : bakeOrbitals();
-    cm_times[2] = (cm_threading) ? cullToleranceThreaded() : cullTolerance();
+    cm_times[0] = createThreaded();
+    cm_times[1] = bakeOrbitalsThreadedAlt();
+    cm_times[2] = cullToleranceThreaded();
     if (cfg.cpu) expandPDVsToColours();
-    cm_times[3] = (cm_threading) ? cullSliderThreaded() : cullSlider();
+    cm_times[3] = cullSliderThreaded();
 
-    // std::cout << "Init() -- Functions took:\n";
-    // this->printTimes();
+    if (isProfiling) {
+        std::cout << "Init() -- Functions took:\n";
+        this->printTimes();
+    }
 
     mStatus.set(em::UPD_MATRICES);
 }
@@ -358,7 +362,7 @@ double CloudManager::bakeOrbitalsThreaded() {
                     while (l_times-- > 0) {
                         rhol *= rho;
                     }
-                    double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * (*ncR)[DSQ(n, l)];
+                    double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho * 0.5) * (*ncR)[DSQ(n, l)];
                     std::complex<double> Y = exp(std::complex<double>{0,1} * static_cast<double>(m_l) * theta) * legp(l, abs(m_l), cos(phi)) * (*ncY)[DSQ(l, m_l)];
                     std::complex<double> Psi = R * Y;
 
@@ -475,7 +479,7 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
                         for (int l_times = l; l_times > 0; l_times--) {
                             rhol *= rho;
                         }
-                        double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho/2.0) * radNorm;
+                        double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho * 0.5) * radNorm;
                         
                         // Theta Loop
                         for (int i = 0; i < theta_max_local; i++) {
@@ -885,7 +889,6 @@ void CloudManager::cloudTestCSV() {
                 }
                 std::cout << "\n";
             }
-
         }
     }
     std::cout << std::endl;
@@ -1002,31 +1005,6 @@ void CloudManager::wavefuncNorms(int max_n) {
     }
 }
 
-/* void CloudManager::RDPtoColours() {
-    // genRDPs();
-    // TODO implement RDP-to-Colour conversion for CPU
-
-
-
-    for (auto f : max_rads) {
-        std::cout << f << ", ";
-    }
-    std::cout << std::endl;
-    for (auto f : max_RDPs) {
-        std::cout << f << ", ";
-    }
-    std::cout << std::endl;
-
-    std::vector<float>::iterator fIt = std::max_element(allData.begin(), allData.end());
-    int idx = std::distance(allData.begin(), fIt);
-    std::cout << "Max value " << *fIt << " at index " << idx << std::endl;
-
-} */
-
-/* void CloudManager::resetUpdates() {
-    mStatus.reset();
-} */
-
 void CloudManager::clearForNext() {
     dataStaging.assign(this->pixelCount, 0.0);
     allData.assign(this->pixelCount, 0.0f);
@@ -1063,16 +1041,6 @@ void CloudManager::resetManager() {
  *  Generators
  */
 
-/* void CloudManager::genColourArray() {
-    allColours.clear();
-
-    for (int i = 0; i < cloudLayerCount; i++) {
-        std::copy(pixelColours[i]->begin(), pixelColours[i]->end(), std::back_inserter(this->allColours));
-    }
-
-    this->colourCount = setColourCount();
-    this->colourSize = setColourSize();
-} */
 
 /*
  *  Getters -- Size
@@ -1175,9 +1143,9 @@ void CloudManager::printBuffer(uvec buf, std::string name) {
 }
 
 void CloudManager::printTimes() {
-    for (int i = 0; i < cm_labels.size(); i++) {
-        if (!cm_times[i]) {
-            std::cout << cm_labels[i] << std::setprecision(2) << std::fixed << std::setw(9) << cm_times[i] << " ms\n";
+    for (auto [lab, t] : std::views::zip(cm_labels, cm_times)) {
+        if (t) {
+            std::cout << lab << std::setprecision(2) << std::fixed << std::setw(9) << t << " ms\n";
         }
     }
     std::cout << std::endl;

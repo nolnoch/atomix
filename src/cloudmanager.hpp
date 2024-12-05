@@ -25,37 +25,24 @@
 #ifndef CLOUDMANAGER_H
 #define CLOUDMANAGER_H
 
-#define MAC_OS
-
 #include <format>
 #include <map>
-#include <unordered_map>
 #include <unordered_map>
 #include <chrono>
 #include <cmath>
 #include <complex>
-#include <cmath>
-#include <complex>
+
 #include "manager.hpp"
-#include <oneapi/dpl/algorithm>
 
-/*  <---[ Mac's Clang uses dispatch() calls instead of std parallel. ]--->  */
-// TODO implement dispatch
+// Mac's Clang does not support Special Math functions from STL. Must use Boost, which is 4x slower 
+// Got around this by yanking the STD math functions out and calling them directly.
+#include "special.hpp"
+const inline auto& legp = static_cast<double(*)(uint, uint, double)>(atomix::special::atomix_legendre);
+const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(atomix::special::atomix_laguerre);
 
-/*  Mac's Clang does not support Special Math functions from STL. Must use Boost, which is 4x slower  */
-#ifdef MAC_OS
-    #include <boost/math/special_functions.hpp>
-    const inline auto& legp = static_cast<double(*)(int, int, double)>(boost::math::legendre_p);
-    const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(boost::math::laguerre);
-#else
-    const inline auto& legp = static_cast<double(*)(uint, uint, double)>(std::assoc_legendre);
-    const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(std::assoc_laguerre);
-#endif
-
-/*  BS::thread_pool Priority slows the program down for optional benefit of low/high prio  */
+// BS::thread_pool Priority slows the program down for optional benefit of low/high prio 
 // #define BS_THREAD_POOL_ENABLE_PRIORITY
 #include "BS_thread_pool.hpp"
-
 
 
 using std::chrono::steady_clock;

@@ -730,8 +730,6 @@ void MainWindow::refreshOrbits() {
 }
 
 void MainWindow::setupDetails() {
-    fontDebug.setStyleHint(QFont::Monospace);
-    fontDebug.setFamily((isMacOS) ? "Monaco" : "Monospace");
     QString strDetails = QString("Position:      %1\n"\
                                  "View|Near:     %2\n"\
                                  "View|Far:      %3\n\n"\
@@ -741,7 +739,7 @@ void MainWindow::setupDetails() {
                                  "Buffer|Total:  %7\n"\
                                  ).arg("--").arg("--").arg("--").arg("--").arg("--").arg("--").arg("--");
     labelDetails = new QLabel(graph);
-    labelDetails->setFont(fontDebug);
+    labelDetails->setFont(aStyle.fontMono);
     labelDetails->setText(strDetails);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     labelDetails->raise();
@@ -838,11 +836,9 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             this->numRecipes++;
 
             // Because adding, enable buttons
-            if (!intTableRows) {
-                buttClearHarmonics->setEnabled(true);
-                buttMorbHarmonics->setEnabled(true);
-                groupRecipeReporter->setStyleSheet("");
-            }
+            buttClearHarmonics->setEnabled(true);
+            buttMorbHarmonics->setEnabled(true);
+            groupRecipeReporter->setStyleSheet("");
 
         } else {
             // Remove orbital from table
@@ -974,11 +970,7 @@ void MainWindow::handleButtMorbWaves() {
 
     refreshOrbits();
 
-#ifdef USING_QVULKAN
     vkGraph->newWaveConfig(&waveConfig);
-#elif defined(USING_QOPENGL)
-    glGraph->newWaveConfig(&waveConfig);
-#endif
 
     groupColors->setEnabled(true);
     groupOrbits->setEnabled(true);
@@ -994,11 +986,7 @@ void MainWindow::handleButtMorbHarmonics() {
 
     uint vertex, data, index;
     uint64_t total;
-#ifdef USING_QVULKAN
     vkGraph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
-#elif defined(USING_QOPENGL)
-    glGraph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
-#endif
     total = vertex + data + index;
     uint64_t oneGiB = 1024 * 1024 * 1024;
 
@@ -1032,11 +1020,7 @@ void MainWindow::handleButtMorbHarmonics() {
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
     }
 
-#ifdef USING_QVULKAN
     vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
-#elif defined(USING_QOPENGL)
-    glGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, true);
-#endif
 
     // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
@@ -1155,11 +1139,7 @@ void MainWindow::handleButtColors(int id) {
     pmColour->fill(QColor::fromString(colourHex));
     buttGroupColors->button(id)->setIcon(QIcon(*pmColour));
 
-#ifdef USING_QVULKAN
     vkGraph->setColorsWaves(id, colour);
-#elif defined(USING_QOPENGL)
-    glGraph->setColorsWaves(id, colour);
-#endif
 }
 
 void MainWindow::handleSlideCullingX(int val) {
@@ -1194,11 +1174,8 @@ void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
     if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY) || (this->cloudConfig.CloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.CloudCull_rOut != lastSliderSentROut)) {
-#ifdef USING_QVULKAN
         vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
-#elif defined(USING_QOPENGL)
-        glGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, this->numRecipes, false);
-#endif
+
         lastSliderSentX = this->cloudConfig.CloudCull_x;
         lastSliderSentY = this->cloudConfig.CloudCull_y;
         lastSliderSentRIn = this->cloudConfig.CloudCull_rIn;
@@ -1207,12 +1184,7 @@ void MainWindow::handleSlideReleased() {
 }
 
 void MainWindow::handleSlideBackground(int val) {
-    printLayout();
-#ifdef USING_QVULKAN
     vkGraph->setBGColour((static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks)));
-#elif defined(USING_QOPENGL)
-    glGraph->setBGColour((static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks)));
-#endif
 }
 
 int MainWindow::findHarmapItem(int n, int l, int m) {
@@ -1337,11 +1309,9 @@ void MainWindow::_initStyle() {
 }
 
 void MainWindow::_initGraphics() {
-#ifdef USING_QVULKAN
-
     // Vulkan
     QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
-    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library", "VK_EXT_metal_surface" };
+    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     
     QVersionNumber version = vkInst.supportedApiVersion();
     VK_MINOR_VERSION = version.minorVersion();
@@ -1371,15 +1341,6 @@ void MainWindow::_initGraphics() {
     graph = QWidget::createWindowContainer(vkGraph);
     graph->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     this->setCentralWidget(graph);
-
-#elif defined(USING_QOPENGL)
-
-    // OpenGL
-    glGraph = new GWidget(this, cfgParser);
-    this->setCentralWidget(glGraph);
-    graph = glGraph;
-
-#endif
 }
 
 void MainWindow::_initWidgets() {
@@ -1407,11 +1368,7 @@ void MainWindow::_connectSignals() {
     connect(vkGraph, SIGNAL(detailsChanged(AtomixInfo*)), this, SLOT(updateDetails(AtomixInfo*)));
     connect(vkGraph, SIGNAL(toggleLoading(bool)), this, SLOT(setLoading(bool)));
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
-#ifdef USING_QVULKAN
     connect(buttGroupOrbits, &QButtonGroup::idToggled, vkGraph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
-#elif defined(USING_QOPENGL)
-    connect(buttGroupOrbits, &QButtonGroup::idToggled, glGraph, &GWidget::selectRenderedWaves, Qt::DirectConnection);
-#endif
     connect(buttGroupConfig, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(entryOrbit, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);

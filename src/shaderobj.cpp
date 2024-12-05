@@ -22,16 +22,13 @@
  *    atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "shaderobj.hpp"
 #include <iostream>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/Public/ResourceLimits.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+#include <spirv_cross/spirv_cross.hpp>
 
-#ifdef USING_QVULKAN
-    #include <glslang/Public/ShaderLang.h>
-    #include <glslang/Public/ResourceLimits.h>
-    #include <glslang/SPIRV/GlslangToSpv.h>
-
-    #include <spirv_cross/spirv_cross.hpp>
-#endif
+#include "shaderobj.hpp"
 
 
 /**
@@ -57,7 +54,6 @@ void Shader::setId(unsigned int idAssigned) {
     shaderId = idAssigned;
 }
 
-#ifdef USING_QVULKAN
 /**
  * Compile the shader from source code.
  * 
@@ -164,7 +160,6 @@ bool Shader::reflect() {
     this->validReflect = true;
     return true;
 }
-#endif
 
 /**
  * Accessor function for the assigned ID.

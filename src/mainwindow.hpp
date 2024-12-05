@@ -55,15 +55,12 @@
 
 #include "slideswitch.hpp"
 #include "configparser.hpp"
+#include "vkwindow.hpp"
 
-#ifdef USING_QVULKAN
-    #include "vkwindow.hpp"
-#elif defined(USING_QOPENGL)
-    #include "glwidget.hpp"
-#endif
 
 const QString DEFAULT = "default-config.wave";
 const int MAX_ORBITS = 8;
+
 
 struct AtomixStyle {
     void setWindowSize(int width, int height) {
@@ -84,7 +81,7 @@ struct AtomixStyle {
     }
 
     void setFonts(QFont baseFont, QString monoFont) {
-        QString strDefault = (isMacOS) ? "Monaco" : "Monospace";
+        QString strMonoDefault = (isMacOS) ? "Monaco" : "Monospace";
 
         int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + monoFont + "-Regular.ttf");
         QStringList fontList = QFontDatabase::applicationFontFamilies(id);
@@ -92,8 +89,8 @@ struct AtomixStyle {
             fontMono = QFont(monoFont);
             strFontInc = monoFont;
         } else {
-            fontMono = QFont(strDefault);
-            strFontInc = strDefault;
+            fontMono = QFont(strMonoDefault);
+            strFontInc = strMonoDefault;
         }
 
         fontAtomix = baseFont;
@@ -348,13 +345,9 @@ private:
     QLabel *labelDetails = nullptr;
     QProgressBar *pbLoading = nullptr;
 
-#ifdef USING_QVULKAN
     VKWindow *vkGraph = nullptr;
     QVulkanInstance vkInst;
     QWidget *vkWinWidWrapper = nullptr;
-#elif defined(USING_QOPENGL)
-    GWidget *glGraph = nullptr;
-#endif
     QWidget *graph = nullptr;
     QWindow *graphWin = nullptr;
 

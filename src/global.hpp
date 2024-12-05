@@ -36,14 +36,6 @@
 #include <string>
 #include <filesystem>
 
-#define MACOS
-#ifdef MACOS
-    constexpr bool isMacOS = true;
-#else
-    constexpr bool isMacOS = false;
-#endif
-
-// #define DEBUG
 
 #define SWIDTH 1280
 #define SHEIGHT 720
@@ -52,6 +44,9 @@
 extern int VK_MINOR_VERSION;
 extern int VK_SPIRV_VERSION;
 extern bool isDebug;
+extern bool isMacOS;
+extern bool isProfiling;
+
 
 struct AtomixFiles {
     std::string rootDir;

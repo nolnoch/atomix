@@ -1091,7 +1091,9 @@ double CloudManager::wavefuncRadial(int n, int l, double r) {
      *
      * This function takes the orbital angular momentum `l` and the z-component of the
      * orbital angular momentum `m_l` and returns the angular wavefunction evaluated at
-     * the given polar angle `theta` and azimuthal angle `phi`.
+     * the given polar angle `theta` and azimuthal angle `phi`. The angular wavefunction
+     * is given by the formula:
+     * Y_{lm}(\theta, \phi) = exp(i * m_l * \theta) * L_{l}^{m_l}(\cos(\phi)) * N_{lm}
      *
      * @param[in] l The orbital angular momentum.
      * @param[in] m_l The z-component of the orbital angular momentum.

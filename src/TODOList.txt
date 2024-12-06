@@ -24,15 +24,14 @@ o Fix Harmonics Phi culling
 o Implement CPU vs GPU cloud rendering -- Note: FULL cpu rendering is not really feasible considering the array of possible superposed states
 o Add radial culling
 o Implement MainWindow resizeEvent()
+o Move ProgressBar to StatusBar
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Refactor config files to use denser format, saved to file from application
-- Reimplement custom vertex shading through QFileDialog and JIT programVK addition
-- Move ProgressBar to StatusBar
+- Reimplement custom vertex shaders through QFileDialog and JIT programVK addition
 - Energy tab
 - Gravity tab
 - Planck tab
 [GENERAL END]
 
 [IMMEDIATE START]
-- Implement StatusBar to replace Loading and details
 [IMMEDIATE END]

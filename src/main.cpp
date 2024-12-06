@@ -115,9 +115,9 @@ int main(int argc, char* argv[]) {
     mainWindow.init(dispXY);
 
     // I would like the ship to go.
-    // Now.
     mainWindow.show();
     app.processEvents();
+    // Now.
     mainWindow.postInit();
     
     return app.exec();

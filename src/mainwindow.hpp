@@ -217,9 +217,11 @@ public:
     ~SortableOrbital() override = default;
 
     bool operator<(const QTableWidgetItem &other) const override {
-        int textVal = this->text().simplified().replace(" ", "").toInt();
-        int otherTextVal = other.text().simplified().replace(" ", "").toInt();
-        return (textVal < otherTextVal);
+        int textValA = this->text().simplified().replace(" ", "").first(2).toInt();
+        int textValB = this->text().simplified().replace(" ", "").slice(2).toInt();
+        int otherTextValA = other.text().simplified().replace(" ", "").first(2).toInt();
+        int otherTextValB = other.text().simplified().replace(" ", "").slice(2).toInt();
+        return (textValA < otherTextValA) || (textValA == otherTextValA && textValB < otherTextValB);
     }
 };
 

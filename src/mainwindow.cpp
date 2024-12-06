@@ -454,7 +454,7 @@ void MainWindow::setupDockHarmonics() {
             thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
             thisItem->setCheckState(0, Qt::Unchecked);
             lastL = thisItem;
-            for (int m_l = l; m_l >= 0; m_l--) {
+            for (int m_l = l; m_l >= -l; m_l--) {
                 QString strFinal = QString("%1 %2 %3").arg(n).arg(l).arg(m_l);
                 thisItem = new QTreeWidgetItem(lastL);
                 thisItem->setText(0, strFinal);
@@ -822,7 +822,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 
             // Because adding, enable buttons
             buttClearHarmonics->setEnabled(true);
-            buttMorbHarmonics->setEnabled(true);
             groupRecipeReporter->setStyleSheet("");
 
         } else {
@@ -858,6 +857,9 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     }
 
     /* ALL Nodes make it here */
+    // Since we've made any change, enable render button
+    buttMorbHarmonics->setEnabled(true);
+
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent
     while (ptrParent) {

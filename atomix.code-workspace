@@ -104,7 +104,8 @@
 			"ios": "cpp",
 			"locale": "cpp",
 			"print": "cpp",
-			"text_encoding": "cpp"
+			"text_encoding": "cpp",
+			"regex": "cpp"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

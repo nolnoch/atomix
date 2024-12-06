@@ -36,9 +36,9 @@
 
 // Mac's Clang does not support Special Math functions from STL. Must use Boost, which is 4x slower 
 // Got around this by yanking the STD math functions out and calling them directly.
-#include "special.hpp"
-const inline auto& legp = static_cast<double(*)(uint, uint, double)>(atomix::special::atomix_legendre);
-const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(atomix::special::atomix_laguerre);
+// #include "special.hpp"
+const inline auto& legp = static_cast<double(*)(uint, uint, double)>(std::assoc_legendre);
+const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(std::assoc_laguerre);
 
 // BS::thread_pool Priority slows the program down for optional benefit of low/high prio 
 // #define BS_THREAD_POOL_ENABLE_PRIORITY
@@ -88,6 +88,7 @@ class CloudManager : public Manager {
         double createThreaded();
         double bakeOrbitals();
         double bakeOrbitalsThreaded();
+        double bakeOrbitalsThreadedAng();
         double cullTolerance();
         double cullToleranceThreaded();
         double expandPDVsToColours();

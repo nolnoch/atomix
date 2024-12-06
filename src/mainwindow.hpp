@@ -280,7 +280,7 @@ private:
 
     int findHarmapItem(int n, int l, int m);
     int getHarmapSize();
-    void printHarmap();
+    // void printHarmap();
     void printList();
     
     void printLayout();

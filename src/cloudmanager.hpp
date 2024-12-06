@@ -63,11 +63,7 @@ class CloudManager : public Manager {
         CloudManager();
         virtual ~CloudManager();
         void newConfig(AtomixConfig *cfg) override;
-
         void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, bool generator = true);
-        
-        void cloudTest(int n_max);
-        void cloudTestCSV();
         
         uint getColourSize();
         uint getMaxLayer(double tolerance, int n_max, int divisor);
@@ -77,8 +73,6 @@ class CloudManager : public Manager {
 
         void printRecipes();
         void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
-
-        void testThreadingInit();
 
     private:
         void initManager() override final;
@@ -120,6 +114,10 @@ class CloudManager : public Manager {
         void printBuffer(fvec buf, std::string name);
         void printBuffer(uvec buf, std::string name);
         void printTimes();
+
+        void cloudTest(int n_max);
+        void cloudTestCSV();
+        void testThreadingInit(AtomixConfig *config, harmap *inMap);
 
         // void genOrbitalsThroughN(int n);
         // void genOrbitalsOfN(int n);

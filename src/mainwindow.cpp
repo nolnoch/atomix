@@ -1192,7 +1192,7 @@ int MainWindow::getHarmapSize() {
     return totalSize;
 }
 
-void MainWindow::printHarmap() {
+/* void MainWindow::printHarmap() {
     for (auto k : mapCloudRecipesLocked) {
         std::cout << k.first << ": ";
         for (auto v : k.second) {
@@ -1201,7 +1201,7 @@ void MainWindow::printHarmap() {
         std::cout << "\n";
     }
     std::cout << std::endl;
-}
+} */
 
 void MainWindow::printList() {
     int listSize = tableOrbitalReport->rowCount();

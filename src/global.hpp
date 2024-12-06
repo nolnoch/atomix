@@ -33,9 +33,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <map>
+#include <iostream>
 #include <string>
 #include <filesystem>
 
+
+using harmap = std::map<int, std::vector<glm::ivec3>>;
 
 #define SWIDTH 1280
 #define SHEIGHT 720
@@ -46,6 +50,7 @@ extern int VK_SPIRV_VERSION;
 extern bool isDebug;
 extern bool isMacOS;
 extern bool isProfiling;
+extern bool isTesting;
 
 
 struct AtomixFiles {
@@ -136,6 +141,19 @@ struct BitFlag {
 
     uint32_t bf = 0;
 };
+
+namespace atomix {
+    inline void printHarmap(harmap &map) {
+        for (auto k : map) {
+            std::cout << k.first << ": ";
+            for (auto v : k.second) {
+                std::cout << glm::to_string(v) << ", ";
+            }
+            std::cout << "\n";
+        }
+        std::cout << std::endl;
+    }
+}
 
 /* Math constants */
 const double TWO_PI = 2.0 * M_PI;   // 2pi is used a lot

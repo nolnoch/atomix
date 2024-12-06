@@ -40,7 +40,6 @@ using uvec = std::vector<uint>;
 using vec3 = glm::vec3;
 using ivec2 = glm::ivec2;
 using ivec3 = glm::ivec3;
-using harmap = std::map<int, std::vector<glm::ivec3>>;
 
 
 class Manager {

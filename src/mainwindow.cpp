@@ -1042,8 +1042,8 @@ void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
             dialogConfim.exec();
 
             treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
+            return;
         }
-        return;
     }
 
     std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];

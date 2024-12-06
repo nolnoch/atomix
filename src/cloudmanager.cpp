@@ -761,7 +761,6 @@ double CloudManager::bakeOrbitalsThreadedAng() {
                         double phi = j * deg_fac_local;
 
                         std::complex<double> Psi;
-                        double weight = 0;
 
                         // Recipe Loop
                         for (int r = 0; r < numRecipes; r++) {
@@ -770,7 +769,7 @@ double CloudManager::bakeOrbitalsThreadedAng() {
                             int m_l = ms[r];
                             double angNorm = ny[r];
                             double radNorm = nr[r];
-                            weight = ws[r];
+                            double weight = ws[r];
                         
                             // Radial wavefunc
                             double rho = 2.0 * radius / static_cast<double>(n);
@@ -783,12 +782,12 @@ double CloudManager::bakeOrbitalsThreadedAng() {
 
                             // Angular wavefunc
                             std::complex<double> Y = exp(std::complex<double>{0,1} * (m_l * theta)) * angNorm * legp(l, abs(m_l), cos(phi));
-                            Psi += R * Y;
+                            Psi += (R * Y) * weight;
                         }
 
                         double pdv = (std::conj(Psi) * Psi).real() * radius * radius;
                         int localCount = layer_idx + theta_idx + j;
-                        (*thread_vec)[localCount] += (pdv * weight);
+                        (*thread_vec)[localCount] += pdv;
 
                     } // End of Phi Loop
                 } // End of Theta Loop

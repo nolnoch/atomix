@@ -426,9 +426,9 @@ void VKWindow::initModels() {
 }
 
 void VKWindow::initVecsAndMatrices() {
-    vw_startDist = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
-    vw_nearDist = 0.1f;
-    vw_farDist = vw_startDist * 2.0f;
+    vw_info.start = (flGraphState.hasNone(egs::CLOUD_MODE)) ? 16.0f : (10.0f + 6.0f * (this->max_n * this->max_n));
+    vw_info.near = 0.1f;
+    vw_info.far = vw_info.start * 2.0f;
 
     q_TotalRot.zero();
     m4_rotation = glm::mat4(1.0f);
@@ -437,7 +437,7 @@ void VKWindow::initVecsAndMatrices() {
     vw_world.m4_view = glm::mat4(1.0f);
     vw_world.m4_world = glm::mat4(1.0f);
 
-    v3_cameraPosition = glm::vec3(0.0f, 0.0f, vw_startDist);
+    v3_cameraPosition = glm::vec3(0.0f, 0.0f, vw_info.start);
     v3_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     v3_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     v3_mouseBegin = glm::vec3(0);
@@ -453,16 +453,13 @@ void VKWindow::initVecsAndMatrices() {
         width = this->width();
         height = this->height();
     }
-    vw_aspect = width / height;
-    vw_world.m4_proj = glm::perspective(RADN(45.0f), vw_aspect, vw_nearDist, vw_farDist);
+    vw_info.aspect = width / height;
+    vw_world.m4_proj = glm::perspective(RADN(45.0f), vw_info.aspect, vw_info.near, vw_info.far);
     vw_world.m4_proj[1][1] *= -1.0f;
 
     atomixProg->updateClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-    vw_info.pos = vw_startDist;
-    vw_info.start = vw_startDist;
-    vw_info.near = vw_nearDist;
-    vw_info.far = vw_farDist;
+    vw_info.pos = vw_info.start;
     emit detailsChanged(&vw_info);
 }
 
@@ -476,8 +473,6 @@ void VKWindow::wheelEvent(QWheelEvent *e) {
     
     vw_info.pos = v3_cameraPosition.z;
     vw_info.far = v3_cameraPosition.z + vw_info.start;
-    vw_world.m4_proj = glm::perspective(RADN(45.0f), VKfloat(width()) / height(), vw_nearDist, vw_info.far);
-    vw_world.m4_proj[1][1] *= -1.0f;
     emit detailsChanged(&vw_info);
     requestUpdate();
 }
@@ -558,6 +553,14 @@ void VKWindow::keyPressEvent(QKeyEvent *e) {
     QCoreApplication::sendEvent(this->parent(), e);
 }
 
+void VKWindow::resizeEvent(QResizeEvent *e) {
+    QWindow::resizeEvent(e);
+    
+    // Update matrices
+    // VkExtent2D renderExtent = { (uint32_t)e->size().width(), (uint32_t)e->size().height() };
+    // this->updateExtent(renderExtent);
+}
+
 void VKWindow::handleHome() {
     initVecsAndMatrices();
     requestUpdate();
@@ -593,6 +596,7 @@ void VKWindow::setColorsWaves(int id, uint colorChoice) {
 
 void VKWindow::updateExtent(VkExtent2D &renderExtent) {
     vw_extent = renderExtent;
+    vw_info.aspect = (float)renderExtent.width / (float)renderExtent.height;
 }
 
 void VKWindow::updateBuffersAndShaders() {
@@ -602,6 +606,8 @@ void VKWindow::updateBuffersAndShaders() {
     m4_rotation = glm::make_mat4(&q_TotalRot.matrix()[0]);
     vw_world.m4_world = m4_translation * m4_rotation;
     vw_world.m4_view = glm::lookAt(v3_cameraPosition, v3_cameraTarget, v3_cameraUp);
+    vw_world.m4_proj = glm::perspective(RADN(45.0f), vw_info.aspect, vw_info.near, vw_info.far);
+    vw_world.m4_proj[1][1] *= -1.0f;
     this->q_TotalRot.normalize();
 
     // Update time (per-frame)
@@ -729,7 +735,7 @@ void VKWindow::updateBuffersAndShaders() {
         }
 
         flGraphState.clear(eUpdateFlags);
-        this->updateSize();
+        this->updateBufferSizes();
     }
 
     atomixProg->updateUniformBuffer(this->currentSwapChainImageIndex(), "WorldState", sizeof(this->vw_world), &this->vw_world);
@@ -766,7 +772,7 @@ std::string VKWindow::withCommas(int64_t value) {
     return ssFmt.str();
 }
 
-void VKWindow::updateSize() {
+void VKWindow::updateBufferSizes() {
     uint64_t VSize = 0, DSize = 0, ISize = 0;
     vw_info.vertex = 0;
     vw_info.data = 0;
@@ -789,7 +795,7 @@ void VKWindow::updateSize() {
 }
 
 void VKWindow::printSize() {
-    updateSize();
+    updateBufferSizes();
     
     std::array<double, 4> bufs = { static_cast<double>(vw_info.vertex), static_cast<double>(vw_info.data), static_cast<double>(vw_info.index), 0 };
     std::array<std::string, 4> labels = { "Vertex:  ", "Data:    ", "Index:   ", "TOTAL:   " };

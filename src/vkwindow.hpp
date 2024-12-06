@@ -58,6 +58,7 @@ struct AtomixInfo {
     float near = 0.0f;      // Near culling distance
     float far = 0.0f;       // Far culling distance
     float start = 0.0f;     // Starting distance
+    float aspect = 0.0f;    // Aspect ratio
     uint64_t vertex = 0;    // Vertex buffer size
     uint64_t data = 0;      // Data buffer size
     uint64_t index = 0;     // Index buffer size
@@ -198,6 +199,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     void cleanup();
@@ -213,7 +215,7 @@ private:
     void threadFinishedWithResult(uint result);
     
     std::string withCommas(int64_t value);
-    void updateSize();
+    void updateBufferSizes();
     void printSize();
     void printFlags(std::string);
     void printConfig(AtomixConfig *cfg);
@@ -247,13 +249,7 @@ private:
     int64_t vw_timeStart;
     int64_t vw_timeEnd;
     int64_t vw_timePaused;
-    float vw_startDist = 0.0f;
-    float vw_farDist = 0.0f;
-    float vw_nearDist = 0.0f;
     float vw_bg = 0.0f;
-    float vw_nearScale = 0.05f;
-    float vw_farScale = 2.20f;
-    float vw_aspect = 1.0f;
     
     VkExtent2D vw_extent = {0, 0};
     uint vw_movement = 0;

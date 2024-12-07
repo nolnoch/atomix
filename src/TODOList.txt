@@ -25,6 +25,8 @@ o Implement CPU vs GPU cloud rendering -- Note: FULL cpu rendering is not really
 o Add radial culling
 o Implement MainWindow resizeEvent()
 o Move ProgressBar to StatusBar
+o Re-add negative m_l values and correctly render superpositions
+o Save window geometry and state between sessions
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Refactor config files to use denser format, saved to file from application
 - Reimplement custom vertex shaders through QFileDialog and JIT programVK addition
@@ -34,4 +36,5 @@ o Move ProgressBar to StatusBar
 [GENERAL END]
 
 [IMMEDIATE START]
+- Wave orbital selection is now buggy?
 [IMMEDIATE END]

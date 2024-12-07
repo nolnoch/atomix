@@ -245,6 +245,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     void setupTabs();
@@ -259,6 +260,7 @@ private:
     void setupLoading();
     void showDetails();
     void showReady();
+    void loadSavedSettings();
 
     void handleComboCfg();
     void handleConfigChanged();

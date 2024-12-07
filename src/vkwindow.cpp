@@ -381,7 +381,7 @@ void VKWindow::initCloudModel() {
     cloudModel.vbos = { &cloudVert, &cloudVertCPU, &cloudData, &cloudDataCPU };
     cloudModel.ibo = &cloudInd;
     cloudModel.ubos = { "WorldState" };
-    cloudModel.vertShaders = { "gpu_harmonics.vert", "gpu_harmonics_test.vert" };
+    cloudModel.vertShaders = { "gpu_harmonics.vert", "default.vert" };
     cloudModel.fragShaders = { "default.frag" };
     cloudModel.pushConstant = "pConstCloud";
     cloudModel.topologies = { VK_PRIMITIVE_TOPOLOGY_POINT_LIST };

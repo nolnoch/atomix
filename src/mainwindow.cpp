@@ -53,12 +53,10 @@ void MainWindow::postInit() {
     mw_graphHeight = vkGraph->height();
     mw_graphWidth = vkGraph->width();
 
-    wTabs->resize(int(mw_width * 0.20), aStyle.dockHeight);
-
+    loadSavedSettings();
     _dockResize();
 
     wTabs->installEventFilter(this);
-
     statBar->showMessage(tr("Ready"));
 }
 
@@ -176,11 +174,20 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     return false;
 }
 
+void MainWindow::closeEvent(QCloseEvent *e) {
+    QSettings settings("Nolnoch", "atomix");
+    settings.setValue("geometry", this->saveGeometry());
+    settings.setValue("state", this->saveState());
+    QWidget::closeEvent(e);
+}
+
 void MainWindow::setupTabs() {
     dockTabs = new QDockWidget(this);
+    dockTabs->setObjectName("dockTabs");
     dockTabs->setAllowedAreas(Qt::RightDockWidgetArea);
     
     wTabs = new QTabWidget(this);
+    wTabs->setObjectName("tabsAtomix");
     wTabs->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
     // wTabs->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
@@ -754,6 +761,12 @@ void MainWindow::setupLoading() {
     pbLoading->setMinimum(0);
     pbLoading->setMaximum(0);
     pbLoading->setTextVisible(false);
+}
+
+void MainWindow::loadSavedSettings() {
+    QSettings settings("Nolnoch", "atomix");
+    restoreGeometry(settings.value("geometry").toByteArray());
+    restoreState(settings.value("state").toByteArray());
 }
 
 void MainWindow::handleComboCfg() {

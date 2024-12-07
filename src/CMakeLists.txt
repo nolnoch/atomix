@@ -32,7 +32,7 @@ find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_reflect CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 
-# set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 add_executable(atomix main.cpp quaternion.cpp special.cpp shaderobj.cpp mainwindow.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programVK.cpp vkwindow.cpp)
 

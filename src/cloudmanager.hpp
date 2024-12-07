@@ -82,7 +82,7 @@ class CloudManager : public Manager {
         double createThreaded();
         double bakeOrbitals();
         double bakeOrbitalsThreaded();
-        double bakeOrbitalsThreadedAng();
+        double bakeOrbitalsThreadedAlt();
         double cullTolerance();
         double cullToleranceThreaded();
         double expandPDVsToColours();

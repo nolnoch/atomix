@@ -54,6 +54,7 @@ struct AtomixConfig {
     int cloudResolution = 180;                      // Number of points per circle [int] in orbital cloud
     int waves = 6;                                  // Wave count as Integer
     int resolution = 180;                           // Resolution as Integer
+    uint visibleOrbits = 0;                         // Visible Orbits as Unsigned Integer
     bool superposition = false;                     // Superposition as Bool
     bool cpu = false;                               // GPU rendering as Bool
     bool parallel = false;                          // Parallel waves as Bool

@@ -62,7 +62,7 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     }
     
     // Check for relevant config changes OR for recipes to require larger radius
-    if (cfg.waves != config->waves) {                    // Requires new {Vertices[cpu/gpu], VBO, EBO}
+    if (cfg.waves != config->waves) {                    // Requires new {Vertices[cpu/gpu], VBO, IBO}
         flWaveCfg.set(ewc::ORBITS);
     }
     if (cfg.amplitude != config->amplitude) {            // Requires new {Vertices[cpu]}
@@ -74,7 +74,7 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     if (cfg.wavelength != config->wavelength) {          // Requires new {Vertices[cpu]}
         flWaveCfg.set(ewc::WAVELENGTH);
     }
-    if (cfg.resolution != config->resolution) {          // Requires new {Vertices[cpu/gpu], VBO, EBO}
+    if (cfg.resolution != config->resolution) {          // Requires new {Vertices[cpu/gpu], VBO, IBO}
         flWaveCfg.set(ewc::RESOLUTION);
     }
     if (cfg.parallel != config->parallel) {              // Requires new {Vertices[cpu]}
@@ -83,10 +83,10 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     if (cfg.superposition != config->superposition) {    // Requires new {Vertices[cpu]}
         flWaveCfg.set(ewc::SUPERPOSITION);
     }
-    if (cfg.cpu != config->cpu) {                        // Requires new {Vertices[cpu/gpu], VBO, EBO}
+    if (cfg.cpu != config->cpu) {                        // Requires new {Vertices[cpu/gpu], VBO, IBO}
         flWaveCfg.set(ewc::CPU);
     }
-    if (cfg.sphere != config->sphere) {                  // Requires new {Vertices[cpu/gpu], VBO, EBO}
+    if (cfg.sphere != config->sphere) {                  // Requires new {Vertices[cpu/gpu], VBO, IBO}
         flWaveCfg.set(ewc::SPHERE);
     }
     if (cfg.vert != config->vert) {                      // Requires new {Shader}
@@ -179,23 +179,16 @@ void WaveManager::update(double time) {
     genVertexArray();
 }
 
-void WaveManager::newWaves() {
-    resetManager();
-    create();
-}
-
-uint WaveManager::selectWaves(int id, bool checked) {
+void WaveManager::selectWaves(int id, bool checked) {
     uint flag = id;
 
     if (checked)
-        renderedWaves |= flag;
+        this->cfg.visibleOrbits |= flag;
     else
-        renderedWaves &= ~(flag);
+        this->cfg.visibleOrbits &= ~flag;
 
     mStatus.set(em::INDEX_READY);
     genIndexBuffer();
-
-    return em::UPD_IBO;
 }
 
 void WaveManager::circleWaveGPU(int idx) {
@@ -443,7 +436,7 @@ void WaveManager::genIndexBuffer() {
     allIndices.clear();
 
     for (int i = 0; i < cfg.waves; i++) {
-        if (renderedWaves & (1 << i)) {
+        if (this->cfg.visibleOrbits & (1 << i)) {
             std::copy(waveIndices[i]->begin(), waveIndices[i]->end(), std::back_inserter(this->allIndices));
             // If we choose to use lines, then we need primitive restart (0xFFFFFFFF)
         }

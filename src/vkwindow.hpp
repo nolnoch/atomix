@@ -89,9 +89,9 @@ struct PushConstantsCloud {
 
 enum egs {
     WAVE_MODE =         1 << 0,     // Button from Wave tab clicked, only making Waves
-    WAVE_RENDER =       1 << 1,     // Wave EBO has been loaded
+    WAVE_RENDER =       1 << 1,     // Wave IBO has been loaded
     CLOUD_MODE =        1 << 2,     // Button from Cloud tab clicked, only making Clouds
-    CLOUD_RENDER =      1 << 3,     // Cloud EBO has been loaded
+    CLOUD_RENDER =      1 << 3,     // Cloud IBO has been loaded
     THREAD_FINISHED =   1 << 4,     // init_X_Manager() has finished
     UPD_SHAD_V =        1 << 5,     // Update Vertex Shader
     UPD_SHAD_F =        1 << 6,     // Update Fragment Shader

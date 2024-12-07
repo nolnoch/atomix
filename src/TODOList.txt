@@ -3,7 +3,7 @@ o Resize VBO when/if CloudConfig changes
 o Commit to new vertex/resolution scaling or fix above
 o Multithreading (ughhh, but very necessary)...[holy crap, I figured it out -- 98% reduction in time!]
 o Slider for bg color
-o Slider for cutting through model (EBO change)
+o Slider for cutting through model (IBO change)
 o Scale pan based on zoom level
 o Swap state-lock to make maxRadius depend on config
 o Selecting subset of previous recipes does not enable Lock Recipes button
@@ -36,5 +36,4 @@ o Save window geometry and state between sessions
 [GENERAL END]
 
 [IMMEDIATE START]
-- Wave orbital selection is now buggy?
 [IMMEDIATE END]

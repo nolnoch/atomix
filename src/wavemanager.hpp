@@ -44,8 +44,7 @@ class WaveManager : public Manager {
         double create() override final;
         void update(double time) override final;
         
-        void newWaves();
-        uint selectWaves(int id, bool checked);
+        void selectWaves(int id, bool checked);
         void setTime(double time) { this->time = time; }
 
         void setPeak(uint colourBits) { this->waveColours.r = colourBits; }

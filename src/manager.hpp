@@ -131,7 +131,7 @@ class Manager {
             INIT =              1 << 0,     // Manager has been initialized
             VERT_READY =        1 << 1,     // Vertices generated and ready for VBO load
             DATA_READY =        1 << 2,     // Special data generated and ready for VBO load
-            INDEX_READY =       1 << 3,     // Indices generated and ready for EBO load
+            INDEX_READY =       1 << 3,     // Indices generated and ready for IBO load
             INDEX_GEN =         1 << 4,     // Data generated but not processed
             UPD_SHAD_V =        1 << 5,     // Update Vertex Shader
             UPD_SHAD_F =        1 << 6,     // Update Fragment Shader

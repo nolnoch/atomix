@@ -37,6 +37,7 @@ void Manager::newConfig(AtomixConfig *config) {
     this->cfg.sphere = config->sphere;
     this->cfg.vert = config->vert;
     this->cfg.frag = config->frag;
+    this->cfg.visibleOrbits = config->visibleOrbits;
 
     this->cfg.cloudLayDivisor = config->cloudLayDivisor;
     this->cfg.cloudResolution = config->cloudResolution;

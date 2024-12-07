@@ -218,9 +218,10 @@ struct ValidityInfo {
     bool uniforms = false;
     bool pipelines = false;
     bool renders = false;
+    bool suspended = false;
 
     bool validate() {
-        return shaders && vbo && ibo && uniforms && pipelines && renders;
+        return shaders && vbo && ibo && uniforms && pipelines && renders && !suspended;
     }
 };
 
@@ -267,6 +268,9 @@ public:
     bool removeModelProgram(const std::string &name, const std::string &program = "default");
     bool clearModelPrograms(const std::string &name);
     bool deactivateModel(const std::string &name);
+    bool suspendModel(const std::string &name);
+    bool resumeModel(const std::string &name);
+    bool isSuspended(const std::string &name);
     void clearActiveModels();
 
     void createPipelineCache();

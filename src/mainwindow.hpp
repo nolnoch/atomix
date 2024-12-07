@@ -40,7 +40,6 @@
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QCheckBox>
-#include <QtWidgets/QListWidget>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QHeaderView>
@@ -210,18 +209,50 @@ struct AtomixStyle {
     int fontMonoWidth, fontMonoHeight, fontAtomixWidth, fontAtomixHeight;
 };
 
-class SortableOrbital : public QTableWidgetItem {
+class SortableOrbitalTa : public QTableWidgetItem {
 public:
-    SortableOrbital(int type = QTableWidgetItem::Type) : QTableWidgetItem(type) {}
-    SortableOrbital(QString &text, int type = QTableWidgetItem::Type) : QTableWidgetItem(text, type) {}
-    ~SortableOrbital() override = default;
+    SortableOrbitalTa(int type = QTableWidgetItem::Type) : QTableWidgetItem(type) {}
+    SortableOrbitalTa(QString &text, int type = QTableWidgetItem::Type) : QTableWidgetItem(text, type) {}
+    ~SortableOrbitalTa() override = default;
 
     bool operator<(const QTableWidgetItem &other) const override {
-        int textValA = this->text().simplified().replace(" ", "").first(2).toInt();
-        int textValB = this->text().simplified().replace(" ", "").slice(2).toInt();
-        int otherTextValA = other.text().simplified().replace(" ", "").first(2).toInt();
-        int otherTextValB = other.text().simplified().replace(" ", "").slice(2).toInt();
-        return (textValA < otherTextValA) || (textValA == otherTextValA && textValB < otherTextValB);
+        QString thisText = this->text().simplified().replace(" ", "");
+        int textValA = thisText.first(2).toInt();
+        int textValB = thisText.sliced(2).toInt();
+        QString otherText = other.text().simplified().replace(" ", "");
+        int otherTextValA = otherText.first(2).toInt();
+        int otherTextValB = otherText.sliced(2).toInt();
+        bool aLess = textValA < otherTextValA;
+        bool aEqual = textValA == otherTextValA;
+        bool bLess = textValB < otherTextValB;
+        return ((aLess) || (aEqual && bLess));
+    }
+};
+
+class SortableOrbitalTr : public QTreeWidgetItem {
+public:
+    SortableOrbitalTr(int type = QTreeWidgetItem::Type) : QTreeWidgetItem(type) {}
+    SortableOrbitalTr(QTreeWidget *parent, int type = QTreeWidgetItem::Type) : QTreeWidgetItem(parent, type) {}
+    SortableOrbitalTr(QTreeWidgetItem *parent, int type = QTreeWidgetItem::Type) : QTreeWidgetItem(parent, type) {}
+    SortableOrbitalTr(const QStringList &strings, int type = QTreeWidgetItem::Type) : QTreeWidgetItem(strings, type) {}
+    ~SortableOrbitalTr() override = default;
+
+    bool operator<(const QTreeWidgetItem &other) const override {
+        int col = this->columnCount() - 1;
+        QString thisText = this->text(col).simplified().replace(" ", "");
+        int textValA = thisText.first(1).toInt();
+        int textValB = thisText.sliced(1, 1).toInt();
+        int textValC = thisText.sliced(2).toInt();
+        QString otherText = other.text(col).simplified().replace(" ", "");
+        int otherTextValA = otherText.first(1).toInt();
+        int otherTextValB = otherText.sliced(1, 1).toInt();
+        int otherTextValC = otherText.sliced(2).toInt();
+        bool aLess = textValA < otherTextValA;
+        bool aEqual = textValA == otherTextValA;
+        bool bLess = textValB < otherTextValB;
+        bool bEqual = textValB == otherTextValB;
+        bool cLess = textValC < otherTextValC;
+        return ((aLess) || (aEqual && bLess) || (aEqual && bEqual && cLess));
     }
 };
 
@@ -254,7 +285,7 @@ private:
     void refreshConfigs();
     void refreshShaders();
     void loadConfig();
-    void refreshOrbits();
+    uint refreshOrbits();
     void setupStatusBar();
     void setupDetails();
     void setupLoading();

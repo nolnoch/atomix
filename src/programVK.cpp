@@ -617,6 +617,35 @@ bool ProgramVK::deactivateModel(const std::string &name) {
     return success;
 }
 
+bool ProgramVK::suspendModel(const std::string &name) {
+    VKuint id = getModelIdFromName(name);
+    bool success = false;
+
+    if (p_activeModels.contains(id)) {
+        p_models[id]->valid.suspended = true;
+        success = true;
+    }
+
+    return success;
+}
+
+bool ProgramVK::resumeModel(const std::string &name) {
+    VKuint id = getModelIdFromName(name);
+    bool success = false;
+
+    if (p_activeModels.contains(id)) {
+        p_models[id]->valid.suspended = false;
+        success = true;
+    }
+
+    return success;
+}
+
+bool ProgramVK::isSuspended(const std::string &name) {
+    VKuint id = getModelIdFromName(name);
+    return p_activeModels.contains(id) && p_models[id]->valid.suspended;
+}
+
 void ProgramVK::clearActiveModels() {
     p_activeModels.clear();
 }
@@ -1489,6 +1518,9 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     // For each active model, bind and draw for all render targets
     for (auto &modelIdx : this->p_activeModels) {
         ModelInfo *model = this->p_models[modelIdx];
+        if (model->valid.suspended) {
+            continue;
+        }
 
         for (auto &prog : model->activePrograms) {
             for (auto &renderIdx : model->programs[prog].offsets) {

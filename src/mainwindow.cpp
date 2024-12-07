@@ -444,26 +444,26 @@ void MainWindow::setupDockHarmonics() {
     treeOrbitalSelect->setObjectName("treeOrbitalSelect");
     treeOrbitalSelect->setColumnCount(1);
     
-    QTreeWidgetItem *lastN = nullptr;
-    QTreeWidgetItem *lastL = nullptr;
-    QTreeWidgetItem *thisItem = nullptr;
+    SortableOrbitalTr *lastN = nullptr;
+    SortableOrbitalTr *lastL = nullptr;
+    SortableOrbitalTr *thisItem = nullptr;
     for (int n = 1; n <= MAX_ORBITS; n++) {
         QString strParentN = QString("%1 _ _").arg(n);
-        thisItem = new QTreeWidgetItem(treeOrbitalSelect);
+        thisItem = new SortableOrbitalTr(treeOrbitalSelect);
         thisItem->setText(0, strParentN);
         thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
         thisItem->setCheckState(0, Qt::Unchecked);
         lastN = thisItem;
         for (int l = 0; l < n; l++) {
             QString strParentL = QString("%1 %2 _").arg(n).arg(l);
-            thisItem = new QTreeWidgetItem(lastN);
+            thisItem = new SortableOrbitalTr(lastN);
             thisItem->setText(0, strParentL);
             thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
             thisItem->setCheckState(0, Qt::Unchecked);
             lastL = thisItem;
             for (int m_l = l; m_l >= -l; m_l--) {
-                QString strFinal = QString("%1 %2 %3").arg(n).arg(l).arg(m_l);
-                thisItem = new QTreeWidgetItem(lastL);
+                QString strFinal = QString("%1 %2 %3").arg(n).arg(l).arg(((m_l > 0) ? QString("+") : QString("")) + QString::number(m_l));
+                thisItem = new SortableOrbitalTr(lastL);
                 thisItem->setText(0, strFinal);
                 thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
                 thisItem->setCheckState(0, Qt::Unchecked);
@@ -726,41 +726,57 @@ void MainWindow::loadConfig() {
     entryCloudMinRDP->setText(QString::number(cfg->cloudTolerance));
 }
 
-void MainWindow::refreshOrbits() {
+uint MainWindow::refreshOrbits() {
     const QSignalBlocker blocker(buttGroupOrbits);
     ushort renderedOrbits = 0;
 
-    for (int i = 0; i < waveConfig.waves; i++) {
-        renderedOrbits |= (1 << i);
+    if (activeModel) {
+        for (auto &button : buttGroupOrbits->buttons()) {
+            if (button->isChecked()) {
+                renderedOrbits |= buttGroupOrbits->id(button);
+            }
+        }
+    } else {
+        for (int i = 0; i < waveConfig.waves; i++) {
+            renderedOrbits |= (1 << i);
+        }
     }
+
     for (int i = 0; i < MAX_ORBITS; i++) {
         uint checkID = 1 << i;
         QAbstractButton *checkBox = buttGroupOrbits->button(checkID);
+        bool enabled = (i < waveConfig.waves);
         bool checkState = (renderedOrbits & checkID);
 
-        checkBox->setEnabled(checkState);
+        checkBox->setEnabled(enabled);
+        checkBox->setVisible(enabled);
         checkBox->setChecked(checkState);
     }
+
+    return renderedOrbits;
 }
 
 void MainWindow::setupStatusBar() {
     statBar = this->statusBar();
     statBar->setObjectName("statusBar");
     statBar->setFont(aStyle.fontMonoStatus);
+    statBar->setMinimumHeight(pbLoading->sizeHint().height());
 }
 
 void MainWindow::setupDetails() {
-    labelDetails = new QLabel(graph);
+    labelDetails = new QLabel(this);
     labelDetails->setObjectName("labelDetails");
     labelDetails->setFont(aStyle.fontMonoStatus);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    labelDetails->hide();
 }
 
 void MainWindow::setupLoading() {
-    pbLoading = new QProgressBar(graph);
+    pbLoading = new QProgressBar(this);
     pbLoading->setMinimum(0);
     pbLoading->setMaximum(0);
     pbLoading->setTextVisible(false);
+    pbLoading->hide();
 }
 
 void MainWindow::loadSavedSettings() {
@@ -793,7 +809,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     tableOrbitalReport->setSortingEnabled(false);
     const QSignalBlocker blocker(tableOrbitalReport);
 
-    QTreeWidgetItem *ptrParent = item->parent();
+    SortableOrbitalTr *ptrParent = (SortableOrbitalTr *)item->parent();
     Qt::CheckState checked = item->checkState(col);
     int itemChildren = item->childCount();
 
@@ -814,8 +830,8 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
         
         if (checked) {
             // Add orbital to table
-            QTableWidgetItem *thisOrbital = new SortableOrbital(strItem);
-            QTableWidgetItem *thisWeight = new SortableOrbital(strWeight);
+            QTableWidgetItem *thisOrbital = new SortableOrbitalTa(strItem);
+            QTableWidgetItem *thisWeight = new SortableOrbitalTa(strWeight);
             int intTableRows = tableOrbitalReport->rowCount();
             tableOrbitalReport->setRowCount(intTableRows + 1);
             tableOrbitalReport->setItem(intTableRows, 1, thisOrbital);
@@ -890,7 +906,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
         }
         const QSignalBlocker blocker(treeOrbitalSelect);
         ptrParent->setCheckState(col, (homo) ? checked : Qt::PartiallyChecked);
-        ptrParent = ptrParent->parent();
+        ptrParent = (SortableOrbitalTr *)ptrParent->parent();
     }
 
     tableOrbitalReport->setSortingEnabled(true);
@@ -967,8 +983,7 @@ void MainWindow::handleButtMorbWaves() {
     waveConfig.superposition = slswSuper->value();
     waveConfig.cpu = slswCPU->value();
     waveConfig.sphere = slswSphere->value();
-
-    refreshOrbits();
+    waveConfig.visibleOrbits = refreshOrbits();
 
     vkGraph->newWaveConfig(&waveConfig);
 
@@ -977,6 +992,7 @@ void MainWindow::handleButtMorbWaves() {
     if (numRecipes > 0) {
         buttMorbHarmonics->setEnabled(true);
     }
+    this->activeModel = true;
 }
 
 void MainWindow::handleButtMorbHarmonics() {
@@ -1343,6 +1359,12 @@ void MainWindow::_initGraphics() {
     this->setCentralWidget(graph);
 }
 
+    /**
+     * @brief Initializes all the widgets in the main window, including validators, dock GUI and status bar.
+     *
+     * Initializes input validators, sets up dock GUI, refreshes configuration and shader selection, loads the default configuration,
+     * refreshes available orbitals, sets up the status bar, and sets up the details dock.
+     */
 void MainWindow::_initWidgets() {
     // Input Validators
     valIntSmall = new QIntValidator();  
@@ -1362,11 +1384,16 @@ void MainWindow::_initWidgets() {
     loadConfig();
     refreshOrbits();
 
-    setupStatusBar();
     setupDetails();
     setupLoading();
+    setupStatusBar();
 }
 
+    /**
+     * @brief Connects GUI signals to their respective slots.
+     *
+     * Initializes all necessary signal-slot connections for the application's GUI.
+     */
 void MainWindow::_connectSignals() {
     // Signal-Slot Connections
     connect(vkGraph, &VKWindow::detailsChanged, this, &MainWindow::updateDetails);

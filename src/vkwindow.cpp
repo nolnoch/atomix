@@ -140,8 +140,10 @@ void VKWindow::newWaveConfig(AtomixConfig *config) {
 }
 
 void VKWindow::selectRenderedWaves(int id, bool checked) {
-    // Process and flag for EBO update
-    flGraphState.set(waveManager->selectWaves(id, checked) | egs::UPDATE_REQUIRED);
+    // Process and flag for IBO update
+    futureModel = QtConcurrent::run(&WaveManager::selectWaves, waveManager, id, checked);
+    fwModel->setFuture(futureModel);
+    emit toggleLoading(true);
 }
 
 void VKWindow::initCrystalModel() {
@@ -684,15 +686,22 @@ void VKWindow::updateBuffersAndShaders() {
             atomixProg->updateBuffer(updBuf);
         }
 
-        // Update EBO: Indices
+        // Update IBO: Indices
         if (flGraphState.hasAny(egs::UPD_IBO | egs::UPD_IDXOFF)) {
             updBuf.bufferName = vw_currentModel + "Indices";
             updBuf.type = BufferType::INDEX;
             updBuf.offset = currentManager->getIndexOffset();
             updBuf.count = currentManager->getIndexCount();
             updBuf.size = currentManager->getIndexSize();
-            updBuf.data = (flGraphState.hasAny(egs::UPD_IDXOFF)) ? 0 : currentManager->getIndexData();
-            atomixProg->updateBuffer(updBuf);
+            if (updBuf.size) {
+                if (atomixProg->isSuspended(vw_currentModel)) {
+                    atomixProg->resumeModel(vw_currentModel);
+                }
+                updBuf.data = (flGraphState.hasAny(egs::UPD_IDXOFF)) ? 0 : currentManager->getIndexData();
+                atomixProg->updateBuffer(updBuf);
+            } else {
+                atomixProg->suspendModel(vw_currentModel);
+            }
         }
 
         // Update Uniforms
@@ -838,7 +847,7 @@ void VKWindow::printSize() {
  */
 void VKWindow::printFlags(std::string str) {
     std::vector<std::string> labels = { "Wave Mode", "Wave Render", "Cloud Mode", "Cloud Render", "Thread Finished", "Update Vert Shader", "Update Frag Shader",\
-                                        "Update VBO", "Update Data", "Update EBO", "Update Uniform Colour", "Update Uniform Maths", "Update Matrices", "Update Required"  };
+                                        "Update VBO", "Update Data", "Update IBO", "Update Uniform Colour", "Update Uniform Maths", "Update Matrices", "Update Required"  };
     std::cout << str << std::endl;
     for (int i = 13; i >= 0; i--) {
         if (flGraphState.hasAny(1 << i)) {

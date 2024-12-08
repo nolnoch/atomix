@@ -52,7 +52,7 @@
 
 
 const QString DEFAULT = "default.wave";
-const QString CUSTOM = "Custom";
+const QString CUSTOM = "<Custom>";
 const int MAX_ORBITS = 8;
 
 
@@ -278,7 +278,8 @@ private:
 
     void handleWaveConfigChanged();
     void handleCloudConfigChanged();
-    void handleDoubleClick(QTreeWidgetItem *item, int col);
+    void handleTreeDoubleClick(QTreeWidgetItem *item, int col);
+    void handleTableDoubleClick(int row, int col);
     void handleRecipeCheck(QTreeWidgetItem *item, int col);
     void handleButtLockRecipes();
     void handleButtClearRecipes();

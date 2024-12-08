@@ -87,7 +87,7 @@ private:
     bool slsw_value = false;
     int slsw_sub_height = 18;
     int slsw_borderRadius = 12;
-    int slsw_extend = 4;
+    int slsw_extend = 2;
     int slsw_extend2 = 8;
     int fontPx = 12;
     int buttMove = 0;

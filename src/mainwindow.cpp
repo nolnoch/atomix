@@ -862,7 +862,7 @@ void MainWindow::handleCloudConfigChanged() {
     }
 }
 
-void MainWindow::handleDoubleClick(QTreeWidgetItem *item, int col) {
+void MainWindow::handleTreeDoubleClick(QTreeWidgetItem *item, int col) {
     Qt::CheckState checked = item->checkState(col);
     int itemChildren = item->childCount();
     
@@ -870,6 +870,15 @@ void MainWindow::handleDoubleClick(QTreeWidgetItem *item, int col) {
     if (!itemChildren) {
         item->setCheckState(col, (checked) ? Qt::Unchecked : Qt::Checked);
     }
+}
+
+void MainWindow::handleTableDoubleClick(int row, int col) {
+    if (col != 1) {
+        return;
+    }
+
+    QString strOrbital = tableOrbitalReport->item(row, 1)->text();
+    treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
 }
 
 void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
@@ -908,7 +917,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             thisOrbital->setForeground(Qt::white);
             thisWeight->setTextAlignment(Qt::AlignCenter);
             thisWeight->setForeground(Qt::gray);
-            thisOrbital->setFlags(Qt::ItemNeverHasChildren);
+            thisOrbital->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsEnabled);
             thisWeight->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
 
             // Add orbital to harmap
@@ -1571,8 +1580,9 @@ void MainWindow::_connectSignals() {
 
     // Harmonic Recipes
     connect(treeOrbitalSelect, &QTreeWidget::itemChanged, this, &MainWindow::handleRecipeCheck);
-    connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleDoubleClick);
+    connect(treeOrbitalSelect, &QTreeWidget::itemDoubleClicked, this, &MainWindow::handleTreeDoubleClick);
     connect(tableOrbitalReport, &QTableWidget::cellChanged, this, &MainWindow::handleWeightChange);
+    connect(tableOrbitalReport, &QTableWidget::cellDoubleClicked, this, &MainWindow::handleTableDoubleClick);
     
     // Harmonic Config Values
     connect(entryCloudLayers, &QLineEdit::editingFinished, this, &MainWindow::handleCloudConfigChanged);

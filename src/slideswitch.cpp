@@ -32,7 +32,6 @@
 SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int height, QWidget* parent)
   : slsw_width(width), slsw_height(height), slsw_duration(100), slsw_enabled(true), slsw_value(false) {
     setParent(parent);
-    slsw_extend = 4;
     slsw_extend2 = slsw_extend << 1;
     this->slsw_sub_height = slsw_height - slsw_extend2;
     this->slsw_borderRadius = slsw_sub_height >> 1;

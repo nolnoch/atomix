@@ -50,7 +50,7 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
  
 ### Tab 1: Spherical Harmonics
 
-![harmonics](https://github.com/user-attachments/assets/08d7bc23-a29a-4e7d-91cf-55e6e0e5f50b)
+![841](https://github.com/user-attachments/assets/379c7d7a-d676-4b9b-a818-436368df7686)
 
 The center (i.e. nucleus) model is a central hexahedral crystal with polar colouring. The probability cloud (sum of results to Schroedinger's equations for selected n,l,m states) is rendered around the center with coloring indicating the relative probability of the electron's position.
 

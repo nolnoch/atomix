@@ -25,28 +25,6 @@
 #include "manager.hpp"
 
 
-void Manager::newConfig(AtomixConfig *config) {
-    this->cfg.waves = config->waves;
-    this->cfg.amplitude = config->amplitude;
-    this->cfg.period = config->period;
-    this->cfg.wavelength = config->wavelength;
-    this->cfg.resolution = config->resolution;
-    this->cfg.parallel = config->parallel;
-    this->cfg.superposition = config->superposition;
-    this->cfg.cpu = config->cpu;
-    this->cfg.sphere = config->sphere;
-    this->cfg.vert = config->vert;
-    this->cfg.frag = config->frag;
-    this->cfg.visibleOrbits = config->visibleOrbits;
-
-    this->cfg.cloudLayDivisor = config->cloudLayDivisor;
-    this->cfg.cloudResolution = config->cloudResolution;
-    this->cfg.cloudTolerance = config->cloudTolerance;
-    this->cfg.CloudCull_x = config->CloudCull_x;
-    this->cfg.CloudCull_y = config->CloudCull_y;
-    this->cfg.CloudCull_rIn = config->CloudCull_rIn;
-    this->cfg.CloudCull_rOut = config->CloudCull_rOut;
-}
 
 void Manager::resetManager() {
     allVertices.clear();
@@ -183,6 +161,14 @@ const float* Manager::getColourData() {
 const uint* Manager::getIndexData() {
     assert(mStatus.hasAll(em::INDEX_READY));
     return &allIndices[0];
+}
+
+/*
+ *  Getters -- Misc.
+ */
+
+bool Manager::getCPU() {
+    return mStatus.hasAll(em::CPU_RENDER);
 }
 
 /*

@@ -103,7 +103,8 @@ enum egs {
     UPD_UNI_MATHS =     1 << 12,    // [Wave] Maths Uniforms need to be updated
     UPD_PUSH_CONST =    1 << 13,    // Push Constants need to be updated
     UPD_MATRICES =      1 << 14,    // Needs initVecsAndMatrices() to reset position and view
-    UPDATE_REQUIRED =   1 << 15,    // An update must execute on next render
+    CPU_RENDER =        1 << 15,    // Render on CPU
+    UPDATE_REQUIRED =   1 << 16,    // An update must execute on next render
 };
 
 const uint eWaveFlags = egs::WAVE_MODE | egs::WAVE_RENDER;
@@ -165,7 +166,7 @@ private:
 class VKWindow : public QVulkanWindow {
     Q_OBJECT
 public:
-    VKWindow(QWidget *parent = nullptr, ConfigParser *configParser = nullptr);
+    VKWindow(QWidget *parent = nullptr, FileHandler *configParser = nullptr);
     ~VKWindow();
     
     QVulkanWindowRenderer* createRenderer() override;
@@ -178,7 +179,7 @@ public:
     void updateExtent(VkExtent2D &renderExtent);
     void updateBuffersAndShaders();
     void setBGColour(float colour);
-    void estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
+    void estimateSize(AtomixCloudConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
 
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
     BitFlag flGraphState;
@@ -189,8 +190,8 @@ signals:
     void forwardKeyEvent(QKeyEvent *e);
 
 public slots:
-    void newCloudConfig(AtomixConfig *cfg, harmap *cloudMap, bool canCreate = true);
-    void newWaveConfig(AtomixConfig *cfg);
+    void newCloudConfig(AtomixCloudConfig *cfg, harmap *cloudMap, bool canCreate = true);
+    void newWaveConfig(AtomixWaveConfig *cfg);
     void selectRenderedWaves(int id, bool checked);
 
 protected:
@@ -218,9 +219,8 @@ private:
     void updateBufferSizes();
     void printSize();
     void printFlags(std::string);
-    void printConfig(AtomixConfig *cfg);
 
-    ConfigParser *cfgParser = nullptr;
+    FileHandler *fileHandler = nullptr;
     QWidget *vw_parent = nullptr;
     VKRenderer *vw_renderer = nullptr;
     std::string vw_currentModel = "";

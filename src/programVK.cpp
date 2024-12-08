@@ -126,7 +126,7 @@ bool ProgramVK::addShader(const std::string &fName, VKuint type) {
     std::string fileLoc;
     
     if (fName.find('/') == std::string::npos) {
-        fileLoc = atomixFiles.shaders() + fName;
+        fileLoc = fileHandler->atomixFiles.shaders() + fName;
     } else {
         fileLoc = fName;
     }

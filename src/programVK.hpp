@@ -57,14 +57,11 @@
 #include <QVulkanInstance>
 #include <QVulkanWindow>
 #include <vulkan/vulkan.hpp>
-#include <iostream>
-#include <vector>
 #include <deque>
-#include <map>
 #include <set>
 
 #include "shaderobj.hpp"
-#include "global.hpp"
+#include "filehandler.hpp"
 
 typedef uint64_t VKuint64;
 typedef uint32_t VKuint;
@@ -332,6 +329,8 @@ private:
     void _updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 offset, const VKuint64 count, const VKuint64 size, const void *data);
 
     const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
+
+    FileHandler *fileHandler;
 
     VkDevice p_dev = VK_NULL_HANDLE;
     VkPhysicalDevice p_phydev = VK_NULL_HANDLE;

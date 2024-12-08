@@ -29,7 +29,6 @@
 #include "mainwindow.hpp"
 
 
-AtomixFiles atomixFiles;
 bool isDebug;
 bool isMacOS;
 bool isProfiling;
@@ -87,20 +86,23 @@ int main(int argc, char* argv[]) {
     }
 
     // Set atomix directory and icon
+    MainWindow mainWindow;
     QDir execDir = QDir(strAtomixDir);
     QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
-    if (!atomixFiles.setRoot(atomixDir.absolutePath().toStdString())) {
+    while (!mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,
-            "Select Atomix Directory",
+            "Select atomix Files Directory",
             execDir.absolutePath(),
             QFileDialog::ShowDirsOnly
         );
-        if (dir.isEmpty()) {return 0;}
-        execDir = QDir(dir);
-        atomixFiles.setRoot(dir.toStdString());
+        if (dir.isEmpty()) {
+            std::cout << "Canceled." << std::endl;
+            return 0;
+        }
+        atomixDir = QDir(dir);
     }
-    QIcon icoAtomix(QString::fromStdString(atomixFiles.resources()) + QString::fromStdString("icons/favicon.ico"));
+    QIcon icoAtomix(QString::fromStdString(mainWindow.getAtomixFiles().resources()) + QString::fromStdString("icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
     
     // Surface Format
@@ -113,11 +115,9 @@ int main(int argc, char* argv[]) {
     QSurfaceFormat::setDefaultFormat(qFmt);
 
     // Windows
-    MainWindow mainWindow;
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
     dispXY = QRect(0, 0, dispXY.width() + 1, dispXY.height() + 1);
-    
     mainWindow.setWindowTitle(QCoreApplication::applicationName());
     mainWindow.init(dispXY);
 

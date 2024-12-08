@@ -34,7 +34,7 @@ find_package(Vulkan REQUIRED)
 
 set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
-add_executable(atomix main.cpp quaternion.cpp special.cpp shaderobj.cpp mainwindow.cpp configparser.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programVK.cpp vkwindow.cpp)
+add_executable(atomix main.cpp quaternion.cpp special.cpp shaderobj.cpp mainwindow.cpp filehandler.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programVK.cpp vkwindow.cpp)
 
 target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent glslang::glslang glslang::SPIRV glslang::glslang-default-resource-limits spirv-cross-core spirv-cross-reflect oneDPL TBB::tbb TBB::tbbmalloc)
 

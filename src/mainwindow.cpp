@@ -29,12 +29,13 @@ int VK_SPIRV_VERSION;
 
 
 MainWindow::MainWindow() {
+    fileHandler = new FileHandler;
 }
 
 void MainWindow::init(QRect &screenSize) {
-    cfgParser = new ConfigParser;
     aStyle.qtStyle = this->style()->name();
     setWindowTitle(tr("atomix"));
+    fileHandler->init();
     
     // Window Size and Position on Screen
     double windowRatio = 0.3333333333333333;
@@ -650,80 +651,98 @@ void MainWindow::setupDockHarmonics() {
     wTabHarmonics->setLayout(layDockHarmonics);
 }
 
-void MainWindow::refreshConfigs() {
-    int files = cfgParser->cfgFiles.size();
-    std::string configPath = atomixFiles.configs();
-    int rootLength = configPath.length();
-
-    if (!files)
-        files = cfgParser->findFiles(configPath, CFGEXT, &cfgParser->cfgFiles);
+void MainWindow::refreshWaveConfigs() {
+    int files = fileHandler->getWaveFilesCount();
+    int rootLength = fileHandler->atomixFiles.configs().length();
     assert(files);
+
+    std::vector<std::string> cfgFiles = fileHandler->getWaveFilesList();
 
     comboConfigFile->clear();
     for (int i = 0; i < files; i++) {
-        comboConfigFile->addItem(QString::fromStdString(cfgParser->cfgFiles[i]).sliced(rootLength), i + 1);
+        comboConfigFile->addItem(QString::fromStdString(cfgFiles[i]).sliced(rootLength), i + 1);
     }
     comboConfigFile->addItem(tr("Custom"), files + 1);
     comboConfigFile->setCurrentText(DEFAULT);
 }
 
 void MainWindow::refreshShaders() {
-    std::string shaderPath = atomixFiles.shaders();
-    int rootLength = shaderPath.length();
-    int files = 0;
-
     // Vertex Shaders
-    files = cfgParser->vshFiles.size();
-    if (!files)
-        files = cfgParser->findFiles(shaderPath, VSHEXT, &cfgParser->vshFiles);
+    int files = fileHandler->getVertexShadersCount();
+    int rootLength = fileHandler->atomixFiles.shaders().length();
     assert(files);
 
+    std::vector<std::string> vshFiles = fileHandler->getVertexShadersList();
+
     for (int i = 0; i < files; i++) {
-        QString item = QString::fromStdString(cfgParser->vshFiles[i]).sliced(rootLength);
+        QString item = QString::fromStdString(vshFiles[i]).sliced(rootLength);
     }
 
     // Fragment Shaders
-    files = cfgParser->fshFiles.size();
-    if (!files)
-        files = cfgParser->findFiles(shaderPath, FSHEXT, &cfgParser->fshFiles);
+    files = fileHandler->getFragmentShadersCount();
+    rootLength = fileHandler->atomixFiles.shaders().length();
     assert(files);
 
+    std::vector<std::string> fshFiles = fileHandler->getFragmentShadersList();
+
     for (int i = 0; i < files; i++) {
-        QString item = QString::fromStdString(cfgParser->fshFiles[i]).sliced(rootLength);
+        QString item = QString::fromStdString(fshFiles[i]).sliced(rootLength);
     }
 }
 
-void MainWindow::loadConfig() {
-    int files = cfgParser->cfgFiles.size();
+void MainWindow::loadWaveConfig() {
+    int files = fileHandler->getWaveFilesCount();
     int comboID = comboConfigFile->currentData().toInt();
-    AtomixConfig *cfg = nullptr;
+    AtomixWaveConfig cfg;
 
     if (comboID <= files) {
-        assert(!cfgParser->loadConfigFileGUI(cfgParser->cfgFiles[comboID - 1], &waveConfig));
-        cfg = &waveConfig;
-    } else if (comboID == files + 1) {
-        // TODO handle this
-        std::cout << "Invalid at this time." << std::endl;
+        std::variant<AtomixWaveConfig, AtomixCloudConfig> waveConfig;
+        waveConfig = fileHandler->loadConfigFile(fileHandler->getWaveFilesList()[comboID - 1]);
+        if (std::holds_alternative<AtomixWaveConfig>(waveConfig)) {
+            cfg = std::get<AtomixWaveConfig>(waveConfig);
+        } else {
+            assert("Invalid at this time.");
+        }
+    } else if (comboID > (files + 1)) {
+        assert("Invalid at this time.");
     } else {
         return;
     }
 
-    entryOrbit->setText(QString::number(cfg->waves));
-    entryAmp->setText(QString::number(cfg->amplitude));
-    entryPeriod->setText(QString::number(cfg->period));
-    entryWavelength->setText(QString::number(cfg->wavelength));
-    entryResolution->setText(QString::number(cfg->resolution));
-    /* entryVertex->setCurrentText(QString::fromStdString(cfg->vert));
-    entryFrag->setCurrentText(QString::fromStdString(cfg->frag)); */
+    entryOrbit->setText(QString::number(cfg.waves));
+    entryAmp->setText(QString::number(cfg.amplitude));
+    entryPeriod->setText(QString::number(cfg.period));
+    entryWavelength->setText(QString::number(cfg.wavelength));
+    entryResolution->setText(QString::number(cfg.resolution));
 
-    slswPara->setValue(cfg->parallel);
-    slswSuper->setValue(cfg->superposition);
-    slswCPU->setValue(cfg->cpu);
-    slswSphere->setValue(cfg->sphere);
+    slswPara->setValue(cfg.parallel);
+    slswSuper->setValue(cfg.superposition);
+    slswCPU->setValue(cfg.cpu);
+    slswSphere->setValue(cfg.sphere);
+}
 
-    entryCloudLayers->setText(QString::number(cfg->cloudLayDivisor));
-    entryCloudRes->setText(QString::number(cfg->cloudResolution));
-    entryCloudMinRDP->setText(QString::number(cfg->cloudTolerance));
+void MainWindow::loadCloudConfig() {
+    int files = fileHandler->getCloudFilesCount();
+    int comboID = comboConfigFile->currentData().toInt();
+    AtomixCloudConfig cfg;
+
+    if (comboID <= files) {
+        std::variant<AtomixWaveConfig, AtomixCloudConfig> cloudConfig;
+        cloudConfig = fileHandler->loadConfigFile(fileHandler->getCloudFilesList()[comboID - 1]);
+        if (std::holds_alternative<AtomixCloudConfig>(cloudConfig)) {
+            cfg = std::get<AtomixCloudConfig>(cloudConfig);
+        } else {
+            assert("Invalid at this time.");
+        }
+    } else if (comboID > (files + 1)) {
+        assert("Invalid at this time.");
+    } else {
+        return;
+    }
+
+    entryCloudLayers->setText(QString::number(cfg.cloudLayDivisor));
+    entryCloudRes->setText(QString::number(cfg.cloudResolution));
+    entryCloudMinRDP->setText(QString::number(cfg.cloudTolerance));
 }
 
 uint MainWindow::refreshOrbits() {
@@ -786,7 +805,7 @@ void MainWindow::loadSavedSettings() {
 }
 
 void MainWindow::handleComboCfg() {
-    this->loadConfig();
+    this->loadWaveConfig();
 }
 
 void MainWindow::handleConfigChanged() {
@@ -1160,12 +1179,12 @@ void MainWindow::handleButtColors(int id) {
 
 void MainWindow::handleSlideCullingX(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
-    this->cloudConfig.CloudCull_x = pct;
+    this->cloudConfig.cloudCull_x = pct;
 }
 
 void MainWindow::handleSlideCullingY(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
-    this->cloudConfig.CloudCull_y = pct;
+    this->cloudConfig.cloudCull_y = pct;
 }
 
 void MainWindow::handleSlideCullingR(int val) {
@@ -1174,28 +1193,28 @@ void MainWindow::handleSlideCullingR(int val) {
 
     if (val < range) {
         newVal = range - val;
-        this->cloudConfig.CloudCull_rIn = (float(newVal) / float(range));
-        this->cloudConfig.CloudCull_rOut = 0.0f;
+        this->cloudConfig.cloudCull_rIn = (float(newVal) / float(range));
+        this->cloudConfig.cloudCull_rOut = 0.0f;
     } else if (val > range) {
         newVal = val - range;
-        this->cloudConfig.CloudCull_rOut = (float(newVal) / float(range));
-        this->cloudConfig.CloudCull_rIn = 0.0f;
+        this->cloudConfig.cloudCull_rOut = (float(newVal) / float(range));
+        this->cloudConfig.cloudCull_rIn = 0.0f;
     } else {
-        this->cloudConfig.CloudCull_rIn = 0.0f;
-        this->cloudConfig.CloudCull_rOut = 0.0f;
+        this->cloudConfig.cloudCull_rIn = 0.0f;
+        this->cloudConfig.cloudCull_rOut = 0.0f;
     }
 }
 
 void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
-    if ((this->cloudConfig.CloudCull_x != lastSliderSentX) || (this->cloudConfig.CloudCull_y != lastSliderSentY) || (this->cloudConfig.CloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.CloudCull_rOut != lastSliderSentROut)) {
+    if ((this->cloudConfig.cloudCull_x != lastSliderSentX) || (this->cloudConfig.cloudCull_y != lastSliderSentY) || (this->cloudConfig.cloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.cloudCull_rOut != lastSliderSentROut)) {
         vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, false);
 
-        lastSliderSentX = this->cloudConfig.CloudCull_x;
-        lastSliderSentY = this->cloudConfig.CloudCull_y;
-        lastSliderSentRIn = this->cloudConfig.CloudCull_rIn;
-        lastSliderSentROut = this->cloudConfig.CloudCull_rOut;
+        lastSliderSentX = this->cloudConfig.cloudCull_x;
+        lastSliderSentY = this->cloudConfig.cloudCull_y;
+        lastSliderSentRIn = this->cloudConfig.cloudCull_rIn;
+        lastSliderSentROut = this->cloudConfig.cloudCull_rOut;
     }
 }
 
@@ -1314,7 +1333,19 @@ void MainWindow::_printChild(QLayoutItem *child, int lvl, int idx, int nameLen) 
 
 void MainWindow::_initStyle() {
     // Add custom font(s)
-    aStyle.setFonts(this->font(), "Inconsolata");
+    QString strFontMono = "Inconsolata";
+    QString strMonoDefault = (isMacOS) ? "Monaco" : "Monospace";
+    QFont fontMono;
+
+    int id = QFontDatabase::addApplicationFont(QString::fromStdString(fileHandler->atomixFiles.fonts()) + strFontMono + "-Regular.ttf");
+    QStringList fontList = QFontDatabase::applicationFontFamilies(id);
+    if (fontList.contains(strFontMono)) {
+        fontMono = QFont(strFontMono);
+    } else {
+        fontMono = QFont(strMonoDefault);
+        strFontMono = strMonoDefault;
+    }
+    aStyle.setFonts(this->font(), fontMono, strFontMono);
 
     // Set defaults because we haven't added tabs or shown the window yet
     mw_tabWidth = int(mw_width * 0.2);
@@ -1352,7 +1383,7 @@ void MainWindow::_initGraphics() {
         qFatal("Failed to create Vulkan Instance: %d", vkInst.errorCode());
     }
     
-    vkGraph = new VKWindow(this, cfgParser);
+    vkGraph = new VKWindow(this, fileHandler);
     vkGraph->setVulkanInstance(&vkInst);
     graph = QWidget::createWindowContainer(vkGraph);
     graph->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -1379,9 +1410,8 @@ void MainWindow::_initWidgets() {
     // Setup Dock GUI
     setupTabs();
     
-    refreshConfigs();
-    refreshShaders();
-    loadConfig();
+    refreshWaveConfigs();
+    loadWaveConfig();
     refreshOrbits();
 
     setupDetails();

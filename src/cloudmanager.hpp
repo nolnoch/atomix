@@ -26,11 +26,11 @@
 #define CLOUDMANAGER_H
 
 #include <format>
-#include <map>
 #include <unordered_map>
 #include <chrono>
 #include <cmath>
 #include <complex>
+#include <fstream>
 
 #include "manager.hpp"
 
@@ -62,8 +62,8 @@ class CloudManager : public Manager {
     public:
         CloudManager();
         virtual ~CloudManager();
-        void newConfig(AtomixConfig *cfg) override;
-        void receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, bool generator = true);
+        void newConfig(AtomixCloudConfig *cfg);
+        void receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *inMap, bool generator = true);
         
         uint getColourSize();
         uint getMaxLayer(double tolerance, int n_max, int divisor);
@@ -117,7 +117,7 @@ class CloudManager : public Manager {
 
         void cloudTest(int n_max);
         void cloudTestCSV();
-        void testThreadingInit(AtomixConfig *config, harmap *inMap);
+        void testThreadingInit(AtomixCloudConfig *config, harmap *inMap);
 
         // void genOrbitalsThroughN(int n);
         // void genOrbitalsOfN(int n);
@@ -127,6 +127,7 @@ class CloudManager : public Manager {
         // void RDPtoColours();
 
         BS::thread_pool cloudPool;
+        AtomixCloudConfig cfg;
 
         dvec pdvStaging;
         uvec idxCulledTolerance;

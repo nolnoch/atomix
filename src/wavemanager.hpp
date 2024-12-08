@@ -35,10 +35,10 @@ enum ewc { ORBITS = 1, AMPLITUDE = 2, PERIOD = 4, WAVELENGTH = 8, RESOLUTION = 1
 
 class WaveManager : public Manager {
     public:
-        WaveManager(AtomixConfig *config);
+        WaveManager();
         virtual ~WaveManager();
-        void newConfig(AtomixConfig *cfg) override;
-        void receiveConfig(AtomixConfig *config);
+        void newConfig(AtomixWaveConfig *cfg);
+        void receiveConfig(AtomixWaveConfig *config);
         void initManager() override final;
 
         double create() override final;
@@ -69,6 +69,8 @@ class WaveManager : public Manager {
 
         void genVertexArray() override;
         void genIndexBuffer() override;
+        
+        AtomixWaveConfig cfg;
         
         std::vector<vVec3 *> waveVertices;
         std::vector<uvec *> waveIndices;

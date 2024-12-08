@@ -30,7 +30,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "configparser.hpp"
+#include "filehandler.hpp"
 
 using vVec3 = std::vector<glm::vec3>;
 using vVec2 = std::vector<glm::vec2>;
@@ -46,7 +46,6 @@ class Manager {
     public:
         Manager(){};
         virtual ~Manager(){ resetManager(); };
-        virtual void newConfig(AtomixConfig *config);
 
         virtual double create() { return 0.0; };
         virtual void update(double time) {m_time = time;};
@@ -71,10 +70,7 @@ class Manager {
         const float* getColourData();
         const uint* getIndexData();
 
-        std::string& getShaderVert() { return this->cfg.vert; };
-        std::string& getShaderFrag() { return this->cfg.frag; };
-        AtomixConfig& getConfig() { return this->cfg; };
-        bool getCPU() { return this->cfg.cpu; };
+        bool getCPU();
 
         void printIndices();
         void printVertices();
@@ -98,7 +94,6 @@ class Manager {
         int setIndexCount();
         int setIndexSize();
 
-        AtomixConfig cfg;
         BitFlag mStatus;
         QMutex mutex;
         
@@ -143,7 +138,8 @@ class Manager {
             UPD_UNI_MATHS =     1 << 12,    // [Wave] Maths Uniforms need to be updated
             UPD_PUSH_CONST =    1 << 13,    // Push Constants need to be updated
             UPD_MATRICES =      1 << 14,    // Needs initVecsAndMatrices() to reset position and view
-            UPDATE_REQUIRED =   1 << 15,    // An update must execute on next render
+            CPU_RENDER =        1 << 15,    // CPU rendering
+            UPDATE_REQUIRED =   1 << 16,    // An update must execute on next render
         };
 
         const uint eUpdateFlags = -1 << 5;

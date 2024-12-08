@@ -36,12 +36,13 @@ FileHandler::~FileHandler() {
     fshFiles.clear();
 }
 
-void FileHandler::init() {
-    findFiles();
-}
-
 void FileHandler::findFiles() {
-    std::tuple<std::string, std::string, std::vector<std::string>*> pack[4] = {
+    wavFiles.clear();
+    cldFiles.clear();
+    vshFiles.clear();
+    fshFiles.clear();
+
+    std::tuple<std::string, std::string, QStringList *> pack[4] = {
         {atomixFiles.configs(), atomixFiles.WAVEXT, &wavFiles},
         {atomixFiles.configs(), atomixFiles.CLDEXT, &cldFiles},
         {atomixFiles.shaders(), atomixFiles.VSHEXT, &vshFiles},
@@ -51,14 +52,13 @@ void FileHandler::findFiles() {
     for (auto &p: pack) {
         std::string loc = std::get<0>(p);
         std::string ext = std::get<1>(p);
-        std::vector<std::string>* fileList = std::get<2>(p);
+        QStringList* fileList = std::get<2>(p);
 
         for (auto &p: std::filesystem::recursive_directory_iterator(loc)) {
             if (p.path().extension() == ext) {
-                fileList->push_back(p.path().string());
+                (*fileList) << QString::fromStdString(p.path().string());
             }
         }
-        // cout << "Found " << fileList->size() << " candidate file(s) with extension " << type << "." << endl;
     }
 }
 
@@ -181,6 +181,10 @@ QJsonObject FileHandler::configToJson(std::variant<AtomixWaveConfig, AtomixCloud
     }
 
     return jo;
+}
+
+bool FileHandler::deleteFile(QString filepath) {
+    return QFile::remove(filepath);
 }
 
 void FileHandler::printConfig(std::variant<AtomixWaveConfig, AtomixCloudConfig> &config) {

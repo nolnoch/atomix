@@ -83,36 +83,33 @@ class FileHandler {
     public:
         FileHandler();
         virtual ~FileHandler();
-        void init();
+        void findFiles();
 
         std::variant<AtomixWaveConfig, AtomixCloudConfig> loadConfigFile(QString filepath);
         void saveConfigFile(QString filepath, std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg);
         std::variant<AtomixWaveConfig, AtomixCloudConfig> configFromJson(QJsonObject &json);
         QJsonObject configToJson(std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg);
 
-        std::vector<std::string> getWaveFilesList() { return wavFiles; }
-        std::vector<std::string> getCloudFilesList() { return cldFiles; }
-        std::vector<std::string> getVertexShadersList() { return vshFiles; }
-        std::vector<std::string> getFragmentShadersList() { return fshFiles; }
+        QStringList getWaveFilesList() { return wavFiles; }
+        QStringList getCloudFilesList() { return cldFiles; }
+        QStringList getVertexShadersList() { return vshFiles; }
+        QStringList getFragmentShadersList() { return fshFiles; }
         int getWaveFilesCount() { return wavFiles.size(); }
         int getCloudFilesCount() { return cldFiles.size(); }
         int getVertexShadersCount() { return vshFiles.size(); }
         int getFragmentShadersCount() { return fshFiles.size(); }
 
+        bool deleteFile(QString filepath);
+
         void printConfig(std::variant<AtomixWaveConfig, AtomixCloudConfig> &config);
 
         AtomixFiles atomixFiles;
-        enum ConfigType { WAVE = 0, CLOUD = 1 };
 
     private:
-        void findFiles();
-
-        std::vector<std::string> wavFiles;
-        std::vector<std::string> cldFiles;
-        std::vector<std::string> vshFiles;
-        std::vector<std::string> fshFiles;
-        AtomixWaveConfig waveConfig;
-        AtomixCloudConfig cloudConfig;
+        QStringList wavFiles;
+        QStringList cldFiles;
+        QStringList vshFiles;
+        QStringList fshFiles;
 };
 
 #endif

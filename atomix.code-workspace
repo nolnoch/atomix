@@ -108,7 +108,13 @@
 			"regex": "cpp",
 			"qjsonarray": "cpp",
 			"qjsonobject": "cpp",
-			"qjsondocument": "cpp"
+			"qjsondocument": "cpp",
+			"qslider": "cpp",
+			"qfontmetrics": "cpp",
+			"qboxlayout": "cpp",
+			"qmessagebox": "cpp",
+			"qformlayout": "cpp",
+			"qfiledialog": "cpp"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

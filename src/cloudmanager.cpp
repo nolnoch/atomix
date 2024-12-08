@@ -1104,17 +1104,17 @@ double CloudManager::cullSliderThreaded() {
 }
 
 void CloudManager::update([[maybe_unused]] double time) {
-    //TODO implement for CPU updates over time
+    Manager::update(time);
 }
 
-    /**
-     * @brief cloudTest(int n_max)
-     * 
-     * Prints the complete list of orbital indices for given n_max to the console.
-     * Also checks for and prints any duplicate indices.
-     * 
-     * @param n_max The maximum principal quantum number to generate indices for.
-     */
+/**
+ * @brief cloudTest(int n_max)
+ * 
+ * Prints the complete list of orbital indices for given n_max to the console.
+ * Also checks for and prints any duplicate indices.
+ * 
+ * @param n_max The maximum principal quantum number to generate indices for.
+ */
 void CloudManager::cloudTest(int n_max) {
     int idx = 0;
 

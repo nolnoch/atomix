@@ -52,10 +52,6 @@ void WaveManager::newConfig(AtomixWaveConfig *config) {
     this->waveMaths.y = waveMathsCPU.y;
     this->waveMaths.z = waveMathsCPU.z;
     this->deg_fac = TWO_PI / this->waveResolution;
-
-    if (cfg.cpu) {
-        mStatus.set(em::CPU_RENDER);
-    }
 }
 
 void WaveManager::initManager() {
@@ -164,12 +160,20 @@ double WaveManager::create() {
         init = true;
     }
 
+    if (cfg.cpu) {
+        mStatus.set(em::CPU_RENDER);
+    }
+
     genVertexArray();
     genIndexBuffer();
     return 0.0;
 }
 
 void WaveManager::update(double time) {
+    Manager::update(time);
+    if (!cfg.cpu) {
+        return;
+    }
     allVertices.clear();
     
     for (int i = 0; i < cfg.waves; i++) {
@@ -180,7 +184,7 @@ void WaveManager::update(double time) {
                 updateWaveCPUCircle(i, time);
         }
     }
-    mStatus.set(em::VERT_READY);
+    mStatus.set(em::VERT_READY | em::CPU_RENDER);
 
     genVertexArray();
 }

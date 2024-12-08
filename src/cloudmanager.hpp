@@ -64,6 +64,7 @@ class CloudManager : public Manager {
         virtual ~CloudManager();
         void newConfig(AtomixCloudConfig *cfg);
         void receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *inMap, bool generator = true);
+        void update(double time) override final;
         
         uint getColourSize();
         uint getMaxLayer(double tolerance, int n_max, int divisor);
@@ -88,8 +89,6 @@ class CloudManager : public Manager {
         double expandPDVsToColours();
         double cullSlider();
         double cullSliderThreaded();
-
-        void update(double time) override final;
 
         void clearForNext() override final;
         void resetManager() override final;

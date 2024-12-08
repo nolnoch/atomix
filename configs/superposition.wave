@@ -1,0 +1,13 @@
+{
+    "amplitude": 0.8,
+    "cpu": true,
+    "parallel": true,
+    "period": 3.14159,
+    "resolution": 360,
+    "sphere": false,
+    "superposition": true,
+    "type": "wave",
+    "visibleOrbits": 63,
+    "wavelength": 6.28319,
+    "waves": 6
+}

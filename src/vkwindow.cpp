@@ -620,10 +620,8 @@ void VKWindow::updateBuffersAndShaders() {
         vw_timeEnd = QDateTime::currentMSecsSinceEpoch();
     }
     pConstWave.time = (vw_timeEnd - vw_timeStart) * 0.001f;
-
-    // TODO : This may break if we go from GPU waves to CPU anything
-    if (flGraphState.hasAll(egs::WAVE_RENDER | egs::CPU_RENDER) && threadsFinished) {
-        this->waveManager->update(pConstWave.time);
+    if ((currentManager) && threadsFinished) {
+        currentManager->update(pConstWave.time);
         this->flGraphState.set(egs::UPDATE_REQUIRED);
     }
     
@@ -686,7 +684,7 @@ void VKWindow::updateBuffersAndShaders() {
                 updBuf.size = currentManager->getDataSize();
                 updBuf.data = currentManager->getDataData();
             }
-            atomixProg->updateBuffer(updBuf);
+            this->atomixProg->updateBuffer(updBuf);
         }
 
         // Update IBO: Indices
@@ -701,9 +699,9 @@ void VKWindow::updateBuffersAndShaders() {
                     atomixProg->resumeModel(vw_currentModel);
                 }
                 updBuf.data = (flGraphState.hasAny(egs::UPD_IDXOFF)) ? 0 : currentManager->getIndexData();
-                atomixProg->updateBuffer(updBuf);
+                this->atomixProg->updateBuffer(updBuf);
             } else {
-                atomixProg->suspendModel(vw_currentModel);
+                this->atomixProg->suspendModel(vw_currentModel);
             }
         }
 

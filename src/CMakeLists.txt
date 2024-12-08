@@ -24,7 +24,7 @@ set(ENV{VSCODE_QT_SDK} ${Qt6_DIR})
 set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 set(ENV{VK_LOADER_DEBUG} "error,warn,layer,info")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Concurrent Qml)
 find_package(oneDPL REQUIRED oneDPL)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 find_package(glslang CONFIG REQUIRED)
@@ -36,7 +36,7 @@ set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 add_executable(atomix main.cpp quaternion.cpp special.cpp shaderobj.cpp mainwindow.cpp filehandler.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programVK.cpp vkwindow.cpp)
 
-target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent glslang::glslang glslang::SPIRV glslang::glslang-default-resource-limits spirv-cross-core spirv-cross-reflect oneDPL TBB::tbb TBB::tbbmalloc)
+target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent Qt6::Qml glslang::glslang glslang::SPIRV glslang::glslang-default-resource-limits spirv-cross-core spirv-cross-reflect oneDPL TBB::tbb TBB::tbbmalloc)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

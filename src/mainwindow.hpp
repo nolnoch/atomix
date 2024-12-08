@@ -27,31 +27,23 @@
 
 
 #include <QtWidgets/QMainWindow>
-#include <QtWidgets/QDockWidget>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QColorDialog>
 #include <QtWidgets/QFileDialog>
-#include <QtWidgets/QLabel>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QComboBox>
-#include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QFormLayout>
-#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QTableWidget>
-#include <QtWidgets/QHeaderView>
-#include <QtWidgets/QSlider>
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QStatusBar>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QLabel>
+#include <QFontMetrics>
 #include <QPixmap>
 #include <QIcon>
-#include <QSignalBlocker>
-#include <QThread>
-#include <QFontDatabase>
-#include <QFontMetrics>
 
 #include "slideswitch.hpp"
 #include "filehandler.hpp"
@@ -73,8 +65,9 @@ struct AtomixStyle {
         dockHeight = height;
         tabLabelWidth = dockWidth / tabCount;
 
-        layDockSpace = int(double(dockHeight * 0.01));
-        morbMargin = layDockSpace << 1;
+        layDockSpaceV = int(dockHeight * 0.006);
+        layDockSpaceH = layDockSpaceV * 1.5;
+        morbMargin = layDockSpaceV << 1;
 
         halfDock = dockWidth >> 1;
         quarterDock = halfDock >> 1;
@@ -188,7 +181,7 @@ struct AtomixStyle {
 
     uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, morbFontSize, statusFontSize;
     uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize, morbMargin;
-    uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpace;
+    uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpaceV, layDockSpaceH;
 
     uint windowWidth, windowHeight, dockWidth, dockHeight, halfDock, quarterDock;
 
@@ -320,10 +313,10 @@ private:
     void _initGraphics();
     void _initWidgets();
     void _connectSignals();
-    
     void _setStyle();
     void _dockResize();
     void _resize();
+    std::pair<bool, double> _validateExprInput(QLineEdit *entry);
 
     FileHandler *fileHandler = nullptr;
     AtomixWaveConfig waveConfig;

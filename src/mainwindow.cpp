@@ -22,6 +22,15 @@
  *  atomix. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QFormLayout>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QColorDialog>
+#include <QtWidgets/QHeaderView>
+#include <QFontDatabase>
+#include <QSignalBlocker>
+#include <QtQml/QJSEngine>
+
 #include "mainwindow.hpp"
 
 int VK_MINOR_VERSION;
@@ -189,7 +198,7 @@ void MainWindow::setupTabs() {
     
     wTabs = new QTabWidget(this);
     wTabs->setObjectName("tabsAtomix");
-    wTabs->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
+    wTabs->setContentsMargins(aStyle.layDockSpaceH, aStyle.layDockSpaceV, aStyle.layDockSpaceH, aStyle.layDockSpaceV);
     // wTabs->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     setupDockWaves();
@@ -231,7 +240,7 @@ void MainWindow::setupDockWaves() {
     labelWaves->setWordWrap(true);
     labelWaves->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelWaves->setLineWidth(aStyle.borderWidth);
-    labelWaves->setMargin(aStyle.layDockSpace);
+    labelWaves->setMargin(aStyle.layDockSpaceH);
     labelWaves->setAlignment(Qt::AlignCenter);
 
     // Config Selection Box
@@ -239,9 +248,10 @@ void MainWindow::setupDockWaves() {
     buttSaveConfig = new QPushButton("Save", this);
     buttLoadConfig = new QPushButton("Load", this);
     QHBoxLayout *layConfigFile = new QHBoxLayout;
-    layConfigFile->addWidget(comboConfigFile, 4);
-    layConfigFile->addWidget(buttLoadConfig, 1);
+    layConfigFile->addWidget(comboConfigFile, 6);
     layConfigFile->addWidget(buttSaveConfig, 1);
+    layConfigFile->setContentsMargins(aStyle.layDockSpaceV, aStyle.layDockSpaceV, aStyle.layDockSpaceV, aStyle.layDockSpaceV);
+    layConfigFile->setSpacing(aStyle.layDockSpaceV);
     groupConfig->setLayout(layConfigFile);
     groupConfig->setAlignment(Qt::AlignRight);
     
@@ -254,10 +264,10 @@ void MainWindow::setupDockWaves() {
     entryAmp->setValidator(valDoubleLarge);
     entryPeriod = new QLineEdit("1.0");
     entryPeriod->setObjectName("entryPeriod");
-    entryPeriod->setValidator(valDoubleLarge);
+    // entryPeriod->setValidator(valDoubleLarge);
     entryWavelength = new QLineEdit("2.0");
     entryWavelength->setObjectName("entryWavelength");
-    entryWavelength->setValidator(valDoubleLarge);
+    // entryWavelength->setValidator(valDoubleLarge);
     entryResolution = new QLineEdit("180");
     entryResolution->setObjectName("entryResolution");
     entryResolution->setValidator(valIntLarge);
@@ -303,8 +313,8 @@ void MainWindow::setupDockWaves() {
     layWaveConfig->addRow("CPU/GPU:", slswCPU);
     layWaveConfig->addRow("Sphere/Circle:", slswSphere);
     layWaveConfig->setRowWrapPolicy(QFormLayout::DontWrapRows);
-    layWaveConfig->setHorizontalSpacing(aStyle.layDockSpace);
-    layWaveConfig->setVerticalSpacing(aStyle.layDockSpace);
+    layWaveConfig->setHorizontalSpacing(aStyle.layDockSpaceH);
+    layWaveConfig->setVerticalSpacing(aStyle.layDockSpaceV);
     layWaveConfig->setLabelAlignment(Qt::AlignRight);
     layWaveConfig->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
     layWaveConfig->setFormAlignment(Qt::AlignCenter);
@@ -376,8 +386,8 @@ void MainWindow::setupDockWaves() {
     layOrbitSelect->addWidget(new QLabel("6", this), 1, 5, Qt::AlignCenter);
     layOrbitSelect->addWidget(new QLabel("7", this), 1, 6, Qt::AlignCenter);
     layOrbitSelect->addWidget(new QLabel("8", this), 1, 7, Qt::AlignCenter);
-    layOrbitSelect->setContentsMargins(0, 0, 0, 0);
-    layOrbitSelect->setSpacing(0);
+    layOrbitSelect->setContentsMargins(4, 4, 4, 4);
+    layOrbitSelect->setSpacing(4);
     groupOrbits->setLayout(layOrbitSelect);
 
     // Assign checkboxes to button group
@@ -407,7 +417,7 @@ void MainWindow::setupDockWaves() {
     layDockWaves->setStretchFactor(buttMorbWaves, 4);
 
     // Set Main Tab Layout
-    layDockWaves->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
+    layDockWaves->setContentsMargins(aStyle.layDockSpaceH, aStyle.layDockSpaceV, aStyle.layDockSpaceH, aStyle.layDockSpaceV);
     wTabWaves->setLayout(layDockWaves);
 }
 
@@ -441,7 +451,7 @@ void MainWindow::setupDockHarmonics() {
     labelHarmonics->setWordWrap(true);
     labelHarmonics->setFrameStyle(QFrame::Panel | QFrame::Raised);
     labelHarmonics->setLineWidth(aStyle.borderWidth);
-    labelHarmonics->setMargin(aStyle.layDockSpace);
+    labelHarmonics->setMargin(aStyle.layDockSpaceH);
     labelHarmonics->setAlignment(Qt::AlignCenter);
 
     // Orbital Selection Tree
@@ -542,8 +552,8 @@ void MainWindow::setupDockHarmonics() {
     layGenVertices->addRow("Minimum probability:", entryCloudMinRDP);
     layGenVertices->setLabelAlignment(Qt::AlignRight);
     layGenVertices->setRowWrapPolicy(QFormLayout::DontWrapRows);
-    // layGenVertices->setHorizontalSpacing(aStyle.layDockSpace);
-    // layGenVertices->setVerticalSpacing(aStyle.layDockSpace << 1);
+    layGenVertices->setHorizontalSpacing(aStyle.layDockSpaceH);
+    layGenVertices->setVerticalSpacing(aStyle.layDockSpaceV);
     layGenVertices->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
     layGenVertices->setFormAlignment(Qt::AlignCenter);
     groupGenVertices->setLayout(layGenVertices);
@@ -651,7 +661,7 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics->setStretchFactor(layHarmButts, 1);
 
     // Set Main Tab Layout
-    layDockHarmonics->setContentsMargins(aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace, aStyle.layDockSpace);
+    layDockHarmonics->setContentsMargins(aStyle.layDockSpaceH, aStyle.layDockSpaceV, aStyle.layDockSpaceH, aStyle.layDockSpaceV);
     wTabHarmonics->setLayout(layDockHarmonics);
 }
 
@@ -1003,10 +1013,10 @@ void MainWindow::handleButtResetRecipes() {
 void MainWindow::handleButtLoadConfig() {
     std::variant<AtomixWaveConfig, AtomixCloudConfig> config;
 
-    QFileDialog fd(this, "Load Wave Config");
+    QFileDialog fd(this, tr("Load Wave Config"), QString::fromStdString(fileHandler->atomixFiles.configs()));
     fd.setAcceptMode(QFileDialog::AcceptOpen);
     fd.setDefaultSuffix("wave");
-    fd.selectFile("filename.wave");
+    fd.selectFile("default.wave");
     if (fd.exec() == QDialog::Accepted) {
         config = fileHandler->loadConfigFile(fd.selectedFiles().first());
     }
@@ -1020,7 +1030,7 @@ void MainWindow::handleButtLoadConfig() {
 void MainWindow::handleButtSaveConfig() {
     std::variant<AtomixWaveConfig, AtomixCloudConfig> config = waveConfig;
 
-    QFileDialog fd(this, "Save Wave Config");
+    QFileDialog fd(this, tr("Save Wave Config"), QString::fromStdString(fileHandler->atomixFiles.configs()));
     fd.setAcceptMode(QFileDialog::AcceptSave);
     fd.setDefaultSuffix("wave");
     fd.selectFile("filename.wave");
@@ -1030,16 +1040,26 @@ void MainWindow::handleButtSaveConfig() {
 }
 
 void MainWindow::handleButtMorbWaves() {
+    std::pair<bool, double> resultP, resultW;
+    
     waveConfig.waves = std::clamp(entryOrbit->text().toInt(), 1, 8);
     waveConfig.amplitude = std::clamp(entryAmp->text().toDouble(), 0.001, 999.999);
-    waveConfig.period = std::clamp(entryPeriod->text().toDouble(), 0.001, 999.999) * M_PI;
-    waveConfig.wavelength = std::clamp(entryWavelength->text().toDouble(), 0.001, 999.999) * M_PI;
     waveConfig.resolution = std::clamp(entryResolution->text().toInt(), 1, 999);
     waveConfig.parallel = slswPara->value();
     waveConfig.superposition = slswSuper->value();
     waveConfig.cpu = slswCPU->value();
     waveConfig.sphere = slswSphere->value();
     waveConfig.visibleOrbits = refreshOrbits();
+
+    resultP = _validateExprInput(entryPeriod);
+    waveConfig.period = std::clamp(resultP.second, 0.001, 999.999);
+
+    resultW = _validateExprInput(entryWavelength);
+    waveConfig.wavelength = std::clamp(resultW.second, 0.001, 999.999);
+
+    if (!resultP.first || !resultW.first) {
+        return;
+    }
 
     vkGraph->newWaveConfig(&waveConfig);
 
@@ -1514,8 +1534,8 @@ void MainWindow::_dockResize() {
 
     _setStyle();
 
-    layDockWaves->setSpacing(aStyle.layDockSpace);
-    layDockHarmonics->setSpacing(aStyle.layDockSpace);
+    layDockWaves->setSpacing(aStyle.layDockSpaceV);
+    layDockHarmonics->setSpacing(aStyle.layDockSpaceV);
     treeOrbitalSelect->setIndentation(aStyle.fontMonoWidth << 1);
 
     if (showDebug) {
@@ -1546,4 +1566,40 @@ void MainWindow::_resize() {
     }
 
     assert(startingTabIdx == currentTabIdx);
+}
+
+std::pair<bool, double> MainWindow::_validateExprInput(QLineEdit *entry) {
+    bool valid = false;
+    double value = 0;
+    
+    QRegularExpression re("[0-9()+\\-*/.pie\\s]*");
+    QRegularExpression reMult("[0-9.]+pi");
+    QRegularExpressionValidator val(re, 0);
+    QString eval = entry->text();
+    int pos = 0;
+
+    QJSEngine evalEngine;
+    evalEngine.globalObject().setProperty("pi", M_PI);
+    evalEngine.globalObject().setProperty("e", M_E);
+
+    if (val.validate(eval, pos) == QValidator::Acceptable) {
+        if (reMult.match(eval).hasMatch()) {
+            eval = eval.replace("pi", " * pi");
+        }
+        QJSValue evalResult = evalEngine.evaluate(eval);
+        
+        if (evalResult.isError()) {
+            entry->setStyleSheet("color: #FF7777;");
+            qDebug() << evalResult.toString();
+        } else {
+            entry->setStyleSheet("color: #77FF77;");
+            valid = true;
+            value = evalResult.toNumber();
+            entry->setText(QString::number(value, 'f', 6));
+        }
+    } else {
+        entry->setStyleSheet("color: #FF7777;");
+    }
+
+    return std::make_pair(valid, value);
 }

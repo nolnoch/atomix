@@ -74,8 +74,8 @@ QVulkanWindowRenderer* VKWindow::createRenderer() {
 }
 
 void VKWindow::initProgram(AtomixDevice *atomixDevice) {
-    std::vector<std::string> vshad = fileHandler->getVertexShadersList();
-    std::vector<std::string> fshad = fileHandler->getFragmentShadersList();
+    std::vector<std::string> vshad = atomix::stringlistToVector(fileHandler->getVertexShadersList());
+    std::vector<std::string> fshad = atomix::stringlistToVector(fileHandler->getFragmentShadersList());
 
     atomixProg = new ProgramVK(fileHandler);
     atomixProg->setInstance(atomixDevice);

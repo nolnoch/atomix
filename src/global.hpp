@@ -30,6 +30,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <QMetaType>
+#include <QStringList>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -150,6 +151,16 @@ namespace atomix {
             std::cout << "\n";
         }
         std::cout << std::endl;
+    }
+
+    inline std::vector<std::string> stringlistToVector(QStringList list) {
+        std::vector<std::string> vec;
+        vec.reserve(list.size());
+
+        for (auto str : list) {
+            vec.push_back(str.toStdString());
+        }
+        return vec;
     }
 }
 

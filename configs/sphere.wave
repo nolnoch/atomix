@@ -1,10 +1,10 @@
 {
     "amplitude": 0.4,
     "cpu": false,
-    "parallel": false,
+    "parallel": true,
     "period": 3.14159,
     "resolution": 360,
-    "sphere": false,
+    "sphere": true,
     "superposition": false,
     "type": "wave",
     "visibleOrbits": 63,

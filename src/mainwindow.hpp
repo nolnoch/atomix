@@ -30,6 +30,7 @@
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QFormLayout>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QGroupBox>
@@ -50,7 +51,8 @@
 #include "vkwindow.hpp"
 
 
-const QString DEFAULT = "default-config.wave";
+const QString DEFAULT = "default.wave";
+const QString CUSTOM = "Custom";
 const int MAX_ORBITS = 8;
 
 
@@ -64,13 +66,6 @@ struct AtomixStyle {
         dockWidth = width;
         dockHeight = height;
         tabLabelWidth = dockWidth / tabCount;
-
-        layDockSpaceV = int(dockHeight * 0.006);
-        layDockSpaceH = layDockSpaceV * 1.5;
-        morbMargin = layDockSpaceV << 1;
-
-        halfDock = dockWidth >> 1;
-        quarterDock = halfDock >> 1;
     }
 
     void setFonts(QFont baseFont, QFont fontMono, QString strMonoFont) {
@@ -84,8 +79,8 @@ struct AtomixStyle {
         descFontSize = int(round(baseFontSize * 1.333));
         tabSelectedFontSize = int(round(baseFontSize * 1.15));
         tabUnselectedFontSize = int(round(baseFontSize * 0.90));
-        treeFontSize = baseFontSize + 1;
-        tableFontSize = baseFontSize + 1;
+        treeFontSize = baseFontSize + 3;
+        tableFontSize = baseFontSize + 2;
         morbFontSize = descFontSize;
         statusFontSize = baseFontSize + 3;
 
@@ -104,13 +99,14 @@ struct AtomixStyle {
 
     void scaleWidgets() {
         treeCheckSize = int(round(baseFontSize * 1.5));
-        tabLabelHeight = windowHeight / 9;
+        labelDescHeight = descFontSize * 5;
         sliderTicks = 20;
         sliderInterval = sliderTicks >> 2;
         borderWidth = (isMacOS) ? 1 : 3;
-        defaultMargin = 0;
-        defaultPadding = 0;
-        defaultSpacing = 0;
+
+        spaceL = fontAtomixWidth;
+        spaceM = fontAtomixWidth >> 1;
+        spaceS = fontAtomixWidth >> 2;
     }
 
     void updateStyleSheet() {
@@ -180,8 +176,8 @@ struct AtomixStyle {
     QString qtStyle;
 
     uint baseFontSize, tabSelectedFontSize, tabUnselectedFontSize, descFontSize, treeFontSize, tableFontSize, morbFontSize, statusFontSize;
-    uint tabLabelWidth, tabLabelHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize, morbMargin;
-    uint defaultMargin, defaultPadding, defaultSpacing, listPadding, layDockSpaceV, layDockSpaceH;
+    uint tabLabelWidth, labelDescHeight, sliderTicks, sliderInterval, borderWidth, treeCheckSize;
+    uint spaceS, spaceM, spaceL;
 
     uint windowWidth, windowHeight, dockWidth, dockHeight, halfDock, quarterDock;
 
@@ -266,7 +262,7 @@ private:
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
-    void refreshWaveConfigs();
+    void refreshWaveConfigs(QString selection = DEFAULT);
     void refreshShaders();
     void loadWaveConfig();
     void refreshWaveConfigGUI(AtomixWaveConfig &cfg);
@@ -280,18 +276,18 @@ private:
     void showReady();
     void loadSavedSettings();
 
-    void handleComboCfg();
-    void handleConfigChanged();
+    void handleWaveConfigChanged();
+    void handleCloudConfigChanged();
     void handleDoubleClick(QTreeWidgetItem *item, int col);
     void handleRecipeCheck(QTreeWidgetItem *item, int col);
     void handleButtLockRecipes();
     void handleButtClearRecipes();
     void handleButtResetRecipes();
-    void handleButtLoadConfig();
+    void handleButtDeleteConfig();
     void handleButtSaveConfig();
     void handleButtMorbWaves();
     void handleButtMorbHarmonics();
-    void handleButtConfig(int id, bool checked);
+    void handleSwitchToggle(int id, bool checked);
     void handleButtColors(int id);
     void handleWeightChange(int row, int col);
     void handleSlideCullingX(int val);
@@ -327,7 +323,6 @@ private:
     QWidget *wTabHarmonics = nullptr;
     QDockWidget *dockTabs = nullptr;
 
-    QFont fontDebug;
     QIntValidator *valIntSmall = nullptr;
     QIntValidator *valIntLarge = nullptr;
     QDoubleValidator *valDoubleSmall = nullptr;
@@ -335,6 +330,14 @@ private:
 
     QVBoxLayout *layDockWaves = nullptr;
     QVBoxLayout *layDockHarmonics = nullptr;
+    QHBoxLayout *layConfigFile = nullptr;
+    QHBoxLayout *layColorPicker = nullptr;
+    QGridLayout *layOrbitSelect = nullptr;
+    QFormLayout *layWaveConfig = nullptr;
+    QFormLayout *layGenVertices = nullptr;
+
+    QLabel *labelWaves = nullptr;
+    QLabel *labelHarmonics = nullptr;
     
     QLineEdit *entryOrbit = nullptr;
     QLineEdit *entryAmp = nullptr;
@@ -352,7 +355,7 @@ private:
     QButtonGroup *buttGroupColors = nullptr;
 
     QPushButton *buttSaveConfig = nullptr;
-    QPushButton *buttLoadConfig = nullptr;
+    QPushButton *buttDeleteConfig = nullptr;
     QPushButton *buttMorbWaves = nullptr;
     QPushButton *buttClearHarmonics = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
@@ -392,6 +395,7 @@ private:
     bool activeModel = false;
     bool isLoading = false;
     bool showDebug = false;
+    bool notDefaultConfig = false;
 
     int mw_baseFontSize = 0;
     

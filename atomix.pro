@@ -17,7 +17,7 @@ INCLUDEPATH += .
 HEADERS += src/BS_thread_pool.hpp \
            src/BS_thread_pool_utils.hpp \
            src/cloudmanager.hpp \
-           src/configparser.hpp \
+           src/filehandler.hpp \
            src/global.hpp \
            src/glwidget.hpp \
            src/mainwindow.hpp \
@@ -30,7 +30,7 @@ HEADERS += src/BS_thread_pool.hpp \
            src/vkwindow.hpp \
            src/wavemanager.hpp
 SOURCES += src/cloudmanager.cpp \
-           src/configparser.cpp \
+           src/filehandler.cpp \
            src/glwidget.cpp \
            src/main.cpp \
            src/mainwindow.cpp \

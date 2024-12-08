@@ -35,8 +35,8 @@
 static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 
 
-VKWindow::VKWindow(QWidget *parent, ConfigParser *configParser)
-    : cfgParser(configParser), vw_parent(parent) {
+VKWindow::VKWindow(QWidget *parent, FileHandler *fileHandler)
+    : fileHandler(fileHandler), vw_parent(parent) {
     setSurfaceType(QVulkanWindow::VulkanSurface);
     this->setDeviceExtensions({ "VK_KHR_portability_subset" });
 }
@@ -74,10 +74,13 @@ QVulkanWindowRenderer* VKWindow::createRenderer() {
 }
 
 void VKWindow::initProgram(AtomixDevice *atomixDevice) {
+    std::vector<std::string> vshad = fileHandler->getVertexShadersList();
+    std::vector<std::string> fshad = fileHandler->getFragmentShadersList();
+    
     atomixProg = new ProgramVK();
     atomixProg->setInstance(atomixDevice);
-    atomixProg->addAllShaders(&cfgParser->vshFiles, GL_VERTEX_SHADER);
-    atomixProg->addAllShaders(&cfgParser->fshFiles, GL_FRAGMENT_SHADER);
+    atomixProg->addAllShaders(&vshad, GL_VERTEX_SHADER);
+    atomixProg->addAllShaders(&fshad, GL_FRAGMENT_SHADER);
     atomixProg->init();
 
     vw_renderer->setProgram(atomixProg);
@@ -103,7 +106,7 @@ void VKWindow::initWindow() {
     this->vw_init = true;
 }
 
-void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, bool generator) {
+void VKWindow::newCloudConfig(AtomixCloudConfig *config, harmap *cloudMap, bool generator) {
     flGraphState.set(egs::CLOUD_MODE);
     if (flGraphState.hasAny(eWaveFlags)) {
         changeModes(false);
@@ -122,14 +125,14 @@ void VKWindow::newCloudConfig(AtomixConfig *config, harmap *cloudMap, bool gener
     emit toggleLoading(true);
 }
 
-void VKWindow::newWaveConfig(AtomixConfig *config) {
+void VKWindow::newWaveConfig(AtomixWaveConfig *config) {
     flGraphState.set(egs::WAVE_MODE);
     if (flGraphState.hasAny(eCloudFlags)) {
         changeModes(false);
     }
 
     if (!waveManager) {
-        waveManager = new WaveManager(config);
+        waveManager = new WaveManager();
         currentManager = waveManager;
     }
 
@@ -733,7 +736,7 @@ void VKWindow::updateBuffersAndShaders() {
             std::string program = "default";
             if (currentManager->getCPU()) {
                 program = "cpu";
-            } else if (currentManager->getConfig().sphere) {
+            } else if (flGraphState.hasAll(egs::WAVE_MODE) && waveManager->getSphere()) {
                 program = "sphere";
             } else {
                 program = "default";
@@ -755,7 +758,7 @@ void VKWindow::setBGColour(float colour) {
     this->atomixProg->updateClearColor(vw_bg, vw_bg, vw_bg, 1.0f);
 }
 
-void VKWindow::estimateSize(AtomixConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
+void VKWindow::estimateSize(AtomixCloudConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index) {
     uint layer_max = cloudManager->getMaxLayer(cfg->cloudTolerance, cloudMap->rbegin()->first, cfg->cloudLayDivisor);
     uint pixel_count = (layer_max * cfg->cloudResolution * cfg->cloudResolution) >> 1;
 
@@ -855,20 +858,6 @@ void VKWindow::printFlags(std::string str) {
         }
     }
     std::cout << std::endl;
-}
-
-void VKWindow::printConfig(AtomixConfig *cfg) {
-    std::cout << "Waves: " << cfg->waves << "\n";
-    std::cout << "Amplitude: " << cfg->amplitude << "\n";
-    std::cout << "Period: " << cfg->period << "\n";
-    std::cout << "Wavelength: " << cfg->wavelength << "\n";
-    std::cout << "Resolution: " << cfg->resolution << "\n";
-    std::cout << "Parallel: " << cfg->parallel << "\n";
-    std::cout << "Superposition: " << cfg->superposition << "\n";
-    std::cout << "CPU: " << cfg->cpu << "\n";
-    std::cout << "Sphere: " << cfg->sphere << "\n";
-    std::cout << "Vert Shader: " << cfg->vert << "\n";
-    std::cout << "Frag Shader: " << cfg->frag << std::endl;
 }
 
 /**

@@ -29,14 +29,15 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#include <QMetaType>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <vector>
 #include <map>
 #include <iostream>
 #include <string>
-#include <filesystem>
 
 
 using harmap = std::map<int, std::vector<glm::ivec3>>;
@@ -53,38 +54,35 @@ extern bool isProfiling;
 extern bool isTesting;
 
 
-struct AtomixFiles {
-    std::string rootDir;
-    std::string shadersDir;
-    std::string configsDir;
-    std::string resourcesDir;
-    std::string fontsDir;
-    std::string iconsDir;
-
-    bool setRoot(const std::string &_root) {
-        if (!std::filesystem::exists(std::string(_root + "/shaders"))) {
-            return false;
-        }
-
-        rootDir = _root + "/";
-        shadersDir = rootDir + "shaders/";
-        configsDir = rootDir + "configs/";
-        resourcesDir = rootDir + "resources/";
-        fontsDir = resourcesDir + "fonts/";
-        iconsDir = resourcesDir + "icons/";
-
-        return true;
-    }
-
-    constexpr std::string& root() { return rootDir; }
-    constexpr std::string& shaders() { return shadersDir; }
-    constexpr std::string& configs() { return configsDir; }
-    constexpr std::string& resources() { return resourcesDir; }
-    constexpr std::string& fonts() { return fontsDir; }
-    constexpr std::string& icons() { return iconsDir; }
+struct AtomixWaveConfig {
+    // Wave-circle config values
+    double wavelength = 2.0;                        // Wavelength as Multiples of PI [double]
+    double amplitude = 0.4;                         // Amplitude [double]
+    double period = 1.0;                            // Period as Multiples of PI [double]
+    int waves = 6;                                  // Wave count [int]
+    int resolution = 180;                           // Circle point resolution [int]
+    uint visibleOrbits = 0;                         // Visible waves [uint]
+    bool superposition = false;                     // Superposition on/off [bool]
+    bool cpu = false;                               // GPU rendering on/off [bool]
+    bool parallel = false;                          // Parallel waves on/off [bool]
+    bool sphere = false;                            // Spherical waves on/off [bool]
+    std::string type = "wave";                      // Wave type [string]
 };
+Q_DECLARE_METATYPE(AtomixWaveConfig);
 
-extern AtomixFiles atomixFiles;
+struct AtomixCloudConfig {
+    // Orbital cloud config values
+    double cloudTolerance = 0.05;                   // Minimum probability for rendering [double]
+    float cloudCull_x = 0.0f;                       // Culling slider -- theta [float]
+    float cloudCull_y = 0.0f;                       // Culling slider -- phi [float]
+    float cloudCull_rIn = 0.0f;                     // Culling slider -- radius-inward [float]
+    float cloudCull_rOut = 0.0f;                    // Culling slider -- radius-outward [float]
+    int cloudLayDivisor = 1;                        // Number of layers per radius [int]
+    int cloudResolution = 180;                      // Number of points per circle [int]
+    bool cpu = false;                               // GPU rendering on/off [bool]
+    std::string type = "cloud";                      // Cloud type [string]
+};
+Q_DECLARE_METATYPE(AtomixCloudConfig);
 
 /* Custom BitFlag struct */
 struct BitFlag {

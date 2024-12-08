@@ -68,14 +68,19 @@ CloudManager::~CloudManager() {
  *
  * @param config A pointer to the new configuration.
  */
-void CloudManager::newConfig(AtomixConfig *config) {
-    Manager::newConfig(config);
+void CloudManager::newConfig(AtomixCloudConfig *config) {
+    this->cfg.cloudLayDivisor = config->cloudLayDivisor;
+    this->cfg.cloudResolution = config->cloudResolution;
+    this->cfg.cloudTolerance = config->cloudTolerance;
+    this->cfg.cloudCull_x = config->cloudCull_x;
+    this->cfg.cloudCull_y = config->cloudCull_y;
+    this->cfg.cloudCull_rIn = config->cloudCull_rIn;
+    this->cfg.cloudCull_rOut = config->cloudCull_rOut;
 
     this->cloudLayerDivisor = cfg.cloudLayDivisor;
     this->cloudResolution = cfg.cloudResolution;
     this->cloudTolerance = cfg.cloudTolerance;
     this->deg_fac = TWO_PI / this->cloudResolution;
-    this->cfg.vert = "gpu_harmonics.vert";
 }
 
 /**
@@ -103,7 +108,7 @@ void CloudManager::receiveCloudMap(harmap *inMap) {
  * @param inMap A pointer to the new orbital map.
  * @param generator True if this may generate a new cloud render, False if only culling.
  */
-void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap, bool generator) {
+void CloudManager::receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *inMap, bool generator) {
     cm_proc_coarse.lock();
 
     if (mStatus.hasNone(em::INIT)) {
@@ -136,7 +141,7 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
         newTolerance = (this->cloudTolerance != config->cloudTolerance);
         higherMaxN = (mStatus.hasAny(em::VERT_READY)) && (inMap->rbegin()->first > this->max_n);
     }
-    newCulling = (this->cfg.CloudCull_x != config->CloudCull_x) || (this->cfg.CloudCull_y != config->CloudCull_y) || (this->cfg.CloudCull_rIn != config->CloudCull_rIn) || (this->cfg.CloudCull_rOut != config->CloudCull_rOut);
+    newCulling = (this->cfg.cloudCull_x != config->cloudCull_x) || (this->cfg.cloudCull_y != config->cloudCull_y) || (this->cfg.cloudCull_rIn != config->cloudCull_rIn) || (this->cfg.cloudCull_rOut != config->cloudCull_rOut);
     
     bool configChanged = (newDivisor || newResolution || newTolerance);
     bool newVerticesRequired = (newDivisor || newResolution || higherMaxN || widerRadius);
@@ -152,10 +157,10 @@ void CloudManager::receiveCloudMapAndConfig(AtomixConfig *config, harmap *inMap,
     if (configChanged) {
         this->newConfig(config);
     } else if (newCulling) {
-        this->cfg.CloudCull_x = config->CloudCull_x;
-        this->cfg.CloudCull_y = config->CloudCull_y;
-        this->cfg.CloudCull_rIn = config->CloudCull_rIn;
-        this->cfg.CloudCull_rOut = config->CloudCull_rOut;
+        this->cfg.cloudCull_x = config->cloudCull_x;
+        this->cfg.cloudCull_y = config->cloudCull_y;
+        this->cfg.cloudCull_rIn = config->cloudCull_rIn;
+        this->cfg.cloudCull_rOut = config->cloudCull_rOut;
     }
 
     // Mark for vecsAndMatrices update if map (orbital recipe) has changed
@@ -963,15 +968,15 @@ double CloudManager::cullSlider() {
         allIndices.clear();
     }
 
-    if (!(this->cfg.CloudCull_x || this->cfg.CloudCull_y)) {
+    if (!(this->cfg.cloudCull_x || this->cfg.cloudCull_y)) {
         std::copy(idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), std::back_inserter(allIndices));
     } else {
         uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_b = 0, culled_phi_f = 0;
         layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
-        culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
+        culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.cloudCull_x));
         phi_size = this->cloudResolution >> 1;
-        culled_phi_b = static_cast<uint>(ceil(phi_size * (1.0f - this->cfg.CloudCull_y))) + phi_size;
-        culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.CloudCull_y));
+        culled_phi_b = static_cast<uint>(ceil(phi_size * (1.0f - this->cfg.cloudCull_y))) + phi_size;
+        culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.cloudCull_y));
         uint idxEnd = idxCulledTolerance.size();
 
         for (uint i = 0; i < idxEnd; i++) {
@@ -1008,16 +1013,16 @@ double CloudManager::cullSliderThreaded() {
     cm_proc_fine.lock();
     steady_clock::time_point begin = steady_clock::now();
 
-    bool visible = !bool(int(this->cfg.CloudCull_x) + int(this->cfg.CloudCull_y) + int(this->cfg.CloudCull_rIn) + int(this->cfg.CloudCull_rOut));
-    bool rin = (this->cfg.CloudCull_rIn);
-    bool rout = (this->cfg.CloudCull_rOut);
+    bool visible = !bool(int(this->cfg.cloudCull_x) + int(this->cfg.cloudCull_y) + int(this->cfg.cloudCull_rIn) + int(this->cfg.cloudCull_rOut));
+    bool rin = (this->cfg.cloudCull_rIn);
+    bool rout = (this->cfg.cloudCull_rOut);
     bool radial = (rin || rout);
-    bool angular = ((this->cfg.CloudCull_x) || (this->cfg.CloudCull_y));
+    bool angular = ((this->cfg.cloudCull_x) || (this->cfg.cloudCull_y));
     bool untouched  = !(angular || radial);
 
     uint radial_layers = this->opt_max_radius;
     if (radial) {
-        radial_layers *= (rin) ? (1.0f - this->cfg.CloudCull_rIn) : this->cfg.CloudCull_rOut;
+        radial_layers *= (rin) ? (1.0f - this->cfg.cloudCull_rIn) : this->cfg.cloudCull_rOut;
     }
     uint64_t rad_threshold = radial_layers * this->cloudResolution * (this->cloudResolution >> 1);
 
@@ -1043,14 +1048,14 @@ double CloudManager::cullSliderThreaded() {
             uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0, culled_phi_b = 0;
             float phi_front_pct = 0.0f, phi_back_pct = 0.0f;
             layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
-            culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.CloudCull_x));
+            culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.cloudCull_x));
             theta_size = this->cloudResolution;
             phi_size = this->cloudResolution >> 1;
-            if (this->cfg.CloudCull_y > 0.50f) {
+            if (this->cfg.cloudCull_y > 0.50f) {
                 phi_front_pct = 1.0f;
-                phi_back_pct = (this->cfg.CloudCull_y - 0.50f) * 2.0f;
+                phi_back_pct = (this->cfg.cloudCull_y - 0.50f) * 2.0f;
             } else {
-                phi_front_pct = this->cfg.CloudCull_y * 2.0f;
+                phi_front_pct = this->cfg.cloudCull_y * 2.0f;
                 phi_back_pct = 0.0f;
             }
             culled_phi_f = static_cast<uint>(ceil(phi_size * phi_front_pct));
@@ -1685,11 +1690,11 @@ void CloudManager::printTimes() {
      * @warning This function is not intended to be called in normal use and is only for testing
      * purposes.
      */
-void CloudManager::testThreadingInit([[maybe_unused]] AtomixConfig *config, [[maybe_unused]] harmap *inMap) {
-    std::vector<std::pair<AtomixConfig *, harmap *>> tests;
+void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config, [[maybe_unused]] harmap *inMap) {
+    std::vector<std::pair<AtomixCloudConfig *, harmap *>> tests;
     std::vector<std::pair<std::string, std::string>> testLabels;
-    AtomixConfig *shallow = new AtomixConfig();
-    AtomixConfig *deep = new AtomixConfig();
+    AtomixCloudConfig *shallow = new AtomixCloudConfig();
+    AtomixCloudConfig *deep = new AtomixCloudConfig();
     harmap *narrow = new harmap();
     harmap *wide = new harmap();
     bool cfgChanged = false, mapChanged = false;
@@ -1720,7 +1725,7 @@ void CloudManager::testThreadingInit([[maybe_unused]] AtomixConfig *config, [[ma
     testLabels.push_back(std::make_pair("Deep", "Narrow"));
     testLabels.push_back(std::make_pair("Deep", "Wide"));
 
-    AtomixConfig *oldCfg = tests[3].first;
+    AtomixCloudConfig *oldCfg = tests[3].first;
     harmap *oldMap = tests[3].second;
 
     uint pool_min = 16;

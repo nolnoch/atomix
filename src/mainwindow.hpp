@@ -54,7 +54,7 @@
 #include <QFontMetrics>
 
 #include "slideswitch.hpp"
-#include "configparser.hpp"
+#include "filehandler.hpp"
 #include "vkwindow.hpp"
 
 
@@ -80,21 +80,10 @@ struct AtomixStyle {
         quarterDock = halfDock >> 1;
     }
 
-    void setFonts(QFont baseFont, QString monoFont) {
-        QString strMonoDefault = (isMacOS) ? "Monaco" : "Monospace";
-
-        int id = QFontDatabase::addApplicationFont(QString::fromStdString(atomixFiles.fonts()) + monoFont + "-Regular.ttf");
-        QStringList fontList = QFontDatabase::applicationFontFamilies(id);
-        if (fontList.contains(monoFont)) {
-            fontMono = QFont(monoFont);
-            strFontMono = monoFont;
-        } else {
-            fontMono = QFont(strMonoDefault);
-            strFontMono = strMonoDefault;
-        }
-
+    void setFonts(QFont baseFont, QFont fontMono, QString strMonoFont) {
         fontAtomix = baseFont;
         fontMonoStatus = fontMono;
+        strFontMono = strMonoFont;
     }
     
     void scaleFonts() {
@@ -265,6 +254,8 @@ public:
     void init(QRect &windowSize);
     void postInit();
 
+    AtomixFiles& getAtomixFiles() { return fileHandler->atomixFiles; }
+
 signals:
     void changeRenderedOrbits(uint selectedOrbits);
 
@@ -282,9 +273,10 @@ private:
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
-    void refreshConfigs();
+    void refreshWaveConfigs();
     void refreshShaders();
-    void loadConfig();
+    void loadWaveConfig();
+    void loadCloudConfig();
     uint refreshOrbits();
     void setupStatusBar();
     void setupDetails();
@@ -329,14 +321,14 @@ private:
     void _dockResize();
     void _resize();
 
-    AtomixConfig waveConfig;
-    AtomixConfig cloudConfig;
+    FileHandler *fileHandler = nullptr;
+    AtomixWaveConfig waveConfig;
+    AtomixCloudConfig cloudConfig;
 
     QTabWidget *wTabs = nullptr;
     QWidget *wTabWaves = nullptr;
     QWidget *wTabHarmonics = nullptr;
     QDockWidget *dockTabs = nullptr;
-    ConfigParser *cfgParser = nullptr;
 
     QFont fontDebug;
     QIntValidator *valIntSmall = nullptr;

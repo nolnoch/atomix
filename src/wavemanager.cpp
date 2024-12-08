@@ -25,16 +25,24 @@
 #include "wavemanager.hpp"
 
 
-WaveManager::WaveManager(AtomixConfig *config) {
-    newConfig(config);
+WaveManager::WaveManager() {
 }
 
 WaveManager::~WaveManager() {
     resetManager();
 }
 
-void WaveManager::newConfig(AtomixConfig *config) {
-    Manager::newConfig(config);
+void WaveManager::newConfig(AtomixWaveConfig *config) {
+    this->cfg.waves = config->waves;
+    this->cfg.amplitude = config->amplitude;
+    this->cfg.period = config->period;
+    this->cfg.wavelength = config->wavelength;
+    this->cfg.resolution = config->resolution;
+    this->cfg.parallel = config->parallel;
+    this->cfg.superposition = config->superposition;
+    this->cfg.cpu = config->cpu;
+    this->cfg.sphere = config->sphere;
+    this->cfg.visibleOrbits = config->visibleOrbits;
 
     this->waveResolution = cfg.resolution;
     this->waveMathsCPU.x = TWO_PI / this->cfg.wavelength;
@@ -44,6 +52,10 @@ void WaveManager::newConfig(AtomixConfig *config) {
     this->waveMaths.y = waveMathsCPU.y;
     this->waveMaths.z = waveMathsCPU.z;
     this->deg_fac = TWO_PI / this->waveResolution;
+
+    if (cfg.cpu) {
+        mStatus.set(em::CPU_RENDER);
+    }
 }
 
 void WaveManager::initManager() {
@@ -51,7 +63,7 @@ void WaveManager::initManager() {
     mStatus.set(eInitFlags);
 }
 
-void WaveManager::receiveConfig(AtomixConfig *config) {
+void WaveManager::receiveConfig(AtomixWaveConfig *config) {
     BitFlag flWaveCfg;
 
     if (mStatus.hasNone(em::INIT)) {
@@ -88,12 +100,6 @@ void WaveManager::receiveConfig(AtomixConfig *config) {
     }
     if (cfg.sphere != config->sphere) {                  // Requires new {Vertices[cpu/gpu], VBO, IBO}
         flWaveCfg.set(ewc::SPHERE);
-    }
-    if (cfg.vert != config->vert) {                      // Requires new {Shader}
-        flWaveCfg.set(ewc::VERTSHADER);
-    }
-    if (cfg.frag != config->frag) {                      // Requires new {Shader}
-        flWaveCfg.set(ewc::FRAGSHADER);
     }
 
     if ((flWaveCfg.hasAny(ewc::ORBITS | ewc::RESOLUTION | ewc::SPHERE | ewc::CPU)) ||

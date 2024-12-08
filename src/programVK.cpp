@@ -29,7 +29,8 @@
 /**
  * Default Constructor.
  */
-ProgramVK::ProgramVK() {
+ProgramVK::ProgramVK(FileHandler *fileHandler) {
+    p_fileHandler = fileHandler;
 }
 
 /**
@@ -126,7 +127,7 @@ bool ProgramVK::addShader(const std::string &fName, VKuint type) {
     std::string fileLoc;
     
     if (fName.find('/') == std::string::npos) {
-        fileLoc = fileHandler->atomixFiles.shaders() + fName;
+        fileLoc = this->p_fileHandler->atomixFiles.shaders() + fName;
     } else {
         fileLoc = fName;
     }

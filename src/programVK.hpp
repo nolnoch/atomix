@@ -243,13 +243,13 @@ struct ModelInfo {
  */
 class ProgramVK {
 public:
-    ProgramVK();
+    ProgramVK(FileHandler *fileHandler);
     virtual ~ProgramVK();
     void cleanup();
 
     void setInstance(AtomixDevice *atomixDevice);
 
-    bool addShader(const std::string& fName, VKuint type);
+    bool addShader(const std::string &fName, VKuint type);
     int addAllShaders(std::vector<std::string> *fList, VKuint type);
     bool compileShader(Shader *shader);
     int compileAllShaders();
@@ -330,7 +330,7 @@ private:
 
     const uint MAX_FRAMES_IN_FLIGHT = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 
-    FileHandler *fileHandler;
+    FileHandler *p_fileHandler;
 
     VkDevice p_dev = VK_NULL_HANDLE;
     VkPhysicalDevice p_phydev = VK_NULL_HANDLE;

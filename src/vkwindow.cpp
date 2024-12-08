@@ -76,8 +76,8 @@ QVulkanWindowRenderer* VKWindow::createRenderer() {
 void VKWindow::initProgram(AtomixDevice *atomixDevice) {
     std::vector<std::string> vshad = fileHandler->getVertexShadersList();
     std::vector<std::string> fshad = fileHandler->getFragmentShadersList();
-    
-    atomixProg = new ProgramVK();
+
+    atomixProg = new ProgramVK(fileHandler);
     atomixProg->setInstance(atomixDevice);
     atomixProg->addAllShaders(&vshad, GL_VERTEX_SHADER);
     atomixProg->addAllShaders(&fshad, GL_FRAGMENT_SHADER);
@@ -622,7 +622,7 @@ void VKWindow::updateBuffersAndShaders() {
     pConstWave.time = (vw_timeEnd - vw_timeStart) * 0.001f;
 
     // TODO : This may break if we go from GPU waves to CPU anything
-    if (flGraphState.hasAny(egs::WAVE_RENDER) && waveManager->getCPU() && threadsFinished) {
+    if (flGraphState.hasAll(egs::WAVE_RENDER | egs::CPU_RENDER) && threadsFinished) {
         this->waveManager->update(pConstWave.time);
         this->flGraphState.set(egs::UPDATE_REQUIRED);
     }
@@ -644,9 +644,9 @@ void VKWindow::updateBuffersAndShaders() {
             // std::set<VKuint> activePrograms = this->atomixProg->getModelActivePrograms(vw_currentModel);
             std::string newProgram;
 
-            if (waveManager->getCPU()) {
+            if (flGraphState.hasAny(egs::CPU_RENDER)) {
                 newProgram = "cpu";
-            } else if (waveManager->getSphere()) {
+            } else if (flGraphState.hasAny(egs::WAVE_MODE) && waveManager->getSphere()) {
                 newProgram = "sphere";
             } else {
                 newProgram = "default";
@@ -660,7 +660,7 @@ void VKWindow::updateBuffersAndShaders() {
 
         // Update VBO 1: Vertices
         if (flGraphState.hasAny(egs::UPD_VBO)) {
-            std::string bufferCPU = currentManager->getCPU() ? "VerticesCPU" : "Vertices";
+            std::string bufferCPU = (flGraphState.hasAny(egs::CPU_RENDER)) ? "VerticesCPU" : "Vertices";
             updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::VERTEX;
             updBuf.offset = currentManager->getVertexOffset();
@@ -672,10 +672,10 @@ void VKWindow::updateBuffersAndShaders() {
 
         // Update VBO 2: Data
         if (flGraphState.hasAny(egs::UPD_DATA)) {
-            std::string bufferCPU = currentManager->getCPU() ? "DataCPU" : "Data";
+            std::string bufferCPU = (flGraphState.hasAny(egs::CPU_RENDER)) ? "DataCPU" : "Data";
             updBuf.bufferName = vw_currentModel + bufferCPU;
             updBuf.type = BufferType::DATA;
-            if (currentManager->getCPU()) {
+            if (flGraphState.hasAny(egs::CPU_RENDER)) {
                 updBuf.offset = currentManager->getColourOffset();
                 updBuf.count = currentManager->getColourCount();
                 updBuf.size = currentManager->getColourSize();
@@ -734,9 +734,9 @@ void VKWindow::updateBuffersAndShaders() {
             this->atomixProg->activateModel(vw_currentModel);
             
             std::string program = "default";
-            if (currentManager->getCPU()) {
+            if (flGraphState.hasAny(egs::CPU_RENDER)) {
                 program = "cpu";
-            } else if (flGraphState.hasAll(egs::WAVE_MODE) && waveManager->getSphere()) {
+            } else if (flGraphState.hasAny(egs::WAVE_MODE) && waveManager->getSphere()) {
                 program = "sphere";
             } else {
                 program = "default";

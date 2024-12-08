@@ -62,8 +62,8 @@ void FileHandler::findFiles() {
     }
 }
 
-std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::loadConfigFile(std::string filepath) {
-    QFile f(filepath.c_str());
+std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::loadConfigFile(QString filepath) {
+    QFile f(filepath);
     f.open(QIODevice::ReadOnly | QIODevice::Text);
     QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
     f.close();
@@ -73,10 +73,10 @@ std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::loadConfigFile(st
     return configFromJson(jo);
 }
 
-void FileHandler::saveConfigFile(std::string filepath, std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg) {
-    QFile f(filepath.c_str());
+void FileHandler::saveConfigFile(QString filepath, std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg) {
+    QFile f(filepath);
     f.open(QIODevice::WriteOnly | QIODevice::Text);
-    QJsonDocument doc = QJsonDocument::fromVariant(configToJson(cfg));
+    QJsonDocument doc(configToJson(cfg));
     f.write(doc.toJson());
     f.close();
 }

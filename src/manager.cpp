@@ -164,14 +164,6 @@ const uint* Manager::getIndexData() {
 }
 
 /*
- *  Getters -- Misc.
- */
-
-bool Manager::getCPU() {
-    return mStatus.hasAll(em::CPU_RENDER);
-}
-
-/*
  *  Setters -- Size
  */
 

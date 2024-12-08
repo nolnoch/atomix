@@ -236,8 +236,12 @@ void MainWindow::setupDockWaves() {
 
     // Config Selection Box
     comboConfigFile = new QComboBox(this);
-    QVBoxLayout *layConfigFile = new QVBoxLayout;
-    layConfigFile->addWidget(comboConfigFile);
+    buttSaveConfig = new QPushButton("Save", this);
+    buttLoadConfig = new QPushButton("Load", this);
+    QHBoxLayout *layConfigFile = new QHBoxLayout;
+    layConfigFile->addWidget(comboConfigFile, 4);
+    layConfigFile->addWidget(buttLoadConfig, 1);
+    layConfigFile->addWidget(buttSaveConfig, 1);
     groupConfig->setLayout(layConfigFile);
     groupConfig->setAlignment(Qt::AlignRight);
     
@@ -280,12 +284,12 @@ void MainWindow::setupDockWaves() {
     slswSphere->setChecked(false);
 
     // Assign switches to button group
-    buttGroupConfig = new QButtonGroup(this);
-    buttGroupConfig->setExclusive(false);
-    buttGroupConfig->addButton(slswPara, 0);
-    buttGroupConfig->addButton(slswSuper, 1);
-    buttGroupConfig->addButton(slswCPU, 2);
-    buttGroupConfig->addButton(slswSphere, 3);
+    buttGroupSwitch = new QButtonGroup(this);
+    buttGroupSwitch->setExclusive(false);
+    buttGroupSwitch->addButton(slswPara, 0);
+    buttGroupSwitch->addButton(slswSuper, 1);
+    buttGroupSwitch->addButton(slswCPU, 2);
+    buttGroupSwitch->addButton(slswSphere, 3);
 
     // Wave Configuration Layout
     QFormLayout *layWaveConfig = new QFormLayout;
@@ -697,7 +701,7 @@ void MainWindow::loadWaveConfig() {
 
     if (comboID <= files) {
         std::variant<AtomixWaveConfig, AtomixCloudConfig> waveConfig;
-        waveConfig = fileHandler->loadConfigFile(fileHandler->getWaveFilesList()[comboID - 1]);
+        waveConfig = fileHandler->loadConfigFile(QString::fromStdString(fileHandler->getWaveFilesList()[comboID - 1]));
         if (std::holds_alternative<AtomixWaveConfig>(waveConfig)) {
             cfg = std::get<AtomixWaveConfig>(waveConfig);
         } else {
@@ -709,6 +713,10 @@ void MainWindow::loadWaveConfig() {
         return;
     }
 
+    refreshWaveConfigGUI(cfg);
+}
+
+void MainWindow::refreshWaveConfigGUI(AtomixWaveConfig &cfg) {
     entryOrbit->setText(QString::number(cfg.waves));
     entryAmp->setText(QString::number(cfg.amplitude));
     entryPeriod->setText(QString::number(cfg.period));
@@ -728,7 +736,7 @@ void MainWindow::loadCloudConfig() {
 
     if (comboID <= files) {
         std::variant<AtomixWaveConfig, AtomixCloudConfig> cloudConfig;
-        cloudConfig = fileHandler->loadConfigFile(fileHandler->getCloudFilesList()[comboID - 1]);
+        cloudConfig = fileHandler->loadConfigFile(QString::fromStdString(fileHandler->getCloudFilesList()[comboID - 1]));
         if (std::holds_alternative<AtomixCloudConfig>(cloudConfig)) {
             cfg = std::get<AtomixCloudConfig>(cloudConfig);
         } else {
@@ -992,6 +1000,35 @@ void MainWindow::handleButtResetRecipes() {
     buttMorbHarmonics->setEnabled(false);
 }
 
+void MainWindow::handleButtLoadConfig() {
+    std::variant<AtomixWaveConfig, AtomixCloudConfig> config;
+
+    QFileDialog fd(this, "Load Wave Config");
+    fd.setAcceptMode(QFileDialog::AcceptOpen);
+    fd.setDefaultSuffix("wave");
+    fd.selectFile("filename.wave");
+    if (fd.exec() == QDialog::Accepted) {
+        config = fileHandler->loadConfigFile(fd.selectedFiles().first());
+    }
+
+    if (std::holds_alternative<AtomixWaveConfig>(config)) {
+        waveConfig = std::get<AtomixWaveConfig>(config);
+        refreshWaveConfigGUI(waveConfig);
+    }
+}
+
+void MainWindow::handleButtSaveConfig() {
+    std::variant<AtomixWaveConfig, AtomixCloudConfig> config = waveConfig;
+
+    QFileDialog fd(this, "Save Wave Config");
+    fd.setAcceptMode(QFileDialog::AcceptSave);
+    fd.setDefaultSuffix("wave");
+    fd.selectFile("filename.wave");
+    if (fd.exec() == QDialog::Accepted) {
+        fileHandler->saveConfigFile(fd.selectedFiles().first(), config);
+    }
+}
+
 void MainWindow::handleButtMorbWaves() {
     waveConfig.waves = std::clamp(entryOrbit->text().toInt(), 1, 8);
     waveConfig.amplitude = std::clamp(entryAmp->text().toDouble(), 0.001, 999.999);
@@ -1116,15 +1153,15 @@ void MainWindow::handleButtConfig(int id, bool checked) {
                 break;
             case SUPER:
                 // Superposition
-                buttGroupConfig->button(PARA)->setChecked(true);
-                buttGroupConfig->button(CPU)->setChecked(true);
+                buttGroupSwitch->button(PARA)->setChecked(true);
+                buttGroupSwitch->button(CPU)->setChecked(true);
                 break;
             case CPU:
                 // CPU rendering
                 break;
             case SPHERE:
                 // Spherical wave pattern
-                buttGroupConfig->button(PARA)->setChecked(true);
+                buttGroupSwitch->button(PARA)->setChecked(true);
                 break;
             default:
                 break;
@@ -1133,15 +1170,15 @@ void MainWindow::handleButtConfig(int id, bool checked) {
         switch (id) {
             case PARA:
                 // Orthogonal waves
-                buttGroupConfig->button(SUPER)->setChecked(false);
-                buttGroupConfig->button(SPHERE)->setChecked(false);
+                buttGroupSwitch->button(SUPER)->setChecked(false);
+                buttGroupSwitch->button(SPHERE)->setChecked(false);
                 break;
             case SUPER:
                 // No superposition
                 break;
             case CPU:
                 // GPU rendering
-                buttGroupConfig->button(SUPER)->setChecked(false);
+                buttGroupSwitch->button(SUPER)->setChecked(false);
                 break;
             case SPHERE:
                 // Circular wave pattern
@@ -1430,7 +1467,7 @@ void MainWindow::_connectSignals() {
     connect(vkGraph, &VKWindow::toggleLoading, this, &MainWindow::showLoading);
     connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::handleComboCfg);
     connect(buttGroupOrbits, &QButtonGroup::idToggled, vkGraph, &VKWindow::selectRenderedWaves, Qt::DirectConnection);
-    connect(buttGroupConfig, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
+    connect(buttGroupSwitch, &QButtonGroup::idToggled, this, &MainWindow::handleButtConfig);
     connect(buttGroupColors, &QButtonGroup::idClicked, this, &MainWindow::handleButtColors);
     connect(entryOrbit, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
     connect(entryPeriod, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
@@ -1440,6 +1477,7 @@ void MainWindow::_connectSignals() {
     connect(entryCloudLayers, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
     connect(entryCloudRes, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
     connect(entryCloudMinRDP, &QLineEdit::returnPressed, buttMorbHarmonics, &QPushButton::click);
+    connect(buttSaveConfig, &QPushButton::clicked, this, &MainWindow::handleButtSaveConfig);
     connect(buttMorbHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtMorbHarmonics);
     connect(buttClearHarmonics, &QPushButton::clicked, this, &MainWindow::handleButtClearRecipes);
     connect(entryCloudLayers, &QLineEdit::editingFinished, this, &MainWindow::handleConfigChanged);

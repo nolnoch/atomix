@@ -276,7 +276,9 @@ private:
     void refreshWaveConfigs();
     void refreshShaders();
     void loadWaveConfig();
+    void refreshWaveConfigGUI(AtomixWaveConfig &cfg);
     void loadCloudConfig();
+    void refreshCloudConfigGUI(AtomixCloudConfig &cfg);
     uint refreshOrbits();
     void setupStatusBar();
     void setupDetails();
@@ -292,6 +294,8 @@ private:
     void handleButtLockRecipes();
     void handleButtClearRecipes();
     void handleButtResetRecipes();
+    void handleButtLoadConfig();
+    void handleButtSaveConfig();
     void handleButtMorbWaves();
     void handleButtMorbHarmonics();
     void handleButtConfig(int id, bool checked);
@@ -350,10 +354,12 @@ private:
     SlideSwitch *slswSphere = nullptr;
     QComboBox *comboConfigFile = nullptr;
 
-    QButtonGroup *buttGroupConfig = nullptr;
+    QButtonGroup *buttGroupSwitch = nullptr;
     QButtonGroup *buttGroupOrbits = nullptr;
     QButtonGroup *buttGroupColors = nullptr;
 
+    QPushButton *buttSaveConfig = nullptr;
+    QPushButton *buttLoadConfig = nullptr;
     QPushButton *buttMorbWaves = nullptr;
     QPushButton *buttClearHarmonics = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;

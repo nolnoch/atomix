@@ -85,8 +85,8 @@ class FileHandler {
         virtual ~FileHandler();
         void init();
 
-        std::variant<AtomixWaveConfig, AtomixCloudConfig> loadConfigFile(std::string filepath);
-        void saveConfigFile(std::string filepath, std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg);
+        std::variant<AtomixWaveConfig, AtomixCloudConfig> loadConfigFile(QString filepath);
+        void saveConfigFile(QString filepath, std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg);
         std::variant<AtomixWaveConfig, AtomixCloudConfig> configFromJson(QJsonObject &json);
         QJsonObject configToJson(std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg);
 

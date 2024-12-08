@@ -70,8 +70,6 @@ class Manager {
         const float* getColourData();
         const uint* getIndexData();
 
-        bool getCPU();
-
         void printIndices();
         void printVertices();
 

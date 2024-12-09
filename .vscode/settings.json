@@ -1,6 +1,6 @@
 {
-    "cmake.sourceDirectory": "/home/braer/dev/atomix",
-    "cmake.buildDirectory": "/home/braer/dev/atomix/build",
+    "cmake.sourceDirectory": "C:/dev/atomix",
+    "cmake.buildDirectory": "C:/dev/atomix/build",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "C_Cpp.errorSquiggles": "enabled",
     "files.associations": {

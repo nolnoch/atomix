@@ -28,7 +28,7 @@ o Move ProgressBar to StatusBar
 o Re-add negative m_l values and correctly render superpositions
 o Save window geometry and state between sessions
 o Refactor config files to use denser format, saved to file from application
-- Add config saving for harmonics, including selected recipes
+o Add config saving for harmonics, including selected recipes
 - Deployable packages on Ubuntu, Windows, and MacOS [MacOS WIP]
 - Reimplement custom vertex shaders through QFileDialog and JIT programVK addition
 - Energy tab

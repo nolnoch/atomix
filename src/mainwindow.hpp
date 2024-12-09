@@ -135,6 +135,7 @@ struct AtomixStyle {
                 "QTreeWidget { font-family: %8; font-size: %6px; } "
                 "QTableWidget { font-family: %8; font-size: %7px; } "
                 "QPushButton#morb { font-size: %9px; text-align: center; padding: %1px; } "
+                "QComboBox { font-family: %8; } "
             });
         }
 

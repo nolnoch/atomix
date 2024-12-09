@@ -66,7 +66,7 @@ void MainWindow::postInit() {
     _dockResize();
 
     wTabs->installEventFilter(this);
-    statBar->showMessage(tr("Ready"));
+    showReady();
 }
 
 void MainWindow::updateDetails(AtomixInfo *info) {
@@ -106,7 +106,6 @@ void MainWindow::showLoading(bool loading) {
     this->isLoading = loading;
     
     if (loading) {
-        // statBar->clearMessage();
         statBar->addWidget(pbLoading, 1);
         pbLoading->show();
     } else {
@@ -122,6 +121,7 @@ void MainWindow::showDetails() {
     } else {
         statBar->removeWidget(labelDetails);
     }
+    statBar->adjustSize();
 }
 
 void MainWindow::showReady() {
@@ -242,6 +242,7 @@ void MainWindow::setupDockWaves() {
 
     // Config Selection Box
     comboWaveConfigFile = new QComboBox(this);
+    comboWaveConfigFile->setObjectName("comboWaveConfigFile");
     buttDeleteWaveConfig = new QPushButton("-", this);
     buttDeleteWaveConfig->setObjectName("buttDeleteWaveConfig");
     buttDeleteWaveConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -460,6 +461,7 @@ void MainWindow::setupDockHarmonics() {
 
     // Config Selection Box
     comboCloudConfigFile = new QComboBox(this);
+    comboCloudConfigFile->setObjectName("comboCloudConfigFile");
     buttDeleteCloudConfig = new QPushButton("-", this);
     buttDeleteCloudConfig->setObjectName("buttDeleteCloudConfig");
     buttDeleteCloudConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -803,6 +805,8 @@ void MainWindow::refreshWaveConfigGUI(AtomixWaveConfig &cfg) {
 }
 
 void MainWindow::loadCloudConfig() {
+    this->handleButtClearRecipes();
+    
     int files = fileHandler->getCloudFilesCount();
     int comboID = comboCloudConfigFile->currentIndex();
 
@@ -951,7 +955,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     } else {
         // Leaf nodes
         QString strItem = item->text(col);
-        QString strWeight = "1";
         QStringList strlistItem = strItem.split(u' ');
         int n = strlistItem.at(0).toInt();
         int l = strlistItem.at(1).toInt();
@@ -959,6 +962,18 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
         
         if (checked) {
             // Add orbital to table
+            QString strWeight = "1";
+            bool found = false;
+
+            // Find weight if it already exists in harmap
+            for (auto& vecElem : mapCloudRecipes[n]) {
+                if (vecElem.x == l && vecElem.y == m) {
+                    strWeight = QString::number(vecElem.z);
+                    found = true;
+                    break;
+                }
+            }
+
             QTableWidgetItem *thisOrbital = new SortableOrbitalTa(strItem);
             QTableWidgetItem *thisWeight = new SortableOrbitalTa(strWeight);
             int intTableRows = tableOrbitalReport->rowCount();
@@ -973,10 +988,12 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             thisOrbital->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsEnabled);
             thisWeight->setFlags(Qt::ItemNeverHasChildren | Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
 
-            // Add orbital to harmap
-            ivec3 lmw = ivec3(l, m, 1);
-            mapCloudRecipes[n].push_back(lmw);
-            this->numRecipes++;
+            // Add orbital to harmap if it doesn't already exist
+            if (!found) {
+                ivec3 lmw = ivec3(l, m, 1);
+                mapCloudRecipes[n].push_back(lmw);
+                this->numRecipes++;
+            }
 
             // Because adding, enable buttons
             buttClearHarmonics->setEnabled(true);
@@ -1107,6 +1124,7 @@ void MainWindow::handleButtConfigIO(int id) {
     bool save = (id / 2);
 
     if (save) {
+        // Save config (and recipes) to file
         SuperConfig config = (wave) ? SuperConfig{ waveConfig } : SuperConfig{ cloudConfig };
         QString title = (wave) ? tr("Save Wave Config") : tr("Save Harmonics Config");
         QString extension = (wave) ? "wave" : "cloud";
@@ -1123,6 +1141,7 @@ void MainWindow::handleButtConfigIO(int id) {
             refreshConfigs(mode, strCfgName);
         }
     } else {
+        // Delete config file
         QComboBox *box = (wave) ? comboWaveConfigFile : comboCloudConfigFile;
         int comboID = box->currentIndex();
         QString strCfgName = box->currentText();

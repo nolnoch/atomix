@@ -29,8 +29,8 @@ As of 3 Dec 2024:
 
 ### Tab 0: Simple Waves
 
-![circle2](https://github.com/user-attachments/assets/c783cbc9-f63a-4fca-a612-0b4f85d1dac1)![sphere](https://github.com/user-attachments/assets/b9e53017-f075-4549-84c6-6dce2ea18f3f)
-
+![waves](https://github.com/user-attachments/assets/6e769417-0f21-4dc9-8aab-291a6533ac43)
+![sphere](https://github.com/user-attachments/assets/766c976b-120d-4e77-8229-da6c3a2958ea)
 
 The center (i.e. nucleus) model is a central hexahedral crystal with polar colouring. It is surrounded by transverse standing waves, the wavefunction being either parallel or orthogonal to the equatorial plane (both are options) and expressed in circular or spherical format (both are options).
 
@@ -50,7 +50,7 @@ In any case, both orthogonal and parallel (coplanar) waves can be rendered on ei
  
 ### Tab 1: Spherical Harmonics
 
-![841](https://github.com/user-attachments/assets/379c7d7a-d676-4b9b-a818-436368df7686)
+![harmonics](https://github.com/user-attachments/assets/38c1b5c3-2f86-4fba-a46f-3701a851a368)
 
 The center (i.e. nucleus) model is a central hexahedral crystal with polar colouring. The probability cloud (sum of results to Schroedinger's equations for selected n,l,m states) is rendered around the center with coloring indicating the relative probability of the electron's position.
 

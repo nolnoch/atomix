@@ -51,9 +51,11 @@
 #include "vkwindow.hpp"
 
 
-const QString DEFAULT = QT_TR_NOOP("default.wave");
-const QString CUSTOM = QT_TR_NOOP("<Custom>");
-const QString SELECT = QT_TR_NOOP("<Select>");
+const QString DEFAULT = "default.wave";
+const QString trCustom = QT_TR_NOOP("Custom");
+const QString trSelect = QT_TR_NOOP("Select");
+const QString CUSTOM = "<" + trCustom + ">";
+const QString SELECT = "<" + trSelect + ">";
 const int MAX_ORBITS = 8;
 
 
@@ -77,7 +79,7 @@ struct AtomixStyle {
     
     void scaleFonts() {
         baseFontSize = int(round(dockWidth * 0.04));
-        descFontSize = int(round(baseFontSize * 1.333));
+        descFontSize = int(round(baseFontSize * 1.40));
         tabSelectedFontSize = int(round(baseFontSize * 1.15));
         tabUnselectedFontSize = int(round(baseFontSize * 0.90));
         treeFontSize = baseFontSize + 3;
@@ -96,6 +98,9 @@ struct AtomixStyle {
         fontMonoHeight = fmM.height();
 
         fontMonoStatus.setPixelSize(statusFontSize);
+        QFontMetrics fmS(fontMonoStatus);
+        fontMonoStatusHeight = fmS.height();
+        detailsHeight = int(fontMonoStatusHeight * 2.0);
     }
 
     void scaleWidgets() {
@@ -185,7 +190,7 @@ struct AtomixStyle {
     QStringList styleStringList;
     QString strStyle, strFontMono;
     QFont fontMono, fontMonoStatus, fontAtomix;
-    int fontMonoWidth, fontMonoHeight, fontAtomixWidth, fontAtomixHeight;
+    int fontMonoWidth, fontMonoHeight, fontAtomixWidth, fontAtomixHeight, fontMonoStatusHeight, loadingHeight, detailsHeight;
 };
 
 class SortableOrbitalTa : public QTableWidgetItem {
@@ -322,6 +327,14 @@ private:
     FileHandler *fileHandler = nullptr;
     AtomixWaveConfig waveConfig;
     AtomixCloudConfig cloudConfig;
+    AtomixInfo dInfo;
+    AtomixStyle aStyle;
+
+    VKWindow *vkGraph = nullptr;
+    QVulkanInstance vkInst;
+    QWidget *vkWinWidWrapper = nullptr;
+    QWidget *graph = nullptr;
+    QWindow *graphWin = nullptr;
 
     QTabWidget *wTabs = nullptr;
     QWidget *wTabWaves = nullptr;
@@ -390,15 +403,11 @@ private:
     QSlider *slideCullingY = nullptr;
     QSlider *slideCullingR = nullptr;
 
+    QPixmap *pmColour = nullptr;
+
     QStatusBar *statBar = nullptr;
     QLabel *labelDetails = nullptr;
     QProgressBar *pbLoading = nullptr;
-
-    VKWindow *vkGraph = nullptr;
-    QVulkanInstance vkInst;
-    QWidget *vkWinWidWrapper = nullptr;
-    QWidget *graph = nullptr;
-    QWindow *graphWin = nullptr;
 
     harmap mapCloudRecipes;
     int numRecipes = 0;
@@ -425,11 +434,6 @@ private:
     int mw_tabWidth = 0;
     int mw_tabHeight = 0;
     int mw_tabCount = 0;
-
-    QPixmap *pmColour = nullptr;
-
-    AtomixInfo dInfo;
-    AtomixStyle aStyle;
 };
 
 #endif

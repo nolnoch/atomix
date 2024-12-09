@@ -101,6 +101,30 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     labelDetails->adjustSize();
 }
 
+void MainWindow::setupStatusBar() {
+    statBar = this->statusBar();
+    statBar->setObjectName("statusBar");
+    statBar->setFont(aStyle.fontMonoStatus);
+    statBar->setMinimumHeight(aStyle.loadingHeight);
+}
+
+void MainWindow::setupDetails() {
+    labelDetails = new QLabel(this);
+    labelDetails->setObjectName("labelDetails");
+    labelDetails->setFont(aStyle.fontMonoStatus);
+    labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    labelDetails->hide();
+}
+
+void MainWindow::setupLoading() {
+    pbLoading = new QProgressBar(this);
+    pbLoading->setMinimum(0);
+    pbLoading->setMaximum(0);
+    pbLoading->setTextVisible(false);
+    pbLoading->hide();
+    aStyle.loadingHeight = pbLoading->sizeHint().height();
+}
+
 void MainWindow::showLoading(bool loading) {
     if (this->isLoading == loading) return;
     this->isLoading = loading;
@@ -118,10 +142,11 @@ void MainWindow::showDetails() {
     if (showDebug) {
         statBar->addPermanentWidget(labelDetails, 0);
         labelDetails->show();
+        statBar->setMinimumHeight(aStyle.detailsHeight);
     } else {
         statBar->removeWidget(labelDetails);
+        statBar->setMinimumHeight(aStyle.loadingHeight);
     }
-    statBar->adjustSize();
 }
 
 void MainWindow::showReady() {
@@ -200,12 +225,19 @@ void MainWindow::setupTabs() {
 
     setupDockWaves();
     setupDockHarmonics();
+
     wTabs->addTab(wTabWaves, tr("Waves"));
     wTabs->addTab(wTabHarmonics, tr("Harmonics"));
     dockTabs->setWidget(wTabs);
     this->addDockWidget(Qt::RightDockWidgetArea, dockTabs);
-
     mw_tabCount = wTabs->count();
+
+    buttGroupConfig = new QButtonGroup(this);
+    buttGroupConfig->setExclusive(false);
+    buttGroupConfig->addButton(buttDeleteCloudConfig, 0);
+    buttGroupConfig->addButton(buttDeleteWaveConfig, 1);
+    buttGroupConfig->addButton(buttSaveCloudConfig, 2);
+    buttGroupConfig->addButton(buttSaveWaveConfig, 3);
 }
 
 void MainWindow::setupDockWaves() {
@@ -724,6 +756,7 @@ void MainWindow::refreshConfigs(BitFlag target, QString selection) {
     QString path = QString::fromStdString(fileHandler->atomixFiles.configs());
     int pathLength = path.length();
     
+    // Wave Config Combo Box
     if (waveFiles && target.hasAny(mw::WAVE)) {
         QStringList cfgFiles = fileHandler->getWaveFilesList();
 
@@ -746,6 +779,7 @@ void MainWindow::refreshConfigs(BitFlag target, QString selection) {
         comboWaveConfigFile->clear();
     }
 
+    // Cloud Config Combo Box
     if (cloudFiles && target.hasAny(mw::CLOUD)) {
         QStringList cfgFiles = fileHandler->getCloudFilesList();
 
@@ -805,8 +839,6 @@ void MainWindow::refreshWaveConfigGUI(AtomixWaveConfig &cfg) {
 }
 
 void MainWindow::loadCloudConfig() {
-    this->handleButtClearRecipes();
-    
     int files = fileHandler->getCloudFilesCount();
     int comboID = comboCloudConfigFile->currentIndex();
 
@@ -815,6 +847,8 @@ void MainWindow::loadCloudConfig() {
     } else {
         comboID--;
     }
+
+    this->handleButtClearRecipes();
 
     AtomixCloudConfig cfg;
     if (comboID <= files) {
@@ -831,9 +865,10 @@ void MainWindow::loadCloudConfig() {
         return;
     }
 
+    refreshCloudConfigGUI(cfg);
     buttDeleteCloudConfig->setEnabled(true);
     buttSaveCloudConfig->setEnabled(false);
-    refreshCloudConfigGUI(cfg);
+    comboCloudConfigFile->setCurrentIndex(++comboID);
 }
 
 void MainWindow::refreshCloudConfigGUI(AtomixCloudConfig &cfg) {
@@ -893,29 +928,6 @@ uint MainWindow::refreshOrbits(std::pair<int, int> waveChange) {
     return renderedOrbits;
 }
 
-void MainWindow::setupStatusBar() {
-    statBar = this->statusBar();
-    statBar->setObjectName("statusBar");
-    statBar->setFont(aStyle.fontMonoStatus);
-    statBar->setMinimumHeight(pbLoading->sizeHint().height());
-}
-
-void MainWindow::setupDetails() {
-    labelDetails = new QLabel(this);
-    labelDetails->setObjectName("labelDetails");
-    labelDetails->setFont(aStyle.fontMonoStatus);
-    labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    labelDetails->hide();
-}
-
-void MainWindow::setupLoading() {
-    pbLoading = new QProgressBar(this);
-    pbLoading->setMinimum(0);
-    pbLoading->setMaximum(0);
-    pbLoading->setTextVisible(false);
-    pbLoading->hide();
-}
-
 void MainWindow::loadSavedSettings() {
     QSettings settings("Nolnoch", "atomix");
     restoreGeometry(settings.value("geometry").toByteArray());
@@ -931,6 +943,8 @@ void MainWindow::handleCloudConfigChanged() {
     if (numRecipes) {
         buttMorbHarmonics->setEnabled(true);
     }
+    comboCloudConfigFile->setCurrentText(SELECT);
+    buttDeleteCloudConfig->setEnabled(false);
 }
 
 void MainWindow::handleTreeDoubleClick(QTreeWidgetItem *item, int col) {
@@ -983,6 +997,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
             for (auto& vecElem : mapCloudRecipes[n]) {
                 if (vecElem.x == l && vecElem.y == m) {
                     strWeight = QString::number(vecElem.z);
+                    this->numRecipes++;
                     found = true;
                     break;
                 }
@@ -1047,7 +1062,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 
     /* ALL Nodes make it here */
     // Since we've made any change, enable render button
-    buttMorbHarmonics->setEnabled(true);
+    handleCloudConfigChanged();
 
 
     // If has parent and all siblings are now checked/unchecked, check/uncheck parent
@@ -1312,7 +1327,9 @@ void MainWindow::handleButtMorbHarmonics() {
     groupRSlideCulling->setEnabled(true);
     buttMorbHarmonics->setEnabled(false);
     activeModel = true;
-    buttSaveCloudConfig->setEnabled(true);
+    if (comboCloudConfigFile->currentIndex() == 0) {
+        buttSaveCloudConfig->setEnabled(true);
+    }
 }
 
 void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
@@ -1660,13 +1677,6 @@ void MainWindow::_initWidgets() {
 
     // Setup Dock GUI
     setupTabs();
-
-    buttGroupConfig = new QButtonGroup(this);
-    buttGroupConfig->setExclusive(false);
-    buttGroupConfig->addButton(buttDeleteCloudConfig, 0);
-    buttGroupConfig->addButton(buttDeleteWaveConfig, 1);
-    buttGroupConfig->addButton(buttSaveCloudConfig, 2);
-    buttGroupConfig->addButton(buttSaveWaveConfig, 3);
     
     refreshConfigs(BitFlag(mw::BOTH));
     refreshOrbits();
@@ -1807,10 +1817,8 @@ void MainWindow::_dockResize() {
     layDockHarmonics->setSpacing(aStyle.spaceM);
 
     // Status Bar
-    if (showDebug) {
-        labelDetails->setFont(aStyle.fontMonoStatus);
-        labelDetails->adjustSize();
-    }
+    labelDetails->setFont(aStyle.fontMonoStatus);
+    labelDetails->adjustSize();
     statBar->setFont(aStyle.fontMonoStatus);
 }
 

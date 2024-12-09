@@ -272,7 +272,7 @@ private:
     void refreshWaveConfigGUI(AtomixWaveConfig &cfg);
     void loadCloudConfig();
     void refreshCloudConfigGUI(AtomixCloudConfig &cfg);
-    uint refreshOrbits();
+    uint refreshOrbits(std::pair<int, int> waveChange = { 0, 0 });
     void setupStatusBar();
     void setupDetails();
     void setupLoading();

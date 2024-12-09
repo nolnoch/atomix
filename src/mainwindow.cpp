@@ -849,7 +849,7 @@ void MainWindow::refreshCloudConfigGUI(AtomixCloudConfig &cfg) {
     }
 }
 
-uint MainWindow::refreshOrbits() {
+uint MainWindow::refreshOrbits(std::pair<int, int> waveChange) {
     const QSignalBlocker blocker(buttGroupOrbits);
     ushort renderedOrbits = 0;
 
@@ -862,6 +862,20 @@ uint MainWindow::refreshOrbits() {
     } else {
         for (int i = 0; i < waveConfig.waves; i++) {
             renderedOrbits |= (1 << i);
+        }
+    }
+    
+    int incr = ((0 < waveChange.second) - (waveChange.second < 0));
+    if (incr != 0) {
+        bool neg = (incr < 0);
+        int start = waveChange.first + (neg ? incr : 0);
+        int end = start + waveChange.second;
+        for (int i = start; i != end; i += incr) {
+            if (neg) {
+                renderedOrbits &= ~(1 << i);
+            } else {
+                renderedOrbits |= (1 << i);
+            }
         }
     }
 
@@ -1212,15 +1226,18 @@ void MainWindow::handleButtSaveConfig() {
 
 void MainWindow::handleButtMorbWaves() {
     std::pair<bool, double> resultP, resultW;
+    int oldWaves = waveConfig.waves;
+    int newWaves = std::clamp(entryOrbit->text().toInt(), 1, 8);
+    std::pair<int, int> waveChange = { oldWaves, newWaves - oldWaves };
     
-    waveConfig.waves = std::clamp(entryOrbit->text().toInt(), 1, 8);
+    waveConfig.waves = newWaves;
     waveConfig.amplitude = std::clamp(entryAmp->text().toDouble(), 0.001, 999.999);
     waveConfig.resolution = std::clamp(entryResolution->text().toInt(), 1, 999);
     waveConfig.parallel = slswPara->value();
     waveConfig.superposition = slswSuper->value();
     waveConfig.cpu = slswCPU->value();
     waveConfig.sphere = slswSphere->value();
-    waveConfig.visibleOrbits = refreshOrbits();
+    waveConfig.visibleOrbits = refreshOrbits(waveChange);
 
     resultP = _validateExprInput(entryPeriod);
     waveConfig.period = std::clamp(resultP.second, 0.001, 999.999);
@@ -1690,14 +1707,16 @@ void MainWindow::_connectSignals() {
     
     // Wave Config Values
     connect(entryOrbit, &QLineEdit::editingFinished, this, &MainWindow::handleWaveConfigChanged);
+    connect(entryAmp, &QLineEdit::editingFinished, this, &MainWindow::handleWaveConfigChanged);
     connect(entryPeriod, &QLineEdit::editingFinished, this, &MainWindow::handleWaveConfigChanged);
     connect(entryWavelength, &QLineEdit::editingFinished, this, &MainWindow::handleWaveConfigChanged);
     connect(entryResolution, &QLineEdit::editingFinished, this, &MainWindow::handleWaveConfigChanged);
-    connect(buttGroupSwitch, &QButtonGroup::idToggled, this, &MainWindow::handleSwitchToggle);
     connect(entryOrbit, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
+    connect(entryAmp, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
     connect(entryPeriod, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
     connect(entryWavelength, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
     connect(entryResolution, &QLineEdit::returnPressed, buttMorbWaves, &QPushButton::click);
+    connect(buttGroupSwitch, &QButtonGroup::idToggled, this, &MainWindow::handleSwitchToggle);
     
     // Wave Render
     connect(buttMorbWaves, &QPushButton::clicked, this, &MainWindow::handleButtMorbWaves);

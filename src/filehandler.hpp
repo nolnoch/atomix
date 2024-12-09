@@ -37,6 +37,9 @@
 #include "global.hpp"
 
 
+using SuperConfig = std::variant<AtomixWaveConfig, AtomixCloudConfig>;
+
+
 struct AtomixFiles {
     bool setRoot(const std::string &_root) {
         bool hasShaders = std::filesystem::exists(std::string(_root + "/shaders"));
@@ -85,11 +88,9 @@ class FileHandler {
         virtual ~FileHandler();
         void findFiles();
 
-        std::variant<AtomixWaveConfig, AtomixCloudConfig> loadConfigFile(QString filepath);
-        void saveConfigFile(QString filepath, std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg);
-        std::variant<AtomixWaveConfig, AtomixCloudConfig> configFromJson(QJsonObject &json);
-        QJsonObject configToJson(std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg);
-
+        SuperConfig loadConfigFile(QString filepath, harmap *recipes = nullptr);
+        void saveConfigFile(QString filepath, SuperConfig &cfg, harmap *recipes = nullptr);
+        
         QStringList getWaveFilesList() { return wavFiles; }
         QStringList getCloudFilesList() { return cldFiles; }
         QStringList getVertexShadersList() { return vshFiles; }
@@ -101,11 +102,17 @@ class FileHandler {
 
         bool deleteFile(QString filepath);
 
-        void printConfig(std::variant<AtomixWaveConfig, AtomixCloudConfig> &config);
+        void printConfig(SuperConfig &config);
 
         AtomixFiles atomixFiles;
 
     private:
+        SuperConfig configFromJson(QJsonObject &json, harmap *recipes = nullptr);
+        QJsonObject configToJson(SuperConfig &cfg, harmap *recipes = nullptr);
+        
+        QJsonArray collapseHarmap(harmap *har);
+        harmap inflateHarmap(const QJsonArray &ja);
+
         QStringList wavFiles;
         QStringList cldFiles;
         QStringList vshFiles;

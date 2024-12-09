@@ -44,10 +44,10 @@ int main(int argc, char* argv[]) {
     // Application
     QApplication::setStyle("Fusion");
     QApplication app (argc, argv);
-    // app.setStyle("Fusion");
     QCoreApplication::setApplicationName("atomix");
     QCoreApplication::setOrganizationName("Nolnoch");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+    MainWindow mainWindow;
 
     // Exe and CLI Parsing
     QCommandLineParser qParser;
@@ -56,12 +56,14 @@ int main(int argc, char* argv[]) {
     QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QCoreApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: application directory)"), "directory", QCoreApplication::applicationDirPath());
     QCommandLineOption cliProfiling({ "p", "profiling" }, QCoreApplication::translate("main", "enable profiling"));
     QCommandLineOption cliTesting({ "t", "testing" }, QCoreApplication::translate("main", "enable testing"));
+    QCommandLineOption cliResetGeometry({ "r", "reset-geometry" }, QCoreApplication::translate("main", "reset window geometry (instead of loading saved geometry)"));
     qParser.addHelpOption();
     qParser.addVersionOption();
     qParser.addOption(cliVerbose);
     qParser.addOption(cliAtomixDir);
     qParser.addOption(cliProfiling);
     qParser.addOption(cliTesting);
+    qParser.addOption(cliResetGeometry);
     qParser.process(app);
 
     // CLI option results
@@ -77,6 +79,10 @@ int main(int argc, char* argv[]) {
         std::cout << "Testing Enabled" << std::endl;
         isTesting = true;
     }
+    if (qParser.isSet(cliResetGeometry)) {
+        std::cout << "Reset Geometry Enabled" << std::endl;
+        mainWindow.resetGeometry();
+    }
     QString strAtomixDir = qParser.value(cliAtomixDir);
 
     // Debug Info
@@ -86,7 +92,6 @@ int main(int argc, char* argv[]) {
     }
 
     // Set atomix directory and icon
-    MainWindow mainWindow;
     QDir execDir = QDir(strAtomixDir);
     QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
     while (!mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {

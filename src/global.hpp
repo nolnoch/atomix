@@ -78,7 +78,7 @@ struct AtomixCloudConfig {
     float cloudCull_y = 0.0f;                       // Culling slider -- phi [float]
     float cloudCull_rIn = 0.0f;                     // Culling slider -- radius-inward [float]
     float cloudCull_rOut = 0.0f;                    // Culling slider -- radius-outward [float]
-    int cloudLayDivisor = 1;                        // Number of layers per radius [int]
+    int cloudLayDivisor = 2;                        // Number of layers per radius [int]
     int cloudResolution = 180;                      // Number of points per circle [int]
     bool cpu = false;                               // GPU rendering on/off [bool]
     std::string type = "cloud";                      // Cloud type [string]
@@ -87,6 +87,9 @@ Q_DECLARE_METATYPE(AtomixCloudConfig);
 
 /* Custom BitFlag struct */
 struct BitFlag {
+    BitFlag() : bf(0) {};
+    BitFlag(uint flag) : bf(flag) {};
+
     void set(uint flag) {
         bf |= flag;
     }

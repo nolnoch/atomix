@@ -62,7 +62,7 @@ void FileHandler::findFiles() {
     }
 }
 
-std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::loadConfigFile(QString filepath) {
+SuperConfig FileHandler::loadConfigFile(QString filepath, harmap *recipes) {
     QFile f(filepath);
     f.open(QIODevice::ReadOnly | QIODevice::Text);
     QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
@@ -70,19 +70,19 @@ std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::loadConfigFile(QS
 
     QJsonObject jo = doc.object();
 
-    return configFromJson(jo);
+    return configFromJson(jo, recipes);
 }
 
-void FileHandler::saveConfigFile(QString filepath, std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg) {
+void FileHandler::saveConfigFile(QString filepath, SuperConfig &cfg, harmap *recipes) {
     QFile f(filepath);
     f.open(QIODevice::WriteOnly | QIODevice::Text);
-    QJsonDocument doc(configToJson(cfg));
+    QJsonDocument doc(configToJson(cfg, recipes));
     f.write(doc.toJson());
     f.close();
 }
 
-std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::configFromJson(QJsonObject &json) {
-    std::variant<AtomixWaveConfig, AtomixCloudConfig> config;
+SuperConfig FileHandler::configFromJson(QJsonObject &json, harmap *recipes) {
+    SuperConfig config;
 
     if (const QJsonValue v = json["type"]; v.isString()) {
         if (v.toString() == "wave") {
@@ -129,22 +129,26 @@ std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::configFromJson(QJ
                 cfg.cloudResolution = v.toInt();
             }
             if (const QJsonValue v = json["cloudTolerance"]; v.isDouble()) {
-                cfg.cloudTolerance = v.toInt();
+                cfg.cloudTolerance = v.toDouble();
             }
             if (const QJsonValue v = json["cloudCull_x"]; v.isDouble()) {
-                cfg.cloudCull_x = v.toInt();
+                cfg.cloudCull_x = v.toDouble();
             }
             if (const QJsonValue v = json["cloudCull_y"]; v.isDouble()) {
-                cfg.cloudCull_y = v.toInt();
+                cfg.cloudCull_y = v.toDouble();
             }
             if (const QJsonValue v = json["cloudCull_rIn"]; v.isDouble()) {
-                cfg.cloudCull_rIn = v.toInt();
+                cfg.cloudCull_rIn = v.toDouble();
             }
             if (const QJsonValue v = json["cloudCull_rOut"]; v.isDouble()) {
-                cfg.cloudCull_rOut = v.toInt();
+                cfg.cloudCull_rOut = v.toDouble();
             }
             if (const QJsonValue v = json["cpu"]; v.isBool()) {
                 cfg.cpu = v.toBool();
+            }
+            if (const QJsonValue v = json["recipes"]; v.isArray()) {
+                const QJsonArray ja = v.toArray();
+                *recipes = inflateHarmap(ja);
             }
             config = cfg;
         }
@@ -153,7 +157,7 @@ std::variant<AtomixWaveConfig, AtomixCloudConfig> FileHandler::configFromJson(QJ
     return config;
 }
 
-QJsonObject FileHandler::configToJson(std::variant<AtomixWaveConfig, AtomixCloudConfig> &cfg) {
+QJsonObject FileHandler::configToJson(SuperConfig &cfg, harmap *recipes) {
     QJsonObject jo;
 
     if (std::holds_alternative<AtomixWaveConfig>(cfg)) {
@@ -178,16 +182,47 @@ QJsonObject FileHandler::configToJson(std::variant<AtomixWaveConfig, AtomixCloud
         jo["cloudCull_rIn"] = std::get<AtomixCloudConfig>(cfg).cloudCull_rIn;
         jo["cloudCull_rOut"] = std::get<AtomixCloudConfig>(cfg).cloudCull_rOut;
         jo["cpu"] = std::get<AtomixCloudConfig>(cfg).cpu;
+        jo["recipes"] = collapseHarmap(recipes);
     }
 
     return jo;
+}
+
+QJsonArray FileHandler::collapseHarmap(harmap *har) {
+    QJsonArray ja;
+
+    for (auto [key, vec] : *har) {
+        for (auto v : vec) {
+            QJsonObject jo;
+            jo["Principal"] = key;
+            jo["Azimuthal"] = v.x;
+            jo["Magnetic"] = v.y;
+            jo["Weight"] = v.z;
+            
+            ja.append(jo);
+        }
+    }
+
+    return ja;
+}
+
+harmap FileHandler::inflateHarmap(const QJsonArray &ja) {
+    harmap har;
+
+    for (int i = 0; i < ja.size(); i++) {
+        QJsonObject jo = ja.at(i).toObject();
+        glm::ivec3 v(jo["Azimuthal"].toInt(), jo["Magnetic"].toInt(), jo["Weight"].toInt());
+        har[jo["Principal"].toInt()].push_back(v);
+    }
+
+    return har;
 }
 
 bool FileHandler::deleteFile(QString filepath) {
     return QFile::remove(filepath);
 }
 
-void FileHandler::printConfig(std::variant<AtomixWaveConfig, AtomixCloudConfig> &config) {
+void FileHandler::printConfig(SuperConfig &config) {
     if (std::holds_alternative<AtomixWaveConfig>(config)) {
         std::cout << "Type: " << std::get<AtomixWaveConfig>(config).type << "\n";
         std::cout << "Orbits: " << std::get<AtomixWaveConfig>(config).waves << "\n";

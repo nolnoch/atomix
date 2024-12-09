@@ -51,8 +51,9 @@
 #include "vkwindow.hpp"
 
 
-const QString DEFAULT = "default.wave";
-const QString CUSTOM = "<Custom>";
+const QString DEFAULT = QT_TR_NOOP("default.wave");
+const QString CUSTOM = QT_TR_NOOP("<Custom>");
+const QString SELECT = QT_TR_NOOP("<Select>");
 const int MAX_ORBITS = 8;
 
 
@@ -133,8 +134,7 @@ struct AtomixStyle {
                 "QLabel#tabDesc { font-size: %2px; } "
                 "QTreeWidget { font-family: %8; font-size: %6px; } "
                 "QTableWidget { font-family: %8; font-size: %7px; } "
-                "QPushButton#morb { font-size: %9px; } "
-                // "QStatusBar QLabel { font-family: %8; font-size: %10px; } "
+                "QPushButton#morb { font-size: %9px; text-align: center; padding: %1px; } "
             });
         }
 
@@ -234,6 +234,8 @@ public:
     }
 };
 
+enum mw { WAVE = 1, CLOUD = 2, BOTH = 3 };
+
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -242,6 +244,7 @@ public:
     MainWindow();
     void init(QRect &windowSize);
     void postInit();
+    void resetGeometry() { this->loadGeometry = false; }
 
     AtomixFiles& getAtomixFiles() { return fileHandler->atomixFiles; }
 
@@ -262,8 +265,8 @@ private:
     void setupTabs();
     void setupDockWaves();
     void setupDockHarmonics();
-    void refreshWaveConfigs(QString selection = DEFAULT);
     void refreshShaders();
+    void refreshConfigs(BitFlag target, QString selection = DEFAULT);
     void loadWaveConfig();
     void refreshWaveConfigGUI(AtomixWaveConfig &cfg);
     void loadCloudConfig();
@@ -284,6 +287,7 @@ private:
     void handleButtLockRecipes();
     void handleButtClearRecipes();
     void handleButtResetRecipes();
+    void handleButtConfigIO(int id);
     void handleButtDeleteConfig();
     void handleButtSaveConfig();
     void handleButtMorbWaves();
@@ -299,7 +303,6 @@ private:
 
     int findHarmapItem(int n, int l, int m);
     int getHarmapSize();
-    // void printHarmap();
     void printList();
     
     void printLayout();
@@ -331,7 +334,8 @@ private:
 
     QVBoxLayout *layDockWaves = nullptr;
     QVBoxLayout *layDockHarmonics = nullptr;
-    QHBoxLayout *layConfigFile = nullptr;
+    QHBoxLayout *layWaveConfigFile = nullptr;
+    QHBoxLayout *layCloudConfigFile = nullptr;
     QHBoxLayout *layColorPicker = nullptr;
     QGridLayout *layOrbitSelect = nullptr;
     QFormLayout *layWaveConfig = nullptr;
@@ -349,14 +353,18 @@ private:
     SlideSwitch *slswSuper = nullptr;
     SlideSwitch *slswCPU = nullptr;
     SlideSwitch *slswSphere = nullptr;
-    QComboBox *comboConfigFile = nullptr;
+    QComboBox *comboWaveConfigFile = nullptr;
+    QComboBox *comboCloudConfigFile = nullptr;
 
+    QButtonGroup *buttGroupConfig = nullptr;
     QButtonGroup *buttGroupSwitch = nullptr;
     QButtonGroup *buttGroupOrbits = nullptr;
     QButtonGroup *buttGroupColors = nullptr;
-
-    QPushButton *buttSaveConfig = nullptr;
-    QPushButton *buttDeleteConfig = nullptr;
+    
+    QPushButton *buttSaveWaveConfig = nullptr;
+    QPushButton *buttSaveCloudConfig = nullptr;
+    QPushButton *buttDeleteWaveConfig = nullptr;
+    QPushButton *buttDeleteCloudConfig = nullptr;
     QPushButton *buttMorbWaves = nullptr;
     QPushButton *buttClearHarmonics = nullptr;
     QPushButton *buttMorbHarmonics = nullptr;
@@ -391,12 +399,13 @@ private:
     QWidget *graph = nullptr;
     QWindow *graphWin = nullptr;
 
-    harmap mapCloudRecipesLocked;
+    harmap mapCloudRecipes;
     int numRecipes = 0;
     bool activeModel = false;
     bool isLoading = false;
     bool showDebug = false;
     bool notDefaultConfig = false;
+    bool loadGeometry = true;
 
     int mw_baseFontSize = 0;
     

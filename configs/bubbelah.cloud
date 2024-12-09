@@ -1,0 +1,31 @@
+{
+    "cloudCull_rIn": 0,
+    "cloudCull_rOut": 0,
+    "cloudCull_x": 0,
+    "cloudCull_y": 0,
+    "cloudLayDivisor": 6,
+    "cloudResolution": 240,
+    "cloudTolerance": 0.05,
+    "cpu": false,
+    "recipes": [
+        {
+            "Azimuthal": 7,
+            "Magnetic": -7,
+            "Principal": 8,
+            "Weight": 1
+        },
+        {
+            "Azimuthal": 7,
+            "Magnetic": 0,
+            "Principal": 8,
+            "Weight": 1
+        },
+        {
+            "Azimuthal": 7,
+            "Magnetic": 7,
+            "Principal": 8,
+            "Weight": 1
+        }
+    ],
+    "type": "cloud"
+}

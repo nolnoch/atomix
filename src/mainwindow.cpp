@@ -62,7 +62,7 @@ void MainWindow::postInit() {
     mw_graphHeight = vkGraph->height();
     mw_graphWidth = vkGraph->width();
 
-    loadSavedSettings();
+    if (loadGeometry) loadSavedSettings();
     _dockResize();
 
     wTabs->installEventFilter(this);
@@ -197,8 +197,6 @@ void MainWindow::setupTabs() {
     
     wTabs = new QTabWidget(this);
     wTabs->setObjectName("tabsAtomix");
-    wTabs->setContentsMargins(aStyle.spaceM, aStyle.spaceM, aStyle.spaceM, aStyle.spaceM);
-    // wTabs->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     setupDockWaves();
     setupDockHarmonics();
@@ -221,8 +219,8 @@ void MainWindow::setupDockWaves() {
     buttGroupColors = new QButtonGroup(this);
 
     // Groups
-    QGroupBox *groupConfig = new QGroupBox("Config File", this);
-    groupConfig->setObjectName("groupConfig");
+    QGroupBox *groupWaveConfig = new QGroupBox("Config File", this);
+    groupWaveConfig->setObjectName("groupWaveConfig");
     groupOptions = new QGroupBox("Config Options", this);
     groupOptions->setObjectName("groupOptions");
     groupColors = new QGroupBox("Wave Colors", this);
@@ -243,26 +241,26 @@ void MainWindow::setupDockWaves() {
     labelWaves->setAlignment(Qt::AlignCenter);
 
     // Config Selection Box
-    comboConfigFile = new QComboBox(this);
-    buttDeleteConfig = new QPushButton("-", this);
-    buttDeleteConfig->setObjectName("buttDeleteConfig");
-    buttDeleteConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    buttDeleteConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
-    buttDeleteConfig->setContentsMargins(0, 0, 0, 0);
-    buttSaveConfig = new QPushButton("+", this);
-    buttSaveConfig->setObjectName("buttSaveConfig");
-    buttSaveConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    buttSaveConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
-    buttSaveConfig->setContentsMargins(0, 0, 0, 0);
-    buttSaveConfig->setEnabled(false);
-    layConfigFile = new QHBoxLayout;
-    layConfigFile->addWidget(comboConfigFile, 8);
-    layConfigFile->addWidget(buttDeleteConfig, 1);
-    layConfigFile->addWidget(buttSaveConfig, 1);
-    layConfigFile->setContentsMargins(aStyle.spaceS, aStyle.spaceS, aStyle.spaceS, aStyle.spaceS);
-    layConfigFile->setSpacing(aStyle.spaceS);
-    groupConfig->setLayout(layConfigFile);
-    groupConfig->setAlignment(Qt::AlignRight);
+    comboWaveConfigFile = new QComboBox(this);
+    buttDeleteWaveConfig = new QPushButton("-", this);
+    buttDeleteWaveConfig->setObjectName("buttDeleteWaveConfig");
+    buttDeleteWaveConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    buttDeleteWaveConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
+    buttDeleteWaveConfig->setContentsMargins(0, 0, 0, 0);
+    buttSaveWaveConfig = new QPushButton("+", this);
+    buttSaveWaveConfig->setObjectName("buttSaveWaveConfig");
+    buttSaveWaveConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    buttSaveWaveConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
+    buttSaveWaveConfig->setContentsMargins(0, 0, 0, 0);
+    buttSaveWaveConfig->setEnabled(false);
+    layWaveConfigFile = new QHBoxLayout;
+    layWaveConfigFile->addWidget(comboWaveConfigFile, 8);
+    layWaveConfigFile->addWidget(buttDeleteWaveConfig, 1);
+    layWaveConfigFile->addWidget(buttSaveWaveConfig, 1);
+    layWaveConfigFile->setContentsMargins(aStyle.spaceS, aStyle.spaceS, aStyle.spaceS, aStyle.spaceS);
+    layWaveConfigFile->setSpacing(aStyle.spaceS);
+    groupWaveConfig->setLayout(layWaveConfigFile);
+    groupWaveConfig->setAlignment(Qt::AlignRight);
     
     // LineEdits (entries)
     entryOrbit = new QLineEdit("4");
@@ -412,16 +410,13 @@ void MainWindow::setupDockWaves() {
     // Add All Groups and Layouts to Main Tab Layout
     layDockWaves = new QVBoxLayout;
     layDockWaves->addWidget(labelWaves);
-    layDockWaves->addStretch(8);
-    layDockWaves->addWidget(groupConfig);
+    layDockWaves->addStretch(1);
+    layDockWaves->addWidget(groupWaveConfig);
     layDockWaves->addWidget(groupOptions);
     layDockWaves->addWidget(buttMorbWaves);
-    layDockWaves->addStretch(8);
+    layDockWaves->addStretch(1);
     layDockWaves->addWidget(groupColors);
     layDockWaves->addWidget(groupOrbits);
-
-    layDockWaves->setStretchFactor(groupOptions, 1);
-    layDockWaves->setStretchFactor(buttMorbWaves, 4);
 
     // Set Main Tab Layout
     layDockWaves->setContentsMargins(aStyle.spaceM, aStyle.spaceM, aStyle.spaceM, aStyle.spaceM);
@@ -444,6 +439,8 @@ void MainWindow::setupDockHarmonics() {
     buttClearHarmonics->setObjectName("buttClearHarmonics");
 
     // Groups
+    QGroupBox *groupCloudConfig = new QGroupBox("Config File", this);
+    groupCloudConfig->setObjectName("groupCloudConfig");
     groupRecipeBuilder = new QGroupBox("Orbital Selector", this);
     groupRecipeBuilder->setObjectName("groupRecipeBuilder");
     groupRecipeReporter = new QGroupBox("Selected Orbitals", this);
@@ -460,6 +457,29 @@ void MainWindow::setupDockHarmonics() {
     labelHarmonics->setLineWidth(aStyle.borderWidth);
     labelHarmonics->setMargin(aStyle.spaceM);
     labelHarmonics->setAlignment(Qt::AlignCenter);
+
+    // Config Selection Box
+    comboCloudConfigFile = new QComboBox(this);
+    buttDeleteCloudConfig = new QPushButton("-", this);
+    buttDeleteCloudConfig->setObjectName("buttDeleteCloudConfig");
+    buttDeleteCloudConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    buttDeleteCloudConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
+    buttDeleteCloudConfig->setContentsMargins(0, 0, 0, 0);
+    buttDeleteCloudConfig->setEnabled(false);
+    buttSaveCloudConfig = new QPushButton("+", this);
+    buttSaveCloudConfig->setObjectName("buttSaveCloudConfig");
+    buttSaveCloudConfig->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    buttSaveCloudConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
+    buttSaveCloudConfig->setContentsMargins(0, 0, 0, 0);
+    buttSaveCloudConfig->setEnabled(false);
+    layCloudConfigFile = new QHBoxLayout;
+    layCloudConfigFile->addWidget(comboCloudConfigFile, 8);
+    layCloudConfigFile->addWidget(buttDeleteCloudConfig, 1);
+    layCloudConfigFile->addWidget(buttSaveCloudConfig, 1);
+    layCloudConfigFile->setContentsMargins(aStyle.spaceS, aStyle.spaceS, aStyle.spaceS, aStyle.spaceS);
+    layCloudConfigFile->setSpacing(aStyle.spaceS);
+    groupCloudConfig->setLayout(layCloudConfigFile);
+    groupCloudConfig->setAlignment(Qt::AlignRight);
 
     // Orbital Selection Tree
     treeOrbitalSelect = new QTreeWidget(this);
@@ -656,51 +676,17 @@ void MainWindow::setupDockHarmonics() {
     layDockHarmonics = new QVBoxLayout;
     layDockHarmonics->addWidget(labelHarmonics);
     layDockHarmonics->addStretch(1);
-    layDockHarmonics->addLayout(layHOrbital);
+    layDockHarmonics->addWidget(groupCloudConfig);
+    layDockHarmonics->addLayout(layHOrbital, 8);
     layDockHarmonics->addWidget(groupGenVertices);
     layDockHarmonics->addLayout(layHarmButts);
     layDockHarmonics->addStretch(1);
     layDockHarmonics->addLayout(laySlideCulling);
     layDockHarmonics->addLayout(laySlideRadialBG);
 
-    layDockHarmonics->setStretchFactor(layHOrbital, 7);
-    layDockHarmonics->setStretchFactor(groupGenVertices, 1);
-    layDockHarmonics->setStretchFactor(layHarmButts, 1);
-
     // Set Main Tab Layout
     layDockHarmonics->setContentsMargins(aStyle.spaceM, aStyle.spaceM, aStyle.spaceM, aStyle.spaceM);
     wTabHarmonics->setLayout(layDockHarmonics);
-}
-
-void MainWindow::refreshWaveConfigs(QString selection) {
-    fileHandler->findFiles();
-
-    int files = fileHandler->getWaveFilesCount();
-    QString path = QString::fromStdString(fileHandler->atomixFiles.configs());
-    int pathLength = path.length();
-    
-    if (!files) {
-        comboConfigFile->clear();
-        return;
-    }
-
-    QStringList cfgFiles = fileHandler->getWaveFilesList();
-
-    comboConfigFile->clear();
-    for (int i = 0; i < files; i++) {
-        comboConfigFile->addItem(cfgFiles[i].sliced(pathLength), i + 1);
-    }
-    comboConfigFile->addItem(tr(CUSTOM.toStdString().c_str()), files + 1);
-    
-    if (cfgFiles.contains(path + selection)) {
-        comboConfigFile->setCurrentText(selection);
-    } else if (cfgFiles.contains(path + DEFAULT)) {
-        comboConfigFile->setCurrentText(DEFAULT);
-    } else {
-        comboConfigFile->setCurrentIndex(files);
-    }
-
-    loadWaveConfig();
 }
 
 void MainWindow::refreshShaders() {
@@ -729,13 +715,61 @@ void MainWindow::refreshShaders() {
     }
 }
 
+void MainWindow::refreshConfigs(BitFlag target, QString selection) {
+    fileHandler->findFiles();
+    int waveFiles = fileHandler->getWaveFilesCount();
+    int cloudFiles = fileHandler->getCloudFilesCount();
+    QString path = QString::fromStdString(fileHandler->atomixFiles.configs());
+    int pathLength = path.length();
+    
+    if (waveFiles && target.hasAny(mw::WAVE)) {
+        QStringList cfgFiles = fileHandler->getWaveFilesList();
+
+        comboWaveConfigFile->clear();
+        for (int i = 0; i < waveFiles; i++) {
+            comboWaveConfigFile->addItem(cfgFiles[i].sliced(pathLength), i + 1);
+        }
+        comboWaveConfigFile->addItem(CUSTOM, waveFiles + 1);
+        
+        if (cfgFiles.contains(path + selection)) {
+            comboWaveConfigFile->setCurrentText(selection);
+        } else if (cfgFiles.contains(path + DEFAULT)) {
+            comboWaveConfigFile->setCurrentText(DEFAULT);
+        } else {
+            comboWaveConfigFile->setCurrentIndex(waveFiles);
+        }
+
+        loadWaveConfig();
+    } else {
+        comboWaveConfigFile->clear();
+    }
+
+    if (cloudFiles && target.hasAny(mw::CLOUD)) {
+        QStringList cfgFiles = fileHandler->getCloudFilesList();
+
+        comboCloudConfigFile->clear();
+        comboCloudConfigFile->addItem(SELECT, 1);
+        for (int i = 0; i < cloudFiles; i++) {
+            comboCloudConfigFile->addItem(cfgFiles[i].sliced(pathLength), i + 2);
+        }
+
+        if (cfgFiles.contains(path + selection)) {
+            comboCloudConfigFile->setCurrentText(selection);
+        } else {
+            comboCloudConfigFile->setCurrentText(SELECT);
+        }
+    } else {
+        comboCloudConfigFile->clear();
+    }
+}
+
 void MainWindow::loadWaveConfig() {
     int files = fileHandler->getWaveFilesCount();
-    int comboID = comboConfigFile->currentIndex();
+    int comboID = comboWaveConfigFile->currentIndex();
     AtomixWaveConfig cfg;
 
     if (comboID < files) {
-        std::variant<AtomixWaveConfig, AtomixCloudConfig> waveConfig;
+        SuperConfig waveConfig;
         waveConfig = fileHandler->loadConfigFile(fileHandler->getWaveFilesList()[comboID]);
         if (std::holds_alternative<AtomixWaveConfig>(waveConfig)) {
             cfg = std::get<AtomixWaveConfig>(waveConfig);
@@ -749,9 +783,9 @@ void MainWindow::loadWaveConfig() {
         return;
     }
 
-    notDefaultConfig = (comboConfigFile->currentText() != DEFAULT);
-    buttDeleteConfig->setEnabled((notDefaultConfig && comboConfigFile->currentText() != CUSTOM));
-    buttSaveConfig->setEnabled(false);
+    notDefaultConfig = (comboWaveConfigFile->currentText() != DEFAULT);
+    buttDeleteWaveConfig->setEnabled((notDefaultConfig && comboWaveConfigFile->currentText() != CUSTOM));
+    buttSaveWaveConfig->setEnabled(false);
     refreshWaveConfigGUI(cfg);
 }
 
@@ -770,12 +804,18 @@ void MainWindow::refreshWaveConfigGUI(AtomixWaveConfig &cfg) {
 
 void MainWindow::loadCloudConfig() {
     int files = fileHandler->getCloudFilesCount();
-    int comboID = comboConfigFile->currentIndex();
-    AtomixCloudConfig cfg;
+    int comboID = comboCloudConfigFile->currentIndex();
 
+    if (!comboID) {
+        return;
+    } else {
+        comboID--;
+    }
+
+    AtomixCloudConfig cfg;
     if (comboID <= files) {
-        std::variant<AtomixWaveConfig, AtomixCloudConfig> cloudConfig;
-        cloudConfig = fileHandler->loadConfigFile(fileHandler->getCloudFilesList()[comboID]);
+        SuperConfig cloudConfig;
+        cloudConfig = fileHandler->loadConfigFile(fileHandler->getCloudFilesList()[comboID], &mapCloudRecipes);
         if (std::holds_alternative<AtomixCloudConfig>(cloudConfig)) {
             cfg = std::get<AtomixCloudConfig>(cloudConfig);
         } else {
@@ -787,9 +827,22 @@ void MainWindow::loadCloudConfig() {
         return;
     }
 
+    buttDeleteCloudConfig->setEnabled(true);
+    buttSaveCloudConfig->setEnabled(false);
+    refreshCloudConfigGUI(cfg);
+}
+
+void MainWindow::refreshCloudConfigGUI(AtomixCloudConfig &cfg) {
     entryCloudLayers->setText(QString::number(cfg.cloudLayDivisor));
     entryCloudRes->setText(QString::number(cfg.cloudResolution));
     entryCloudMinRDP->setText(QString::number(cfg.cloudTolerance));
+
+    for (auto [key, vec] : mapCloudRecipes) {
+        for (auto v : vec) {
+            QString strOrbital = QString("%1 %2 %3%4").arg(key).arg(v.x).arg((v.y > 0) ? "+" : "").arg(v.y);
+            treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Checked);
+        }
+    }
 }
 
 uint MainWindow::refreshOrbits() {
@@ -852,7 +905,7 @@ void MainWindow::loadSavedSettings() {
 }
 
 void MainWindow::handleWaveConfigChanged() {
-    comboConfigFile->setCurrentIndex(comboConfigFile->count() - 1);
+    comboWaveConfigFile->setCurrentIndex(comboWaveConfigFile->count() - 1);
     notDefaultConfig = true;
 }
 
@@ -922,7 +975,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 
             // Add orbital to harmap
             ivec3 lmw = ivec3(l, m, 1);
-            mapCloudRecipesLocked[n].push_back(lmw);
+            mapCloudRecipes[n].push_back(lmw);
             this->numRecipes++;
 
             // Because adding, enable buttons
@@ -936,7 +989,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
 
             // Remove orbital from harmap
             if (int v = findHarmapItem(n, l, m); v >= -1) {
-                this->mapCloudRecipesLocked[n].erase(this->mapCloudRecipesLocked[n].begin() + v);
+                this->mapCloudRecipes[n].erase(this->mapCloudRecipes[n].begin() + v);
                 this->numRecipes--;
             }
 
@@ -1006,7 +1059,7 @@ void MainWindow::handleButtLockRecipes() {
         int m = strlistItem.at(2).toInt();
         int w = strWeight.toInt();
         ivec3 lmw = ivec3(l, m, w);
-        std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
+        std::vector<ivec3> *vecElem = &mapCloudRecipes[n];
 
         if (std::find(vecElem->begin(), vecElem->end(), lmw) == vecElem->end()) {
             // Add item to harmap
@@ -1014,7 +1067,7 @@ void MainWindow::handleButtLockRecipes() {
             this->numRecipes++;
         } else {
             // Look for partial match and update weight
-            for (auto& vecElem : mapCloudRecipesLocked[n]) {
+            for (auto& vecElem : mapCloudRecipes[n]) {
                 if (vecElem.x == l && vecElem.y == m) {
                     vecElem.z = w;
                     break;
@@ -1042,16 +1095,64 @@ void MainWindow::handleButtClearRecipes() {
 }
 
 void MainWindow::handleButtResetRecipes() {
-    mapCloudRecipesLocked.clear();
+    mapCloudRecipes.clear();
     this->numRecipes = 0;
 
     // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FF7777; }");
     buttMorbHarmonics->setEnabled(false);
 }
 
+void MainWindow::handleButtConfigIO(int id) {
+    bool wave = (id % 2);
+    bool save = (id / 2);
+
+    if (save) {
+        SuperConfig config = (wave) ? SuperConfig{ waveConfig } : SuperConfig{ cloudConfig };
+        QString title = (wave) ? tr("Save Wave Config") : tr("Save Harmonics Config");
+        QString extension = (wave) ? "wave" : "cloud";
+        BitFlag mode = (wave) ? BitFlag(mw::WAVE) : BitFlag(mw::CLOUD);
+
+        QFileDialog fd(this, title, QString::fromStdString(fileHandler->atomixFiles.configs()));
+        fd.setAcceptMode(QFileDialog::AcceptSave);
+        fd.setDefaultSuffix(extension);
+        fd.selectFile("filename." + extension);
+        if (fd.exec() == QDialog::Accepted) {
+            QString strCfgFile = fd.selectedFiles().first();
+            QString strCfgName = strCfgFile.split(QDir::separator()).last();
+            fileHandler->saveConfigFile(strCfgFile, config, (wave) ? nullptr : &mapCloudRecipes);
+            refreshConfigs(mode, strCfgName);
+        }
+    } else {
+        QComboBox *box = (wave) ? comboWaveConfigFile : comboCloudConfigFile;
+        int comboID = box->currentIndex();
+        QString strCfgName = box->currentText();
+        QString strCfgFile = (wave) ? fileHandler->getWaveFilesList().at(comboID) : fileHandler->getCloudFilesList().at(comboID);
+
+        QMessageBox dialogConfim(this);
+        dialogConfim.setText("Are you sure you want to delete \"" + strCfgName + "\"?");
+        dialogConfim.setFont(aStyle.fontMono);
+        dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        dialogConfim.setDefaultButton(QMessageBox::Cancel);
+        dialogConfim.exec();
+
+        if (dialogConfim.result() == QMessageBox::Ok) {
+            if (fileHandler->deleteFile(strCfgFile)) {
+                refreshConfigs(BitFlag(mw::WAVE));
+            } else {
+                QMessageBox dialogError(this);
+                dialogError.setText("Failed to delete \"" + strCfgName + "\".");
+                dialogError.setFont(aStyle.fontMono);
+                dialogError.setStandardButtons(QMessageBox::Ok);
+                dialogError.setDefaultButton(QMessageBox::Ok);
+                dialogError.exec();
+            }
+        }
+    }
+}
+
 void MainWindow::handleButtDeleteConfig() {
-    int comboID = comboConfigFile->currentIndex();
-    QString strCfgName = comboConfigFile->currentText();
+    int comboID = comboWaveConfigFile->currentIndex();
+    QString strCfgName = comboWaveConfigFile->currentText();
     QString strCfgFile = fileHandler->getWaveFilesList().at(comboID);
 
     QMessageBox dialogConfim(this);
@@ -1063,7 +1164,7 @@ void MainWindow::handleButtDeleteConfig() {
 
     if (dialogConfim.result() == QMessageBox::Ok) {
         if (fileHandler->deleteFile(strCfgFile)) {
-            refreshWaveConfigs();
+            refreshConfigs(BitFlag(mw::WAVE));
         } else {
             QMessageBox dialogError(this);
             dialogError.setText("Failed to delete \"" + strCfgName + "\".");
@@ -1076,7 +1177,7 @@ void MainWindow::handleButtDeleteConfig() {
 }
 
 void MainWindow::handleButtSaveConfig() {
-    std::variant<AtomixWaveConfig, AtomixCloudConfig> config = waveConfig;
+    SuperConfig config = waveConfig;
 
     QFileDialog fd(this, tr("Save Wave Config"), QString::fromStdString(fileHandler->atomixFiles.configs()));
     fd.setAcceptMode(QFileDialog::AcceptSave);
@@ -1086,7 +1187,7 @@ void MainWindow::handleButtSaveConfig() {
         QString strCfgFile = fd.selectedFiles().first();
         QString strCfgName = strCfgFile.split(QDir::separator()).last();
         fileHandler->saveConfigFile(strCfgFile, config);
-        refreshWaveConfigs(strCfgName);
+        refreshConfigs(BitFlag(mw::WAVE), strCfgName);
     }
 }
 
@@ -1121,7 +1222,7 @@ void MainWindow::handleButtMorbWaves() {
     }
     this->activeModel = true;
     if (notDefaultConfig) {
-        buttSaveConfig->setEnabled(true);
+        buttSaveWaveConfig->setEnabled(true);
     }
 }
 
@@ -1132,7 +1233,7 @@ void MainWindow::handleButtMorbHarmonics() {
 
     uint vertex, data, index;
     uint64_t total;
-    vkGraph->estimateSize(&cloudConfig, &mapCloudRecipesLocked, &vertex, &data, &index);
+    vkGraph->estimateSize(&cloudConfig, &mapCloudRecipes, &vertex, &data, &index);
     total = vertex + data + index;
     uint64_t oneGiB = 1024 * 1024 * 1024;
 
@@ -1166,7 +1267,7 @@ void MainWindow::handleButtMorbHarmonics() {
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
     }
 
-    vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, true);
+    vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipes, true);
 
     // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
@@ -1175,6 +1276,7 @@ void MainWindow::handleButtMorbHarmonics() {
     groupRSlideCulling->setEnabled(true);
     buttMorbHarmonics->setEnabled(false);
     activeModel = true;
+    buttSaveCloudConfig->setEnabled(true);
 }
 
 void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
@@ -1205,7 +1307,7 @@ void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
         }
     }
 
-    std::vector<ivec3> *vecElem = &mapCloudRecipesLocked[n];
+    std::vector<ivec3> *vecElem = &mapCloudRecipes[n];
     // Look for partial match and update weight
     if (int v = findHarmapItem(n, l, m); v != -1) {
         vecElem->at(v).z = w;
@@ -1322,7 +1424,7 @@ void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
     if ((this->cloudConfig.cloudCull_x != lastSliderSentX) || (this->cloudConfig.cloudCull_y != lastSliderSentY) || (this->cloudConfig.cloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.cloudCull_rOut != lastSliderSentROut)) {
-        vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipesLocked, false);
+        vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipes, false);
 
         lastSliderSentX = this->cloudConfig.cloudCull_x;
         lastSliderSentY = this->cloudConfig.cloudCull_y;
@@ -1336,8 +1438,8 @@ void MainWindow::handleSlideBackground(int val) {
 }
 
 int MainWindow::findHarmapItem(int n, int l, int m) {
-    for (int i = 0; i < (int)this->mapCloudRecipesLocked[n].size(); i++) {
-        ivec3 vecElem = mapCloudRecipesLocked[n][i];
+    for (int i = 0; i < (int)this->mapCloudRecipes[n].size(); i++) {
+        ivec3 vecElem = mapCloudRecipes[n][i];
         if (vecElem.x == l && vecElem.y == m) {
             return i;
         }
@@ -1347,14 +1449,14 @@ int MainWindow::findHarmapItem(int n, int l, int m) {
 
 int MainWindow::getHarmapSize() {
     int totalSize = 0;
-    for (auto k : mapCloudRecipesLocked) {
+    for (auto k : mapCloudRecipes) {
         totalSize += k.second.size();
     }
     return totalSize;
 }
 
 /* void MainWindow::printHarmap() {
-    for (auto k : mapCloudRecipesLocked) {
+    for (auto k : mapCloudRecipes) {
         std::cout << k.first << ": ";
         for (auto v : k.second) {
             std::cout << glm::to_string(v) << ", ";
@@ -1522,8 +1624,15 @@ void MainWindow::_initWidgets() {
 
     // Setup Dock GUI
     setupTabs();
+
+    buttGroupConfig = new QButtonGroup(this);
+    buttGroupConfig->setExclusive(false);
+    buttGroupConfig->addButton(buttDeleteCloudConfig, 0);
+    buttGroupConfig->addButton(buttDeleteWaveConfig, 1);
+    buttGroupConfig->addButton(buttSaveCloudConfig, 2);
+    buttGroupConfig->addButton(buttSaveWaveConfig, 3);
     
-    refreshWaveConfigs();
+    refreshConfigs(BitFlag(mw::BOTH));
     refreshOrbits();
 
     setupDetails();
@@ -1531,14 +1640,12 @@ void MainWindow::_initWidgets() {
     setupStatusBar();
 }
 
-    /**
-     * @brief Connects GUI signals to their respective slots.
-     *
-     * Initializes all necessary signal-slot connections for the application's GUI.
-     */
+/**
+ * @brief Connects GUI signals to their respective slots.
+ *
+ * Initializes all necessary signal-slot connections for the application's GUI.
+ */
 void MainWindow::_connectSignals() {
-    // Signal-Slot Connections
-
     /* 
      * User Interface
      */
@@ -1547,14 +1654,20 @@ void MainWindow::_connectSignals() {
     connect(vkGraph, &VKWindow::detailsChanged, this, &MainWindow::updateDetails);
     connect(vkGraph, &VKWindow::toggleLoading, this, &MainWindow::showLoading);
 
+    /* 
+     * Config Files
+     */
+
+    // Config Files
+    connect(comboWaveConfigFile, &QComboBox::activated, this, &MainWindow::loadWaveConfig);
+    connect(comboCloudConfigFile, &QComboBox::activated, this, &MainWindow::loadCloudConfig);
+    connect(buttGroupConfig, &QButtonGroup::idClicked, this, &MainWindow::handleButtConfigIO);
+    // connect(buttDeleteWaveConfig, &QPushButton::clicked, this, &MainWindow::handleButtDeleteConfig);
+    // connect(buttSaveWaveConfig, &QPushButton::clicked, this, &MainWindow::handleButtSaveConfig);
+
     /*
      * Waves
      */
-
-    // Wave Config Files
-    connect(comboConfigFile, &QComboBox::activated, this, &MainWindow::loadWaveConfig);
-    connect(buttDeleteConfig, &QPushButton::clicked, this, &MainWindow::handleButtDeleteConfig);
-    connect(buttSaveConfig, &QPushButton::clicked, this, &MainWindow::handleButtSaveConfig);
     
     // Wave Config Values
     connect(entryOrbit, &QLineEdit::editingFinished, this, &MainWindow::handleWaveConfigChanged);
@@ -1629,17 +1742,17 @@ void MainWindow::_dockResize() {
     labelWaves->setFixedHeight(aStyle.labelDescHeight);
     labelWaves->setLineWidth(aStyle.borderWidth);
     labelWaves->setMargin(aStyle.spaceM);
-    buttDeleteConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
-    buttSaveConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
-    layConfigFile->setContentsMargins(aStyle.spaceS, aStyle.spaceS, aStyle.spaceS, aStyle.spaceS);
-    layConfigFile->setSpacing(aStyle.spaceS);
+    buttDeleteWaveConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
+    buttSaveWaveConfig->setMaximumWidth(aStyle.fontAtomixWidth << 1);
+    layWaveConfigFile->setContentsMargins(aStyle.spaceS, aStyle.spaceS, aStyle.spaceS, aStyle.spaceS);
+    layWaveConfigFile->setSpacing(aStyle.spaceS);
     layWaveConfig->setHorizontalSpacing(aStyle.spaceL);
     layWaveConfig->setVerticalSpacing(aStyle.spaceM);
     layColorPicker->setContentsMargins(aStyle.spaceS, aStyle.spaceS, aStyle.spaceS, aStyle.spaceS);
     layColorPicker->setSpacing(aStyle.spaceS);
     layOrbitSelect->setSpacing(aStyle.spaceS);
     layDockWaves->setContentsMargins(aStyle.spaceM, aStyle.spaceM, aStyle.spaceM, aStyle.spaceM);
-    layDockWaves->setSpacing(aStyle.spaceS);
+    layDockWaves->setSpacing(aStyle.spaceM);
 
     delete pmColour;
     pmColour = new QPixmap(aStyle.baseFontSize, aStyle.baseFontSize);
@@ -1653,7 +1766,7 @@ void MainWindow::_dockResize() {
     layGenVertices->setVerticalSpacing(aStyle.spaceM);
     layGenVertices->setContentsMargins(aStyle.spaceS, aStyle.spaceS, aStyle.spaceS, aStyle.spaceS);
     layDockHarmonics->setContentsMargins(aStyle.spaceM, aStyle.spaceM, aStyle.spaceM, aStyle.spaceM);
-    layDockHarmonics->setSpacing(aStyle.spaceS);
+    layDockHarmonics->setSpacing(aStyle.spaceM);
 
     // Status Bar
     if (showDebug) {

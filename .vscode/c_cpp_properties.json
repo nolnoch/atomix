@@ -13,7 +13,9 @@
                 "/usr/include/**",
                 "/opt/intel/oneapi/2025.0/include/**"
             ],
-            "defines": ["${myDefines}"],
+            "defines": [
+                "${myDefines}"
+            ],
             "cStandard": "c23",
             "cppStandard": "c++23",
             "intelliSenseMode": "linux-gcc-x64",
@@ -29,7 +31,9 @@
                 "/Users/braer/VulkanSDK/1.3.296.0/macOS/include/**",
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/**"
             ],
-            "defines": ["${myDefines}"],
+            "defines": [
+                "${myDefines}"
+            ],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"
@@ -38,6 +42,19 @@
             "cppStandard": "c++23",
             "intelliSenseMode": "macos-clang-arm64",
             "compilerPath": "/usr/bin/clang++"
+        },
+        {
+            "name": "Windows",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Qt/6.8.1/llvm-mingw_64/include/**"
+            ],
+            "defines": [
+                "${myDefines}"
+            ],
+            "cStandard": "c23",
+            "cppStandard": "c++23",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4

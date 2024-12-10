@@ -1,8 +1,9 @@
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_BUILD_TYPE Debug)
 
-set(LINUX 1)
+set(LINUX 0)
 set(MACOS 0)
+set(WIN11 1)
 
 if(LINUX)
     set(Qt6_DIR "/home/braer/Qt/6.8.0/gcc_64")
@@ -13,10 +14,14 @@ elseif(MACOS)
     set(oneDPL_DIR "/opt/intel/oneapi/2022.2.0/lib/cmake/oneDPL")
     set(VULKAN_SDK "/Users/braer/VulkanSDK/1.3.296.0/macOS")
     set(DYLD_LIBRARY_PATH ${VULKAN_SDK}/lib ${DYLD_LIBRARY_PATH})
-
     set(VK_ADD_LAYER_PATH ${VULKAN_SDK}/share/vulkan/explicit_layer.d)
     set(VK_ICD_FILENAMES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
     set(VK_DRIVER_FILES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
+elseif(WIN11)
+    set(Qt6_DIR "C:/Qt/6.8.1/msvc2022_64")
+    set(VULKAN_SDK "C:/VulkanSDK/1.3.296.0")
+    # set(glslang_DIR "C:/dev/vcpkg/installed/x64-windows/share/glslang")
+    list(APPEND CMAKE_PREFIX_PATH C:/dev/vcpkg/installed/x64-windows/share)
 endif()
 
 set(ENV{Qt6_DIR} ${Qt6_DIR})
@@ -32,7 +37,7 @@ find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_reflect CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 
-set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+# set_source_files_properties(cloudmanager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 add_executable(atomix main.cpp quaternion.cpp special.cpp shaderobj.cpp mainwindow.cpp filehandler.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programVK.cpp vkwindow.cpp)
 

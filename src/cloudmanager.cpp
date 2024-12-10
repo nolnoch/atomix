@@ -471,12 +471,12 @@ double CloudManager::bakeOrbitalsThreaded() {
     dvec *dataStagingPtr = &this->dataStaging;
 
     int numRecipes = this->countMapRecipes(&cloudOrbitals);
-    int ns[numRecipes];
-    int ls[numRecipes];
-    int ms[numRecipes];
-    double ws[numRecipes];
-    double ny[numRecipes];
-    double nr[numRecipes];
+    std::vector<int> ns(numRecipes, 0);
+    std::vector<int> ls(numRecipes, 0);
+    std::vector<int> ms(numRecipes, 0);
+    std::vector<double> ws(numRecipes, 0.0);
+    std::vector<double> ny(numRecipes, 0.0);
+    std::vector<double> nr(numRecipes, 0.0);
     int rIdx = 0;
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
@@ -489,8 +489,8 @@ double CloudManager::bakeOrbitalsThreaded() {
             rIdx++;
         }
     }
-    double weightSum = std::accumulate(ws, ws + numRecipes, 0.0);
-    std::for_each(std::execution::par_unseq, ws, ws + numRecipes, [&](double &weight) {
+    double weightSum = std::accumulate(ws.cbegin(), ws.cend(), 0.0);
+    std::for_each(std::execution::par_unseq, ws.begin(), ws.end(), [&](double &weight) {
         weight /= weightSum;
     });
 
@@ -616,12 +616,12 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
     int opt_max_radius_local = this->opt_max_radius;
 
     int numRecipes = this->countMapRecipes(&cloudOrbitals);
-    int ns[numRecipes];
-    int ls[numRecipes];
-    int ms[numRecipes];
-    double ws[numRecipes];
-    double ny[numRecipes];
-    double nr[numRecipes];
+    std::vector<int> ns(numRecipes, 0);
+    std::vector<int> ls(numRecipes, 0);
+    std::vector<int> ms(numRecipes, 0);
+    std::vector<double> ws(numRecipes, 0.0);
+    std::vector<double> ny(numRecipes, 0.0);
+    std::vector<double> nr(numRecipes, 0.0);
     int rIdx = 0;
     for (auto const &[key, val] : cloudOrbitals) {
         for (auto const &v : val) {
@@ -634,8 +634,8 @@ double CloudManager::bakeOrbitalsThreadedAlt() {
             rIdx++;
         }
     }
-    double weightSum = std::accumulate(ws, ws + numRecipes, 0.0);
-    std::for_each(std::execution::par_unseq, ws, ws + numRecipes, [&](double &weight) {
+    double weightSum = std::accumulate(ws.cbegin(), ws.cend(), 0.0);
+    std::for_each(std::execution::par_unseq, ws.begin(), ws.end(), [&](double &weight) {
         weight /= weightSum;
     });
 
@@ -1205,7 +1205,7 @@ void CloudManager::cloudTestCSV() {
      * @returns The factorial of `n`, which is the product of all positive integers less than or equal to `n`.
      */
 int64_t CloudManager::fact(int n) {
-    int64_t prod = n ?: 1;
+    int64_t prod = n ? n : 1;
     // int orig = n;
 
     while (n > 2) {
@@ -1548,7 +1548,7 @@ bool CloudManager::hasBuffers() {
  * @return The size of the colour data in bytes.
  */
 int CloudManager::setColourSize() {
-    int chunks = colourCount ?: setColourCount();
+    int chunks = colourCount ? colourCount : setColourCount();
     int chunkSize = sizeof(glm::vec3);
 
     //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;

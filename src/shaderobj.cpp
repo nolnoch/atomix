@@ -34,7 +34,7 @@
 /**
  * Primary Constructor.
  */
-Shader::Shader(std::string fName, uint type)
+Shader::Shader(std::string fName, uint32_t type)
 : filePath(fName), shaderId(0), shaderType(type), sourceStringRaw("") {
     this->fileToString();
 }
@@ -65,7 +65,7 @@ void Shader::setId(unsigned int idAssigned) {
  * 
  * @return true if the shader compiles and links successfully, false otherwise
  */
-bool Shader::compile(uint version) {
+bool Shader::compile(uint32_t version) {
     const char *shaderSource = this->getSourceRaw();
     int shaderLength = this->getLengthRaw();
     EShLanguage stage = (this->shaderType == GL_VERTEX_SHADER) ? EShLangVertex : EShLangFragment;
@@ -201,7 +201,7 @@ const char* Shader::getSourceRaw() {
     return this->sourceStringRaw.c_str();
 }
 
-const uint* Shader::getSourceCompiled() {
+const uint32_t* Shader::getSourceCompiled() {
     return this->sourceBufferCompiled.data();
 }
 

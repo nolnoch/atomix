@@ -140,7 +140,7 @@ double WaveManager::create() {
         waveVertices.push_back(new vVec3((pixelCount << int(cfg.cpu)), glm::vec3(0.0, 0.0, 0.0)));
         waveIndices.push_back(new uvec(pixelCount, 0));
         phase_const.push_back(phase_base * i);
-        double startTime = (this->time) ?: 0.0;
+        double startTime = (this->time) ? (this->time) : 0.0;
 
         if (cfg.sphere) {
             if (cfg.cpu)

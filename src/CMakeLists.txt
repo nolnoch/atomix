@@ -1,5 +1,6 @@
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_BUILD_TYPE Debug)
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+# set(CMAKE_BUILD_TYPE Debug)
 
 set(LINUX 0)
 set(MACOS 0)
@@ -46,9 +47,12 @@ set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
-# add_custom_command(TARGET atomix POST_BUILD
-#     COMMAND windeployqt --no-system-d3d-compiler "$<TARGET_FILE_DIR:atomix>/atomix.exe"
-#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-#     DEPENDS atomix windeployqt
-#     COMMENT "Generating deployment files for atomix"
-# )
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set_property(TARGET atomix PROPERTY WIN32_EXECUTABLE true)
+    add_custom_command(TARGET atomix POST_BUILD
+        COMMAND windeployqt --no-system-d3d-compiler "$<TARGET_FILE_DIR:atomix>/atomix.exe"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        DEPENDS atomix windeployqt
+        COMMENT "Generating deployment files for atomix"
+    )
+endif()

@@ -72,7 +72,7 @@ class WaveManager : public Manager {
         
         AtomixWaveConfig cfg;
         
-        std::vector<vVec3 *> waveVertices;
+        std::vector<vVec4 *> waveVertices;
         std::vector<uvec *> waveIndices;
         std::vector<double> phase_const;
 

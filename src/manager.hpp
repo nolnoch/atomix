@@ -32,14 +32,15 @@
 
 #include "filehandler.hpp"
 
-using vVec3 = std::vector<glm::vec3>;
-using vVec2 = std::vector<glm::vec2>;
+
+using glm::vec4;
+using glm::ivec2;
+using glm::ivec3;
 using fvec = std::vector<float>;
 using dvec = std::vector<double>;
 using uvec = std::vector<uint>;
-using vec3 = glm::vec3;
-using ivec2 = glm::ivec2;
-using ivec3 = glm::ivec3;
+using vVec4 = std::vector<vec4>;
+// using vVec2 = std::vector<vec2>;
 
 
 class Manager {
@@ -95,10 +96,10 @@ class Manager {
         BitFlag mStatus;
         QMutex mutex;
         
-        vVec3 allVertices;
+        vVec4 allVertices;
         dvec dataStaging;
         fvec allData;
-        vVec3 allColours;
+        vVec4 allColours;
         uvec indicesStaging;
         uvec allIndices;
         

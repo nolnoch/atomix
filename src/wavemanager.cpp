@@ -137,7 +137,7 @@ double WaveManager::create() {
     int pixelCount = (waveResolution * ((cfg.sphere) ? waveResolution : 1));
 
     for (int i = 0; i < cfg.waves; i++) {
-        waveVertices.push_back(new vVec3((pixelCount << int(cfg.cpu)), glm::vec3(0.0, 0.0, 0.0)));
+        waveVertices.push_back(new vVec4((pixelCount << int(cfg.cpu)), vec4(0.0)));
         waveIndices.push_back(new uvec(pixelCount, 0));
         phase_const.push_back(phase_base * i);
         double startTime = (this->time) ? (this->time) : 0.0;
@@ -219,7 +219,7 @@ void WaveManager::circleWaveGPU(int idx) {
         float p = (float) phase_const[idx];
         float d = (float) radius;
 
-        vec3 factorsA = vec3(h, p, d);
+        vec4 factorsA = vec4(h, p, d, 0.0f);
         
         (*waveVertices[idx])[pxCount] = factorsA;
 
@@ -241,7 +241,7 @@ void WaveManager::sphereWaveGPU(int idx) {
             float p = (float) phi;
             float d = (float) radius;
 
-            vec3 factorsA = vec3(h, p, d);
+            vec4 factorsA = vec4(h, p, d, 0.0f);
             
             (*waveVertices[idx])[pxCount] = factorsA;
 
@@ -300,8 +300,8 @@ void WaveManager::updateWaveCPUCircle(int idx, double t) {
             b = (scale * SHIFT(trough, BLUE)) + ((1 - scale) * SHIFT(base, BLUE));
         }
 
-        vec3 vertex = vec3(x, y, z);
-        vec3 colour = vec3(r, g, b);
+        vec4 vertex = vec4(x, y, z, 1.0f);
+        vec4 colour = vec4(r, g, b, 1.0f);
         
         (*waveVertices[idx])[pxCount++] = vertex;
         (*waveVertices[idx])[pxCount++] = colour;
@@ -361,8 +361,8 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
                 //final.a = (scale * SHIFT(trough, ALPHA)) + ((1 - scale) * SHIFT(base, ALPHA));
             }
 
-            vec3 vertex = vec3(x, y, z);
-            vec3 colour = vec3(r, g, b);
+            vec4 vertex = vec4(x, y, z, 1.0f);
+            vec4 colour = vec4(r, g, b, 1.0f);
             
             (*waveVertices[idx])[pxCount++] = vertex;
             (*waveVertices[idx])[pxCount++] = colour;
@@ -379,15 +379,15 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
 
 void WaveManager::superposition(int idx) {
     int verts = waveVertices[idx]->size();
-    vec3 red = vec3(1.0f, 0.0f, 0.0f);
+    vec4 red = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
     for (int dt = 0; dt < verts; dt += 2) {
-        vec3 &a = (*waveVertices[idx - 1])[dt];
-        vec3 &b = (*waveVertices[idx])[dt];
+        vec4 &a = (*waveVertices[idx - 1])[dt];
+        vec4 &b = (*waveVertices[idx])[dt];
 
         if (length(a) > length(b)) {
             // Calculate interference
-            vec3 avg = (a + b) * 0.5f;
+            vec4 avg = (a + b) * 0.5f;
 
             // Adjust vertices for interference
             b = avg;

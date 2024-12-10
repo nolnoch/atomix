@@ -1,5 +1,5 @@
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 set(LINUX 0)
 set(MACOS 0)
@@ -45,3 +45,10 @@ target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concur
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
+# add_custom_command(TARGET atomix POST_BUILD
+#     COMMAND windeployqt --no-system-d3d-compiler "$<TARGET_FILE_DIR:atomix>/atomix.exe"
+#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+#     DEPENDS atomix windeployqt
+#     COMMENT "Generating deployment files for atomix"
+# )

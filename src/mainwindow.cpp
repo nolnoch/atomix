@@ -1625,8 +1625,10 @@ void MainWindow::_initStyle() {
 
 void MainWindow::_initGraphics() {
     // Vulkan
-    QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
-    QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
+    QByteArrayList layers = {};
+    QByteArrayList extensions = {};
+    // QByteArrayList layers = { "VK_LAYER_KHRONOS_validation" };
+    // QByteArrayList extensions = { "VK_KHR_get_physical_device_properties2", "VK_EXT_graphics_pipeline_library" };
     
     QVersionNumber version = vkInst.supportedApiVersion();
     VK_MINOR_VERSION = version.minorVersion();

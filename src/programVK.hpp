@@ -392,7 +392,7 @@ private:
     VkResult err = VK_SUCCESS;
     
     bool p_libEnabled = false;
-    VKint stage = 0;
+    VKint p_stage = 0;
 
     std::array<unsigned int, 19> dataSizes = {
         sizeof(float),

@@ -149,7 +149,7 @@ bool ProgramVK::addShader(const std::string &fName, VKuint type) {
         shader->setId(this->p_registeredShaders.size());
         this->p_registeredShaders.push_back(shader);
         validFile = true;
-        this->stage = 1;
+        this->p_stage = 1;
     }
 
     return validFile;
@@ -370,7 +370,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
         model = p_models[it->second];
 
         // TODO: Handle old model data
-        return -1;
+        return uint(-1);
     } else {
         model = new ModelInfo{};
         model->id = idx;
@@ -686,7 +686,7 @@ void ProgramVK::loadPipelineFromCache() {
 bool ProgramVK::init() {
     int numShaders = this->p_registeredShaders.size();
 
-    if (!numShaders || !stage) {
+    if (!numShaders || !p_stage) {
         std::cout << "No shader files associated with program. Aborting..." << std::endl;
         return false;
     }
@@ -704,7 +704,7 @@ bool ProgramVK::init() {
     createPipelineCache();
     this->pipelineGlobalSetup();
 
-    this->stage = 2;
+    this->p_stage = 2;
 
     return true;
 }
@@ -767,15 +767,15 @@ void ProgramVK::createRenderPass() {
 void ProgramVK::definePipeLayouts() {
     
     // Define pipeline layout with no push constants
-    VkPipelineLayoutCreateInfo lay{};
-    lay.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    lay.setLayoutCount = this->p_setLayouts.size();
-    lay.pSetLayouts = this->p_setLayouts.data();
-    lay.pushConstantRangeCount = 0;
-    lay.pPushConstantRanges = VK_NULL_HANDLE;
+    VkPipelineLayoutCreateInfo layNo{};
+    layNo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layNo.setLayoutCount = this->p_setLayouts.size();
+    layNo.pSetLayouts = this->p_setLayouts.data();
+    layNo.pushConstantRangeCount = 0;
+    layNo.pPushConstantRanges = VK_NULL_HANDLE;
 
     this->p_pipeLayouts.push_back({});
-    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &lay, nullptr, &this->p_pipeLayouts.back()) != VK_SUCCESS) {
+    if (this->p_vdf->vkCreatePipelineLayout(this->p_dev, &layNo, nullptr, &this->p_pipeLayouts.back()) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create pipeline layout!");
     }
 
@@ -1574,7 +1574,7 @@ void ProgramVK::reapZombies() {
 }
 
 Shader* ProgramVK::getShaderFromName(const std::string& fileName) {
-    assert(stage >= 2);
+    assert(p_stage >= 2);
     Shader *s = nullptr;
     
     for (const auto& shader : p_compiledShaders) {
@@ -1599,7 +1599,7 @@ Shader* ProgramVK::getShaderFromId(VKuint id) {
 }
 
 VKuint ProgramVK::getShaderIdFromName(const std::string& fileName) {
-    VKuint id = -1;
+    VKuint id = uint(-1);
     
     if (p_mapShaders.find(fileName) == p_mapShaders.end()) {
         std::cout << "Shader not found: " << fileName << std::endl;

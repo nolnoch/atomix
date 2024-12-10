@@ -140,7 +140,7 @@ class Manager {
             UPDATE_REQUIRED =   1 << 16,    // An update must execute on next render
         };
 
-        const uint eUpdateFlags = -1 << 5;
+        const uint eUpdateFlags = uint(-1) << 5;
         const uint eInitFlags = em::UPD_VBO | em::UPD_IBO | em::UPD_UNI_COLOUR | em::UPD_UNI_MATHS | em::UPD_PUSH_CONST | em::UPD_MATRICES;
 };
 

@@ -593,15 +593,15 @@ void MainWindow::setupDockHarmonics() {
     layHOrbital->setSpacing(0);
 
     // Harmonics Configuration Input Widgets
-    entryCloudRes = new QLineEdit(QString::number(cloudConfig.cloudResolution));
+    entryCloudRes = new QLineEdit(QString::number(mw_cloudConfig.cloudResolution));
     entryCloudRes->setObjectName("entryCloudRes");
     entryCloudRes->setValidator(valIntLarge);
     entryCloudRes->setAlignment(Qt::AlignRight);
-    entryCloudLayers = new QLineEdit(QString::number(cloudConfig.cloudLayDivisor));
+    entryCloudLayers = new QLineEdit(QString::number(mw_cloudConfig.cloudLayDivisor));
     entryCloudLayers->setObjectName("entryCloudLayers");
     entryCloudLayers->setValidator(valIntLarge);
     entryCloudLayers->setAlignment(Qt::AlignRight);
-    entryCloudMinRDP = new QLineEdit(QString::number(cloudConfig.cloudTolerance));
+    entryCloudMinRDP = new QLineEdit(QString::number(mw_cloudConfig.cloudTolerance));
     entryCloudMinRDP->setObjectName("entryCloudMinRDP");
     entryCloudMinRDP->setValidator(valDoubleSmall);
     entryCloudMinRDP->setAlignment(Qt::AlignRight);
@@ -728,7 +728,7 @@ void MainWindow::refreshShaders() {
 
     // Vertex Shaders
     int files = fileHandler->getVertexShadersCount();
-    int pathLength = fileHandler->atomixFiles.shaders().length();
+    auto pathLength = fileHandler->atomixFiles.shaders().length();
     assert(files);
 
     QStringList vshFiles = fileHandler->getVertexShadersList();
@@ -895,7 +895,7 @@ uint MainWindow::refreshOrbits(std::pair<int, int> waveChange) {
             }
         }
     } else {
-        for (int i = 0; i < waveConfig.waves; i++) {
+        for (int i = 0; i < mw_waveConfig.waves; i++) {
             renderedOrbits |= (1 << i);
         }
     }
@@ -917,7 +917,7 @@ uint MainWindow::refreshOrbits(std::pair<int, int> waveChange) {
     for (int i = 0; i < MAX_ORBITS; i++) {
         uint checkID = 1 << i;
         QAbstractButton *checkBox = buttGroupOrbits->button(checkID);
-        bool enabled = (i < waveConfig.waves);
+        bool enabled = (i < mw_waveConfig.waves);
         bool checkState = (renderedOrbits & checkID);
 
         checkBox->setEnabled(enabled);
@@ -1079,7 +1079,7 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
                 homo = true;
             }
         }
-        const QSignalBlocker blocker(treeOrbitalSelect);
+        const QSignalBlocker treeBlocker(treeOrbitalSelect);
         ptrParent->setCheckState(col, (homo) ? checked : Qt::PartiallyChecked);
         ptrParent = (SortableOrbitalTr *)ptrParent->parent();
     }
@@ -1113,9 +1113,9 @@ void MainWindow::handleButtLockRecipes() {
             this->numRecipes++;
         } else {
             // Look for partial match and update weight
-            for (auto& vecElem : mapCloudRecipes[n]) {
-                if (vecElem.x == l && vecElem.y == m) {
-                    vecElem.z = w;
+            for (auto& recipe : mapCloudRecipes[n]) {
+                if (recipe.x == l && recipe.y == m) {
+                    recipe.z = w;
                     break;
                 }
             }
@@ -1154,7 +1154,7 @@ void MainWindow::handleButtConfigIO(int id) {
 
     if (save) {
         // Save config (and recipes) to file
-        SuperConfig config = (wave) ? SuperConfig{ waveConfig } : SuperConfig{ cloudConfig };
+        SuperConfig config = (wave) ? SuperConfig{ mw_waveConfig } : SuperConfig{ mw_cloudConfig };
         QString title = (wave) ? tr("Save Wave Config") : tr("Save Harmonics Config");
         QString extension = (wave) ? "wave" : "cloud";
         BitFlag mode = (wave) ? BitFlag(mw::WAVE) : BitFlag(mw::CLOUD);
@@ -1225,7 +1225,7 @@ void MainWindow::handleButtDeleteConfig() {
 }
 
 void MainWindow::handleButtSaveConfig() {
-    SuperConfig config = waveConfig;
+    SuperConfig config = mw_waveConfig;
 
     QFileDialog fd(this, tr("Save Wave Config"), QString::fromStdString(fileHandler->atomixFiles.configs()));
     fd.setAcceptMode(QFileDialog::AcceptSave);
@@ -1241,30 +1241,30 @@ void MainWindow::handleButtSaveConfig() {
 
 void MainWindow::handleButtMorbWaves() {
     std::pair<bool, double> resultP, resultW;
-    int oldWaves = waveConfig.waves;
+    int oldWaves = mw_waveConfig.waves;
     int newWaves = std::clamp(entryOrbit->text().toInt(), 1, 8);
     std::pair<int, int> waveChange = { oldWaves, newWaves - oldWaves };
     
-    waveConfig.waves = newWaves;
-    waveConfig.amplitude = std::clamp(entryAmp->text().toDouble(), 0.001, 999.999);
-    waveConfig.resolution = std::clamp(entryResolution->text().toInt(), 1, 999);
-    waveConfig.parallel = slswPara->value();
-    waveConfig.superposition = slswSuper->value();
-    waveConfig.cpu = slswCPU->value();
-    waveConfig.sphere = slswSphere->value();
-    waveConfig.visibleOrbits = refreshOrbits(waveChange);
+    mw_waveConfig.waves = newWaves;
+    mw_waveConfig.amplitude = std::clamp(entryAmp->text().toDouble(), 0.001, 999.999);
+    mw_waveConfig.resolution = std::clamp(entryResolution->text().toInt(), 1, 999);
+    mw_waveConfig.parallel = slswPara->value();
+    mw_waveConfig.superposition = slswSuper->value();
+    mw_waveConfig.cpu = slswCPU->value();
+    mw_waveConfig.sphere = slswSphere->value();
+    mw_waveConfig.visibleOrbits = refreshOrbits(waveChange);
 
     resultP = _validateExprInput(entryPeriod);
-    waveConfig.period = std::clamp(resultP.second, 0.001, 999.999);
+    mw_waveConfig.period = std::clamp(resultP.second, 0.001, 999.999);
 
     resultW = _validateExprInput(entryWavelength);
-    waveConfig.wavelength = std::clamp(resultW.second, 0.001, 999.999);
+    mw_waveConfig.wavelength = std::clamp(resultW.second, 0.001, 999.999);
 
     if (!resultP.first || !resultW.first) {
         return;
     }
 
-    vkGraph->newWaveConfig(&waveConfig);
+    vkGraph->newWaveConfig(&mw_waveConfig);
 
     groupColors->setEnabled(true);
     groupOrbits->setEnabled(true);
@@ -1278,18 +1278,18 @@ void MainWindow::handleButtMorbWaves() {
 }
 
 void MainWindow::handleButtMorbHarmonics() {
-    cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
-    cloudConfig.cloudResolution = entryCloudRes->text().toInt();
-    cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
+    mw_cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
+    mw_cloudConfig.cloudResolution = entryCloudRes->text().toInt();
+    mw_cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
 
-    uint vertex, data, index;
+    uint vertex, opt, index;
     uint64_t total;
-    vkGraph->estimateSize(&cloudConfig, &mapCloudRecipes, &vertex, &data, &index);
-    total = vertex + data + index;
+    vkGraph->estimateSize(&mw_cloudConfig, &mapCloudRecipes, &vertex, &opt, &index);
+    total = vertex + opt + index;
     uint64_t oneGiB = 1024 * 1024 * 1024;
 
     if (total > oneGiB) {
-        std::array<float, 4> bufs = { static_cast<float>(vertex), static_cast<float>(data), static_cast<float>(index), static_cast<float>(total) };
+        std::array<float, 4> bufs = { static_cast<float>(vertex), static_cast<float>(opt), static_cast<float>(index), static_cast<float>(total) };
         QStringList units = { " B", "KB", "MB", "GB" };
         std::array<int, 4> u = { 0, 0, 0, 0 };
         int div = 1024;
@@ -1318,7 +1318,7 @@ void MainWindow::handleButtMorbHarmonics() {
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
     }
 
-    vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipes, true);
+    vkGraph->newCloudConfig(&this->mw_cloudConfig, &this->mapCloudRecipes, true);
 
     // groupRecipeLocked->setStyleSheet("QGroupBox { color: #FFFF77; }");
     groupGenVertices->setStyleSheet("QGroupBox { color: #FFFF77; }");
@@ -1447,12 +1447,12 @@ void MainWindow::handleButtColors(int id) {
 
 void MainWindow::handleSlideCullingX(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
-    this->cloudConfig.cloudCull_x = pct;
+    this->mw_cloudConfig.cloudCull_x = pct;
 }
 
 void MainWindow::handleSlideCullingY(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
-    this->cloudConfig.cloudCull_y = pct;
+    this->mw_cloudConfig.cloudCull_y = pct;
 }
 
 void MainWindow::handleSlideCullingR(int val) {
@@ -1461,28 +1461,28 @@ void MainWindow::handleSlideCullingR(int val) {
 
     if (val < range) {
         newVal = range - val;
-        this->cloudConfig.cloudCull_rIn = (float(newVal) / float(range));
-        this->cloudConfig.cloudCull_rOut = 0.0f;
+        this->mw_cloudConfig.cloudCull_rIn = (float(newVal) / float(range));
+        this->mw_cloudConfig.cloudCull_rOut = 0.0f;
     } else if (val > range) {
         newVal = val - range;
-        this->cloudConfig.cloudCull_rOut = (float(newVal) / float(range));
-        this->cloudConfig.cloudCull_rIn = 0.0f;
+        this->mw_cloudConfig.cloudCull_rOut = (float(newVal) / float(range));
+        this->mw_cloudConfig.cloudCull_rIn = 0.0f;
     } else {
-        this->cloudConfig.cloudCull_rIn = 0.0f;
-        this->cloudConfig.cloudCull_rOut = 0.0f;
+        this->mw_cloudConfig.cloudCull_rIn = 0.0f;
+        this->mw_cloudConfig.cloudCull_rOut = 0.0f;
     }
 }
 
 void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
-    if ((this->cloudConfig.cloudCull_x != lastSliderSentX) || (this->cloudConfig.cloudCull_y != lastSliderSentY) || (this->cloudConfig.cloudCull_rIn != lastSliderSentRIn) || (this->cloudConfig.cloudCull_rOut != lastSliderSentROut)) {
-        vkGraph->newCloudConfig(&this->cloudConfig, &this->mapCloudRecipes, false);
+    if ((this->mw_cloudConfig.cloudCull_x != lastSliderSentX) || (this->mw_cloudConfig.cloudCull_y != lastSliderSentY) || (this->mw_cloudConfig.cloudCull_rIn != lastSliderSentRIn) || (this->mw_cloudConfig.cloudCull_rOut != lastSliderSentROut)) {
+        vkGraph->newCloudConfig(&this->mw_cloudConfig, &this->mapCloudRecipes, false);
 
-        lastSliderSentX = this->cloudConfig.cloudCull_x;
-        lastSliderSentY = this->cloudConfig.cloudCull_y;
-        lastSliderSentRIn = this->cloudConfig.cloudCull_rIn;
-        lastSliderSentROut = this->cloudConfig.cloudCull_rOut;
+        lastSliderSentX = this->mw_cloudConfig.cloudCull_x;
+        lastSliderSentY = this->mw_cloudConfig.cloudCull_y;
+        lastSliderSentRIn = this->mw_cloudConfig.cloudCull_rIn;
+        lastSliderSentROut = this->mw_cloudConfig.cloudCull_rOut;
     }
 }
 
@@ -1501,11 +1501,11 @@ int MainWindow::findHarmapItem(int n, int l, int m) {
 }
 
 int MainWindow::getHarmapSize() {
-    int totalSize = 0;
+    size_t totalSize = 0;
     for (auto k : mapCloudRecipes) {
         totalSize += k.second.size();
     }
-    return totalSize;
+    return static_cast<int>(totalSize);
 }
 
 /* void MainWindow::printHarmap() {

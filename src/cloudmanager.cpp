@@ -977,9 +977,9 @@ double CloudManager::cullSlider() {
         phi_size = this->cloudResolution >> 1;
         culled_phi_b = static_cast<uint>(ceil(phi_size * (1.0f - this->cfg.cloudCull_y))) + phi_size;
         culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.cloudCull_y));
-        uint idxEnd = idxCulledTolerance.size();
+        size_t idxEnd = idxCulledTolerance.size();
 
-        for (uint i = 0; i < idxEnd; i++) {
+        for (size_t i = 0; i < idxEnd; i++) {
             uint phi_pos = idxCulledTolerance[i] % phi_size;
             bool cull_theta = ((idxCulledTolerance[i] % layer_size) <= culled_theta_all);
             bool cull_theta_phi = (phi_pos <= phi_size);
@@ -1375,10 +1375,10 @@ double CloudManager::wavefuncPsi2(int n, int l, int m_l, double r, double theta,
      *
      * @param[in] max_n The maximum principal quantum number.
      */
-void CloudManager::wavefuncNorms(int max_n) {
-    int max_l = max_n - 1;
+void CloudManager::wavefuncNorms(int n_max) {
+    int max_l = n_max - 1;
 
-    for (int n = max_n; n > 0; n--) {
+    for (int n = n_max; n > 0; n--) {
         double rho_r = (2.0 * this->atomZ) / n;
         for (int l = n-1; l >= 0; l--) {
             int nl1 = n - l - 1;
@@ -1460,7 +1460,7 @@ void CloudManager::resetManager() {
      *
      * @return The size of the colour data buffer in bytes.
      */
-uint CloudManager::getColourSize() {
+size_t CloudManager::getColourSize() {
     return this->colourSize;
 }
 
@@ -1547,9 +1547,9 @@ bool CloudManager::hasBuffers() {
  *
  * @return The size of the colour data in bytes.
  */
-int CloudManager::setColourSize() {
-    int chunks = colourCount ? colourCount : setColourCount();
-    int chunkSize = sizeof(glm::vec3);
+size_t CloudManager::setColourSize() {
+    uint chunks = colourCount ? colourCount : setColourCount();
+    uint chunkSize = sizeof(glm::vec3);
 
     //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
@@ -1559,7 +1559,7 @@ int CloudManager::setColourSize() {
  *  Setters -- Count
  */
 
-int CloudManager::setColourCount() {
+size_t CloudManager::setColourCount() {
     return allColours.size();
 }
 
@@ -1756,9 +1756,9 @@ void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config,
     testtime += cullSliderThreaded();
     mStatus.set(em::INIT);
 
-    uint diffruns = vruns * pruns * lruns * tests.size();
-    uint totalruns = diffruns * truns;
-    double totaltime = totalruns * testtime * 0.5;
+    auto diffruns = vruns * pruns * lruns * tests.size();
+    auto totalruns = diffruns * truns;
+    auto totaltime = totalruns * testtime * 0.5;
     std::cout << "Total time expected for test: " << std::setprecision(3) << (totaltime / (1000.0 * 60.0)) << " min" << std::endl;
 
     std::vector<double> times(truns, 0.0);
@@ -1766,10 +1766,10 @@ void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config,
     test_times.reserve(diffruns);
     
     uint progress = 0;
-    for (auto [cfg, map] : tests) {
-        cfgChanged = (cfg != oldCfg);
+    for (auto [con, map] : tests) {
+        cfgChanged = (con != oldCfg);
         mapChanged = (map != oldMap);
-        oldCfg = cfg;
+        oldCfg = con;
         oldMap = map;
         for (uint v = vecs_min; v <= vecs_max; v += vstep) {
             this->cm_vecs = v;
@@ -1781,7 +1781,7 @@ void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config,
                     for (uint i = 0; i < truns; i++) {
                         if (cfgChanged) {
                             resetManager();
-                            newConfig(cfg);
+                            newConfig(con);
                             receiveCloudMap(map);
                             createThreaded();
                             cfgChanged = mapChanged = false;

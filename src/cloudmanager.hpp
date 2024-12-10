@@ -66,7 +66,7 @@ class CloudManager : public Manager {
         void receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *inMap, bool generator = true);
         void update(double time) override final;
         
-        uint getColourSize();
+        size_t getColourSize();
         uint getMaxLayer(double tolerance, int n_max, int divisor);
         uint getMaxRadius(double tolerance, int n_max);
         bool hasVertices();
@@ -106,8 +106,8 @@ class CloudManager : public Manager {
 
         void genOrbital(int n, int l, int m_l, double weight);
         
-        int setColourCount();
-        int setColourSize();
+        size_t setColourCount();
+        size_t setColourSize();
         int countMapRecipes(harmap *inMap);
 
         void printBuffer(fvec buf, std::string name);
@@ -149,7 +149,7 @@ class CloudManager : public Manager {
         float cm_culled = 0;
         const int MAX_SHELLS = 8;
 
-        uint cm_pixels;
+        size_t cm_pixels;
         bool cm_threading = true;
         uint cm_pool = 0;
         uint cm_loop = 0;

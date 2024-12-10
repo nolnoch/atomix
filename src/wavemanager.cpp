@@ -169,8 +169,8 @@ double WaveManager::create() {
     return 0.0;
 }
 
-void WaveManager::update(double time) {
-    Manager::update(time);
+void WaveManager::update(double inTime) {
+    Manager::update(inTime);
     if (!cfg.cpu) {
         return;
     }
@@ -179,9 +179,9 @@ void WaveManager::update(double time) {
     for (int i = 0; i < cfg.waves; i++) {
         if (renderedWaves & RENDORBS[i]) {
             if (cfg.sphere)
-                updateWaveCPUSphere(i, time);
+                updateWaveCPUSphere(i, inTime);
             else
-                updateWaveCPUCircle(i, time);
+                updateWaveCPUCircle(i, inTime);
         }
     }
     mStatus.set(em::VERT_READY | em::CPU_RENDER);

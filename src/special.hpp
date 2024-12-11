@@ -29,14 +29,17 @@
 namespace atomix {
 namespace special {
 
-double _a_poly_laguerre_recursion(unsigned int n, double alpha1, double x);
-double _a_poly_laguerre_hyperg(unsigned int n, double alpha1, double x);
-double _a_poly_laguerre(unsigned int n, double alpha1, double x);
-double atomix_laguerre(unsigned int n, unsigned int m, double x);
+double _a_poly_laguerre(unsigned int n, double m, double x);
 
-double _a_poly_legendre_p(unsigned int l, double x);
-double _a_assoc_legendre_p(unsigned int l, unsigned int m, double x, double phase = double(+1));
-double atomix_legendre(unsigned int l, unsigned int m, double x);
+inline double atomix_laguerre(unsigned int n, unsigned int m, double x) {
+    return _a_poly_laguerre(n, m, x);
+}
+
+double _a_assoc_legendre_p(unsigned int l, unsigned int m, double x);
+
+inline double atomix_legendre(unsigned int l, unsigned int m, double x) {
+    return _a_assoc_legendre_p(l, m, x);
+}
 
 }}
 

@@ -42,6 +42,7 @@
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QLabel>
+#include <QStylePainter>
 #include <QFontMetrics>
 #include <QPixmap>
 #include <QIcon>
@@ -239,6 +240,58 @@ public:
         bool bEqual = textValB == otherTextValB;
         bool cLess = textValC < otherTextValC;
         return ((aLess) || (aEqual && bLess) || (aEqual && bEqual && cLess));
+    }
+};
+
+/* class BiStyleOptionSlider : public QStyleOptionSlider {
+public:
+    BiStyleOptionSlider() : QStyleOptionSlider() {}
+
+    void setRect(const QRect &rect) {
+        this->rect = rect;
+    }
+}; */
+
+class BiSlider : public QSlider {
+public:
+    BiSlider(Qt::Orientation orientation, QWidget *parent = nullptr) : QSlider(orientation, parent) {}
+    ~BiSlider() override = default;
+    void paintEvent(QPaintEvent *event) override {
+        QStyleOptionSlider opt;
+        initStyleOption(&opt);
+
+        opt.subControls = QStyle::SC_SliderGroove | QStyle::SC_SliderHandle;
+        if (this->tickPosition() != NoTicks) {
+            opt.subControls |= QStyle::SC_SliderTickmarks;
+        }
+
+        QRect newRect = this->style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
+        QSlider::paintEvent(event);
+
+        int range = this->maximum() - this->minimum();
+        int center = range >> 1;
+        int pos = this->value() - this->minimum();
+        double r_pos = (double)pos / (double)range;
+        int g_width = newRect.width();
+        int g_center = g_width >> 1;
+        int g_pos = (int)(r_pos * (double)g_width);
+
+        if (this->orientation() == Qt::Horizontal) {
+            int start, delta;
+            if (pos < center) {
+                start = g_pos;
+                delta = g_center - g_pos;
+            } else {
+                start = g_center;
+                delta = g_pos - g_center;
+            }
+
+            newRect.setLeft(start);
+            newRect.setRight(start + delta);
+        }
+
+        QPainter painter(this);
+        painter.fillRect(newRect, this->palette().highlight());
     }
 };
 

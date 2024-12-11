@@ -642,13 +642,13 @@ void MainWindow::setupDockHarmonics() {
     slideCullingY->setMaximum(aStyle.sliderTicks);
     slideCullingY->setTickInterval(aStyle.sliderInterval);
     slideCullingY->setTickPosition(QSlider::TicksAbove);
-    slideCullingR = new QSlider(Qt::Horizontal, this);
+    slideCullingR = new BiSlider(Qt::Horizontal, this);
     slideCullingR->setObjectName("slideCullingR");
-    slideCullingR->setMinimum(0);
-    slideCullingR->setMaximum(aStyle.sliderTicks << 1);
-    slideCullingR->setTickInterval(aStyle.sliderInterval << 1);
+    slideCullingR->setMinimum(-int(aStyle.sliderTicks));
+    slideCullingR->setMaximum(+int(aStyle.sliderTicks));
+    slideCullingR->setTickInterval(aStyle.sliderInterval);
     slideCullingR->setTickPosition(QSlider::TicksBelow);
-    slideCullingR->setValue(aStyle.sliderTicks);
+    slideCullingR->setValue(0);
     slideBackground = new QSlider(Qt::Horizontal, this);
     slideBackground->setObjectName("slideBackground");
     slideBackground->setMinimum(0);
@@ -1716,7 +1716,7 @@ void MainWindow::_connectSignals() {
     connect(slideCullingR, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingR);
     connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
-    connect(slideCullingR, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    // connect(slideCullingR, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 }
 

@@ -48,46 +48,46 @@
 
 struct Uniform {
     std::string name;
-    uint set = 0;
-    uint binding = 0;
-    uint size = 0;
+    uint32_t set = 0;
+    uint32_t binding = 0;
+    uint32_t size = 0;
 };
 
 struct PushConstant {
     std::string name;
-    uint size = 0;
+    uint32_t size = 0;
 };
 
 
 class Shader {
 public:
-    Shader(std::string fName, uint type);
+    Shader(std::string fName, uint32_t type);
     virtual ~Shader();
 
-    bool compile(uint version);
+    bool compile(uint32_t version);
     bool reflect();
 
     void setId(unsigned int idAssigned);
-    void setStageIdx(uint idx) { vkStageIdx = idx; };
-    void setPushIdx(uint idx) { vkPushIdx = idx; };
-    void addDescIdx(uint idx) { vkDescIdx.push_back(idx); };
+    void setStageIdx(uint32_t idx) { vkStageIdx = idx; };
+    void setPushIdx(uint32_t idx) { vkPushIdx = idx; };
+    void addDescIdx(uint32_t idx) { vkDescIdx.push_back(idx); };
 
     unsigned int getId();
     unsigned int getType();
     std::string& getName();
     std::string& getPath();
     const char* getSourceRaw();
-    const uint* getSourceCompiled();
+    const uint32_t* getSourceCompiled();
     size_t getLengthRaw();
     size_t getLengthCompiled();
 
     std::vector<Uniform>& getUniforms() { return uniforms; };
     std::vector<PushConstant>& getPushConstants() { return pushConstants; };
 
-    uint getStageIdx() { return vkStageIdx; };
-    uint getPushIdx() { return vkPushIdx; };
-    uint getDescIdx(uint idx) { return vkDescIdx[idx]; };
-    uint getDescCount() { return vkDescIdx.size(); };
+    uint32_t getStageIdx() { return vkStageIdx; };
+    uint32_t getPushIdx() { return vkPushIdx; };
+    uint32_t getDescIdx(uint32_t idx) { return vkDescIdx[idx]; };
+    uint32_t getDescCount() { return vkDescIdx.size(); };
     
     bool isValidFile();
     bool isValidCompile();
@@ -106,9 +106,9 @@ private:
     std::vector<Uniform> uniforms;
     std::vector<PushConstant> pushConstants;
 
-    uint vkStageIdx = 0;
-    uint vkPushIdx = 0;
-    std::vector<uint> vkDescIdx;
+    uint32_t vkStageIdx = 0;
+    uint32_t vkPushIdx = 0;
+    std::vector<uint32_t> vkDescIdx;
     
     bool validFile = false;
     bool validCompile = false;

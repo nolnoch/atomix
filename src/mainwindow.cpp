@@ -111,7 +111,6 @@ void MainWindow::setupStatusBar() {
 void MainWindow::setupDetails() {
     labelDetails = new QLabel(this);
     labelDetails->setObjectName("labelDetails");
-    labelDetails->setFont(aStyle.fontMonoStatus);
     labelDetails->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     labelDetails->hide();
 }
@@ -1044,7 +1043,6 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
                 if (c == 1 && tableOrbitalReport->item(0, 0)->text() == "0") {
                     QMessageBox dialogConfim(this);
                     dialogConfim.setText("The only weighted orbital cannot be zero. Removing remaining orbital.");
-                    dialogConfim.setFont(aStyle.fontMono);
                     dialogConfim.setStandardButtons(QMessageBox::Ok);
                     dialogConfim.setDefaultButton(QMessageBox::Ok);
                     dialogConfim.exec();
@@ -1178,7 +1176,6 @@ void MainWindow::handleButtConfigIO(int id) {
 
         QMessageBox dialogConfim(this);
         dialogConfim.setText("Are you sure you want to delete \"" + strCfgName + "\"?");
-        dialogConfim.setFont(aStyle.fontMono);
         dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
         dialogConfim.setDefaultButton(QMessageBox::Cancel);
         dialogConfim.exec();
@@ -1189,53 +1186,11 @@ void MainWindow::handleButtConfigIO(int id) {
             } else {
                 QMessageBox dialogError(this);
                 dialogError.setText("Failed to delete \"" + strCfgName + "\".");
-                dialogError.setFont(aStyle.fontMono);
                 dialogError.setStandardButtons(QMessageBox::Ok);
                 dialogError.setDefaultButton(QMessageBox::Ok);
                 dialogError.exec();
             }
         }
-    }
-}
-
-void MainWindow::handleButtDeleteConfig() {
-    int comboID = comboWaveConfigFile->currentIndex();
-    QString strCfgName = comboWaveConfigFile->currentText();
-    QString strCfgFile = fileHandler->getWaveFilesList().at(comboID);
-
-    QMessageBox dialogConfim(this);
-    dialogConfim.setText("Are you sure you want to delete \"" + strCfgName + "\"?");
-    dialogConfim.setFont(aStyle.fontMono);
-    dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    dialogConfim.setDefaultButton(QMessageBox::Cancel);
-    dialogConfim.exec();
-
-    if (dialogConfim.result() == QMessageBox::Ok) {
-        if (fileHandler->deleteFile(strCfgFile)) {
-            refreshConfigs(BitFlag(mw::WAVE));
-        } else {
-            QMessageBox dialogError(this);
-            dialogError.setText("Failed to delete \"" + strCfgName + "\".");
-            dialogError.setFont(aStyle.fontMono);
-            dialogError.setStandardButtons(QMessageBox::Ok);
-            dialogError.setDefaultButton(QMessageBox::Ok);
-            dialogError.exec();
-        }
-    }
-}
-
-void MainWindow::handleButtSaveConfig() {
-    SuperConfig config = mw_waveConfig;
-
-    QFileDialog fd(this, tr("Save Wave Config"), QString::fromStdString(fileHandler->atomixFiles.configs()));
-    fd.setAcceptMode(QFileDialog::AcceptSave);
-    fd.setDefaultSuffix("wave");
-    fd.selectFile("filename.wave");
-    if (fd.exec() == QDialog::Accepted) {
-        QString strCfgFile = fd.selectedFiles().first();
-        QString strCfgName = strCfgFile.split(QDir::separator()).last();
-        fileHandler->saveConfigFile(strCfgFile, config);
-        refreshConfigs(BitFlag(mw::WAVE), strCfgName);
     }
 }
 
@@ -1312,7 +1267,6 @@ void MainWindow::handleButtMorbHarmonics() {
                                            .arg(units[u[0]]).arg(units[u[1]]).arg(units[u[2]])\
                                            .arg(bufs[3], 9, 'f', 2, ' ').arg(units[u[3]]);
         dialogConfim.setText(strDialogConfirm);
-        dialogConfim.setFont(aStyle.fontMono);
         dialogConfim.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
         dialogConfim.setDefaultButton(QMessageBox::Ok);
         if (dialogConfim.exec() == QMessageBox::Cancel) { return; }
@@ -1350,7 +1304,6 @@ void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
         if (tableOrbitalReport->rowCount() == 1) {
             QMessageBox dialogConfim(this);
             dialogConfim.setText("The only weighted orbital cannot be zero. Removing this orbital.");
-            dialogConfim.setFont(aStyle.fontMono);
             dialogConfim.setStandardButtons(QMessageBox::Ok);
             dialogConfim.setDefaultButton(QMessageBox::Ok);
             dialogConfim.exec();
@@ -1819,12 +1772,11 @@ void MainWindow::_dockResize() {
     // Status Bar
     labelDetails->setFont(aStyle.fontMonoStatus);
     labelDetails->adjustSize();
-    statBar->setFont(aStyle.fontMonoStatus);
+    statBar->setStyleSheet(QString("font-family: %1; font-size: %2px;").arg(aStyle.strFontMono).arg(aStyle.statusFontSize));
 }
 
 void MainWindow::_resize() {
     int currentTabIdx = wTabs->currentIndex();
-    int startingTabIdx = currentTabIdx;
 
     int i = 0;
     while (i < wTabs->count()) {
@@ -1841,8 +1793,6 @@ void MainWindow::_resize() {
 
         i++;
     }
-
-    assert(startingTabIdx == currentTabIdx);
 }
 
 std::pair<bool, double> MainWindow::_validateExprInput(QLineEdit *entry) {

@@ -42,7 +42,7 @@ const inline auto& lagp = static_cast<double(*)(uint, uint, double)>(atomix::spe
 
 // BS::thread_pool Priority slows the program down for optional benefit of low/high prio 
 // #define BS_THREAD_POOL_ENABLE_PRIORITY
-#include "BS_thread_pool.hpp"
+// #include "BS_thread_pool.hpp"
 
 
 using std::chrono::steady_clock;
@@ -79,15 +79,10 @@ class CloudManager : public Manager {
         void initManager() override final;
         void receiveCloudMap(harmap *inMap);
 
-        double create() override final;
         double createThreaded();
-        double bakeOrbitals();
         double bakeOrbitalsThreaded();
-        double bakeOrbitalsThreadedAlt();
-        double cullTolerance();
         double cullToleranceThreaded();
         double expandPDVsToColours();
-        double cullSlider();
         double cullSliderThreaded();
 
         void clearForNext() override final;
@@ -125,7 +120,6 @@ class CloudManager : public Manager {
         // void genColourArray();
         // void RDPtoColours();
 
-        BS::thread_pool cloudPool;
         AtomixCloudConfig cfg;
 
         dvec pdvStaging;
@@ -150,10 +144,6 @@ class CloudManager : public Manager {
         const int MAX_SHELLS = 8;
 
         size_t cm_pixels;
-        bool cm_threading = true;
-        uint cm_pool = 0;
-        uint cm_loop = 0;
-        uint cm_vecs = 0;
         std::mutex cm_proc_coarse;
         std::mutex cm_proc_fine;
         std::array<double, 4> cm_times = { 0.0, 0.0, 0.0, 0.0 };

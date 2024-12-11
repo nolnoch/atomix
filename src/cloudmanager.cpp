@@ -42,9 +42,6 @@
  * Adjust the thread pool size based on the complexity of the cloud data.
  */
 CloudManager::CloudManager() {
-    this->cm_pool = std::thread::hardware_concurrency();
-    this->cm_loop = 3;
-    this->cm_vecs = 0;
 }
 
 /**
@@ -55,8 +52,6 @@ CloudManager::CloudManager() {
  * all tasks to finish before clearing the cloud rendering data.
  */
 CloudManager::~CloudManager() {
-    cloudPool.purge();
-    cloudPool.wait();
     resetManager();
 }
 
@@ -222,75 +217,6 @@ void CloudManager::initManager() {
     mStatus.set(em::UPD_MATRICES);
 }
 
-// #pragma GCC push_options
-// #pragma GCC optimize ("O3")
-
-/**
- * @brief Generates the vertices and colour data for the cloud render (no threading).
- *
- * @details
- * Generates the vertices and colour data for the cloud render. This is the second-most
- * time-consuming part of the cloud rendering process. The function first finds the
- * maximum radius for the given tolerance and then iterates over all the required
- * vertices, creating the positions and initialising the colour data. The
- * wavefunction norms are also calculated here. The function then sets the
- * `em::VERT_READY` status and sets up the vertex array.
- *
- * @return The time taken to complete the function in milliseconds.
- */
-double CloudManager::create() {
-    assert(mStatus.hasNone(em::VERT_READY));
-    steady_clock::time_point begin = steady_clock::now();
-
-    this->max_n = cloudOrbitals.rbegin()->first;
-    this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
-    int phi_max_local = this->cloudResolution >> 1;
-    int theta_max_local = this->cloudResolution;
-    double deg_fac_local = this->deg_fac;
-
-    this->pixelCount = opt_max_radius * theta_max_local * phi_max_local;
-    vec3 pos = vec3(0.0f);
-
-    // auto beginInner = steady_clock::now();
-    allVertices.reserve(pixelCount);
-    for (int k = 1; k <= opt_max_radius; k++) {
-        double radius = static_cast<double>(k) / this->cloudLayerDivisor;
-
-        for (int i = 0; i < theta_max_local; i++) {
-            double theta = i * deg_fac_local;
-            for (int j = 0; j < phi_max_local; j++) {
-                double phi = j * deg_fac_local;
-
-                if (cfg.cpu) {
-                    pos.x = radius * sin(phi) * sin(theta);
-                    pos.y = radius * cos(phi);
-                    pos.z = radius * sin(phi) * cos(theta);
-                } else {
-                    pos.x = (float) radius;
-                    pos.y = (float) theta;
-                    pos.z = (float) phi;
-                }
-
-                allVertices.push_back(pos);
-            }
-        }
-    }
-    // auto endInner = steady_clock::now();
-
-    dataStaging.insert(dataStaging.end(), pixelCount, 0.0);
-    allData.insert(allData.end(), pixelCount, 0.0f);
-    idxCulledTolerance.reserve(pixelCount);
-
-    wavefuncNorms(MAX_SHELLS);
-
-    mStatus.advance(em::INIT, em::VERT_READY);
-    genVertexArray();
-    steady_clock::time_point end = steady_clock::now();
-    // auto createTime = std::chrono::duration<double, std::milli>(endInner - beginInner).count();
-    // std::cout << "Create Inner Loop took: " << createTime << " ms" << std::endl;
-    return (std::chrono::duration<double, std::milli>(end - begin).count());
-}
-
 /**
  * @brief Generate the vertices and colour data for the cloud render in separate threads.
  *
@@ -367,82 +293,6 @@ double CloudManager::createThreaded() {
 }
 
 /**
- * @brief Populate the dataStaging array with an orbital probability distribution.
- *
- * @details
- * This function is called by bakeOrbitals() to populate the dataStaging array with a
- * probability distribution of the orbital with the given (n, l, m_l) quantum numbers and
- * weight.
- *
- * The function uses the wavefuncRadial() and wavefuncAngExp() functions to compute the
- * radial and angular-exponential parts of the wavefunction. The angular part is then used
- * with the Legendre polynomial using wavefuncAngLeg(). The two parts are then combined into
- * the full angular portion and used to compute the probability density value (PDV) of each
- * point in the dataStaging array.
- *
- * @param n The principal quantum number of the orbital.
- * @param l The orbital angular momentum of the orbital.
- * @param m_l The z-component of the orbital angular momentum of the orbital.
- * @param weight The weight of the orbital in the probability distribution.
- */
-void CloudManager::genOrbital(int n, int l, int m_l, double weight) {
-    double deg_fac_local = this->deg_fac;
-    int phi_max_local = this->cloudResolution >> 1;
-    int theta_max_local = this->cloudResolution;
-    this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
-    double orbNorm = this->norm_constY[DSQ(l, m_l)];
-
-    for (int k = 1; k <= opt_max_radius; k++) {
-        double radius = static_cast<double>(k) / this->cloudLayerDivisor;
-        double R = wavefuncRadial(n, l, radius);
-        for (int i = 0; i < theta_max_local; i++) {
-            double theta = i * deg_fac_local;
-            std::complex<double> orbExp = wavefuncAngExp(m_l, theta);
-            for (int j = 0; j < phi_max_local; j++) {
-                double phi = j * deg_fac_local;
-                int localCount = ((k-1) * theta_max_local * phi_max_local) + (i * phi_max_local) + j;
-
-                double orbLeg = wavefuncAngLeg(l, m_l, phi);
-                std::complex<double> Y = orbExp * orbNorm * orbLeg;
-                double pdv = wavefuncPDV(R * Y, radius, l);
-
-                dataStaging[localCount] += (pdv * weight);
-            }
-        }
-    }
-}
-
-/**
- * @brief Bakes the orbital recipes to generate the cloud data.
- *
- * @details
- * Iterates through the stored recipes, grouped by N, and calls the
- * genOrbital function for each. The genOrbital function generates the
- * cloud data for each orbital and stores it in the dataStaging vector.
- * The final maximum value of the accumulated vector is stored in
- * allPDVMaximum.
- *
- * @return The time taken to complete the function in milliseconds.
- */
-double CloudManager::bakeOrbitals() {
-    assert(mStatus.hasNone(em::INIT) && mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
-    steady_clock::time_point begin = steady_clock::now();
-
-    // Iterate through stored recipes, grouped by N
-    for (auto const &[key, val] : cloudOrbitals) {
-        for (auto const &v : val) {
-            genOrbital(key, v.x, v.y, (v.z / static_cast<double>(numOrbitals)));
-        }
-    }
-
-    // End: check actual max value of accumulated vector
-    this->allPDVMaximum = *std::max_element(dataStaging.begin(), dataStaging.end());
-    // mStatus.set(em::DATA_GEN);
-    steady_clock::time_point end = steady_clock::now();
-    return (std::chrono::duration<double, std::milli>(end - begin).count());
-}
-
-/**
  * @brief Generates the cloud data for the given orbital recipes using threads.
  *
  * @details
@@ -509,6 +359,8 @@ double CloudManager::bakeOrbitalsThreaded() {
             double theta = item.y;
             double phi = item.z;
             double pdv = 0.0;
+            double pdv_factor = radius * radius;
+            int total_l = 0;
 
             // Recipe Loop
             for (int r = 0; r < numRecipes; r++) {
@@ -518,6 +370,7 @@ double CloudManager::bakeOrbitalsThreaded() {
                 double angNorm = ny[r];
                 double radNorm = nr[r];
                 double weight = ws[r];
+                total_l += l;
             
                 // Radial wavefunc
                 double rho = 2.0 * radius / static_cast<double>(n);
@@ -530,10 +383,13 @@ double CloudManager::bakeOrbitalsThreaded() {
 
                 // Angular wavefunc
                 std::complex<double> Y = exp(std::complex<double>{0,1} * (m_l * theta)) * angNorm * legp(l, abs(m_l), cos(phi));
-                Psi += (R * Y) * weight;
+                Psi += R * Y * weight;
             }
 
-            pdv = (std::conj(Psi) * Psi).real() * radius * radius;
+            if (!total_l) {
+                pdv_factor *= 4.0 * M_PI;
+            }
+            pdv = (std::conj(Psi) * Psi).real() * pdv_factor;
             (*dataStagingPtr)[idx] += pdv;
 
         }); // End of Lambda
@@ -557,297 +413,6 @@ double CloudManager::bakeOrbitalsThreaded() {
     genDataBuffer();
     steady_clock::time_point end = steady_clock::now();
     cm_proc_fine.unlock();
-    return (std::chrono::duration<double, std::milli>(end - begin).count());
-}
-
-/**
- * @brief Threading-optimized version of bakeOrbitals, using chunked multithreading with a thread pool.
- * 
- * This version of bakeOrbitals is an attempt at optimizing the cloud generation process by dividing
- * the work into chunks and spawning threads to handle those chunks, from the thread pool.
- * 
- * This function was written to divide the work across orbital recipes first, using temporary staging
- * vectors to store the results of each recipe. Because these vectors can be very large (~GB), they are
- * limited in count and used in a FIFO queue, where as each recipe is completed, higher priority threads
- * are invoked to collapse the temp vector into the final vector, and the temp vector is then reused
- * for another recipe.
- * 
- * Within each recipe, lower priority threads are assigned chunks (a subset of the total radial layers
- * in the model for that recipe), which yield to the higher priority threads when that recipe is completed.
- * 
- * In practice, after extensive profiling, the ideal number of threads to use is always the max/default,
- * the ideal number of temporary vectors to use is always 0, and the ideal chunk size is always 1 layer per thread.
- * 
- * While this function may be updated to use a different work division strategy in future, the current
- * strategy yields a 98% reduction in runtime compared to the single-threaded bakeOrbitals function (6min -> 7sec).
- * 
- * @return The time taken to generate the cloud in milliseconds.
- */
-double CloudManager::bakeOrbitalsThreadedAlt() {
-    assert(mStatus.hasFirstNotLast(em::VERT_READY, em::DATA_READY));
-    cm_proc_fine.lock();
-    steady_clock::time_point begin = steady_clock::now();
-
-    /*  Prep -- Threading  */
-    std::vector<BS::multi_future<void> *> allRecipeFutures;
-    std::vector<std::vector<double> *> vec_top_threads;
-    dvec *thread_vec = nullptr;
-    int thread_loop_limit = this->cm_loop;
-    uint thread_vec_limit = this->cm_vecs;
-    int vecs_to_fill = numOrbitals - 1;
-    uint num_top_vectors = (numOrbitals <= thread_vec_limit) ? vecs_to_fill : thread_vec_limit;
-    bool no_vecs = !num_top_vectors;
-    for (uint top = 0; top < num_top_vectors; top++) {
-        vec_top_threads.push_back(new std::vector<double>);
-        (*vec_top_threads[top]).assign(this->pixelCount, 0.0);
-    }
-    uint recipe_idx = 0;
-    uint clearing_vec = 0;
-    int clearing_fut = 0;
-    dvec *dataStagingPtr = &this->dataStaging;
-    // uint col_max = this->pixelCount;
-
-    /*  Prep -- Compute  */
-    double deg_fac_local = this->deg_fac;
-    int div_local = this->cloudLayerDivisor;
-    int phi_max_local = this->cloudResolution >> 1;
-    int theta_max_local = this->cloudResolution;
-    this->opt_max_radius = this->getMaxRadius(this->cloudTolerance, this->max_n) * div_local + 1;
-    int opt_max_radius_local = this->opt_max_radius;
-
-    int numRecipes = this->countMapRecipes(&cloudOrbitals);
-    std::vector<int> ns(numRecipes, 0);
-    std::vector<int> ls(numRecipes, 0);
-    std::vector<int> ms(numRecipes, 0);
-    std::vector<double> ws(numRecipes, 0.0);
-    std::vector<double> ny(numRecipes, 0.0);
-    std::vector<double> nr(numRecipes, 0.0);
-    int rIdx = 0;
-    for (auto const &[key, val] : cloudOrbitals) {
-        for (auto const &v : val) {
-            ns[rIdx] = key;
-            ls[rIdx] = v.x;
-            ms[rIdx] = v.y;
-            ws[rIdx] = v.z;
-            ny[rIdx] = this->norm_constY[DSQ(v.x, v.y)];
-            nr[rIdx] = this->norm_constR[DSQ(key, v.x)];
-            rIdx++;
-        }
-    }
-    double weightSum = std::accumulate(ws.cbegin(), ws.cend(), 0.0);
-    std::for_each(std::execution::par_unseq, ws.begin(), ws.end(), [&](double &weight) {
-        weight /= weightSum;
-    });
-
-    /*  Compute -- Begin
-        This section contains 62%-98% of the total execution time of cloud generation,
-        which can easily scale into Ne+1 minutes for high resolutions. For that reason,
-        I'm unrolling all the pretty functions that go into this calc (hyperoptimization).
-    */
-    // steady_clock::time_point inner_begin = steady_clock::now();
-
-    uint top_idx = (num_top_vectors) ? (recipe_idx % num_top_vectors) : 0;
-
-    // If this is the last recipe, or if there are no temp vectors, use the final vector for all threads
-    if ((++recipe_idx == numOrbitals) || no_vecs) {
-        thread_vec = dataStagingPtr;                // 6/6
-    } else {
-        thread_vec = vec_top_threads[top_idx];   // 1/6= 0, 2/6= 1, 3/6= 2, 4/6= 3, 5/6= 0
-    }
-    
-    // Store all futures from this recipe
-    BS::multi_future<void> *recipeFutures = new BS::multi_future<void>;
-    allRecipeFutures.push_back(recipeFutures);
-
-    // int thread_idx = 0;
-
-    // Divide up the Layers loop into chunks and spawn threads to handle those chunks, from the thread pool
-    int top_start = 1, top_end = 1;
-    while (top_end < opt_max_radius_local) {
-        if (opt_max_radius_local - top_end >= thread_loop_limit) {
-            top_end = top_start + thread_loop_limit;
-        } else {
-            top_end = opt_max_radius_local;
-        }
-
-        // std::cout << "Spawning thread " << thread_idx++ << " for layer chunk: " << top_start << " to " << top_end << std::endl;
-
-        // Spawn thread for each chunk
-        recipeFutures->push_back(cloudPool.submit_task(
-        [&ns, &ls, &ms, &ws, &ny, &nr, div_local, theta_max_local, phi_max_local, deg_fac_local, thread_vec, top_start, top_end, numRecipes](){
-
-            // Layer Loop
-            for (int k = top_start; k < top_end; k++) {
-                double radius = static_cast<double>(k) / div_local;
-                int layer_idx = (k-1) * theta_max_local * phi_max_local;
-                
-                // Theta Loop
-                for (int i = 0; i < theta_max_local; i++) {
-                    double theta = i * deg_fac_local;
-                    int theta_idx = i * phi_max_local;
-                    
-                    // Phi Loop
-                    for (int j = 0; j < phi_max_local; j++) {
-                        double phi = j * deg_fac_local;
-
-                        std::complex<double> Psi;
-
-                        // Recipe Loop
-                        for (int r = 0; r < numRecipes; r++) {
-                            int n = ns[r];
-                            int l = ls[r];
-                            int m_l = ms[r];
-                            double angNorm = ny[r];
-                            double radNorm = nr[r];
-                            double weight = ws[r];
-                        
-                            // Radial wavefunc
-                            double rho = 2.0 * radius / static_cast<double>(n);
-                            double rhol = 1.0;
-                                // (exponential subroutine for rho^l to avoid time cost of pow())
-                            for (int l_times = l; l_times > 0; l_times--) {
-                                rhol *= rho;
-                            }
-                            double R = lagp((n - l - 1), ((l << 1) + 1), rho) * rhol * exp(-rho * 0.5) * radNorm;
-
-                            // Angular wavefunc
-                            std::complex<double> Y = exp(std::complex<double>{0,1} * (m_l * theta)) * angNorm * legp(l, abs(m_l), cos(phi));
-
-                            // Total wavefunc (weighted)
-                            Psi += (R * Y) * weight;
-                        }
-
-                        double pdv = (std::conj(Psi) * Psi).real() * radius * radius;
-                        int localCount = layer_idx + theta_idx + j;
-                        (*thread_vec)[localCount] += pdv;
-
-                    } // End of Phi Loop
-                } // End of Theta Loop
-            } // End of Layer Loop (layers per chunk)
-        })); // End of lambda (thread loop -- the chunk)
-        
-        top_start = top_end;
-    } // End of Layer Loop (whole)
-
-    // If this is the last recipe, it was assigned the dataStaging vector, so wait for that and then collapse all other spawned vectors
-    if (no_vecs) {
-        allRecipeFutures.back()->wait();
-    } else if (recipe_idx == numOrbitals) {
-        allRecipeFutures.back()->wait();
-        while (clearing_fut < vecs_to_fill) {
-            /* BS::multi_future<void> futureCollapse;
-            uint col_start = 0, col_end = 0;
-            dvec *col_vec = vec_top_threads[clearing_vec]; */
-            (*allRecipeFutures[clearing_fut++]).wait();
-            double *d_start = &(*vec_top_threads[clearing_vec])[0];
-            std::for_each(std::execution::par_unseq, (*vec_top_threads[clearing_vec]).cbegin(), (*vec_top_threads[clearing_vec]).cend(),
-                [d_start, dataStagingPtr](const double &item){
-                    uint idx = &item - d_start;
-                    (*dataStagingPtr)[idx] += item;
-                });
-            /* for (uint64_t c = 0; c < col_max; c += thread_loop_limit) {
-                col_start = c;
-                col_end = (c + thread_loop_limit > col_max) ? thread_loop_limit : c + thread_loop_limit;
-                
-                futureCollapse.push_back(cloudPool.submit_task(
-                    [dataStagingPtr, col_vec, col_start, col_end](){
-                        for (int c = col_start; c < col_end; c++) {
-                            (*dataStagingPtr)[c] += (*col_vec)[c];
-                        }
-                    }, BS::pr::highest));
-            }
-            futureCollapse.wait(); */
-            if (++clearing_vec >= num_top_vectors) {
-                clearing_vec = 0;
-            }
-        }
-    // If this is not the last recipe, but we have filled all spawned vectors, collapse and reset first-filled for next round of threads
-    } else if (recipe_idx >= num_top_vectors) {
-        /* BS::multi_future<void> futureCollapse;
-        uint col_start = 0, col_end = 0;
-        dvec *col_vec = vec_top_threads[clearing_vec]; */
-        allRecipeFutures[clearing_fut++]->wait();
-        double *d_start = &(*vec_top_threads[clearing_vec])[0];
-        std::for_each(std::execution::par_unseq, (*vec_top_threads[clearing_vec]).cbegin(), (*vec_top_threads[clearing_vec]).cend(),
-            [d_start, dataStagingPtr](const double &item){
-                uint idx = &item - d_start;
-                (*dataStagingPtr)[idx] += item;
-            });
-        /* for (uint64_t c = 0; c < col_max; c += thread_loop_limit) {
-            col_start = c;
-            col_end = (c + thread_loop_limit > col_max) ? thread_loop_limit : c + thread_loop_limit;
-        
-            futureCollapse.push_back(cloudPool.submit_task(
-                [dataStagingPtr, col_vec, col_start, col_end](){
-                    for (int c = col_start; c < col_end; c++) {
-                        (*dataStagingPtr)[c] += (*col_vec)[c];
-                    }
-                }, BS::pr::highest));
-        }
-        futureCollapse.wait(); */
-        (*vec_top_threads[clearing_vec]).assign(this->pixelCount, 0.0);
-        if (++clearing_vec >= num_top_vectors) {
-            clearing_vec = 0;
-        }
-    }
-
-    /*  Compute -- Post-processing  */
-    // Check actual max value of accumulated vector
-    this->allPDVMaximum = *std::max_element(std::execution::par, dataStaging.begin(), dataStaging.end());
-
-    // Populate allData with normalized PDVs [** as FLOATS **], leaving dataStaging untouched
-    double pdvMax = this->allPDVMaximum;
-    std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),
-        [pdvMax](const double &item){
-            return static_cast<float>(item / pdvMax);
-        });
-    
-    /*  Cleanup  */
-    for (auto &v : vec_top_threads) {
-        delete v;
-    }
-    for (auto &f : allRecipeFutures) {
-        delete f;
-    }
-    dataStaging.clear();
-    
-    /*  Exit  */
-    mStatus.set(em::DATA_READY);
-    genDataBuffer();
-    steady_clock::time_point end = steady_clock::now();
-    cm_proc_fine.unlock();
-    return (std::chrono::duration<double, std::milli>(end - begin).count());
-}
-
-/**
- * @brief Set all PDVs below the tolerance to zero, and store indices of non-zero PDVs in idxCulledTolerance.
- *
- * @details
- * A PDV has been generated for every vertex in the mesh. This function culls all PDVs
- * below the tolerance and stores the indices of non-zero PDVs in idxCulledTolerance
- * in order to greatly reduce the size of the data buffer and the number of vertices
- * that need to be rendered.
- *
- * @return The time taken to complete the function in milliseconds.
- */
-double CloudManager::cullTolerance() {
-    // assert(mStatus.hasFirstNotLast(em::DATA_READY, (em::INDEX_GEN | em::INDEX_READY)));
-    steady_clock::time_point begin = steady_clock::now();
-
-    std::fill(allData.begin(), allData.end(), 0.0);
-    idxCulledTolerance.clear();
-
-    for (uint p = 0; p < this->pixelCount; p++) {
-        double new_val = dataStaging[p] / this->allPDVMaximum;
-        if (new_val > this->cloudTolerance) {
-            allData[p] = static_cast<float>(new_val);
-            idxCulledTolerance.push_back(p);
-        }
-    }
-    allIndices.reserve(idxCulledTolerance.size());
-
-    mStatus.set(em::DATA_READY);
-    steady_clock::time_point end = steady_clock::now();
     return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
@@ -945,59 +510,6 @@ double CloudManager::expandPDVsToColours() {
 
     genColourBuffer();
     return 0.0;
-}
-
-/**
- * @brief Cull the cloud data based on the slider values.
- *
- * @details
- * This function takes the culling values from the sliders and removes the
- * corresponding vertices from the cloud data. The remaining vertices are then
- * stored in the allIndices vector.
- * 
- * The vertices and indices are generated as:
- * (Layers = [R] * resolution) * [Phi] (pi * resolution) * [Theta] (2pi * resolution).
- * Model may be culled by r, theta, and phi.
- *
- * @return The time taken to complete the function in milliseconds.
- */
-double CloudManager::cullSlider() {
-    assert(mStatus.hasFirstNotLast(em::INDEX_GEN, em::INDEX_READY));
-    steady_clock::time_point begin = steady_clock::now();
-    if (allIndices.size()) {
-        allIndices.clear();
-    }
-
-    if (!(this->cfg.cloudCull_x || this->cfg.cloudCull_y)) {
-        std::copy(idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), std::back_inserter(allIndices));
-    } else {
-        uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_b = 0, culled_phi_f = 0;
-        layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
-        culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.cloudCull_x));
-        phi_size = this->cloudResolution >> 1;
-        culled_phi_b = static_cast<uint>(ceil(phi_size * (1.0f - this->cfg.cloudCull_y))) + phi_size;
-        culled_phi_f = static_cast<uint>(ceil(phi_size * this->cfg.cloudCull_y));
-        size_t idxEnd = idxCulledTolerance.size();
-
-        for (size_t i = 0; i < idxEnd; i++) {
-            uint phi_pos = idxCulledTolerance[i] % phi_size;
-            bool cull_theta = ((idxCulledTolerance[i] % layer_size) <= culled_theta_all);
-            bool cull_theta_phi = (phi_pos <= phi_size);
-            bool cull_phi_front = (phi_pos <= culled_phi_f);
-            bool cull_phi_back = (phi_pos >= culled_phi_b);
-
-            if (!((cull_theta && cull_theta_phi) || (cull_phi_front || cull_phi_back))) {
-                idxCulledSlider.push_back(idxCulledTolerance[i]);
-            }
-        }
-
-        std::copy(idxCulledTolerance.begin(), idxCulledTolerance.end(), std::back_inserter(allIndices));
-    }
-
-    mStatus.set(em::INDEX_READY);
-    genIndexBuffer();
-    steady_clock::time_point end = steady_clock::now();
-    return (std::chrono::duration<double, std::milli>(end - begin).count());
 }
 
 /**
@@ -1751,7 +1263,7 @@ void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config,
     receiveCloudMap(oldMap);
 
     double testtime = createThreaded();
-    testtime += bakeOrbitalsThreadedAlt();
+    testtime += bakeOrbitalsThreaded();
     testtime += cullToleranceThreaded();
     testtime += cullSliderThreaded();
     mStatus.set(em::INIT);
@@ -1772,12 +1284,11 @@ void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config,
         oldCfg = con;
         oldMap = map;
         for (uint v = vecs_min; v <= vecs_max; v += vstep) {
-            this->cm_vecs = v;
+            // this->cm_vecs = v;
             for (uint p = pool_min; p <= pool_max; p += pstep) {
-                cloudPool.reset(p);
                 // sleep(sleep_time);
                 for (uint l = loop_min; l <= loop_max; l += lstep) {
-                    this->cm_loop = l;
+                    // this->cm_loop = l;
                     for (uint i = 0; i < truns; i++) {
                         if (cfgChanged) {
                             resetManager();
@@ -1792,7 +1303,7 @@ void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config,
                         }
                         mStatus.set(em::INIT | UPD_MATRICES);
                         mStatus.clear(em::DATA_READY);
-                        double t = bakeOrbitalsThreadedAlt();
+                        double t = bakeOrbitalsThreaded();
                         mStatus.clear(em::INDEX_GEN);
                         cullToleranceThreaded();
                         mStatus.clear(em::INDEX_READY);

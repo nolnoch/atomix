@@ -73,6 +73,7 @@ struct AtomixStyle {
 
     void setFonts(QFont inBaseFont, QFont inFontMono, QString inStrMonoFont) {
         fontAtomix = inBaseFont;
+        fontMono = inFontMono;
         fontMonoStatus = inFontMono;
         strFontMono = inStrMonoFont;
     }
@@ -85,7 +86,7 @@ struct AtomixStyle {
         treeFontSize = baseFontSize + 3;
         tableFontSize = baseFontSize + 2;
         morbFontSize = descFontSize;
-        statusFontSize = baseFontSize + 3;
+        statusFontSize = treeFontSize;
 
         fontAtomix.setPixelSize(baseFontSize);
         QFontMetrics fmA(fontAtomix);
@@ -100,7 +101,7 @@ struct AtomixStyle {
         fontMonoStatus.setPixelSize(statusFontSize);
         QFontMetrics fmS(fontMonoStatus);
         fontMonoStatusHeight = fmS.height();
-        detailsHeight = int(fontMonoStatusHeight * 2.0);
+        detailsHeight = int(fontMonoStatusHeight * 2.25);
     }
 
     void scaleWidgets() {
@@ -141,6 +142,7 @@ struct AtomixStyle {
                 "QTableWidget { font-family: %8; font-size: %7px; } "
                 "QPushButton#morb { font-size: %9px; text-align: center; padding: %1px; } "
                 "QComboBox { font-family: %8; } "
+                "QMessageBox QLabel { font-family: %8; font-size: %10px; text-align: center; } "
             });
         }
 
@@ -154,7 +156,7 @@ struct AtomixStyle {
                 .arg(QString::number(descFontSize))             // 2
                 .arg(QString::number(treeFontSize))             // 3
                 .arg(QString::number(tableFontSize))            // 4
-                .arg(strFontMono)                                // 5
+                .arg(strFontMono)                               // 5
                 .arg(QString::number(morbFontSize));            // 6
         } else if (qtStyle == "fusion") {
             strStyle = styleStringList.join(" ")
@@ -165,9 +167,9 @@ struct AtomixStyle {
                 .arg(QString::number(tabSelectedFontSize))      // 5
                 .arg(QString::number(treeFontSize))             // 6
                 .arg(QString::number(tableFontSize))            // 7
-                .arg(strFontMono)                                // 8
-                .arg(QString::number(morbFontSize));            // 9
-                // .arg(QString::number(statusFontSize));          // 10
+                .arg(strFontMono)                               // 8
+                .arg(QString::number(morbFontSize))             // 9
+                .arg(QString::number(statusFontSize));          // 10
         }
     }
 
@@ -294,8 +296,6 @@ private:
     void handleButtClearRecipes();
     void handleButtResetRecipes();
     void handleButtConfigIO(int id);
-    void handleButtDeleteConfig();
-    void handleButtSaveConfig();
     void handleButtMorbWaves();
     void handleButtMorbHarmonics();
     void handleSwitchToggle(int id, bool checked);

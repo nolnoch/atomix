@@ -71,10 +71,10 @@ struct AtomixStyle {
         tabLabelWidth = dockWidth / tabCount;
     }
 
-    void setFonts(QFont baseFont, QFont fontMono, QString strMonoFont) {
-        fontAtomix = baseFont;
-        fontMonoStatus = fontMono;
-        strFontMono = strMonoFont;
+    void setFonts(QFont inBaseFont, QFont inFontMono, QString inStrMonoFont) {
+        fontAtomix = inBaseFont;
+        fontMonoStatus = inFontMono;
+        strFontMono = inStrMonoFont;
     }
     
     void scaleFonts() {
@@ -325,8 +325,8 @@ private:
     std::pair<bool, double> _validateExprInput(QLineEdit *entry);
 
     FileHandler *fileHandler = nullptr;
-    AtomixWaveConfig waveConfig;
-    AtomixCloudConfig cloudConfig;
+    AtomixWaveConfig mw_waveConfig;
+    AtomixCloudConfig mw_cloudConfig;
     AtomixInfo dInfo;
     AtomixStyle aStyle;
 

@@ -54,9 +54,9 @@ void FileHandler::findFiles() {
         std::string ext = std::get<1>(p);
         QStringList* fileList = std::get<2>(p);
 
-        for (auto &p: std::filesystem::recursive_directory_iterator(loc)) {
-            if (p.path().extension() == ext) {
-                (*fileList) << QString::fromStdString(p.path().string());
+        for (auto &e: std::filesystem::recursive_directory_iterator(loc)) {
+            if (e.path().extension() == ext) {
+                (*fileList) << QString::fromStdString(e.path().string());
             }
         }
     }
@@ -88,66 +88,66 @@ SuperConfig FileHandler::configFromJson(QJsonObject &json, harmap *recipes) {
         if (v.toString() == "wave") {
             AtomixWaveConfig cfg;
 
-            if (const QJsonValue v = json["waves"]; v.isDouble()) {
-                cfg.waves = v.toInt();
+            if (const QJsonValue h = json["waves"]; h.isDouble()) {
+                cfg.waves = h.toInt();
             }
-            if (const QJsonValue v = json["amplitude"]; v.isDouble()) {
-                cfg.amplitude = v.toDouble();
+            if (const QJsonValue h = json["amplitude"]; h.isDouble()) {
+                cfg.amplitude = h.toDouble();
             }
-            if (const QJsonValue v = json["period"]; v.isDouble()) {
-                cfg.period = v.toDouble();
+            if (const QJsonValue h = json["period"]; h.isDouble()) {
+                cfg.period = h.toDouble();
             }
-            if (const QJsonValue v = json["wavelength"]; v.isDouble()) {
-                cfg.wavelength = v.toDouble();
+            if (const QJsonValue h = json["wavelength"]; h.isDouble()) {
+                cfg.wavelength = h.toDouble();
             }
-            if (const QJsonValue v = json["resolution"]; v.isDouble()) {
-                cfg.resolution = v.toInt();
+            if (const QJsonValue h = json["resolution"]; h.isDouble()) {
+                cfg.resolution = h.toInt();
             }
-            if (const QJsonValue v = json["parallel"]; v.isBool()) {
-                cfg.parallel = v.toBool();
+            if (const QJsonValue h = json["parallel"]; h.isBool()) {
+                cfg.parallel = h.toBool();
             }
-            if (const QJsonValue v = json["superposition"]; v.isBool()) {
-                cfg.superposition = v.toBool();
+            if (const QJsonValue h = json["superposition"]; h.isBool()) {
+                cfg.superposition = h.toBool();
             }
-            if (const QJsonValue v = json["cpu"]; v.isBool()) {
-                cfg.cpu = v.toBool();
+            if (const QJsonValue h = json["cpu"]; h.isBool()) {
+                cfg.cpu = h.toBool();
             }
-            if (const QJsonValue v = json["sphere"]; v.isBool()) {
-                cfg.sphere = v.toBool();
+            if (const QJsonValue h = json["sphere"]; h.isBool()) {
+                cfg.sphere = h.toBool();
             }
-            if (const QJsonValue v = json["visibleOrbits"]; v.isDouble()) {
-                cfg.visibleOrbits = v.toInt();
+            if (const QJsonValue h = json["visibleOrbits"]; h.isDouble()) {
+                cfg.visibleOrbits = h.toInt();
             }
             config = cfg;
         } else if (v.toString() == "cloud") {
             AtomixCloudConfig cfg;
 
-            if (const QJsonValue v = json["cloudLayDivisor"]; v.isDouble()) {
-                cfg.cloudLayDivisor = v.toInt();
+            if (const QJsonValue h = json["cloudLayDivisor"]; h.isDouble()) {
+                cfg.cloudLayDivisor = h.toInt();
             }
-            if (const QJsonValue v = json["cloudResolution"]; v.isDouble()) {
-                cfg.cloudResolution = v.toInt();
+            if (const QJsonValue h = json["cloudResolution"]; h.isDouble()) {
+                cfg.cloudResolution = h.toInt();
             }
-            if (const QJsonValue v = json["cloudTolerance"]; v.isDouble()) {
-                cfg.cloudTolerance = v.toDouble();
+            if (const QJsonValue h = json["cloudTolerance"]; h.isDouble()) {
+                cfg.cloudTolerance = h.toDouble();
             }
-            if (const QJsonValue v = json["cloudCull_x"]; v.isDouble()) {
-                cfg.cloudCull_x = v.toDouble();
+            if (const QJsonValue h = json["cloudCull_x"]; h.isDouble()) {
+                cfg.cloudCull_x = h.toDouble();
             }
-            if (const QJsonValue v = json["cloudCull_y"]; v.isDouble()) {
-                cfg.cloudCull_y = v.toDouble();
+            if (const QJsonValue h = json["cloudCull_y"]; h.isDouble()) {
+                cfg.cloudCull_y = h.toDouble();
             }
-            if (const QJsonValue v = json["cloudCull_rIn"]; v.isDouble()) {
-                cfg.cloudCull_rIn = v.toDouble();
+            if (const QJsonValue h = json["cloudCull_rIn"]; h.isDouble()) {
+                cfg.cloudCull_rIn = h.toDouble();
             }
-            if (const QJsonValue v = json["cloudCull_rOut"]; v.isDouble()) {
-                cfg.cloudCull_rOut = v.toDouble();
+            if (const QJsonValue h = json["cloudCull_rOut"]; h.isDouble()) {
+                cfg.cloudCull_rOut = h.toDouble();
             }
-            if (const QJsonValue v = json["cpu"]; v.isBool()) {
-                cfg.cpu = v.toBool();
+            if (const QJsonValue h = json["cpu"]; h.isBool()) {
+                cfg.cpu = h.toBool();
             }
-            if (const QJsonValue v = json["recipes"]; v.isArray()) {
-                const QJsonArray ja = v.toArray();
+            if (const QJsonValue h = json["recipes"]; h.isArray()) {
+                const QJsonArray ja = h.toArray();
                 *recipes = inflateHarmap(ja);
             }
             config = cfg;

@@ -87,7 +87,7 @@ public:
     uint32_t getStageIdx() { return vkStageIdx; };
     uint32_t getPushIdx() { return vkPushIdx; };
     uint32_t getDescIdx(uint32_t idx) { return vkDescIdx[idx]; };
-    uint32_t getDescCount() { return vkDescIdx.size(); };
+    uint32_t getDescCount() { return static_cast<uint32_t>(vkDescIdx.size()); };
     
     bool isValidFile();
     bool isValidCompile();

@@ -1,5 +1,5 @@
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 set(LINUX 1)
 set(MACOS 0)
@@ -17,6 +17,10 @@ elseif(MACOS)
     set(VK_ADD_LAYER_PATH ${VULKAN_SDK}/share/vulkan/explicit_layer.d)
     set(VK_ICD_FILENAMES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
     set(VK_DRIVER_FILES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
+elseif(WIN11)
+    set(Qt6_DIR "C:/Qt/6.8.1/msvc2022_64")
+    set(VULKAN_SDK "C:/VulkanSDK/1.3.296.0")
+    list(APPEND CMAKE_PREFIX_PATH "C:/dev/vcpkg/installed/x64-windows/share")
 endif()
 
 set(ENV{Qt6_DIR} ${Qt6_DIR})

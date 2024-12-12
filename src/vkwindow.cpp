@@ -165,20 +165,20 @@ void VKWindow::initCrystalModel() {
 
     const std::array<VKfloat, 30> vertices = {
               //Vertex              //Colour
-          zero,  peak,  zero,   0.6f, 0.6f, 0.6f,    //top
-         -forX,  zero,  forZ,   0.1f, 0.4f, 0.4f,    //left - cyan
-          forX,  zero,  forZ,   0.4f, 0.1f, 0.4f,    //right - magenta
-          zero,  zero, -back,   0.4f, 0.4f, 0.1f,    //back - yellow
-          zero, -peak,  zero,   0.0f, 0.0f, 0.0f     //bottom
+          zero,  peak,  zero,   0.6f, 0.6f, 0.6f,    // 0 top
+         -forX,  zero,  forZ,   0.1f, 0.4f, 0.4f,    // 1 left - cyan
+          forX,  zero,  forZ,   0.4f, 0.1f, 0.4f,    // 2 right - magenta
+          zero,  zero, -back,   0.4f, 0.4f, 0.1f,    // 3 back - yellow
+          zero, -peak,  zero,   0.0f, 0.0f, 0.0f     // 4 bottom
     };
 
     const std::array<VKuint, 18> indices = {
-        1, 0, 2,
-        2, 0, 3,
-        3, 0, 1,
-        1, 4, 3,
-        3, 4, 2,
-        2, 4, 1
+        1, 0, 3,
+        3, 0, 2,
+        2, 0, 1,
+        1, 4, 2,
+        2, 4, 3,
+        3, 4, 1
     };
     uint vw_faces = indices.size();
 

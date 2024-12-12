@@ -49,7 +49,7 @@ void main() {
         vec3(1.0f, 0.0f, 0.0f),      // [70-79%] -- Red
         vec3(1.0f, 0.0f, 0.0f),      // [80-89%] -- Red
         vec3(1.0f, 1.0f, 1.0f),      // [90-99%] -- White
-        vec3(1.0f, 1.0f, 1.0f)       // [100%] -- White
+        vec3(0.0f, 0.0f, 0.0f)       // [100%] -- Black
     };
     uint colourIdx = uint(pdv * 10.0f);
     vec3 pdvColour = colours[colourIdx] * pdv;

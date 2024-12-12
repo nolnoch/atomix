@@ -249,7 +249,7 @@ double CloudManager::createThreaded() {
     allData.reserve(pixelCount);
     idxCulledTolerance.reserve(pixelCount);
 
-    allVertices.assign(pixelCount, vec3(0.0f));
+    allVertices.assign(pixelCount, vec4(0.0f));
     dataStaging.assign(pixelCount, 0.0);
     allData.assign(pixelCount, 0.0f);
 
@@ -260,9 +260,9 @@ double CloudManager::createThreaded() {
 
     /*  Compute -- Begin --- This compute portion takes only 6% of create() total time  */
     // auto beginInner = steady_clock::now();
-    vec3 *start = &this->allVertices.at(0);
+    vec4 *start = &this->allVertices.at(0);
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
-        [layer_size, phi_max_local, deg_fac_local, div_local, start, isGPU](glm::vec3 &gVector){
+        [layer_size, phi_max_local, deg_fac_local, div_local, start, isGPU](glm::vec4 &gVector){
             int i = &gVector - start;
             int layer = (i / layer_size) + 1;
             int layer_pos = i % layer_size;
@@ -350,9 +350,9 @@ double CloudManager::bakeOrbitalsThreaded() {
         I'm unrolling all the pretty functions that go into this calc (hyperoptimization).
     */
     // steady_clock::time_point inner_begin = steady_clock::now();
-    vec3 *vertStart = &this->allVertices[0];
+    vec4 *vertStart = &this->allVertices[0];
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
-        [&ns, &ls, &ms, &ws, &ny, &nr, div_local, theta_max_local, phi_max_local, deg_fac_local, dataStagingPtr, numRecipes, vertStart](glm::vec3 &item) {
+        [&ns, &ls, &ms, &ws, &ny, &nr, div_local, theta_max_local, phi_max_local, deg_fac_local, dataStagingPtr, numRecipes, vertStart](glm::vec4 &item) {
             uint idx = &item - vertStart;
             std::complex<double> Psi;
             double radius = item.x;
@@ -479,31 +479,31 @@ double CloudManager::cullToleranceThreaded() {
  */
 double CloudManager::expandPDVsToColours() {
     allColours.resize(allVertices.size());
-    allColours.assign(allVertices.size(), vec3(0.0f, 0.0f, 0.0f));
+    allColours.assign(allVertices.size(), vec4(0.0f));
 
-    vec3 colours[11] = {
-        vec3(2.0f, 0.0f, 2.0f),      // [0-9%] -- Magenta
-        vec3(0.0f, 0.0f, 1.5f),      // [10-19%] -- Blue
-        vec3(0.0f, 0.5f, 1.0f),      // [20-29%] -- Cyan-Blue
-        vec3(0.0f, 1.0f, 0.5f),      // [30-39%] -- Cyan-Green
-        vec3(0.0f, 1.0f, 0.0f),      // [40-49%] -- Green
-        vec3(1.0f, 1.0f, 0.0f),      // [50-59%] -- Yellow
-        vec3(1.0f, 1.0f, 0.0f),      // [60-69%] -- Yellow
-        vec3(1.0f, 0.0f, 0.0f),      // [70-79%] -- Red
-        vec3(1.0f, 0.0f, 0.0f),      // [80-89%] -- Red
-        vec3(1.0f, 1.0f, 1.0f),      // [90-99%] -- White
-        vec3(1.0f, 1.0f, 1.0f)       // [100%] -- White
+    vec4 colours[11] = {
+        vec4(2.0f, 0.0f, 2.0f, 1.0f),      // [0-9%] -- Magenta
+        vec4(0.0f, 0.0f, 1.5f, 1.0f),      // [10-19%] -- Blue
+        vec4(0.0f, 0.5f, 1.0f, 1.0f),      // [20-29%] -- Cyan-Blue
+        vec4(0.0f, 1.0f, 0.5f, 1.0f),      // [30-39%] -- Cyan-Green
+        vec4(0.0f, 1.0f, 0.0f, 1.0f),      // [40-49%] -- Green
+        vec4(1.0f, 1.0f, 0.0f, 1.0f),      // [50-59%] -- Yellow
+        vec4(1.0f, 1.0f, 0.0f, 1.0f),      // [60-69%] -- Yellow
+        vec4(1.0f, 0.0f, 0.0f, 1.0f),      // [70-79%] -- Red
+        vec4(1.0f, 0.0f, 0.0f, 1.0f),      // [80-89%] -- Red
+        vec4(1.0f, 1.0f, 1.0f, 1.0f),      // [90-99%] -- White
+        vec4(1.0f, 1.0f, 1.0f, 1.0f)       // [100%] -- White
     };
     const uint *vecStart = &idxCulledTolerance[0];
     const float *dataStart = &allData[0];
-    vec3 *vecColours = &allColours[0];
+    vec4 *vecColours = &allColours[0];
     uint64_t idx = 0;
     uint64_t *idxPtr = &idx;
     std::for_each(std::execution::par, idxCulledTolerance.begin(), idxCulledTolerance.end(),
         [vecStart, dataStart, colours, vecColours, idxPtr](uint &item){
             float pdv = dataStart[item];
             uint colourIdx = uint(pdv * 10.0f);
-            vec3 pdvColour = colours[colourIdx] * pdv;
+            vec4 pdvColour = colours[colourIdx] * pdv;
 
             vecColours[item] = pdvColour;
         });

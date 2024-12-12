@@ -277,14 +277,14 @@ void VKWindow::initWaveModel() {
     waveVert.binding = 0;
     waveVert.name = "waveVertices";
     waveVert.type = BufferType::VERTEX;
-    waveVert.dataTypes = { DataType::FLOAT_VEC3 };
+    waveVert.dataTypes = { DataType::FLOAT_VEC4 };
 
     // Define VBO:CPU for Atomix Wave
     BufferCreateInfo waveVertCPU{};
     waveVertCPU.binding = 0;
     waveVertCPU.name = "waveVerticesCPU";
     waveVertCPU.type = BufferType::VERTEX;
-    waveVertCPU.dataTypes = { DataType::FLOAT_VEC3, DataType::FLOAT_VEC3 };
+    waveVertCPU.dataTypes = { DataType::FLOAT_VEC4, DataType::FLOAT_VEC4 };
 
     // Define IBO for Atomix Wave
     BufferCreateInfo waveInd{};
@@ -351,14 +351,14 @@ void VKWindow::initCloudModel() {
     cloudVert.binding = 0;
     cloudVert.type = BufferType::VERTEX;
     cloudVert.name = "cloudVertices";
-    cloudVert.dataTypes = { DataType::FLOAT_VEC3 };
+    cloudVert.dataTypes = { DataType::FLOAT_VEC4 };
 
     // Define VBO:Vertex:CPU for Atomix Cloud
     BufferCreateInfo cloudVertCPU{};
     cloudVertCPU.binding = 0;
     cloudVertCPU.type = BufferType::VERTEX;
     cloudVertCPU.name = "cloudVerticesCPU";
-    cloudVertCPU.dataTypes = { DataType::FLOAT_VEC3 };
+    cloudVertCPU.dataTypes = { DataType::FLOAT_VEC4 };
 
     // Define VBO:Data:GPU for Atomix Cloud
     BufferCreateInfo cloudData{};
@@ -372,7 +372,7 @@ void VKWindow::initCloudModel() {
     cloudDataCPU.binding = 1;
     cloudDataCPU.type = BufferType::DATA;
     cloudDataCPU.name = "cloudDataCPU";
-    cloudDataCPU.dataTypes = { DataType::FLOAT_VEC3 };
+    cloudDataCPU.dataTypes = { DataType::FLOAT_VEC4 };
 
     // Define IBO for Atomix Cloud
     BufferCreateInfo cloudInd{};

@@ -114,7 +114,10 @@
 			"qboxlayout": "cpp",
 			"qmessagebox": "cpp",
 			"qformlayout": "cpp",
-			"qfiledialog": "cpp"
+			"qfiledialog": "cpp",
+			"qpixmapcache": "cpp",
+			"qpixmap": "cpp",
+			"qicon": "cpp"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

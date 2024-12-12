@@ -674,12 +674,12 @@ void MainWindow::setupDockHarmonics() {
     laySlideBackground->setContentsMargins(0, 0, 0, 0);
     laySlideBackground->setSpacing(0);
 
-    groupHSlideCulling = new QGroupBox("Theta Culling", this);
+    groupHSlideCulling = new QGroupBox("Phi Culling", this);
     groupHSlideCulling->setObjectName("groupHSlideCulling");
     groupHSlideCulling->setLayout(layHCulling);
     groupHSlideCulling->setContentsMargins(0, 0, 0, 0);
     groupHSlideCulling->setEnabled(false);
-    groupVSlideCulling = new QGroupBox("Phi Culling", this);
+    groupVSlideCulling = new QGroupBox("Theta Culling", this);
     groupVSlideCulling->setObjectName("groupVSlideCulling");
     groupVSlideCulling->setLayout(layVCulling);
     groupVSlideCulling->setContentsMargins(0, 0, 0, 0);
@@ -1410,19 +1410,15 @@ void MainWindow::handleSlideCullingY(int val) {
 
 void MainWindow::handleSlideCullingR(int val) {
     int range = aStyle.sliderTicks;
-    int newVal = 0;
+    float pct = static_cast<float>(val) / static_cast<float>(range);
 
-    if (val < range) {
-        newVal = range - val;
-        this->mw_cloudConfig.cloudCull_rIn = (float(newVal) / float(range));
-        this->mw_cloudConfig.cloudCull_rOut = 0.0f;
-    } else if (val > range) {
-        newVal = val - range;
-        this->mw_cloudConfig.cloudCull_rOut = (float(newVal) / float(range));
-        this->mw_cloudConfig.cloudCull_rIn = 0.0f;
-    } else {
-        this->mw_cloudConfig.cloudCull_rIn = 0.0f;
-        this->mw_cloudConfig.cloudCull_rOut = 0.0f;
+    this->mw_cloudConfig.cloudCull_rIn = 0.0f;
+    this->mw_cloudConfig.cloudCull_rOut = 0.0f;
+
+    if (val < 0) {
+        this->mw_cloudConfig.cloudCull_rIn = -pct;
+    } else if (val > 0) {
+        this->mw_cloudConfig.cloudCull_rOut = pct;
     }
 }
 
@@ -1716,7 +1712,7 @@ void MainWindow::_connectSignals() {
     connect(slideCullingR, &QSlider::valueChanged, this, &MainWindow::handleSlideCullingR);
     connect(slideCullingX, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideCullingY, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
-    // connect(slideCullingR, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
+    connect(slideCullingR, &QSlider::sliderReleased, this, &MainWindow::handleSlideReleased);
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 }
 

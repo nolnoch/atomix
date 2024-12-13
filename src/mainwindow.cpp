@@ -1237,6 +1237,12 @@ void MainWindow::handleButtMorbHarmonics() {
     mw_cloudConfig.cloudResolution = entryCloudRes->text().toInt();
     mw_cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
 
+    for (auto [key, vec] : mapCloudRecipes) {
+        if (vec.size() == 0) {
+            mapCloudRecipes.erase(key);
+        }
+    }
+
     uint vertex, opt, index;
     uint64_t total;
     vkGraph->estimateSize(&mw_cloudConfig, &mapCloudRecipes, &vertex, &opt, &index);

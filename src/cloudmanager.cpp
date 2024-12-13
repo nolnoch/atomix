@@ -87,6 +87,7 @@ void CloudManager::newConfig(AtomixCloudConfig *config) {
  * @param inMap A pointer to the new orbital map.
  */
 void CloudManager::receiveCloudMap(harmap *inMap) {
+    this->cloudOrbitals.clear();
     this->cloudOrbitals = *inMap;
     this->numOrbitals = countMapRecipes(inMap);
     this->max_n = cloudOrbitals.rbegin()->first;
@@ -107,13 +108,10 @@ void CloudManager::receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *i
     cm_proc_coarse.lock();
 
     if (mStatus.hasNone(em::INIT)) {
-        if (isTesting) {
-            testThreadingInit(config, inMap);
-        } else {
-            newConfig(config);
-            receiveCloudMap(inMap);
-            initManager();
-        }
+        newConfig(config);
+        receiveCloudMap(inMap);
+        this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
+        initManager();
         mStatus.set(em::INIT);
         cm_proc_coarse.unlock();
         return;
@@ -129,7 +127,7 @@ void CloudManager::receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *i
     bool higherMaxN = false;
 
     if (generator) {
-        widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor));
+        widerRadius = (getMaxLayer(config->cloudTolerance, inMap->rbegin()->first, config->cloudLayDivisor) > this->opt_max_radius);
         newMap = cloudOrbitals != (*inMap);
         newDivisor = (this->cloudLayerDivisor != config->cloudLayDivisor);
         newResolution = (this->cloudResolution != config->cloudResolution);
@@ -163,6 +161,8 @@ void CloudManager::receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *i
         this->receiveCloudMap(inMap);
         mStatus.set(em::UPD_MATRICES);
     }
+
+    this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, this->cloudLayerDivisor);
 
     // Re-gen vertices for new config values if necessary
     if (newVerticesRequired) {
@@ -232,9 +232,7 @@ double CloudManager::createThreaded() {
     cm_proc_fine.lock();
     steady_clock::time_point begin = steady_clock::now();
 
-    this->max_n = cloudOrbitals.rbegin()->first;
     int div_local = this->cloudLayerDivisor;
-    this->opt_max_radius = getMaxLayer(this->cloudTolerance, this->max_n, div_local);
     int theta_max_local = this->cloudResolution;
     int phi_max_local = this->cloudResolution >> 1;
     int layer_size = theta_max_local * phi_max_local;
@@ -313,13 +311,6 @@ double CloudManager::bakeOrbitalsThreaded() {
     steady_clock::time_point begin = steady_clock::now();
 
     /*  Prep -- Compute  */
-    double deg_fac_local = this->deg_fac;
-    int div_local = this->cloudLayerDivisor;
-    int phi_max_local = this->cloudResolution >> 1;
-    int theta_max_local = this->cloudResolution;
-    this->opt_max_radius = this->getMaxRadius(this->cloudTolerance, this->max_n) * div_local + 1;
-    dvec *dataStagingPtr = &this->dataStaging;
-
     int numRecipes = this->countMapRecipes(&cloudOrbitals);
     std::vector<int> ns(numRecipes, 0);
     std::vector<int> ls(numRecipes, 0);
@@ -343,6 +334,8 @@ double CloudManager::bakeOrbitalsThreaded() {
     std::for_each(std::execution::par_unseq, ws.begin(), ws.end(), [&](double &weight) {
         weight /= weightSum;
     });
+    dvec *dataStagingPtr = &this->dataStaging;
+
 
     /*  Compute -- Begin
         This section contains 62%-98% of the total execution time of cloud generation,
@@ -352,7 +345,7 @@ double CloudManager::bakeOrbitalsThreaded() {
     // steady_clock::time_point inner_begin = steady_clock::now();
     vec4 *vertStart = &this->allVertices[0];
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
-        [&ns, &ls, &ms, &ws, &ny, &nr, div_local, theta_max_local, phi_max_local, deg_fac_local, dataStagingPtr, numRecipes, vertStart](glm::vec4 &item) {
+        [&ns, &ls, &ms, &ws, &ny, &nr, dataStagingPtr, numRecipes, vertStart](vec4 &item) {
             uint idx = &item - vertStart;
             std::complex<double> Psi;
             double radius = item.x;
@@ -398,13 +391,13 @@ double CloudManager::bakeOrbitalsThreaded() {
     // Check actual max value of accumulated vector
     this->allPDVMaximum = *std::max_element(std::execution::par, dataStaging.begin(), dataStaging.end());
 
-    // Populate allData with normalized PDVs [** as FLOATS **], leaving dataStaging untouched
+    // Normalize PDVs againt Maximum and populate allData with results [** as FLOATS **], leaving dataStaging untouched
     double pdvMax = this->allPDVMaximum;
     std::transform(std::execution::par_unseq, dataStaging.cbegin(), dataStaging.cend(), allData.begin(),
         [pdvMax](const double &item){
             return static_cast<float>(item / pdvMax);
         });
-    
+
     /*  Cleanup  */
     dataStaging.clear();
     
@@ -444,17 +437,16 @@ double CloudManager::cullToleranceThreaded() {
     std::transform(std::execution::par_unseq, allData.cbegin(), allData.cend(), idxCulledTolerance.begin(),
         [tolerance_local, vecStart](const float &item){
             uint idx = &item - vecStart;
-            return (item > tolerance_local) ? idx : (uint) 0;
+            return (item > tolerance_local) ? idx : 0u;
         });
-    
+
     // Isolate unused indices for easy removal, then remove them
     auto itEnd = std::remove_if(std::execution::par_unseq, idxCulledTolerance.begin(), idxCulledTolerance.end(),
         [](uint &item){
             return !item;
         });
-    // idxCulledTolerance.resize(std::distance(idxCulledTolerance.begin(), itEnd));
-    idxCulledTolerance.resize((itEnd - idxCulledTolerance.begin()));
-    
+    idxCulledTolerance.erase(itEnd, idxCulledTolerance.end());
+
     // Our model now displays cm_pixels count of indices/vertices unless culled by slider
     this->cm_pixels = idxCulledTolerance.size();
     allIndices.reserve(this->cm_pixels);
@@ -654,27 +646,27 @@ void CloudManager::cloudTest(int n_max) {
     std::cout << "Duplicates " << ((it == cloudMap.end()) ? "NOT found!" : "found.") << std::endl;
 }
 
-    /**
-     * @brief cloudTestCSV
-     * 
-     * This function is designed to spit out a CSV file that contains the maximum
-     * probability density of each orbital for 250 points along the radial axis.
-     * The CSV contains the orbital quantum numbers (n, l, ml) for each row,
-     * followed by the maximum probability density for each of the 250 radial points.
-     * The output is a single, long row with no delimiters between the quantum numbers
-     * and the probability densities. The output is not formatted for human readability.
-     * 
-     * @todo This function should be refactored to emit a header row with the
-     *       quantum numbers and the radial points, and to emit a delimiter between
-     *       the quantum numbers and the probability densities.
-     */
+/**
+ * @brief cloudTestCSV
+ * 
+ * This function is designed to spit out a CSV file that contains the maximum
+ * probability density of each orbital for 250 points along the radial axis.
+ * The CSV contains the orbital quantum numbers (n, l, ml) for each row,
+ * followed by the maximum probability density for each of the 250 radial points.
+ * The output is a single, long row with no delimiters between the quantum numbers
+ * and the probability densities. The output is not formatted for human readability.
+ * 
+ * @todo This function should be refactored to emit a header row with the
+ *       quantum numbers and the radial points, and to emit a delimiter between
+ *       the quantum numbers and the probability densities.
+ */
 void CloudManager::cloudTestCSV() {
     for (int n = 1; n <= 8; n++) {
         for (int l = 0; l <= n-1; l++) {
             for (int m_l = 0; m_l <= l; m_l++) {
                 std::cout << n << l << m_l;
 
-                for (int k = 1; k <= 250; k++) {
+                for (int k = 1; k <= 200; k++) {
                     double max_pdv = 0;
                     int steps_local = this->cloudResolution;
                     double deg_fac_local = this->deg_fac;
@@ -707,15 +699,52 @@ void CloudManager::cloudTestCSV() {
 
 }
 
-    /**
-     * @brief Compute the factorial of a given integer `n`.
-     *
-     * This function takes an integer `n` as input and returns its factorial.
-     * The function uses a simple iterative approach to compute the factorial.
-     *
-     * @param[in] n The integer to compute the factorial of.
-     * @returns The factorial of `n`, which is the product of all positive integers less than or equal to `n`.
-     */
+void CloudManager::radialMaxCSV(fvec &vecPDV, [[maybe_unused]] int n_max) {
+    const size_t chunkSize = this->cloudResolution * this->cloudResolution >> 1;
+    auto it = vecPDV.cbegin();
+    fvec maxPDVs;
+    fvec radii;
+    float tols[4] = {0.1, 0.01, 0.001, 0.0001};
+
+    while ((it + chunkSize) <= vecPDV.cend()) {
+        const auto max_it = std::max_element(it, it + chunkSize);
+        uint i = std::distance(vecPDV.cbegin(), max_it);
+        maxPDVs.push_back(*max_it);
+        radii.push_back(this->allVertices[i].x);
+        it += chunkSize;
+    }
+
+    int radCount = maxPDVs.size();
+    for (int i = 0; i < radCount; i++) {
+        std::cout << std::setw(5) << radii[i] << " : " << std::fixed << std::setprecision(6) << maxPDVs[i] << std::defaultfloat << "\n";
+    }
+    std::cout << std::endl;
+
+    /* int t = 0;
+    for (auto tol : tols) {
+        auto firstNonZero = std::find_if(maxPDVs.crbegin(), maxPDVs.crend(), [tol](float x) { return x > tol; });
+        auto firstIdx = std::distance(std::cbegin(maxPDVs), firstNonZero.base()) - 1;
+        // test_maxRadius[t++][n_max - 1] = round(radii[firstIdx]) + 3;
+    } */
+
+    for (int i = 0; i < 4; i++) {
+        std::cout << "tol " << std::setw(6) << tols[i] << " : { ";
+        for (int j = 0; j < 8; j++) {
+            // std::cout << std::setw(2) << test_maxRadius[i][j] << ((j < 7) ? ", " : " }\n");
+        }
+    }
+    std::cout << std::endl;
+}
+
+/**
+ * @brief Compute the factorial of a given integer `n`.
+ *
+ * This function takes an integer `n` as input and returns its factorial.
+ * The function uses a simple iterative approach to compute the factorial.
+ *
+ * @param[in] n The integer to compute the factorial of.
+ * @returns The factorial of `n`, which is the product of all positive integers less than or equal to `n`.
+ */
 int64_t CloudManager::fact(int n) {
     int64_t prod = n ? n : 1;
     // int orig = n;
@@ -990,8 +1019,8 @@ size_t CloudManager::getColourSize() {
      * @param divisor The divisor to multiply the maximum radius by.
      * @return The maximum layer for the given tolerance, n_max, and divisor.
      */
-uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
-    uint maxRadius = getMaxRadius(tolerance, n_max);
+int CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
+    int maxRadius = getMaxRadius(tolerance, n_max);
     return maxRadius * divisor;
 }
 
@@ -1009,9 +1038,9 @@ uint CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
      *
      * @return The maximum radius for the given tolerance and n_max.
      */
-uint CloudManager::getMaxRadius(double tolerance, int n_max) {
-    uint divSciExp = std::abs(floor(log10(tolerance)));
-    uint maxRadius = cm_maxRadius[divSciExp - 1][n_max - 1];
+int CloudManager::getMaxRadius(double tolerance, int n_max) {
+    int divSciExp = std::abs(floor(log10(tolerance)));
+    int maxRadius = cm_maxRadius[divSciExp - 1][n_max - 1];
     return maxRadius;
 }
 

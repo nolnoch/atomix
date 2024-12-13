@@ -49,13 +49,10 @@ using std::chrono::steady_clock;
 #define DSQ(a, b) (((a<<1)*(a<<1)) + b)
 
 // N                                1   2   3   4   5    6    7    8
-const uint cm_maxRadius[4][8] = { { 4, 12, 24, 40, 60,  85, 113, 146 },\
-// E2                               1   3   5   8  11   13   17   20
-                                  { 5, 15, 29, 48, 71,  98, 130, 166 },\
-// E3                               2   3   5   7  10   12   15   17
-                                  { 7, 18, 34, 55, 81, 110, 145, 183 },\
-// E4                               1   3   5   7   8   11   13   16
-                                  { 8, 21, 39, 62, 89, 121, 158, 199 } };
+const uint cm_maxRadius[4][8] = { {  6, 13, 24, 39, 58,  80, 107, 138 },    // Tolerance = 0.1
+                                  {  8, 17, 30, 47, 69,  94, 124, 158 },    // Tolerance = 0.01
+                                  {  9, 20, 35, 55, 78, 106, 139, 175 },    // Tolerance = 0.001
+                                  { 11, 23, 40, 61, 87, 117, 152, 191 } };  // Tolerance = 0.0001
 
 
 class CloudManager : public Manager {
@@ -67,8 +64,8 @@ class CloudManager : public Manager {
         void update(double time) override final;
         
         size_t getColourSize();
-        uint getMaxLayer(double tolerance, int n_max, int divisor);
-        uint getMaxRadius(double tolerance, int n_max);
+        int getMaxLayer(double tolerance, int n_max, int divisor);
+        int getMaxRadius(double tolerance, int n_max);
         bool hasVertices();
         bool hasBuffers();
 
@@ -99,8 +96,6 @@ class CloudManager : public Manager {
         void wavefuncNorms(int n);
         int64_t fact(int n);
 
-        void genOrbital(int n, int l, int m_l, double weight);
-        
         size_t setColourCount();
         size_t setColourSize();
         int countMapRecipes(harmap *inMap);
@@ -111,14 +106,8 @@ class CloudManager : public Manager {
 
         void cloudTest(int n_max);
         void cloudTestCSV();
+        void radialMaxCSV(fvec &vecPDV, int n_max);
         void testThreadingInit(AtomixCloudConfig *config, harmap *inMap);
-
-        // void genOrbitalsThroughN(int n);
-        // void genOrbitalsOfN(int n);
-        // void genOrbitalsOfL(int n, int l);
-        // void genOrbitalExplicit(int n, int l, int m_l);
-        // void genColourArray();
-        // void RDPtoColours();
 
         AtomixCloudConfig cfg;
 

@@ -694,6 +694,7 @@ void VKWindow::updateBuffersAndShaders() {
             updBuf.offset = currentManager->getIndexOffset();
             updBuf.count = currentManager->getIndexCount();
             updBuf.size = currentManager->getIndexSize();
+
             if (updBuf.size) {
                 if (atomixProg->isSuspended(vw_currentModel)) {
                     atomixProg->resumeModel(vw_currentModel);

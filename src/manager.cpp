@@ -169,7 +169,7 @@ const uint* Manager::getIndexData() {
 
 int Manager::setVertexSize() {
     int chunks = vertexCount ? vertexCount : setVertexCount();
-    int chunkSize = sizeof(glm::vec3);
+    int chunkSize = sizeof(allVertices[0]);
 
     //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
@@ -177,7 +177,7 @@ int Manager::setVertexSize() {
 
 int Manager::setDataSize() {
     int chunks = dataCount ? dataCount : setDataCount();
-    int chunkSize = sizeof(float);
+    int chunkSize = sizeof(allData[0]);
 
     //std::cout << "allVertices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
@@ -185,7 +185,7 @@ int Manager::setDataSize() {
 
 int Manager::setColourSize() {
     int chunks = colourCount ? colourCount : setColourCount();
-    int chunkSize = sizeof(glm::vec3);
+    int chunkSize = sizeof(allColours[0]);
 
     //std::cout << "allColours has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;
@@ -193,7 +193,7 @@ int Manager::setColourSize() {
 
 int Manager::setIndexSize() {
     int chunks = indexCount ? indexCount : setIndexCount();
-    int chunkSize = sizeof(uint);
+    int chunkSize = sizeof(allIndices[0]);
 
     //std::cout << "allIndices has " << chunks << " chunks of " << chunkSize << " bytes." << std::endl;
     return chunks * chunkSize;

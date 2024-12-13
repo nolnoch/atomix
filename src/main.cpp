@@ -36,27 +36,22 @@ bool isTesting;
 
 
 int main(int argc, char* argv[]) {
-    // Platform
-    QString arch = QSysInfo::currentCpuArchitecture();
-    QString os = QSysInfo::prettyProductName();
-    isMacOS = os.contains("macOS");
-
     // Application
-    QApplication::setStyle("Fusion");
     QApplication app (argc, argv);
-    QCoreApplication::setApplicationName("atomix");
-    QCoreApplication::setOrganizationName("Nolnoch");
-    QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+    app.setStyle("Fusion");
+    QApplication::setApplicationName("atomix");
+    QApplication::setOrganizationName("Nolnoch");
+    QApplication::setApplicationVersion(QT_VERSION_STR);
     MainWindow mainWindow;
 
     // Exe and CLI Parsing
     QCommandLineParser qParser;
-    qParser.setApplicationDescription(QCoreApplication::applicationName());
-    QCommandLineOption cliVerbose("verbose", QCoreApplication::translate("main", "ALL debug and information messages"));
-    QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QCoreApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: application directory)"), "directory", QCoreApplication::applicationDirPath());
-    QCommandLineOption cliProfiling({ "p", "profiling" }, QCoreApplication::translate("main", "enable profiling"));
-    QCommandLineOption cliTesting({ "t", "testing" }, QCoreApplication::translate("main", "enable testing"));
-    QCommandLineOption cliResetGeometry({ "r", "reset-geometry" }, QCoreApplication::translate("main", "reset window geometry (instead of loading saved geometry)"));
+    qParser.setApplicationDescription(QApplication::applicationName());
+    QCommandLineOption cliVerbose("verbose", QApplication::translate("main", "ALL debug and information messages"));
+    QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: application directory)"), "directory", QApplication::applicationDirPath());
+    QCommandLineOption cliProfiling({ "p", "profiling" }, QApplication::translate("main", "enable profiling"));
+    QCommandLineOption cliTesting({ "t", "testing" }, QApplication::translate("main", "enable testing"));
+    QCommandLineOption cliResetGeometry({ "r", "reset-geometry" }, QApplication::translate("main", "reset window geometry (instead of loading saved geometry)"));
     qParser.addHelpOption();
     qParser.addVersionOption();
     qParser.addOption(cliVerbose);
@@ -85,6 +80,11 @@ int main(int argc, char* argv[]) {
     }
     QString strAtomixDir = qParser.value(cliAtomixDir);
 
+    // Platform
+    QString arch = QSysInfo::currentCpuArchitecture();
+    QString os = QSysInfo::prettyProductName();
+    isMacOS = os.contains("macOS");
+
     // Debug Info
     if (isDebug) {
         std::cout << "OS: " << os.toStdString() << " (" << arch.toStdString() << ")" << std::endl;
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
 
     // Set atomix directory and icon
     QDir execDir = QDir(strAtomixDir);
-    QDir atomixDir = QDir(execDir.relativeFilePath("../../../"));       // TODO : Set to execDir for release
+    QDir atomixDir = QDir(execDir.relativeFilePath("../"));
     while (!mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
     QRect dispXY = QApplication::primaryScreen()->geometry();
     if (!dispXY.isValid()) {dispXY = QApplication::primaryScreen()->virtualGeometry();}
     dispXY = QRect(0, 0, dispXY.width() + 1, dispXY.height() + 1);
-    mainWindow.setWindowTitle(QCoreApplication::applicationName());
+    mainWindow.setWindowTitle(QApplication::applicationName());
     mainWindow.init(dispXY);
 
     // I would like the ship to go.

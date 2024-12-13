@@ -52,7 +52,7 @@ struct AtomixFiles {
         rootDir = _root + "/";
         shadersDir = rootDir + "shaders/";
         configsDir = rootDir + "configs/";
-        resourcesDir = rootDir + "resources/";
+        resourcesDir = rootDir + "res/";
         fontsDir = resourcesDir + "fonts/";
         iconsDir = resourcesDir + "icons/";
 

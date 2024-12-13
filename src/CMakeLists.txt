@@ -1,8 +1,9 @@
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_BUILD_TYPE Release)
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 set(LINUX 1)
 set(MACOS 0)
+set(WIN11 0)
 
 if(LINUX)
     set(Qt6_DIR "/home/braer/Qt/6.8.0/gcc_64")
@@ -40,12 +41,51 @@ add_executable(atomix main.cpp quaternion.cpp special.cpp shaderobj.cpp mainwind
 
 target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent Qt6::Qml glslang::glslang glslang::SPIRV glslang::glslang-default-resource-limits spirv-cross-core spirv-cross-reflect oneDPL TBB::tbb TBB::tbbmalloc)
 
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
+# message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+# message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
+# message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
+# message(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO: ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+# message(STATUS "CMAKE_CXX_FLAGS_MINSIZEREL: ${CMAKE_CXX_FLAGS_MINSIZEREL}")
 
-message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
-message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
-message(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO: ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-message(STATUS "CMAKE_CXX_FLAGS_MINSIZEREL: ${CMAKE_CXX_FLAGS_MINSIZEREL}")
+# Release Build and Install
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_custom_command(TARGET atomix POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
+        COMMENT "Generating deployment files for atomix"
+    )
+    
+    if(LINUX)
+        set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+        set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+        include(CPack)
+        MESSAGE(STATUS "Test LINUX")
+    elseif(MACOS)
+        set_property(TARGET atomix PROPERTY MACOSX_BUNDLE true)
+        MESSAGE(STATUS "Test MACOS")
+    elseif(WIN11)
+        set_property(TARGET atomix PROPERTY WIN32_EXECUTABLE true)
+        MESSAGE(STATUS "Test WIN11")
+    endif()
+
+    install(TARGETS atomix
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+
+    qt_generate_deploy_app_script(
+        TARGET atomix
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+
+    install(SCRIPT ${deploy_script})
+    
+    add_custom_command(TARGET atomix POST_BUILD
+        COMMAND cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}/configs
+        COMMAND cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}/shaders
+        COMMAND cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}/res
+        COMMENT "Generating deployment files for atomix"
+    )
+endif()
+
+

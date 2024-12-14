@@ -27,6 +27,7 @@
 
 #include <format>
 #include <unordered_map>
+#include <mutex>
 #include <chrono>
 #include <cmath>
 #include <complex>
@@ -56,93 +57,101 @@ const uint cm_maxRadius[4][8] = { {  6, 13, 24, 39, 58,  80, 107, 138 },    // T
 
 
 class CloudManager : public Manager {
-    public:
-        CloudManager();
-        virtual ~CloudManager();
-        void newConfig(AtomixCloudConfig *cfg);
-        void receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *inMap, bool generator = true);
-        void update(double time) override final;
-        
-        size_t getColourSize();
-        int getMaxLayer(double tolerance, int n_max, int divisor);
-        int getMaxRadius(double tolerance, int n_max);
-        bool hasVertices();
-        bool hasBuffers();
+public:
+    CloudManager();
+    virtual ~CloudManager();
+    void newConfig(AtomixCloudConfig *cfg);
+    void receiveCloudMapAndConfig(AtomixCloudConfig *config, harmap *inMap, bool generator = true);
+    void update(double time) override final;
+    
+    size_t getColourSize();
+    int getMaxLayer(double tolerance, int n_max, int divisor);
+    int getMaxRadius(double tolerance, int n_max);
+    bool hasVertices();
+    bool hasBuffers();
 
-        void printRecipes();
-        void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
+    void printRecipes();
+    void printMaxRDP_CSV(const int &n, const int &l, const int &m_l, const double &maxRDP);
 
-    private:
-        void initManager() override final;
-        void receiveCloudMap(harmap *inMap);
+protected:
+    
 
-        double createThreaded();
-        double bakeOrbitalsThreaded();
-        double cullToleranceThreaded();
-        double expandPDVsToColours();
-        double cullSliderThreaded();
+private:
+    void initManager() override;
+    void receiveCloudMap(harmap *inMap);
 
-        void clearForNext() override final;
-        void resetManager() override final;
-        
-        double wavefuncRadial(int n, int l, double r);
-        std::complex<double> wavefuncAngular(int l, int m_l, double theta, double phi);
-        std::complex<double> wavefuncAngExp(int m_l, double theta);
-        double wavefuncAngLeg(int l, int m_l, double phi);
-        std::complex<double> wavefuncPsi(double radial, std::complex<double> angular);
-        double wavefuncRDP(double R, double r, int l);
-        double wavefuncPDV(std::complex<double> Psi, double r, int l);
-        double wavefuncPsi2(int n, int l, int m_l, double r, double theta, double phi);
-        void wavefuncNorms(int n);
-        int64_t fact(int n);
+    double createThreaded();
+    double bakeOrbitalsThreaded();
+    double cullToleranceThreaded();
+    double expandPDVsToColours();
+    double cullSliderThreaded();
 
-        size_t setColourCount();
-        size_t setColourSize();
-        int countMapRecipes(harmap *inMap);
+    void clearForNext() override;
+    void resetManager() override;
+    
+    double wavefuncRadial(int n, int l, double r);
+    std::complex<double> wavefuncAngular(int l, int m_l, double theta, double phi);
+    std::complex<double> wavefuncAngExp(int m_l, double theta);
+    double wavefuncAngLeg(int l, int m_l, double phi);
+    std::complex<double> wavefuncPsi(double radial, std::complex<double> angular);
+    double wavefuncRDP(double R, double r, int l);
+    double wavefuncPDV(std::complex<double> Psi, double r, int l);
+    double wavefuncPsi2(int n, int l, int m_l, double r, double theta, double phi);
+    void wavefuncNorms(int n);
+    int64_t fact(int n);
 
-        void printBuffer(fvec buf, std::string name);
-        void printBuffer(uvec buf, std::string name);
-        void printTimes();
+    size_t setColourCount();
+    size_t setColourSize();
+    int countMapRecipes(harmap *inMap);
 
-        void cloudTest(int n_max);
-        void cloudTestCSV();
-        void radialMaxCSV(fvec &vecPDV, int n_max);
-        void testThreadingInit(AtomixCloudConfig *config, harmap *inMap);
+    void printBuffer(fvec buf, std::string name);
+    void printBuffer(uvec buf, std::string name);
+    void printTimes();
 
-        AtomixCloudConfig cfg;
+    void cloudTest(int n_max);
+    void cloudTestCSV();
+    void radialMaxCSV(fvec &vecPDV, int n_max);
+    void testThreadingInit(AtomixCloudConfig *config, harmap *inMap);
 
-        dvec pdvStaging;
-        uvec idxCulledTolerance;
-        uvec idxCulledSlider; // Not needed with threading
-        double allPDVMaximum;
-        
-        std::unordered_map<int, double> norm_constR;
-        std::unordered_map<int, double> norm_constY;
-        harmap cloudOrbitals;
+    void genVertexArray() override final {Manager::genVertexArray();}
+    void genDataBuffer() override final {Manager::genDataBuffer();}
+    void genColourBuffer() override final {Manager::genColourBuffer();}
+    void genIndexBuffer() override final {Manager::genIndexBuffer();}
 
-        uint colourCount = 0;
-        uint colourSize = 0;
-        uint64_t pixelCount = 0;
-        
-        int orbitalIdx = 0;
-        uint numOrbitals = 0;
-        int atomZ = 1;
-        int max_n = 0;
-        int opt_max_radius = 0;
-        float cm_culled = 0;
-        const int MAX_SHELLS = 8;
+    AtomixCloudConfig cfg;
 
-        size_t cm_pixels;
-        std::mutex cm_proc_coarse;
-        std::mutex cm_proc_fine;
-        std::array<double, 4> cm_times = { 0.0, 0.0, 0.0, 0.0 };
-        std::array<std::string, 4> cm_labels = { "Create():        ", "BakeOrbitals():  ", "CullTolerance(): ", "CullSlider():    " };
+    dvec pdvStaging;
+    uvec idxCulledTolerance;
+    uvec idxCulledSlider; // Not needed with threading
+    double allPDVMaximum;
+    
+    std::unordered_map<int, double> norm_constR;
+    std::unordered_map<int, double> norm_constY;
+    harmap cloudOrbitals;
 
-        int cloudResolution = 0;
-        int cloudLayerDivisor = 0;
-        double cloudTolerance = 0.05;
+    uint colourCount = 0;
+    uint colourSize = 0;
+    uint64_t pixelCount = 0;
+    
+    int orbitalIdx = 0;
+    uint numOrbitals = 0;
+    int atomZ = 1;
+    int max_n = 0;
+    int opt_max_radius = 0;
+    float cm_culled = 0;
+    const int MAX_SHELLS = 8;
 
-        uint printCounter = 0;
+    size_t cm_pixels;
+    std::mutex cm_proc_coarse;
+    std::mutex cm_proc_fine;
+    std::array<double, 4> cm_times = { 0.0, 0.0, 0.0, 0.0 };
+    std::array<std::string, 4> cm_labels = { "Create():        ", "BakeOrbitals():  ", "CullTolerance(): ", "CullSlider():    " };
+
+    int cloudResolution = 0;
+    int cloudLayerDivisor = 0;
+    double cloudTolerance = 0.05;
+
+    uint printCounter = 0;
 };
 
 #endif

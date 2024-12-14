@@ -89,10 +89,16 @@ int main(int argc, char* argv[]) {
     if (isDebug) {
         std::cout << "OS: " << os.toStdString() << " (" << arch.toStdString() << ")" << std::endl;
         std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
+        std::cout << "Atomix Directory: " << strAtomixDir.toStdString() << std::endl;
     }
 
     // Set atomix directory and icon
-    QDir atomixDir = QDir(QDir(strAtomixDir).relativeFilePath("../"));
+    if (isMacOS) {
+        strAtomixDir = strAtomixDir + "/../Resources";
+    } else {
+        strAtomixDir = strAtomixDir + "/../.";
+    }
+    QDir atomixDir(strAtomixDir);
     while (!mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,

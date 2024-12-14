@@ -486,13 +486,10 @@ double CloudManager::expandPDVsToColours() {
         vec4(1.0f, 1.0f, 1.0f, 1.0f),      // [90-99%] -- White
         vec4(1.0f, 1.0f, 1.0f, 1.0f)       // [100%] -- White
     };
-    const uint *vecStart = &idxCulledTolerance[0];
     const float *dataStart = &allData[0];
     vec4 *vecColours = &allColours[0];
-    uint64_t idx = 0;
-    uint64_t *idxPtr = &idx;
     std::for_each(std::execution::par, idxCulledTolerance.begin(), idxCulledTolerance.end(),
-        [vecStart, dataStart, colours, vecColours, idxPtr](uint &item){
+        [dataStart, colours, vecColours](uint &item){
             float pdv = dataStart[item];
             uint colourIdx = uint(pdv * 10.0f);
             vec4 pdvColour = colours[colourIdx] * pdv;
@@ -549,11 +546,10 @@ double CloudManager::cullSliderThreaded() {
             } */
         } else {
             //  Other -- X/Y sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
-            uint layer_size = 0, theta_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0, culled_phi_b = 0;
+            uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0, culled_phi_b = 0;
             float phi_front_pct = 0.0f, phi_back_pct = 0.0f;
             layer_size = (this->cloudResolution * this->cloudResolution) >> 1;
             culled_theta_all = static_cast<uint>(ceil(layer_size * this->cfg.cloudCull_x));
-            theta_size = this->cloudResolution;
             phi_size = this->cloudResolution >> 1;
             if (this->cfg.cloudCull_y > 0.50f) {
                 phi_front_pct = 1.0f;
@@ -566,7 +562,7 @@ double CloudManager::cullSliderThreaded() {
             culled_phi_b = phi_size - static_cast<uint>(ceil(phi_size * phi_back_pct));
 
             // Define lambda for multi-use
-            auto lambda_cull = [layer_size, theta_size, culled_theta_all, phi_size, culled_phi_f, culled_phi_b, rad_threshold, rin, rout](const uint &item){
+            auto lambda_cull = [layer_size, culled_theta_all, phi_size, culled_phi_f, culled_phi_b, rad_threshold, rin, rout](const uint &item){
                 uint layer_pos = (item % layer_size);
                 uint theta_pos = layer_pos / phi_size;
                 uint phi_pos = item % phi_size;

@@ -1,6 +1,6 @@
 {
-    "cmake.sourceDirectory": "/home/braer/dev/atomix",
-    "cmake.buildDirectory": "/home/braer/dev/atomix/build",
+    "cmake.sourceDirectory": "/Users/braer/dev/atomix",
+    "cmake.buildDirectory": "/Users/braer/dev/atomix/build",
     "cmake.installPrefix": "${workspaceRoot}/build/install",
     "cmake.configureSettings": {
         "CMAKE_BUILD_TYPE": "${buildType}",
@@ -73,5 +73,6 @@
         "fstream": "cpp",
         "iomanip": "cpp",
         "*.wave": "zsh"
-    }
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/clang++"
 }

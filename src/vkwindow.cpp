@@ -32,8 +32,6 @@
 
 #define RADN(t) (glm::radians((t)))
 
-static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
-
 
 VKWindow::VKWindow(QWidget *parent, FileHandler *fileHandler)
     : fileHandler(fileHandler), vw_parent(parent) {
@@ -863,22 +861,17 @@ void VKWindow::printFlags(std::string str) {
  * @brief Returns the smallest value that is greater than or equal to v and a multiple of byteAlign.
  * 
  * This is a utility function for aligning a VkDeviceSize to a particular byte boundary.
- * 
  * @param v A VkDeviceSize object.
  * @param byteAlign The byte boundary to align to.
  * 
  * This function returns the smallest value that is greater than or equal to v and a multiple of byteAlign.
- * 
  * The implementation is based on the formula:
- * 
  *   (v + byteAlign - 1) & ~(byteAlign - 1)
- * 
  * This works by adding the byteAlign to v, subtracting 1, and then using the bitwise and operator to zero out any bits that are not part of the byteAlign.
  * 
  * @return The aligned VkDeviceSize.
  */
-static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
-{
+static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign) {
     return (v + byteAlign - 1) & ~(byteAlign - 1);
 }
 

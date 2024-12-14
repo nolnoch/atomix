@@ -150,15 +150,6 @@ private:
 
     VkExtent2D vr_extent = {0, 0};
 
-    glm::mat4 m4_rotation;
-    glm::mat4 m4_translation;
-    glm::vec3 v3_cameraPosition;
-    glm::vec3 v3_cameraTarget;
-    glm::vec3 v3_cameraUp;
-    glm::vec3 v3_mouseBegin;
-    glm::vec3 v3_mouseEnd;
-    Quaternion q_TotalRot;
-
     VkDeviceSize vr_minUniAlignment = 0;
 };
 

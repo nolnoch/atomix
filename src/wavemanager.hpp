@@ -69,6 +69,9 @@ class WaveManager : public Manager {
 
         void genVertexArray() override;
         void genIndexBuffer() override;
+
+        void genDataBuffer() override {Manager::genDataBuffer();}
+        void genColourBuffer() override {Manager::genColourBuffer();}
         
         AtomixWaveConfig cfg;
         

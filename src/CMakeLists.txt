@@ -1,10 +1,8 @@
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_BUILD_RPATH "$ORIGIN/../lib")
-set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-set(LINUX 1)
-set(MACOS 0)
+set(LINUX 0)
+set(MACOS 1)
 set(WIN11 0)
 
 if(LINUX)
@@ -14,6 +12,7 @@ if(LINUX)
 elseif(MACOS)
     set(Qt6_DIR "/usr/local/Qt-6.8.0")
     set(oneDPL_DIR "/opt/intel/oneapi/2022.2.0/lib/cmake/oneDPL")
+    set(Qt6GuiTools_DIR ${Qt6_DIR}/lib/cmake/Qt6GuiTools)
     set(VULKAN_SDK "/Users/braer/VulkanSDK/1.3.296.0/macOS")
     set(DYLD_LIBRARY_PATH ${VULKAN_SDK}/lib ${DYLD_LIBRARY_PATH})
 
@@ -28,6 +27,7 @@ endif()
 
 set(ENV{Qt6_DIR} ${Qt6_DIR})
 set(ENV{VSCODE_QT_SDK} ${Qt6_DIR})
+set(ENV{VSCODE_QT_FOLDER} ${Qt6_DIR})
 set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 set(ENV{VK_LOADER_DEBUG} "error,warn,layer,info")
 
@@ -51,19 +51,42 @@ target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concur
 
 # Release Build and Install
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build/install)
     
     if(LINUX)
         set(CPACK_PROJECT_NAME ${PROJECT_NAME})
         set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
         include(CPack)
-        MESSAGE(STATUS "Test LINUX")
+        # set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
+        set_target_properties(atomix PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+        add_custom_command(TARGET atomix PRE_BUILD
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}/configs
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}/shaders
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/res && cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}/res
+            COMMENT "Generating Linux deployment files for atomix"
+        )
     elseif(MACOS)
         set_property(TARGET atomix PROPERTY MACOSX_BUNDLE true)
-        MESSAGE(STATUS "Test MACOS")
+        # set_target_properties(atomix PROPERTIES BUILD_RPATH "@loader_path/../Frameworks")
+        set_target_properties(atomix PROPERTIES INSTALL_RPATH "@loader_path/../Frameworks")
+        add_custom_command(TARGET atomix POST_BUILD
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs && cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res && cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res
+            COMMAND cp ${CMAKE_SOURCE_DIR}/res/icons/atomix.icns ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks && cp ${VULKAN_SDK}/lib/libvulkan.dylib ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks/
+            COMMENT "Generating macOS deployment files for atomix"
+        )
     elseif(WIN11)
         set_property(TARGET atomix PROPERTY WIN32_EXECUTABLE true)
-        MESSAGE(STATUS "Test WIN11")
+        # set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
+        set_target_properties(atomix PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+        add_custom_command(TARGET atomix PRE_BUILD
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}/configs
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}/shaders
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/res && cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}/res
+            COMMENT "Generating Windows deployment files for atomix"
+        )
     endif()
 
     install(TARGETS atomix
@@ -78,13 +101,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 
     install(SCRIPT ${deploy_script})
-
-    add_custom_command(TARGET atomix PRE_BUILD
-        COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}
-        COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}
-        COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/res && cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}
-        COMMENT "Generating deployment files for atomix"
-    )
     
 endif()
 

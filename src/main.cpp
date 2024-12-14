@@ -92,13 +92,12 @@ int main(int argc, char* argv[]) {
     }
 
     // Set atomix directory and icon
-    QDir execDir = QDir(strAtomixDir);
-    QDir atomixDir = QDir(execDir.relativeFilePath("../"));
+    QDir atomixDir = QDir(QDir(strAtomixDir).relativeFilePath("../"));
     while (!mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,
             "Select atomix Files Directory",
-            execDir.absolutePath(),
+            atomixDir.absolutePath(),
             QFileDialog::ShowDirsOnly
         );
         if (dir.isEmpty()) {

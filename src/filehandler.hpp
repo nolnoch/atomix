@@ -26,9 +26,6 @@
 #define CONFIGPARSER_H
 
 #include <filesystem>
-#include <iostream>
-#include <vector>
-#include <map>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>

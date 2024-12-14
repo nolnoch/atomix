@@ -1,4 +1,6 @@
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_BUILD_RPATH "$ORIGIN/../lib")
+set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 set(LINUX 1)
@@ -49,10 +51,7 @@ target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concur
 
 # Release Build and Install
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_custom_command(TARGET atomix POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
-        COMMENT "Generating deployment files for atomix"
-    )
+    set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
     
     if(LINUX)
         set(CPACK_PROJECT_NAME ${PROJECT_NAME})
@@ -79,13 +78,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 
     install(SCRIPT ${deploy_script})
-    
-    add_custom_command(TARGET atomix POST_BUILD
-        COMMAND cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}/configs
-        COMMAND cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}/shaders
-        COMMAND cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}/res
+
+    add_custom_command(TARGET atomix PRE_BUILD
+        COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}
+        COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}
+        COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/res && cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}
         COMMENT "Generating deployment files for atomix"
     )
+    
 endif()
 
 

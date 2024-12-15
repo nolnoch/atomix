@@ -92,10 +92,10 @@ class FileHandler {
         QStringList getCloudFilesList() { return cldFiles; }
         QStringList getVertexShadersList() { return vshFiles; }
         QStringList getFragmentShadersList() { return fshFiles; }
-        int getWaveFilesCount() { return wavFiles.size(); }
-        int getCloudFilesCount() { return cldFiles.size(); }
-        int getVertexShadersCount() { return vshFiles.size(); }
-        int getFragmentShadersCount() { return fshFiles.size(); }
+        int getWaveFilesCount() { return int(wavFiles.size()); }
+        int getCloudFilesCount() { return int(cldFiles.size()); }
+        int getVertexShadersCount() { return int(vshFiles.size()); }
+        int getFragmentShadersCount() { return int(fshFiles.size()); }
 
         bool deleteFile(QString filepath);
 

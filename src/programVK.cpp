@@ -184,18 +184,19 @@ int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
 
 bool ProgramVK::compileShader(Shader *shader) {
     bool compiled = shader->compile(VK_SPIRV_VERSION);
+    bool reflected = false;
     
     if (compiled) {
         this->p_compiledShaders.push_back(shader);
         this->p_mapShaders[shader->getName()] = this->p_compiledShaders.size() - 1;
+        
+        reflected = shader->reflect();
+        if (!reflected) {
+            std::cout << "Failed to reflect shader. Deleting shader..." << std::endl;
+            delete shader;
+        }
     } else {
         std::cout << "Failed to compile shader. Deleting shader..." << std::endl;
-        delete shader;
-    }
-    
-    bool reflected = shader->reflect();
-    if (!reflected) {
-        std::cout << "Failed to reflect shader. Deleting shader..." << std::endl;
         delete shader;
     }
 
@@ -366,10 +367,9 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     // Check for existing model and add if it doesn't exist
     const auto [it, success] = p_mapModels.insert({info.name, idx});
     if (!success) {
-        std::cout << "Model already exists. Updating model " << info.name << "..." << std::endl;
-        model = p_models[it->second];
-
         // TODO: Handle old model data
+        std::cout << "Model already exists. Updating model " << info.name << "..." << std::endl;
+        // model = p_models[it->second];
         return uint(-1);
     } else {
         model = new ModelInfo{};

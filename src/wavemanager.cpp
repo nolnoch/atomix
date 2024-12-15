@@ -285,9 +285,6 @@ void WaveManager::updateWaveCPUCircle(int idx, double t) {
             z = radius * sin(theta);
         }
 
-        r = 1.0f;
-        g = 1.0f;
-        b = 1.0f;
         scale = abs(wavefunc);
 
         if (wavefunc >= 0) {
@@ -342,10 +339,6 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
             x = (float) ((radius + displacement) * (sin(phi) * sin(theta)));
             y = (float) ((radius + displacement) * cos(phi));
             z = (float) ((radius + displacement) * (sin(phi) * cos(theta)));
-
-            r = 0;
-            g = 0;
-            b = 0;
             
             scale = abs(wavefunc);
 
@@ -378,7 +371,7 @@ void WaveManager::updateWaveCPUSphere(int idx, double t) {
 }
 
 void WaveManager::superposition(int idx) {
-    int verts = waveVertices[idx]->size();
+    int verts = int(waveVertices[idx]->size());
     vec4 red = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
     for (int dt = 0; dt < verts; dt += 2) {

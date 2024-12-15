@@ -261,7 +261,7 @@ double CloudManager::createThreaded() {
     vec4 *start = &this->allVertices.at(0);
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
         [layer_size, phi_max_local, deg_fac_local, div_local, start, isGPU](glm::vec4 &gVector){
-            int i = &gVector - start;
+            int i = int(&gVector - start);
             int layer = (i / layer_size) + 1;
             int layer_pos = i % layer_size;
             float theta = (layer_pos / phi_max_local) * deg_fac_local;
@@ -346,7 +346,7 @@ double CloudManager::bakeOrbitalsThreaded() {
     vec4 *vertStart = &this->allVertices[0];
     std::for_each(std::execution::par_unseq, allVertices.begin(), allVertices.end(),
         [&ns, &ls, &ms, &ws, &ny, &nr, dataStagingPtr, numRecipes, vertStart](vec4 &item) {
-            uint idx = &item - vertStart;
+            uint idx = uint(&item - vertStart);
             std::complex<double> Psi;
             double radius = item.x;
             double theta = item.y;
@@ -436,7 +436,7 @@ double CloudManager::cullToleranceThreaded() {
     const float tolerance_local = this->cloudTolerance;
     std::transform(std::execution::par_unseq, allData.cbegin(), allData.cend(), idxCulledTolerance.begin(),
         [tolerance_local, vecStart](const float &item){
-            uint idx = &item - vecStart;
+            uint idx = uint(&item - vecStart);
             return (item > tolerance_local) ? idx : 0u;
         });
 

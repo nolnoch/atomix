@@ -55,16 +55,16 @@ class Manager {
 
         uint getVertexCount();
         uint getVertexSize();
-        uint getVertexOffset() { return this->vertexOffset; };
+        uint getVertexOffset() { return int(this->vertexOffset); };
         uint getDataCount();
         uint getDataSize();
-        uint getDataOffset() { return this->dataOffset; };
+        uint getDataOffset() { return int(this->dataOffset); };
         uint getColourCount();
         uint getColourSize();
-        uint getColourOffset() { return this->colourOffset; };
+        uint getColourOffset() { return int(this->colourOffset); };
         uint getIndexCount();
         uint getIndexSize();
-        uint getIndexOffset() { return this->indexOffset; };
+        uint getIndexOffset() { return int(this->indexOffset); };
         
         const float* getVertexData();
         const float* getDataData();

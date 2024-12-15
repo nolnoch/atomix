@@ -753,7 +753,7 @@ void MainWindow::refreshConfigs(BitFlag target, QString selection) {
     int waveFiles = fileHandler->getWaveFilesCount();
     int cloudFiles = fileHandler->getCloudFilesCount();
     QString path = QString::fromStdString(fileHandler->atomixFiles.configs());
-    int pathLength = path.length();
+    int pathLength = int(path.length());
     
     // Wave Config Combo Box
     if (waveFiles && target.hasAny(mw::WAVE)) {

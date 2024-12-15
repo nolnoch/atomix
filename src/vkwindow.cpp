@@ -213,7 +213,7 @@ void VKWindow::initCrystalModel() {
     crystalRingVertices.push_back(0.85f);
     crystalRingVertices.push_back(0.85f);
     crystalRingIndices.push_back(vs + crystalRes);
-    this->crystalRingCount = crystalRingIndices.size() - vw_faces;
+    this->crystalRingCount = uint(crystalRingIndices.size()) - vw_faces;
     this->crystalRingOffset = vw_faces;
     
     // Define VBO for Crystal Diamond & Ring
@@ -939,7 +939,7 @@ void VKRenderer::initResources() {
         std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
 
         QString dev_info;
-        int deviceCount = vr_qvw->availablePhysicalDevices().count();
+        int deviceCount = int(vr_qvw->availablePhysicalDevices().count());
         dev_info += QString::asprintf("Number of physical devices: %d\n", deviceCount);
         for (int i = 0; i < deviceCount; i++) {
             dev_info += QString::asprintf("Device %d: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",

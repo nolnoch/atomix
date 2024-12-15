@@ -337,7 +337,6 @@ private:
     VkCommandPool p_cmdpool = VK_NULL_HANDLE;
     VkQueue p_queue = VK_NULL_HANDLE;
     VkCommandBuffer p_cmdbuff = VK_NULL_HANDLE;
-    VkFramebuffer p_frames[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT] = { 0 };
     VkPipelineCache p_pipeCache = VK_NULL_HANDLE;
     VkDescriptorPool p_descPool = VK_NULL_HANDLE;
     VkRenderPass p_renderPass = VK_NULL_HANDLE;

@@ -1237,10 +1237,14 @@ void MainWindow::handleButtMorbHarmonics() {
     mw_cloudConfig.cloudResolution = entryCloudRes->text().toInt();
     mw_cloudConfig.cloudTolerance = entryCloudMinRDP->text().toDouble();
 
+    std::vector<int> markForDeletion;
     for (auto [key, vec] : mapCloudRecipes) {
         if (vec.size() == 0) {
-            mapCloudRecipes.erase(key);
+            markForDeletion.push_back(key);
         }
+    }
+    for (auto key : markForDeletion) {
+        mapCloudRecipes.erase(key);
     }
 
     uint vertex, opt, index;

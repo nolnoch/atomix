@@ -149,8 +149,9 @@ private:
     VkPhysicalDevice vr_phydev;
 
     VkExtent2D vr_extent = {0, 0};
-
     VkDeviceSize vr_minUniAlignment = 0;
+
+    bool vr_isInit = false;
 };
 
 
@@ -161,7 +162,7 @@ public:
     ~VKWindow();
     
     QVulkanWindowRenderer* createRenderer() override;
-    void initProgram(AtomixDevice *dev);
+    bool initProgram(AtomixDevice *dev);
     void initWindow();
 
     void handleHome();

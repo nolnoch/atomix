@@ -71,17 +71,24 @@ QVulkanWindowRenderer* VKWindow::createRenderer() {
     return vw_renderer;
 }
 
-void VKWindow::initProgram(AtomixDevice *atomixDevice) {
-    std::vector<std::string> vshad = atomix::stringlistToVector(fileHandler->getVertexShadersList());
-    std::vector<std::string> fshad = atomix::stringlistToVector(fileHandler->getFragmentShadersList());
+bool VKWindow::initProgram(AtomixDevice *atomixDevice) {
+    bool firstInit = false;
 
-    atomixProg = new ProgramVK(fileHandler);
-    atomixProg->setInstance(atomixDevice);
-    atomixProg->addAllShaders(&vshad, GL_VERTEX_SHADER);
-    atomixProg->addAllShaders(&fshad, GL_FRAGMENT_SHADER);
-    atomixProg->init();
+    if (!atomixProg) {
+        atomixProg = new ProgramVK(fileHandler);
+        atomixProg->setInstance(atomixDevice);
+        std::vector<std::string> vshad = atomix::stringlistToVector(fileHandler->getVertexShadersList());
+        std::vector<std::string> fshad = atomix::stringlistToVector(fileHandler->getFragmentShadersList());
+        atomixProg->addAllShaders(&vshad, GL_VERTEX_SHADER);
+        atomixProg->addAllShaders(&fshad, GL_FRAGMENT_SHADER);
+        atomixProg->init();
+        vw_renderer->setProgram(atomixProg);
+        firstInit = true;
+    } else {
+        atomixProg->setInstance(atomixDevice);
+    }
 
-    vw_renderer->setProgram(atomixProg);
+    return firstInit;
 }
 
 void VKWindow::initWindow() {
@@ -894,8 +901,7 @@ VKRenderer::~VKRenderer() {
 }
 
 void VKRenderer::preInitResources() {
-    /* std::cout << "preInitResources" << std::endl;
-    std::cout << this->vr_vkw->parent()->objectName().toStdString() << std::endl; */
+    // TODO preInitResources
 }
 
 void VKRenderer::initResources() {
@@ -909,90 +915,94 @@ void VKRenderer::initResources() {
     vr_vdf = vr_vi->deviceFunctions(vr_dev);
     vr_vf = vr_vi->functions();
 
-    // Retrieve physical device constraints
-    VkPhysicalDeviceProperties vr_props;
-    vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
-
-    QVersionNumber version = QVersionNumber(VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion), VK_VERSION_PATCH(vr_props.apiVersion));
-    if (version.minorVersion() != VK_MINOR_VERSION) {
-        VK_MINOR_VERSION = version.minorVersion();
-        if (VK_MINOR_VERSION >= 3) {
-            VK_SPIRV_VERSION = 6;
-        } else if (VK_MINOR_VERSION == 2) {
-            VK_SPIRV_VERSION = 5;
-        } else if (VK_MINOR_VERSION == 1) {
-            VK_SPIRV_VERSION = 3;
-        } else {
-            VK_SPIRV_VERSION = 0;
-        }
-        if (isDebug) {
-            std::cout << "Post-Device-Query Reassignment: Vulkan API version: " << version.toString().toStdString() << std::endl;
-            std::cout << "Post-Device-Query Reassignment: Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
-        }
-    }
-    
-    const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
-    this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
-    
-    if (isDebug) {
-        const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
-        std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
-
-        QString dev_info;
-        int deviceCount = int(vr_qvw->availablePhysicalDevices().count());
-        dev_info += QString::asprintf("Number of physical devices: %d\n", deviceCount);
-        for (int i = 0; i < deviceCount; i++) {
-            dev_info += QString::asprintf("Device %d: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
-                i,
-                vr_qvw->availablePhysicalDevices().at(i).deviceName,
-                VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
-                VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
-                VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
-                VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
-                VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
-                VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).apiVersion));
-        }
-
-        dev_info += QString::asprintf("Active physical device name: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
-            vr_props.deviceName,
-            VK_VERSION_MAJOR(vr_props.driverVersion), VK_VERSION_MINOR(vr_props.driverVersion),
-            VK_VERSION_PATCH(vr_props.driverVersion),
-            VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion),
-            VK_VERSION_PATCH(vr_props.apiVersion));
-
-        dev_info += QStringLiteral("Supported instance layers:\n");
-        for (const QVulkanLayer &layer : vr_vi->supportedLayers())
-            dev_info += QString::asprintf("    %s v%u\n", layer.name.constData(), layer.version);
-        dev_info += QStringLiteral("Enabled instance layers:\n");
-        for (const QByteArray &layer : vr_vi->layers())
-            dev_info += QString::asprintf("    %s\n", layer.constData());
-
-        dev_info += QStringLiteral("Supported instance extensions:\n");
-        for (const QVulkanExtension &ext : vr_vi->supportedExtensions())
-            dev_info += QString::asprintf("    %s v%u\n", ext.name.constData(), ext.version);
-        dev_info += QStringLiteral("Enabled instance extensions:\n");
-        for (const QByteArray &ext : vr_vi->extensions())
-            dev_info += QString::asprintf("    %s\n", ext.constData());
-
-        dev_info += QString::asprintf("Color format: %u\nDepth-stencil format: %u\n",
-                                vr_qvw->colorFormat(), vr_qvw->depthStencilFormat());
-
-        dev_info += QStringLiteral("Supported sample counts:");
-        const QList<int> sampleCounts = vr_qvw->supportedSampleCounts();
-        for (int count : sampleCounts)
-            dev_info += QLatin1Char(' ') + QString::number(count);
-        dev_info += QLatin1Char('\n');
-
-        std::cout << dev_info.toStdString() << std::endl;
-    }
-
     // Create Program
-    AtomixDevice *progDev = new AtomixDevice();
-    progDev->window = vr_qvw;
-    progDev->physicalDevice = vr_phydev;
-    progDev->device = vr_dev;
-    this->vr_vkw->initProgram(progDev);
-    this->vr_vkw->initWindow();
+    AtomixDevice progDev;
+    progDev.window = vr_qvw;
+    progDev.physicalDevice = vr_phydev;
+    progDev.device = vr_dev;
+    if (this->vr_vkw->initProgram(&progDev)) {
+        this->vr_vkw->initWindow();
+    }
+
+    // Retrieve physical device constraints
+    if (!vr_isInit) {
+        VkPhysicalDeviceProperties vr_props;
+        vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
+
+        QVersionNumber version = QVersionNumber(VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion), VK_VERSION_PATCH(vr_props.apiVersion));
+        if (version.minorVersion() != VK_MINOR_VERSION) {
+            VK_MINOR_VERSION = version.minorVersion();
+            if (VK_MINOR_VERSION >= 3) {
+                VK_SPIRV_VERSION = 6;
+            } else if (VK_MINOR_VERSION == 2) {
+                VK_SPIRV_VERSION = 5;
+            } else if (VK_MINOR_VERSION == 1) {
+                VK_SPIRV_VERSION = 3;
+            } else {
+                VK_SPIRV_VERSION = 0;
+            }
+            if (isDebug) {
+                std::cout << "Post-Device-Query Reassignment: Vulkan API version: " << version.toString().toStdString() << std::endl;
+                std::cout << "Post-Device-Query Reassignment: Vulkan SPIRV version: 1." << VK_SPIRV_VERSION << std::endl;
+            }
+        }
+        
+        const VkPhysicalDeviceLimits *phydevLimits = &vr_props.limits;
+        this->vr_minUniAlignment = phydevLimits->minUniformBufferOffsetAlignment;
+        
+        if (isDebug) {
+            const VkDeviceSize uniBufferSize = phydevLimits->maxUniformBufferRange;
+            std::cout << "uniAlignment: " << this->vr_minUniAlignment << " uniBufferSize: " << uniBufferSize << "\n" << std::endl;
+
+            QString dev_info;
+            int deviceCount = int(vr_qvw->availablePhysicalDevices().count());
+            dev_info += QString::asprintf("Number of physical devices: %d\n", deviceCount);
+            for (int i = 0; i < deviceCount; i++) {
+                dev_info += QString::asprintf("Device %d: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
+                    i,
+                    vr_qvw->availablePhysicalDevices().at(i).deviceName,
+                    VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                    VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                    VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).driverVersion),
+                    VK_VERSION_MAJOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
+                    VK_VERSION_MINOR(vr_qvw->availablePhysicalDevices().at(i).apiVersion),
+                    VK_VERSION_PATCH(vr_qvw->availablePhysicalDevices().at(i).apiVersion));
+            }
+
+            dev_info += QString::asprintf("Active physical device name: '%s' version %d.%d.%d\nAPI version %d.%d.%d\n",
+                vr_props.deviceName,
+                VK_VERSION_MAJOR(vr_props.driverVersion), VK_VERSION_MINOR(vr_props.driverVersion),
+                VK_VERSION_PATCH(vr_props.driverVersion),
+                VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion),
+                VK_VERSION_PATCH(vr_props.apiVersion));
+
+            dev_info += QStringLiteral("Supported instance layers:\n");
+            for (const QVulkanLayer &layer : vr_vi->supportedLayers())
+                dev_info += QString::asprintf("    %s v%u\n", layer.name.constData(), layer.version);
+            dev_info += QStringLiteral("Enabled instance layers:\n");
+            for (const QByteArray &layer : vr_vi->layers())
+                dev_info += QString::asprintf("    %s\n", layer.constData());
+
+            dev_info += QStringLiteral("Supported instance extensions:\n");
+            for (const QVulkanExtension &ext : vr_vi->supportedExtensions())
+                dev_info += QString::asprintf("    %s v%u\n", ext.name.constData(), ext.version);
+            dev_info += QStringLiteral("Enabled instance extensions:\n");
+            for (const QByteArray &ext : vr_vi->extensions())
+                dev_info += QString::asprintf("    %s\n", ext.constData());
+
+            dev_info += QString::asprintf("Color format: %u\nDepth-stencil format: %u\n",
+                                    vr_qvw->colorFormat(), vr_qvw->depthStencilFormat());
+
+            dev_info += QStringLiteral("Supported sample counts:");
+            const QList<int> sampleCounts = vr_qvw->supportedSampleCounts();
+            for (int count : sampleCounts)
+                dev_info += QLatin1Char(' ') + QString::number(count);
+            dev_info += QLatin1Char('\n');
+
+            std::cout << dev_info.toStdString() << std::endl;
+        }
+    }
+    vr_isInit = true;
 }
 
 /* SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
@@ -1083,8 +1093,7 @@ void VKRenderer::releaseSwapChainResources() {
  * physical device, as these are owned by the QVulkanWindow.
  */
 void VKRenderer::releaseResources() {
-    delete atomixProg;
-    atomixProg = 0;
+    // TODO releaseResources
 }
 
 void VKRenderer::startNextFrame() {

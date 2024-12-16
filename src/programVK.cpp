@@ -102,12 +102,31 @@ void ProgramVK::cleanup() {
 }
 
 void ProgramVK::setInstance(AtomixDevice *atomixDevice) {
-    p_dev = atomixDevice->device;
-    p_phydev = atomixDevice->physicalDevice;
-    p_vkw = atomixDevice->window;
-    p_vi = p_vkw->vulkanInstance();
-    p_vdf = p_vi->deviceFunctions(p_dev);
-    p_vf = p_vi->functions();
+    /* if (this->p_stage >= 2) {
+        this->p_dev = atomixDevice->device;
+        this->p_vdf = this->p_vi->deviceFunctions(this->p_dev);
+        this->p_cmdpool = this->p_vkw->graphicsCommandPool();
+        this->p_queue = this->p_vkw->graphicsQueue();
+        this->p_renderPass = this->p_vkw->defaultRenderPass();
+        return;
+    } */
+    
+    // Link Vulkan Window and Instance Objects
+    this->p_vkw = atomixDevice->window;
+    this->p_vi = this->p_vkw->vulkanInstance();
+    
+    // Link Vulkan Logical Device and Function Objects
+    this->p_dev = atomixDevice->device;
+    this->p_vdf = this->p_vi->deviceFunctions(this->p_dev);
+    
+    // Link Vulkan Physical Device and Function Objects
+    this->p_phydev = atomixDevice->physicalDevice;
+    this->p_vf = this->p_vi->functions();
+
+    // Link Command Pool, Queue, and Render Pass to Qt defaults
+    this->p_cmdpool = this->p_vkw->graphicsCommandPool();
+    this->p_queue = this->p_vkw->graphicsQueue();
+    this->p_renderPass = this->p_vkw->defaultRenderPass();
 }
 
 /**
@@ -690,11 +709,6 @@ bool ProgramVK::init() {
         std::cout << "No shader files associated with program. Aborting..." << std::endl;
         return false;
     }
-
-    // Link Command Pool, Queue, and Render Pass to Qt defaults
-    this->p_cmdpool = this->p_vkw->graphicsCommandPool();
-    this->p_queue = this->p_vkw->graphicsQueue();
-    this->p_renderPass = this->p_vkw->defaultRenderPass();
 
     // Process registered shaders
     compileAllShaders();
@@ -1487,7 +1501,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     VkCommandBuffer cmdBuff = this->p_vkw->currentCommandBuffer();
 
     // Set clear color and depth stencil
-    VkClearColorValue clearColor = { p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] };
+    VkClearColorValue clearColor = { { p_clearColor[0], p_clearColor[1], p_clearColor[2], p_clearColor[3] } };
     VkClearDepthStencilValue clearDepth = { 1.0f, 0 };
     VkClearValue clearValues[3];
     memset(clearValues, 0, sizeof(clearValues));
@@ -1515,7 +1529,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     renderPassInfo.pClearValues = clearValues;
     
     this->p_vdf->vkCmdBeginRenderPass(cmdBuff, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    
+
     // For each active model, bind and draw for all render targets
     for (auto &modelIdx : this->p_activeModels) {
         ModelInfo *model = this->p_models[modelIdx];

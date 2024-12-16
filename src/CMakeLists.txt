@@ -70,9 +70,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         # set_target_properties(atomix PROPERTIES BUILD_RPATH "@loader_path/../Frameworks")
         set_target_properties(atomix PROPERTIES INSTALL_RPATH "@loader_path/../Frameworks")
         add_custom_command(TARGET atomix POST_BUILD
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs && cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res && cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs && cp -r ${CMAKE_SOURCE_DIR}/configs/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs/
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders/
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res && cp -r ${CMAKE_SOURCE_DIR}/res/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res/
             COMMAND cp ${CMAKE_SOURCE_DIR}/res/icons/atomix.icns ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/
             COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks && cp ${VULKAN_SDK}/lib/libvulkan.dylib ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks/
             COMMENT "Generating macOS deployment files for atomix"

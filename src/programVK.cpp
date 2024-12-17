@@ -1451,10 +1451,17 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
         }
 
         if (isIBO) {
-            for (auto &prog : model->activePrograms) {
-                for (auto &renderIdx : model->programs[prog].offsets) {
-                    model->renders[renderIdx]->indexOffset = offset;
-                    model->renders[renderIdx]->indexCount = count;
+            if (model->activePrograms.size() != 0) {
+                for (auto &prog : model->activePrograms) {
+                    for (auto &renderIdx : model->programs[prog].offsets) {
+                        model->renders[renderIdx]->indexOffset = offset;
+                        model->renders[renderIdx]->indexCount = count;
+                    }
+                }
+            } else {
+                for (auto &render : model->renders) {
+                    render->indexOffset = offset;
+                    render->indexCount = count;
                 }
             }
         }

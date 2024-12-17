@@ -533,17 +533,7 @@ double CloudManager::cullSliderThreaded() {
             allIndices.resize(this->cm_pixels);
             allIndices.assign(this->cm_pixels, 0);
             std::copy(std::execution::par, idxCulledTolerance.cbegin(), idxCulledTolerance.cend(), allIndices.begin());
-
-            /* if (radial) {
-                if (rin) {
-                    this->indexOffset = 0;
-                    this->indexCount = rad_threshold;
-                } else {
-                    this->indexOffset = rad_threshold;
-                    this->indexCount = allIndices.size() - rad_threshold;
-                }
-                mStatus.condSet(em::UPD_IDXOFF, mStatus.hasAll(em::INIT));
-            } */
+            
         } else {
             //  Other -- X/Y sliders ARE culling, so count number of unculled vertices, resize allIndices, and then copy unculled vertices.  
             uint layer_size = 0, culled_theta_all = 0, phi_size = 0, culled_phi_f = 0, culled_phi_b = 0;

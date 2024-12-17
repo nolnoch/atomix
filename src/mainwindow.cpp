@@ -1136,6 +1136,8 @@ void MainWindow::handleButtClearRecipes() {
             thisItem->setCheckState(0, Qt::Unchecked);
         }
     }
+
+    this->mapCloudRecipes.clear();
 }
 
 void MainWindow::handleButtResetRecipes() {

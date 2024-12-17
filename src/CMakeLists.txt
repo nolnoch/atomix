@@ -1,8 +1,8 @@
 set(CMAKE_AUTOMOC ON)
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-set(LINUX 0)
-set(MACOS 1)
+set(LINUX 1)
+set(MACOS 0)
 set(WIN11 0)
 
 if(LINUX)

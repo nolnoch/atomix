@@ -747,20 +747,20 @@ int64_t CloudManager::fact(int n) {
     return prod;
 }
 
-    /**
-     * @brief Compute the radial wavefunction for the given quantum numbers.
-     *
-     * This function takes the principal quantum number `n` and the orbital angular momentum `l`
-     * and returns the radial wavefunction evaluated at the given radius `r`.
-     * The radial wavefunction is given by the formula:
-     * R_{nl}(r) = N_{nl} * L_{n-l-1}^{2l+1}(r/n) * e^{-r/n} * (r/n)^l
-     * where L is the associated Laguerre polynomial and N is the normalization constant.
-     *
-     * @param[in] n The principal quantum number.
-     * @param[in] l The orbital angular momentum.
-     * @param[in] r The radius at which to evaluate the wavefunction.
-     * @returns The radial wavefunction evaluated at `r`.
-     */
+/**
+ * @brief Compute the radial wavefunction for the given quantum numbers.
+ *
+ * This function takes the principal quantum number `n` and the orbital angular momentum `l`
+ * and returns the radial wavefunction evaluated at the given radius `r`.
+ * The radial wavefunction is given by the formula:
+ * R_{nl}(r) = N_{nl} * L_{n-l-1}^{2l+1}(r/n) * e^{-r/n} * (r/n)^l
+ * where L is the associated Laguerre polynomial and N is the normalization constant.
+ *
+ * @param[in] n The principal quantum number.
+ * @param[in] l The orbital angular momentum.
+ * @param[in] r The radius at which to evaluate the wavefunction.
+ * @returns The radial wavefunction evaluated at `r`.
+ */
 double CloudManager::wavefuncRadial(int n, int l, double r) {
     double rho = 2.0 * r / static_cast<double>(n);
 
@@ -771,21 +771,21 @@ double CloudManager::wavefuncRadial(int n, int l, double r) {
     return laguerre * rhol * expFunc * this->norm_constR[DSQ(n, l)];
 }
 
-    /**
-     * @brief Compute the angular wavefunction for the given quantum numbers.
-     *
-     * This function takes the orbital angular momentum `l` and the z-component of the
-     * orbital angular momentum `m_l` and returns the angular wavefunction evaluated at
-     * the given polar angle `theta` and azimuthal angle `phi`. The angular wavefunction
-     * is given by the formula:
-     * Y_{lm}(\theta, \phi) = exp(i * m_l * \theta) * L_{l}^{m_l}(\cos(\phi)) * N_{lm}
-     *
-     * @param[in] l The orbital angular momentum.
-     * @param[in] m_l The z-component of the orbital angular momentum.
-     * @param[in] theta The polar angle at which to evaluate the wavefunction.
-     * @param[in] phi The azimuthal angle at which to evaluate the wavefunction.
-     * @returns The angular wavefunction evaluated at `(theta, phi)`.
-     */
+/**
+ * @brief Compute the angular wavefunction for the given quantum numbers.
+ *
+ * This function takes the orbital angular momentum `l` and the z-component of the
+ * orbital angular momentum `m_l` and returns the angular wavefunction evaluated at
+ * the given polar angle `theta` and azimuthal angle `phi`. The angular wavefunction
+ * is given by the formula:
+ * Y_{lm}(\theta, \phi) = exp(i * m_l * \theta) * L_{l}^{m_l}(\cos(\phi)) * N_{lm}
+ *
+ * @param[in] l The orbital angular momentum.
+ * @param[in] m_l The z-component of the orbital angular momentum.
+ * @param[in] theta The polar angle at which to evaluate the wavefunction.
+ * @param[in] phi The azimuthal angle at which to evaluate the wavefunction.
+ * @returns The angular wavefunction evaluated at `(theta, phi)`.
+ */
 std::complex<double> CloudManager::wavefuncAngular(int l, int m_l, double theta, double phi) {
     using namespace std::complex_literals;
     std::complex<double> ibase = 1i;
@@ -797,51 +797,51 @@ std::complex<double> CloudManager::wavefuncAngular(int l, int m_l, double theta,
     return expFunc * legendre * this->norm_constY[DSQ(l, m_l)];
 }
 
-    /**
-     * @brief Compute the angular wavefunction exponential term.
-     *
-     * This function takes the z-component of the orbital angular momentum `m_l` and the
-     * polar angle `theta` and returns the exponential term of the angular wavefunction.
-     * The exponential term is given by the formula:
-     * e^(i*m_l*theta)
-     *
-     * @param[in] m_l The z-component of the orbital angular momentum.
-     * @param[in] theta The polar angle at which to evaluate the wavefunction.
-     * @returns The exponential term of the angular wavefunction evaluated at `(m_l, theta)`.
-     */
+/**
+ * @brief Compute the angular wavefunction exponential term.
+ *
+ * This function takes the z-component of the orbital angular momentum `m_l` and the
+ * polar angle `theta` and returns the exponential term of the angular wavefunction.
+ * The exponential term is given by the formula:
+ * e^(i*m_l*theta)
+ *
+ * @param[in] m_l The z-component of the orbital angular momentum.
+ * @param[in] theta The polar angle at which to evaluate the wavefunction.
+ * @returns The exponential term of the angular wavefunction evaluated at `(m_l, theta)`.
+ */
 std::complex<double> CloudManager::wavefuncAngExp(int m_l, double theta) {
     using namespace std::complex_literals;
     std::complex<double> ibase = 1i;
     return exp(ibase * (m_l * theta));
 }
 
-    /**
-     * @brief Compute the associated Legendre polynomial term of the angular wavefunction.
-     *
-     * This function takes the orbital angular momentum `l` and the z-component of the
-     * orbital angular momentum `m_l` and returns the associated Legendre polynomial term
-     * of the angular wavefunction evaluated at the given azimuthal angle `phi`.
-     *
-     * @param[in] l The orbital angular momentum.
-     * @param[in] m_l The z-component of the orbital angular momentum.
-     * @param[in] phi The azimuthal angle at which to evaluate the wavefunction.
-     * @returns The associated Legendre polynomial term of the angular wavefunction evaluated at `(l, m_l, phi)`.
-     */
+/**
+ * @brief Compute the associated Legendre polynomial term of the angular wavefunction.
+ *
+ * This function takes the orbital angular momentum `l` and the z-component of the
+ * orbital angular momentum `m_l` and returns the associated Legendre polynomial term
+ * of the angular wavefunction evaluated at the given azimuthal angle `phi`.
+ *
+ * @param[in] l The orbital angular momentum.
+ * @param[in] m_l The z-component of the orbital angular momentum.
+ * @param[in] phi The azimuthal angle at which to evaluate the wavefunction.
+ * @returns The associated Legendre polynomial term of the angular wavefunction evaluated at `(l, m_l, phi)`.
+ */
 double CloudManager::wavefuncAngLeg(int l, int m_l, double phi) {
     return legp(l, abs(m_l), cos(phi));
 }
 
-    /**
-     * @brief Compute the probability density value of the orbital wavefunction.
-     *
-     * This function takes the radial wavefunction term `radial` and the angular
-     * wavefunction term `angular` and returns the probability density value of the
-     * orbital wavefunction evaluated at the given point.
-     *
-     * @param[in] radial The radial wavefunction term.
-     * @param[in] angular The angular wavefunction term.
-     * @returns The probability density value of the orbital wavefunction evaluated at `(radial, angular)`.
-     */
+/**
+ * @brief Compute the probability density value of the orbital wavefunction.
+ *
+ * This function takes the radial wavefunction term `radial` and the angular
+ * wavefunction term `angular` and returns the probability density value of the
+ * orbital wavefunction evaluated at the given point.
+ *
+ * @param[in] radial The radial wavefunction term.
+ * @param[in] angular The angular wavefunction term.
+ * @returns The probability density value of the orbital wavefunction evaluated at `(radial, angular)`.
+ */
 std::complex<double> CloudManager::wavefuncPsi(double radial, std::complex<double> angular) {
     return radial * angular;
 }
@@ -856,18 +856,18 @@ double CloudManager::wavefuncRDP(double R, double r, [[maybe_unused]] int l) {
     return R * R * factor;
 }
 
-    /**
-     * @brief Compute the probability density value of the orbital wavefunction.
-     *
-     * This function takes the wavefunction term `Psi` and the radial distance `r`
-     * and returns the probability density value of the orbital wavefunction
-     * evaluated at the given radial distance.
-     *
-     * @param[in] Psi The wavefunction term.
-     * @param[in] r The radial distance at which to evaluate the wavefunction.
-     * @param[in] l The orbital angular momentum.
-     * @returns The probability density value of the orbital wavefunction evaluated at `(Psi, r, l)`.
-     */
+/**
+ * @brief Compute the probability density value of the orbital wavefunction.
+ *
+ * This function takes the wavefunction term `Psi` and the radial distance `r`
+ * and returns the probability density value of the orbital wavefunction
+ * evaluated at the given radial distance.
+ *
+ * @param[in] Psi The wavefunction term.
+ * @param[in] r The radial distance at which to evaluate the wavefunction.
+ * @param[in] l The orbital angular momentum.
+ * @returns The probability density value of the orbital wavefunction evaluated at `(Psi, r, l)`.
+ */
 double CloudManager::wavefuncPDV(std::complex<double> Psi, double r, [[maybe_unused]] int l) {
     double factor = r * r;
 
@@ -892,16 +892,16 @@ double CloudManager::wavefuncPsi2(int n, int l, int m_l, double r, double theta,
     return (std::conj(Psi) * Psi).real() * factor;
 }
 
-    /**
-     * @brief Compute the normalizing constants for the orbital wavefunctions.
-     *
-     * This function takes the maximum principal quantum number `max_n` and
-     * computes the normalizing constants for all orbital wavefunctions with
-     * n <= max_n. The constants are stored in the `norm_constR` and `norm_constY`
-     * maps of the CloudManager object.
-     *
-     * @param[in] max_n The maximum principal quantum number.
-     */
+/**
+ * @brief Compute the normalizing constants for the orbital wavefunctions.
+ *
+ * This function takes the maximum principal quantum number `max_n` and
+ * computes the normalizing constants for all orbital wavefunctions with
+ * n <= max_n. The constants are stored in the `norm_constR` and `norm_constY`
+ * maps of the CloudManager object.
+ *
+ * @param[in] max_n The maximum principal quantum number.
+ */
 void CloudManager::wavefuncNorms(int n_max) {
     int max_l = n_max - 1;
 
@@ -927,12 +927,12 @@ void CloudManager::wavefuncNorms(int n_max) {
     }
 }
 
-    /**
-     * @brief Reset the cloud rendering process for the next frame.
-     *
-     * Clear all data buffers, reset the orbital index, and reset the atom's
-     * atomic number.
-     */
+/**
+ * @brief Reset the cloud rendering process for the next frame.
+ *
+ * Clear all data buffers, reset the orbital index, and reset the atom's
+ * atomic number.
+ */
 void CloudManager::clearForNext() {
     dataStaging.assign(this->pixelCount, 0.0);
     allData.assign(this->pixelCount, 0.0f);
@@ -943,14 +943,14 @@ void CloudManager::clearForNext() {
     mStatus.setTo(em::INIT | em::VERT_READY);
 }
 
-    /**
-     * @brief Reset the cloud rendering process to its initial state.
-     *
-     * Reset the cloud rendering process to its initial state, clearing all
-     * data buffers, resetting the orbital index, and resetting the atom's
-     * atomic number. This function is generally only called once, when the
-     * CloudManager object is created.
-     */
+/**
+ * @brief Reset the cloud rendering process to its initial state.
+ *
+ * Reset the cloud rendering process to its initial state, clearing all
+ * data buffers, resetting the orbital index, and resetting the atom's
+ * atomic number. This function is generally only called once, when the
+ * CloudManager object is created.
+ */
 void CloudManager::resetManager() {
     Manager::resetManager();
 
@@ -982,48 +982,48 @@ void CloudManager::resetManager() {
  *  Getters -- Size
  */
 
-    /**
-     * @brief Get the size of the colour data buffer in bytes.
-     *
-     * @return The size of the colour data buffer in bytes.
-     */
+/**
+ * @brief Get the size of the colour data buffer in bytes.
+ *
+ * @return The size of the colour data buffer in bytes.
+ */
 size_t CloudManager::getColourSize() {
     return this->colourSize;
 }
 
-    /**
-     * @brief Calculates the maximum layer for a given tolerance, n_max, and divisor.
-     *
-     * @details
-     * The maximum layer is calculated by finding the appropriate row in the
-     * cm_maxRadius table and returning the value at n_max - 1, multiplied by
-     * the divisor. The row is chosen based on the absolute value of the floor
-     * of the base-10 logarithm of the tolerance.
-     *
-     * @param tolerance The tolerance to calculate the maximum layer for.
-     * @param n_max The n_max to calculate the maximum layer for.
-     * @param divisor The divisor to multiply the maximum radius by.
-     * @return The maximum layer for the given tolerance, n_max, and divisor.
-     */
+/**
+ * @brief Calculates the maximum layer for a given tolerance, n_max, and divisor.
+ *
+ * @details
+ * The maximum layer is calculated by finding the appropriate row in the
+ * cm_maxRadius table and returning the value at n_max - 1, multiplied by
+ * the divisor. The row is chosen based on the absolute value of the floor
+ * of the base-10 logarithm of the tolerance.
+ *
+ * @param tolerance The tolerance to calculate the maximum layer for.
+ * @param n_max The n_max to calculate the maximum layer for.
+ * @param divisor The divisor to multiply the maximum radius by.
+ * @return The maximum layer for the given tolerance, n_max, and divisor.
+ */
 int CloudManager::getMaxLayer(double tolerance, int n_max, int divisor) {
     int maxRadius = getMaxRadius(tolerance, n_max);
     return maxRadius * divisor;
 }
 
-    /**
-     * @brief Calculates the maximum radius for a given tolerance and n_max.
-     *
-     * @details
-     * The maximum radius is calculated by finding the appropriate row in the
-     * cm_maxRadius table and returning the value at n_max - 1. The row is
-     * chosen based on the absolute value of the floor of the base-10 logarithm
-     * of the tolerance.
-     *
-     * @param tolerance The tolerance to calculate the maximum radius for.
-     * @param n_max The n_max to calculate the maximum radius for.
-     *
-     * @return The maximum radius for the given tolerance and n_max.
-     */
+/**
+ * @brief Calculates the maximum radius for a given tolerance and n_max.
+ *
+ * @details
+ * The maximum radius is calculated by finding the appropriate row in the
+ * cm_maxRadius table and returning the value at n_max - 1. The row is
+ * chosen based on the absolute value of the floor of the base-10 logarithm
+ * of the tolerance.
+ *
+ * @param tolerance The tolerance to calculate the maximum radius for.
+ * @param n_max The n_max to calculate the maximum radius for.
+ *
+ * @return The maximum radius for the given tolerance and n_max.
+ */
 int CloudManager::getMaxRadius(double tolerance, int n_max) {
     int divSciExp = std::abs(floor(log10(tolerance)));
     int maxRadius = cm_maxRadius[divSciExp - 1][n_max - 1];
@@ -1188,15 +1188,15 @@ void CloudManager::printBuffer(uvec buf, std::string name) {
     }
 }
 
-    /**
-     * @brief Prints the elapsed time for each stage of the cloud manager processing.
-     *
-     * Prints the elapsed time for each stage of the cloud manager processing, in milliseconds.
-     * The output is in the format "stage: nn.nn ms\n", where "stage" is the name of the stage and
-     * "nn.nn" is the elapsed time in milliseconds.
-     *
-     * @note This function resets the elapsed time counters after printing.
-     */
+/**
+ * @brief Prints the elapsed time for each stage of the cloud manager processing.
+ *
+ * Prints the elapsed time for each stage of the cloud manager processing, in milliseconds.
+ * The output is in the format "stage: nn.nn ms\n", where "stage" is the name of the stage and
+ * "nn.nn" is the elapsed time in milliseconds.
+ *
+ * @note This function resets the elapsed time counters after printing.
+ */
 void CloudManager::printTimes() {
     for (auto [lab, t] : std::views::zip(cm_labels, cm_times)) {
         if (t) {
@@ -1207,16 +1207,16 @@ void CloudManager::printTimes() {
     this->cm_times.fill(0.0);
 }
 
-    /**
-     * @brief A long-running test function for the threading performance of baking orbitals.
-     *
-     * This function is a test for the performance of `bakeOrbitalsThreaded()` with different
-     * numbers of threads, temporary vectors, and loop iterations. It will take a long time to run
-     * and will print out the total time expected for the test.
-     *
-     * @warning This function is not intended to be called in normal use and is only for testing
-     * purposes.
-     */
+/**
+ * @brief A long-running test function for the threading performance of baking orbitals.
+ *
+ * This function is a test for the performance of `bakeOrbitalsThreaded()` with different
+ * numbers of threads, temporary vectors, and loop iterations. It will take a long time to run
+ * and will print out the total time expected for the test.
+ *
+ * @warning This function is not intended to be called in normal use and is only for testing
+ * purposes.
+ */
 void CloudManager::testThreadingInit([[maybe_unused]] AtomixCloudConfig *config, [[maybe_unused]] harmap *inMap) {
     std::vector<std::pair<AtomixCloudConfig *, harmap *>> tests;
     std::vector<std::pair<std::string, std::string>> testLabels;

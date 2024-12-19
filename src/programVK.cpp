@@ -237,7 +237,7 @@ int ProgramVK::compileAllShaders() {
     errors -= this->p_registeredShaders.size();
 
     for (uint i = 0; i < this->p_registeredShaders.size(); i++) {
-        assert (this->p_registeredShaders[i]->getId() == this->p_compiledShaders[i]->getId());
+        assert(this->p_registeredShaders[i]->getId() == this->p_compiledShaders[i]->getId());
     }
 
     for (auto &s : this->p_compiledShaders) {
@@ -1418,7 +1418,7 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
             bufferInfo->size = size;
             bufferInfo->data = data;
 
-            VKuint zombieIdx =  0;
+            VKuint zombieIdx = 0;
             if (this->p_buffersFree.size()) {
                 zombieIdx = this->p_buffersFree.front();
                 this->p_buffersFree.pop_front();
@@ -1532,7 +1532,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     renderPassInfo.framebuffer = this->p_vkw->currentFramebuffer();
     renderPassInfo.renderArea.extent = renderExtent;
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.clearValueCount = this->p_vkw->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT ? 3 : 2;
+    renderPassInfo.clearValueCount = (this->p_vkw->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT) ? 3 : 2;
     renderPassInfo.pClearValues = clearValues;
     
     this->p_vdf->vkCmdBeginRenderPass(cmdBuff, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);

@@ -35,16 +35,10 @@ SlideSwitch::SlideSwitch(QString strTrue, QString strFalse, int width, int heigh
     slsw_extend2 = slsw_extend << 1;
     this->slsw_sub_height = slsw_height - slsw_extend2;
     this->slsw_borderRadius = slsw_sub_height >> 1;
-    /* setWindowFlags(Qt::FramelessWindowHint);
-    setAttribute(Qt::WA_TranslucentBackground); */
-    // this->resize(slsw_width, slsw_height);
-    // this->setMinimumSize(QSize(120, 20));
     QSizePolicy sp = this->sizePolicy();
     sp.setHorizontalPolicy(QSizePolicy::Preferred);
     sp.setVerticalPolicy(QSizePolicy::Expanding);
-    // sp.setControlType(QSizePolicy::LineEdit);
     this->setSizePolicy(sp);
-    // this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     
     this->setCheckable(true);
     

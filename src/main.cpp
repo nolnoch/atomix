@@ -37,8 +37,9 @@ bool isTesting;
 
 int main(int argc, char* argv[]) {
     // Application
-    QApplication app (argc, argv);
-    app.setStyle("Fusion");
+    QApplication::setStyle("Fusion");
+    QApplication app(argc, argv);
+    // app.setStyle("Fusion");
     QApplication::setApplicationName("atomix");
     QApplication::setOrganizationName("Nolnoch");
     QApplication::setApplicationVersion(QT_VERSION_STR);

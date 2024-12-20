@@ -23,7 +23,6 @@
  */
 
 #include <QtWidgets/QCheckBox>
-#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QColorDialog>
 #include <QtWidgets/QHeaderView>
 #include <QFontDatabase>
@@ -208,9 +207,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *e) {
-    QSettings settings("Nolnoch", "atomix");
+    QSettings settings("nolnoch", "atomix");
+    settings.beginGroup("window");
     settings.setValue("geometry", this->saveGeometry());
     settings.setValue("state", this->saveState());
+    settings.endGroup();
     QWidget::closeEvent(e);
 }
 
@@ -928,9 +929,11 @@ uint MainWindow::refreshOrbits(std::pair<int, int> waveChange) {
 }
 
 void MainWindow::loadSavedSettings() {
-    QSettings settings("Nolnoch", "atomix");
-    restoreGeometry(settings.value("geometry").toByteArray());
-    restoreState(settings.value("state").toByteArray());
+    QSettings settings("nolnoch", "atomix");
+    settings.beginGroup("window");
+    this->restoreGeometry(settings.value("geometry").toByteArray());
+    this->restoreState(settings.value("state").toByteArray());
+    settings.endGroup();
 }
 
 void MainWindow::handleWaveConfigChanged() {

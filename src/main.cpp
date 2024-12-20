@@ -37,13 +37,55 @@ bool isTesting;
 
 int main(int argc, char* argv[]) {
     // Application
-    QApplication::setStyle("Fusion");
     QApplication app(argc, argv);
-    // app.setStyle("Fusion");
-    QApplication::setApplicationName("atomix");
-    QApplication::setOrganizationName("Nolnoch");
-    QApplication::setApplicationVersion(QT_VERSION_STR);
+    app.setApplicationName("atomix");
+    app.setOrganizationName("nolnoch");
+    app.setApplicationVersion(QT_VERSION_STR);
+
+    // Force Fusion-Dark Palette iff AppRun needs to set default GTK_THEME (not currently)
+    /* QPalette atomixPalette;
+    atomixPalette.setColor(QPalette::WindowText, QColor("#ffffffff"));
+    atomixPalette.setColor(QPalette::Button, QColor("#ff2a2a2a"));
+    atomixPalette.setColor(QPalette::Light, QColor("#ff343434"));
+    atomixPalette.setColor(QPalette::Midlight, QColor("#ff2f2f2f"));
+    atomixPalette.setColor(QPalette::Dark, QColor("#ff252525"));
+    atomixPalette.setColor(QPalette::Mid, QColor("#ff2f2f2f"));
+    atomixPalette.setColor(QPalette::Text, QColor("#ffffffff"));
+    atomixPalette.setColor(QPalette::BrightText, QColor("#ffffffff"));
+    atomixPalette.setColor(QPalette::ButtonText, QColor("#ffffffff"));
+    atomixPalette.setColor(QPalette::Base, QColor("#ff2a2a2a"));
+    atomixPalette.setColor(QPalette::Window, QColor("#ff2a2a2a"));
+    atomixPalette.setColor(QPalette::Shadow, QColor("#ff020202"));
+    // atomixPalette.setColor(QPalette::Highlight, QColor("#ff7764d8"));
+    // atomixPalette.setColor(QPalette::HighlightedText, QColor("#ffffffff"));
+    atomixPalette.setColor(QPalette::AlternateBase, QColor("#ff272727"));
+    atomixPalette.setColor(QPalette::ToolTipBase, QColor("#ffffffdc"));
+    atomixPalette.setColor(QPalette::ToolTipText, QColor("#ff000000"));
+    atomixPalette.setColor(QPalette::PlaceholderText, QColor("#ff9b9b9b"));
+
+    atomixPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#ff949494"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Button, QColor("#ff2a2a2a"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Light, QColor("#ff343434"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Midlight, QColor("#ff2f2f2f"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Dark, QColor("#ff252525"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Mid, QColor("#ff2f2f2f"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Text, QColor("#ff949494"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::BrightText, QColor("#ffffffff"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#ff949494"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Base, QColor("#ff2a2a2a"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Window, QColor("#ff2a2a2a"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::Shadow, QColor("#ff020202"));
+    // atomixPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor("#ff7764d8"));
+    // atomixPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor("#ffffffff"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::AlternateBase, QColor("#ff272727"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::ToolTipBase, QColor("#ffffffdc"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::ToolTipText, QColor("#ff000000"));
+    atomixPalette.setColor(QPalette::Disabled, QPalette::PlaceholderText, QColor("#ff9b9b9b"));
+
+    app.setPalette(atomixPalette); */
+    app.setStyle("fusion");
     MainWindow mainWindow;
+    QSettings settings;
 
     // Exe and CLI Parsing
     QCommandLineParser qParser;
@@ -79,28 +121,45 @@ int main(int argc, char* argv[]) {
         std::cout << "Reset Geometry Enabled" << std::endl;
         mainWindow.resetGeometry();
     }
-    QString strAtomixDir = qParser.value(cliAtomixDir);
 
     // Platform
     QString arch = QSysInfo::currentCpuArchitecture();
     QString os = QSysInfo::prettyProductName();
     isMacOS = os.contains("macOS");
 
-    // Debug Info
-    if (isDebug) {
-        std::cout << "OS: " << os.toStdString() << " (" << arch.toStdString() << ")" << std::endl;
-        std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
-        std::cout << "Atomix Directory: " << strAtomixDir.toStdString() << std::endl;
+    QString strAtomixDir = "";
+    if (qParser.isSet(cliAtomixDir)) {
+        // Use CLI argument first, as if it is provided, the user probably knows what they are doing (hah)
+        strAtomixDir = qParser.value(cliAtomixDir);
+    } else {
+        // If not provided, start with default (current) directory
+        strAtomixDir = QDir::currentPath();
+
+        // Adjust for platform filesystems
+        if (isMacOS) {
+            strAtomixDir = strAtomixDir + "/../Resources";
+        } else {
+            strAtomixDir = strAtomixDir + "/../usr";
+        }
+
+        // Check for previous directory
+        settings.beginGroup("atomixFiles");
+        QString savedDir = settings.value("root").toString();
+        settings.endGroup();
+        if (!savedDir.isEmpty()) {
+            strAtomixDir = savedDir;
+        }
     }
 
-    // Set atomix directory and icon
-    if (isMacOS) {
-        strAtomixDir = strAtomixDir + "/../Resources";
-    } else {
-        strAtomixDir = strAtomixDir + "/../.";
-    }
+    // Attempt to set atomix directory and show dialog if necessary
     QDir atomixDir(strAtomixDir);
     while (!mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {
+        QMessageBox dialogConfim;
+        dialogConfim.setText("Please choose the folder (\"atomix Files Directory\") containing the \"configs\" and \"shaders\" folders shipped with the program or provided by you.");
+        dialogConfim.setStandardButtons(QMessageBox::Ok);
+        dialogConfim.setDefaultButton(QMessageBox::Ok);
+        dialogConfim.exec();
+
         QString dir = QFileDialog::getExistingDirectory(
             nullptr,
             "Select atomix Files Directory",
@@ -115,6 +174,18 @@ int main(int argc, char* argv[]) {
     }
     QIcon icoAtomix(QString::fromStdString(mainWindow.getAtomixFiles().resources()) + QString::fromStdString("icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
+
+    // Since by this point the atomix directory is set, let's save it.
+    settings.beginGroup("atomixFiles");
+    settings.setValue("root", atomixDir.absolutePath());
+    settings.endGroup();
+
+    // Debug Info
+    if (isDebug) {
+        std::cout << "OS: " << os.toStdString() << " (" << arch.toStdString() << ")" << std::endl;
+        std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
+        std::cout << "Atomix Directory: " << strAtomixDir.toStdString() << std::endl;
+    }
     
     // Surface Format
     QSurfaceFormat qFmt;

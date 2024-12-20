@@ -27,6 +27,7 @@
 
 
 #include <QtWidgets/QMainWindow>
+#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QBoxLayout>

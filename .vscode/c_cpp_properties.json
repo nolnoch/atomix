@@ -42,6 +42,19 @@
             "cppStandard": "c++23",
             "intelliSenseMode": "macos-clang-arm64",
             "compilerPath": "/usr/bin/clang++"
+        },
+        {
+            "name": "Windows",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Qt/6.8.1/llvm-mingw_64/include/**"
+            ],
+            "defines": [
+                "${myDefines}"
+            ],
+            "cStandard": "c23",
+            "cppStandard": "c++23",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4

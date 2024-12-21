@@ -690,7 +690,7 @@ void CloudManager::radialMaxCSV(fvec &vecPDV, [[maybe_unused]] int n_max) {
     auto it = vecPDV.cbegin();
     fvec maxPDVs;
     fvec radii;
-    float tols[4] = {0.1, 0.01, 0.001, 0.0001};
+    float tols[4] = {0.1f, 0.01f, 0.001f, 0.0001f};
 
     while ((it + chunkSize) <= vecPDV.cend()) {
         const auto max_it = std::max_element(it, it + chunkSize);

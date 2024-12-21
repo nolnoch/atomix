@@ -17,7 +17,8 @@ elseif(APPLE)
     set(VK_DRIVER_FILES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
 elseif(WIN32)
     set(Qt6_DIR "C:/Qt/6.8.1/msvc2022_64")
-    set(VULKAN_SDK "C:/VulkanSDK/1.3.296.0")
+    # set(Vulkan_DIR "C:/dev/vcpkg/installed/x64-windows/share/Vulkan")
+    set(glslang_DIR "C:/dev/vcpkg/installed/x64-windows/share/glslang")
     list(APPEND CMAKE_PREFIX_PATH "C:/dev/vcpkg/installed/x64-windows/share")
 endif()
 
@@ -30,15 +31,16 @@ set(ENV{VK_LOADER_DEBUG} "error,warn,layer,info")
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Concurrent Qml)
 find_package(oneDPL REQUIRED)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
-find_package(glslang CONFIG REQUIRED COMPONENTS SPIRV SPIRV-Tools SPIRV-Tools-opt)
+find_package(glslang CONFIG REQUIRED COMPONENTS SPIRV glslang glslang-default-resource-limits)
+find_package(SPIRV-Tools CONFIG REQUIRED)
+find_package(SPIRV-Tools-opt CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_reflect CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 
 qt_add_executable(atomix main.cpp quaternion.cpp special.cpp shaderobj.cpp mainwindow.cpp filehandler.cpp manager.cpp wavemanager.cpp cloudmanager.cpp slideswitch.cpp programVK.cpp vkwindow.cpp)
 
-target_link_libraries(atomix PRIVATE glslang glslang-default-resource-limits SPIRV SPIRV-Tools SPIRV-Tools-opt spirv-cross-core spirv-cross-reflect oneDPL TBB::tbb TBB::tbbmalloc vulkan)
-target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent Qt6::Qml)
+target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent Qt6::Qml glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV SPIRV-Tools-opt spirv-cross-core spirv-cross-reflect oneDPL TBB::tbb TBB::tbbmalloc Vulkan::Vulkan)
 
 # Release Build and Install
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -82,14 +84,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     elseif(WIN32)
         message(STATUS "Build/Install for Windows")
         set_property(TARGET atomix PROPERTY WIN32_EXECUTABLE true)
-        # set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
-        set_target_properties(atomix PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-        add_custom_command(TARGET atomix PRE_BUILD
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs ${CMAKE_INSTALL_PREFIX}/configs
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_INSTALL_PREFIX}/shaders
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/res && cp -r ${CMAKE_SOURCE_DIR}/res ${CMAKE_INSTALL_PREFIX}/res
-            COMMENT "Generating Windows deployment files for atomix"
-        )
         install(SCRIPT ${deploy_script})
     endif()
     

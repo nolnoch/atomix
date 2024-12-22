@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "atomix",
+  "version": "1.0.0",
+  "description": "atomix is a Vulkan-based renderer for 3D waves and spherical harmonics.",
+  "dependencies": [
+    {
+      "name": "glm",
+      "default-features": true
+    },
+    {
+      "name": "glslang",
+      "default-features": true,
+      "features": [
+        "opt",
+        "tools"
+      ]
+    },
+    {
+      "name": "spirv-tools",
+      "default-features": true
+    },
+    {
+      "name": "spirv-cross",
+      "default-features": true
+    },
+    {
+      "name": "spirv-reflect",
+      "default-features": true
+    },
+    {
+      "name": "tbb",
+      "default-features": true
+    },
+    {
+      "name": "vulkan",
+      "default-features": true
+    }
+  ],
+  "builtin-baseline": "f06267da58f3c06b3a1aff9cbf5c2906e595ebc9",
+  "overrides": [
+    {
+      "name": "glslang",
+      "version": "15.0.0"
+    }
+  ]
+}

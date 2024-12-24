@@ -56,15 +56,19 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     elseif(APPLE)
         message(STATUS "Build/Install for Apple")
         # Run QT's macdeployqt and copy additional files
+        set(LIBDIR ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks)
+        set(RESDIR ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources)
         set_property(TARGET atomix PROPERTY MACOSX_BUNDLE true)
         set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
         set_target_properties(atomix PROPERTIES INSTALL_RPATH "@loader_path/../Frameworks")
         add_custom_command(TARGET atomix POST_BUILD
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs && cp -r ${CMAKE_SOURCE_DIR}/configs/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs/
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders/
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res && cp -r ${CMAKE_SOURCE_DIR}/res/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res/
-            COMMAND cp ${CMAKE_SOURCE_DIR}/res/icons/atomix.icns ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks && cp ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libvulkan.1.3.296.dylib ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks/
+            COMMAND mkdir -p ${RESDIR}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs/* ${RESDIR}/configs/
+            COMMAND mkdir -p ${RESDIR}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders/* ${RESDIR}/shaders/
+            COMMAND mkdir -p ${RESDIR}/res && cp -r ${CMAKE_SOURCE_DIR}/res/* ${RESDIR}/res/
+            COMMAND cp ${CMAKE_SOURCE_DIR}/res/icons/atomix.icns ${RESDIR}/
+            COMMAND mkdir -p ${LIBDIR} && cp ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libvulkan.1.3.296.dylib ${LIBDIR}/
+            COMMAND ln -s ${LIBDIR}/libvulkan.1.3.296.dylib ${LIBDIR}/libvulkan.1.dylib
+            COMMAND ln -s ${LIBDIR}/libvulkan.1.3.296.dylib ${LIBDIR}/libvulkan.dylib
             COMMENT "Generating macOS deployment files for atomix"
         )
     elseif(WIN32)

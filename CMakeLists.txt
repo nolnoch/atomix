@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.10.0...3.30.0)
+cmake_minimum_required(VERSION 3.30.0...3.32.0)
 set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake CACHE STRING "Vcpkg toolchain file")
+
+message(STATUS "<------- CMake version: ${CMAKE_VERSION} ------->")
 
 project(atomix VERSION 0.1.0 LANGUAGES CXX)
 add_subdirectory(src)

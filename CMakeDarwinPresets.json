@@ -1,0 +1,23 @@
+{
+    "version": 9,
+    "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "configurePresets": [
+        {
+            "name": "vcpkg",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build",
+            "installDir": "${sourceDir}/build/install",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_OSX_ARCHITECTURES": "$env{CM_TARGET_ARCH}",
+                "CMAKE_BUILD_TYPE": "$env{VCPKG_BUILD_TYPE}",
+                "VCPKG_HOST_TRIPLET": "$env{VC_HOST_ARCH}-osx",
+                "VCPKG_TARGET_TRIPLET": "$env{VC_TARGET_ARCH}-osx"
+            },
+            "environment": {
+                "VCPKG_ROOT": "${sourceParentDir}/vcpkg"
+            },
+            "hidden": true
+        }
+    ]
+}

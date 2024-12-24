@@ -54,7 +54,8 @@
             ],
             "cStandard": "c23",
             "cppStandard": "c++23",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerPath": "cl.exe"
         }
     ],
     "version": 4

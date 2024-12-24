@@ -1,0 +1,22 @@
+{
+    "version": 9,
+    "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "configurePresets": [
+        {
+            "name": "vcpkg",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build",
+            "installDir": "${sourceDir}/build/install",
+            "description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_BUILD_TYPE": "$env{VCPKG_BUILD_TYPE}"
+            },
+            "environment": {
+                "VCPKG_ROOT": "${sourceParentDir}/vcpkg"
+            },
+            "hidden": true
+        }
+    ]
+}

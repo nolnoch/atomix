@@ -11,18 +11,17 @@ elseif(WIN32)
     set(Qt6_DIR "C:/Qt/6.8.1/msvc2022_64")
 endif()
 
-set(HOST_LIBS ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/uni-osx/share)
-list(APPEND CMAKE_PREFIX_PATH ${HOST_LIBS})
+set(VC_LIBS ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share)
+list(APPEND CMAKE_PREFIX_PATH ${VC_LIBS})
 list(APPEND CMAKE_PREFIX_PATH ${Qt6_DIR})
 
 set(ENV{VSCODE_QT_SDK} ${Qt6_DIR})
 set(ENV{VSCODE_QT_FOLDER} ${Qt6_DIR})
-# set(ENV{VK_LOADER_DEBUG} "error,warn,layer,info")
 
+message(STATUS "<------- USING VC_LIBS: ${VC_LIBS} ------>")
 message(STATUS "<------- USING Qt6_DIR: ${Qt6_DIR} ------->")
-message(STATUS "<------- USING HOST_LIBS: ${HOST_LIBS} ------>")
-message(STATUS "<------- USING VCPKG_TARGET_TRIPLET: ${VCPKG_TARGET_TRIPLET} ------->")
 message(STATUS "<------- USING VCPKG_HOST_TRIPLET: ${VCPKG_HOST_TRIPLET} ------->")
+message(STATUS "<------- USING VCPKG_TARGET_TRIPLET: ${VCPKG_TARGET_TRIPLET} ------->")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Concurrent Qml)
 find_package(oneDPL REQUIRED)
@@ -43,24 +42,14 @@ target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concur
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build/install)
     
-    if(UNIX AND NOT APPLE)
-        message(STATUS "Build/Install for Linux")
-        # Run custom install script invoking appimagetool and copying/editing files
-        add_custom_command(TARGET atomix POST_BUILD
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}
-            COMMAND cp ${CMAKE_SOURCE_DIR}/doc/deploy/nix* ${CMAKE_INSTALL_PREFIX}/../
-            COMMAND chmod +x ${CMAKE_INSTALL_PREFIX}/../nixdeploy.sh
-            COMMENT "Generating macOS deployment files for atomix"
-        )
-        install(CODE "execute_process(COMMAND ./nixdeploy.sh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build)")
-    elseif(APPLE)
+    if(APPLE)
         message(STATUS "Build/Install for Apple")
+        set_property(TARGET atomix PROPERTY MACOSX_BUNDLE true)
+        set_target_properties(atomix PROPERTIES INSTALL_RPATH "@loader_path/../Frameworks")
         # Run QT's macdeployqt and copy additional files
         set(LIBDIR ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks)
         set(RESDIR ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources)
-        set_property(TARGET atomix PROPERTY MACOSX_BUNDLE true)
-        set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
-        set_target_properties(atomix PROPERTIES INSTALL_RPATH "@loader_path/../Frameworks")
+        # set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
         add_custom_command(TARGET atomix POST_BUILD
             COMMAND mkdir -p ${RESDIR}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs/* ${RESDIR}/configs/
             COMMAND mkdir -p ${RESDIR}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders/* ${RESDIR}/shaders/
@@ -69,8 +58,18 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
             COMMAND mkdir -p ${LIBDIR} && cp ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libvulkan.1.3.296.dylib ${LIBDIR}/
             COMMAND ln -s ${LIBDIR}/libvulkan.1.3.296.dylib ${LIBDIR}/libvulkan.1.dylib
             COMMAND ln -s ${LIBDIR}/libvulkan.1.3.296.dylib ${LIBDIR}/libvulkan.dylib
+            COMMAND cp ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libMoltenVK.dylib ${LIBDIR}/
             COMMENT "Generating macOS deployment files for atomix"
         )
+    elseif(UNIX)
+        message(STATUS "Build/Install for Linux")
+        # Run custom install script invoking appimagetool and copying/editing files
+        add_custom_command(TARGET atomix POST_BUILD
+            COMMAND cp ${CMAKE_SOURCE_DIR}/doc/deploy/nix* .
+            COMMAND chmod +x nixdeploy.sh
+            COMMENT "Generating macOS deployment files for atomix"
+        )
+        install(CODE "execute_process(COMMAND ./nixdeploy.sh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build)")
     elseif(WIN32)
         message(STATUS "Build/Install for Windows")
         set_property(TARGET atomix PROPERTY WIN32_EXECUTABLE true)

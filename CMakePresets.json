@@ -1,5 +1,5 @@
 {
-    "version": 8,
+    "version": 9,
     "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
     "configurePresets": [
         {
@@ -8,100 +8,60 @@
             "binaryDir": "${sourceDir}/build",
             "installDir": "${sourceDir}/build/install",
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_OSX_ARCHITECTURES": "$env{CM_TARGET_ARCH}",
+                "CMAKE_BUILD_TYPE": "$env{VCPKG_BUILD_TYPE}",
+                "VCPKG_HOST_TRIPLET": "$env{VC_HOST_ARCH}-osx",
+                "VCPKG_TARGET_TRIPLET": "$env{VC_TARGET_ARCH}-osx",
+                "VCPKG_TRACE_FIND_PACKAGE": "ON"
             },
             "environment": {
                 "VCPKG_ROOT": "${sourceParentDir}/vcpkg"
-            }
-        },{
+            },
+            "hidden": true
+        },
+        {
             "name": "defaultConfigDebug",
             "displayName": "Preset Configuration: Debug",
             "inherits": "vcpkg",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            "environment": {
+                "VCPKG_BUILD_TYPE": "Debug"},
+            "hidden": true
         },
         {
             "name": "defaultConfigRelease",
             "displayName": "Preset Configuration: Release",
             "inherits": "vcpkg",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
+            "environment": {
+                "VCPKG_BUILD_TYPE": "Release"},
+            "hidden": true
         }
     ],
     "buildPresets": [
         {
             "name": "defaultBuildDebug",
             "displayName": "Preset Build: Debug",
-            "configurePreset": "defaultConfigDebug",
-            "inheritConfigureEnvironment": true,
             "configuration": "Debug",
             "jobs": 16,
-            "cleanFirst": true
+            "cleanFirst": true,
+            "hidden": true
         },
         {
             "name": "defaultBuildRelease",
-            "displayName": "Preset Build: Release",
-            "configurePreset": "defaultConfigRelease",
-            "inheritConfigureEnvironment": true,
+            "displayName": "Preset Build: Release (default)",
             "configuration": "Release",
             "jobs": 16,
-            "cleanFirst": true
+            "cleanFirst": true,
+            "hidden": true
         },
         {
             "name": "defaultInstall",
-            "displayName": "Preset Install",
-            "configurePreset": "defaultConfigRelease",
-            "inheritConfigureEnvironment": true,
+            "displayName": "Preset Install (default)",
             "configuration": "Release",
             "targets": ["atomix", "install"],
             "jobs": 16,
-            "cleanFirst": true
-        }
-    ],
-    "workflowPresets": [
-        {
-            "name": "defaultWorkflowDebug",
-            "displayName": "Preset Workflow: Debug",
-            "steps": [
-                {
-                    "type": "configure",
-                    "name": "defaultConfigDebug"
-                },
-                {
-                    "type": "build",
-                    "name": "defaultBuildDebug"
-                }
-            ]
-        },
-        {
-            "name": "defaultWorkflowRelease",
-            "displayName": "Preset Workflow: Release",
-            "steps": [
-                {
-                    "type": "configure",
-                    "name": "defaultConfigRelease"
-                },
-                {
-                    "type": "build",
-                    "name": "defaultBuildRelease"
-                }
-            ]
-        },
-        {
-            "name": "defaultWorkflowInstall",
-            "displayName": "Preset Workflow: Install",
-            "steps": [
-                {
-                    "type": "configure",
-                    "name": "defaultConfigRelease"
-                },
-                {
-                    "type": "build",
-                    "name": "defaultInstall"
-                }
-            ]
+            "cleanFirst": true,
+            "hidden": true
         }
     ]
 }

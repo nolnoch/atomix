@@ -878,9 +878,9 @@ void VKWindow::printFlags(std::string str) {
  * 
  * @return The aligned VkDeviceSize.
  */
-static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign) {
+/* static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign) {
     return (v + byteAlign - 1) & ~(byteAlign - 1);
-}
+} */
 
 /*
  * VKRenderer

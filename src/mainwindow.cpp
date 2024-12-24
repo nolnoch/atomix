@@ -1625,12 +1625,12 @@ void MainWindow::_initGraphics() {
     this->setCentralWidget(graph);
 }
 
-    /**
-     * @brief Initializes all the widgets in the main window, including validators, dock GUI and status bar.
-     *
-     * Initializes input validators, sets up dock GUI, refreshes configuration and shader selection, loads the default configuration,
-     * refreshes available orbitals, sets up the status bar, and sets up the details dock.
-     */
+/**
+ * @brief Initializes all the widgets in the main window, including validators, dock GUI and status bar.
+ *
+ * Initializes input validators, sets up dock GUI, refreshes configuration and shader selection, loads the default configuration,
+ * refreshes available orbitals, sets up the status bar, and sets up the details dock.
+ */
 void MainWindow::_initWidgets() {
     // Input Validators
     valIntSmall = new QIntValidator();  

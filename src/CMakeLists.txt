@@ -2,36 +2,27 @@ set(CMAKE_AUTOMOC ON)
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 if(UNIX AND NOT APPLE)
-    set(VCPKG_HOST_TRIPLET "x64-linux")
-    set(VCPKG_TARGET_TRIPLET "x64-linux")
-
     set(Qt6_DIR "/home/braer/Qt/6.8.0/gcc_64")
     set(oneDPL_DIR "/opt/intel/oneapi/2025.0/lib/cmake/oneDPL")
 elseif(APPLE)
-    set(VCPKG_HOST_TRIPLET "x64-macos")
-    set(VCPKG_TARGET_TRIPLET "x64-macos")
-
     set(Qt6_DIR "/usr/local/Qt-6.8.0")
     set(oneDPL_DIR "/opt/intel/oneapi/2022.2.0/lib/cmake/oneDPL")
-    # set(Qt6GuiTools_DIR ${Qt6_DIR}/lib/cmake/Qt6GuiTools)
-
-    set(DYLD_LIBRARY_PATH ${VULKAN_SDK}/lib ${DYLD_LIBRARY_PATH})
-    set(VK_ADD_LAYER_PATH ${VULKAN_SDK}/share/vulkan/explicit_layer.d)
-    set(VK_ICD_FILENAMES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
-    set(VK_DRIVER_FILES ${VULKAN_SDK}/share/vulkan/icd.d/MoltenVK_icd.json)
 elseif(WIN32)
-    set(VCPKG_HOST_TRIPLET "x64-windows")
-    set(VCPKG_TARGET_TRIPLET "x64-windows")
-
     set(Qt6_DIR "C:/Qt/6.8.1/msvc2022_64")
 endif()
 
-list(APPEND CMAKE_PREFIX_PATH $ENV{VCPKG_ROOT}/installed/${VCPKG_TARGET_TRIPLET}/share)
+set(HOST_LIBS ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/uni-osx/share)
+list(APPEND CMAKE_PREFIX_PATH ${HOST_LIBS})
 list(APPEND CMAKE_PREFIX_PATH ${Qt6_DIR})
 
 set(ENV{VSCODE_QT_SDK} ${Qt6_DIR})
 set(ENV{VSCODE_QT_FOLDER} ${Qt6_DIR})
-set(ENV{VK_LOADER_DEBUG} "error,warn,layer,info")
+# set(ENV{VK_LOADER_DEBUG} "error,warn,layer,info")
+
+message(STATUS "<------- USING Qt6_DIR: ${Qt6_DIR} ------->")
+message(STATUS "<------- USING HOST_LIBS: ${HOST_LIBS} ------>")
+message(STATUS "<------- USING VCPKG_TARGET_TRIPLET: ${VCPKG_TARGET_TRIPLET} ------->")
+message(STATUS "<------- USING VCPKG_HOST_TRIPLET: ${VCPKG_HOST_TRIPLET} ------->")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Concurrent Qml)
 find_package(oneDPL REQUIRED)
@@ -51,17 +42,6 @@ target_link_libraries(atomix PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concur
 # Release Build and Install
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build/install)
-
-    install(TARGETS atomix
-        BUNDLE DESTINATION .
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-
-    qt_generate_deploy_app_script(
-        TARGET atomix
-        OUTPUT_SCRIPT deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
-    )
     
     if(UNIX AND NOT APPLE)
         message(STATUS "Build/Install for Linux")
@@ -77,22 +57,35 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         message(STATUS "Build/Install for Apple")
         # Run QT's macdeployqt and copy additional files
         set_property(TARGET atomix PROPERTY MACOSX_BUNDLE true)
+        set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
         set_target_properties(atomix PROPERTIES INSTALL_RPATH "@loader_path/../Frameworks")
         add_custom_command(TARGET atomix POST_BUILD
             COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs && cp -r ${CMAKE_SOURCE_DIR}/configs/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/configs/
             COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/shaders/
             COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res && cp -r ${CMAKE_SOURCE_DIR}/res/* ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/res/
             COMMAND cp ${CMAKE_SOURCE_DIR}/res/icons/atomix.icns ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources/
-            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks && cp ${VULKAN_SDK}/lib/libvulkan.dylib ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks/
+            COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks && cp ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libvulkan.1.3.296.dylib ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks/
             COMMENT "Generating macOS deployment files for atomix"
         )
-        install(SCRIPT ${deploy_script})
     elseif(WIN32)
         message(STATUS "Build/Install for Windows")
         set_property(TARGET atomix PROPERTY WIN32_EXECUTABLE true)
+    endif()
+
+    install(TARGETS atomix
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION .
+    )
+
+    qt_generate_deploy_app_script(
+        TARGET atomix
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    
+    if (APPLE OR WIN32)
         install(SCRIPT ${deploy_script})
     endif()
-    
 endif()
 
 

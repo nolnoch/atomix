@@ -6,12 +6,44 @@
             "name": "defaultConfigDebugA",
             "displayName": "Preset Configuration: Debug+",
             "inherits": "defaultConfigDebug",
+            "environment": {
+                "VC_HOST_ARCH": "arm64-osx",
+                "VC_TARGET_ARCH": "arm64-osx",
+                "CM_TARGET_ARCH": "arm64"
+            },
             "hidden": false
         },
         {
             "name": "defaultConfigReleaseA",
             "displayName": "Preset Configuration: Release+ (default)",
             "inherits": "defaultConfigRelease",
+            "environment": {
+                "VC_HOST_ARCH": "arm64-osx",
+                "VC_TARGET_ARCH": "arm64-osx",
+                "CM_TARGET_ARCH": "arm64"
+            },
+            "hidden": false
+        },
+        {
+            "name": "crossConfigReleaseA",
+            "displayName": "Preset Configuration: Release+ (cross)",
+            "inherits": "defaultConfigRelease",
+            "environment": {
+                "VC_HOST_ARCH": "arm64-osx",
+                "VC_TARGET_ARCH": "x64-osx",
+                "CM_TARGET_ARCH": "x86_64"
+            },
+            "hidden": false
+        },
+        {
+            "name": "universalConfigReleaseA",
+            "displayName": "Preset Configuration: Release+ (universal)",
+            "inherits": "defaultConfigRelease",
+            "environment": {
+                "VC_HOST_ARCH": "arm64-osx",
+                "VC_TARGET_ARCH": "uni-osx",
+                "CM_TARGET_ARCH": "x86_64;arm64"
+            },
             "hidden": false
         }
     ],
@@ -33,10 +65,42 @@
             "hidden": false
         },
         {
+            "name": "crossBuildReleaseA",
+            "displayName": "Preset Build: Release+ (cross)",
+            "inherits": "defaultBuildRelease",
+            "configurePreset": "crossConfigReleaseA",
+            "inheritConfigureEnvironment": true,
+            "hidden": false
+        },
+        {
+            "name": "universalBuildReleaseA",
+            "displayName": "Preset Build: Release+ (universal)",
+            "inherits": "defaultBuildRelease",
+            "configurePreset": "universalConfigReleaseA",
+            "inheritConfigureEnvironment": true,
+            "hidden": false
+        },
+        {
             "name": "defaultInstallA",
             "displayName": "Preset Install+ (default)",
             "inherits": "defaultInstall",
             "configurePreset": "defaultConfigReleaseA",
+            "inheritConfigureEnvironment": true,
+            "hidden": false
+        },
+        {
+            "name": "crossInstallA",
+            "displayName": "Preset Install+ (cross)",
+            "inherits": "defaultInstall",
+            "configurePreset": "crossConfigReleaseA",
+            "inheritConfigureEnvironment": true,
+            "hidden": false
+        },
+        {
+            "name": "universalInstallA",
+            "displayName": "Preset Install+ (universal)",
+            "inherits": "defaultInstall",
+            "configurePreset": "universalConfigReleaseA",
             "inheritConfigureEnvironment": true,
             "hidden": false
         }

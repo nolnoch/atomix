@@ -11,8 +11,8 @@
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
                 "CMAKE_OSX_ARCHITECTURES": "$env{CM_TARGET_ARCH}",
                 "CMAKE_BUILD_TYPE": "$env{VCPKG_BUILD_TYPE}",
-                "VCPKG_HOST_TRIPLET": "$env{VC_HOST_ARCH}-osx",
-                "VCPKG_TARGET_TRIPLET": "$env{VC_TARGET_ARCH}-osx"
+                "VCPKG_HOST_TRIPLET": "$env{VC_HOST_ARCH}",
+                "VCPKG_TARGET_TRIPLET": "$env{VC_TARGET_ARCH}"
             },
             "environment": {
                 "VCPKG_ROOT": "${sourceParentDir}/vcpkg"

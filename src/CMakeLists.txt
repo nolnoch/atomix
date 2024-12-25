@@ -44,32 +44,25 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     
     if(APPLE)
         message(STATUS "Build/Install for Apple")
-        set_property(TARGET atomix PROPERTY MACOSX_BUNDLE true)
-        set_target_properties(atomix PROPERTIES INSTALL_RPATH "@loader_path/../Frameworks")
-        # Run QT's macdeployqt and copy additional files
-        set(LIBDIR ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Frameworks)
-        set(RESDIR ${CMAKE_INSTALL_PREFIX}/atomix.app/Contents/Resources)
-        # set_target_properties(atomix PROPERTIES BUILD_RPATH "$ORIGIN/../lib")
+        set_target_properties(atomix PROPERTIES
+            MACOSX_BUNDLE true
+            BUILD_RPATH "$ORIGIN/../Frameworks"
+            INSTALL_RPATH "@loader_path/../Frameworks"
+        )
+        # Run custom install script invoking macdeployqt and copying/editing files
         add_custom_command(TARGET atomix POST_BUILD
-            COMMAND mkdir -p ${RESDIR}/configs && cp -r ${CMAKE_SOURCE_DIR}/configs/* ${RESDIR}/configs/
-            COMMAND mkdir -p ${RESDIR}/shaders && cp -r ${CMAKE_SOURCE_DIR}/shaders/* ${RESDIR}/shaders/
-            COMMAND mkdir -p ${RESDIR}/res && cp -r ${CMAKE_SOURCE_DIR}/res/* ${RESDIR}/res/
-            COMMAND cp ${CMAKE_SOURCE_DIR}/res/icons/atomix.icns ${RESDIR}/
-            COMMAND mkdir -p ${LIBDIR} && cp ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libvulkan.1.3.296.dylib ${LIBDIR}/
-            COMMAND ln -s ${LIBDIR}/libvulkan.1.3.296.dylib ${LIBDIR}/libvulkan.1.dylib
-            COMMAND ln -s ${LIBDIR}/libvulkan.1.3.296.dylib ${LIBDIR}/libvulkan.dylib
-            COMMAND cp ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libMoltenVK.dylib ${LIBDIR}/
-            COMMENT "Generating macOS deployment files for atomix"
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build
+            COMMAND cp ${CMAKE_SOURCE_DIR}/doc/deploy/macdeploy.sh deploy.sh
+            COMMAND chmod +x deploy.sh
         )
     elseif(UNIX)
         message(STATUS "Build/Install for Linux")
         # Run custom install script invoking appimagetool and copying/editing files
         add_custom_command(TARGET atomix POST_BUILD
-            COMMAND cp ${CMAKE_SOURCE_DIR}/doc/deploy/nix* .
-            COMMAND chmod +x nixdeploy.sh
-            COMMENT "Generating macOS deployment files for atomix"
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build
+            COMMAND cp ${CMAKE_SOURCE_DIR}/doc/deploy/nixdeploy.sh deploy.sh
+            COMMAND chmod +x deploy.sh
         )
-        install(CODE "execute_process(COMMAND ./nixdeploy.sh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build)")
     elseif(WIN32)
         message(STATUS "Build/Install for Windows")
         set_property(TARGET atomix PROPERTY WIN32_EXECUTABLE true)
@@ -86,8 +79,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         NO_UNSUPPORTED_PLATFORM_ERROR
     )
     
-    if (APPLE OR WIN32)
+    if(WIN32)
         install(SCRIPT ${deploy_script})
+    else()
+        install(CODE "execute_process(COMMAND ./deploy.sh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build)")
     endif()
 endif()
 

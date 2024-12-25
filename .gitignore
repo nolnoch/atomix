@@ -3,3 +3,4 @@ build/
 .cache
 .qt/
 xbuild/
+CMakeUserPresets.json

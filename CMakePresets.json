@@ -10,7 +10,8 @@
             "displayName": "Preset Configuration: Debug",
             "inherits": "vcpkg",
             "environment": {
-                "VCPKG_BUILD_TYPE": "Debug"},
+                "VCPKG_BUILD_TYPE": "Debug"
+            },
             "hidden": true
         },
         {
@@ -18,7 +19,8 @@
             "displayName": "Preset Configuration: Release",
             "inherits": "vcpkg",
             "environment": {
-                "VCPKG_BUILD_TYPE": "Release"},
+                "VCPKG_BUILD_TYPE": "Release"
+            },
             "hidden": true
         }
     ],
@@ -27,6 +29,7 @@
             "name": "defaultBuildDebug",
             "displayName": "Preset Build: Debug",
             "configuration": "Debug",
+            "targets": ["atomix"],
             "jobs": 16,
             "cleanFirst": true,
             "hidden": true
@@ -35,6 +38,7 @@
             "name": "defaultBuildRelease",
             "displayName": "Preset Build: Release (default)",
             "configuration": "Release",
+            "targets": ["atomix"],
             "jobs": 16,
             "cleanFirst": true,
             "hidden": true

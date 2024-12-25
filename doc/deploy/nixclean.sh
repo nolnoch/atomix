@@ -1,6 +1,6 @@
 #!/bin/sh
 
 rm -rf atomix-*
-rm -rf package install/*
+rm -rf deploy.sh package install/*
 echo Done cleaning.
 

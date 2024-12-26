@@ -51,6 +51,15 @@
             "jobs": 16,
             "cleanFirst": true,
             "hidden": true
+        },
+        {
+            "name": "debugInstall",
+            "displayName": "Preset Install: Debug",
+            "configuration": "Debug",
+            "targets": ["atomix", "install"],
+            "jobs": 16,
+            "cleanFirst": true,
+            "hidden": true
         }
     ]
 }

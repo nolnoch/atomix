@@ -25,6 +25,7 @@
 #include <QSysInfo>
 #include <QtWidgets/QApplication>
 #include <QCommandLineParser>
+#include <QLoggingCategory>
 #include <QSurfaceFormat>
 #include "mainwindow.hpp"
 
@@ -185,6 +186,8 @@ int main(int argc, char* argv[]) {
         std::cout << "OS: " << os.toStdString() << " (" << arch.toStdString() << ")" << std::endl;
         std::cout << "Qt Version: " << QT_VERSION_STR << std::endl;
         std::cout << "Atomix Directory: " << strAtomixDir.toStdString() << std::endl;
+        // QLoggingCategory::setFilterRules("*:debug=true");
+        QLoggingCategory::setFilterRules("qt.vulkan=true");
     }
     
     // Surface Format

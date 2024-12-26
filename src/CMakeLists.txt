@@ -3,15 +3,19 @@ message(STATUS "<------- CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE} ------>")
 
 if(APPLE)
     set(SCRIPT_PREFIX "mac")
+    set(SCRIPT_CMD "source")
     set(SCRIPT_EXT "sh")
     set(Qt6_DIR "/usr/local/Qt-6.8.0")
 elseif(UNIX)
     set(SCRIPT_PREFIX "linux")
+    set(SCRIPT_CMD "source")
     set(SCRIPT_EXT "sh")
     set(Qt6_DIR "/home/braer/Qt/6.8.0/gcc_64")
     set(oneDPL_DIR "/opt/intel/oneapi/2025.0/lib/cmake/oneDPL")
 elseif(WIN32)
     set(SCRIPT_PREFIX "win")
+    set(SCRIPT_CMD "cmd")
+    set(SCRIPT_ARGS "/c")
     set(SCRIPT_EXT "bat")
     set(Qt6_DIR "C:/Qt/6.8.1/msvc2022_64")
 endif()
@@ -48,55 +52,32 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build/install)
 
 if(APPLE)
     message(STATUS "Build/Install for Apple")
-    # Run custom install script invoking macdeployqt and copying/editing files
     set_target_properties(atomix PROPERTIES
         MACOSX_BUNDLE true
         BUILD_RPATH "@loader_path/../lib"
         INSTALL_RPATH "@loader_path/../lib"
     )
-    file(COPY ${CMAKE_SOURCE_DIR}/doc/deploy/mac/macdeploy.sh DESTINATION ${CMAKE_SOURCE_DIR}/build)
-    file(RENAME ${CMAKE_SOURCE_DIR}/build/macdeploy.sh ${CMAKE_SOURCE_DIR}/build/deploy.sh)
-    file(CHMOD ${CMAKE_SOURCE_DIR}/build/deploy.sh PERMISSIONS OWNER_EXECUTE)
 elseif(UNIX)
     message(STATUS "Build/Install for Linux")
-    # Run custom install script invoking appimagetool and copying/editing files
-    file(COPY ${CMAKE_SOURCE_DIR}/doc/deploy/linux/linuxdeploy.sh DESTINATION ${CMAKE_SOURCE_DIR}/build)
-    file(RENAME ${CMAKE_SOURCE_DIR}/build/linuxdeploy.sh ${CMAKE_SOURCE_DIR}/build/deploy.sh)
-    file(CHMOD ${CMAKE_SOURCE_DIR}/build/deploy.sh PERMISSIONS OWNER_EXECUTE)
 elseif(WIN32)
     message(STATUS "Build/Install for Windows")
-    # Run custom install script invoking windeployqt and copying/editing files
     set_target_properties(atomix PROPERTIES
         WIN32_EXECUTABLE true
     )
-    file(COPY ${CMAKE_SOURCE_DIR}/doc/deploy/win/windeploy.bat DESTINATION ${CMAKE_SOURCE_DIR}/build)
-    file(RENAME ${CMAKE_SOURCE_DIR}/build/windeploy.bat ${CMAKE_SOURCE_DIR}/build/deploy.bat)
 endif()
 
-add_custom_target(atomix_clean
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build    
-    if(WIN32)
-        COMMAND "cmd /c ${CMAKE_SOURCE_DIR}\\doc\\deploy\\${SCRIPT_PREFIX}\\${SCRIPT_PREFIX}clean.${SCRIPT_EXT}" ${CMAKE_BUILD_TYPE} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build
-    else()
-        COMMAND "source ${CMAKE_SOURCE_DIR}/doc/deploy/${SCRIPT_PREFIX}/${SCRIPT_PREFIX}clean.${SCRIPT_EXT}" ${CMAKE_BUILD_TYPE} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build
-    endif()
-)
+file(COPY ${CMAKE_SOURCE_DIR}/doc/deploy/${SCRIPT_PREFIX}/${SCRIPT_PREFIX}deploy.${SCRIPT_EXT} DESTINATION ${CMAKE_SOURCE_DIR}/build)
+file(RENAME ${CMAKE_SOURCE_DIR}/build/${SCRIPT_PREFIX}deploy.${SCRIPT_EXT} ${CMAKE_SOURCE_DIR}/build/deploy.${SCRIPT_EXT})
 
 install(TARGETS atomix
     BUNDLE DESTINATION .
     RUNTIME DESTINATION .
 )
 
-qt_generate_deploy_app_script(
-    TARGET atomix
-    OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
+install(CODE "execute_process(COMMAND ${SCRIPT_CMD} ${SCRIPT_ARGS} \"deploy.${SCRIPT_EXT} ${CMAKE_BUILD_TYPE}\" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build)")
+
+add_custom_target(atomix_clean
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build
+    COMMAND ${SCRIPT_CMD} "${SCRIPT_ARGS} ${CMAKE_SOURCE_DIR}/doc/deploy/${SCRIPT_PREFIX}/${SCRIPT_PREFIX}clean.${SCRIPT_EXT}"
+    VERBATIM
 )
-
-if(WIN32)
-    install(CODE "execute_process(COMMAND cmd /c \"deploy.bat\" ${CMAKE_BUILD_TYPE} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build)")
-else()
-    install(CODE "execute_process(COMMAND ./deploy.sh ${CMAKE_BUILD_TYPE} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build)")
-endif()
-
-

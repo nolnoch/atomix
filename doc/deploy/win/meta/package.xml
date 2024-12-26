@@ -9,7 +9,4 @@
     </Licenses>
     <Default>script</Default>
     <Script>installscript.qs</Script>
-    <UserInterfaces>
-        <UserInterface>page.ui</UserInterface>
-    </UserInterfaces>
 </Package>

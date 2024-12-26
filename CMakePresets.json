@@ -62,12 +62,22 @@
             "hidden": true
         },
         {
-            "name": "aomtixClean",
+            "name": "atomixCleanDebug",
             "displayName": "Preset Clean: Custom",
+            "configuration": "Debug",
             "targets": ["atomix_clean"],
             "jobs": 0,
             "cleanFirst": false,
-            "hidden": false
+            "hidden": true
+        },
+        {
+            "name": "atomixCleanRelease",
+            "displayName": "Preset Clean: Custom",
+            "configuration": "Release",
+            "targets": ["atomix_clean"],
+            "jobs": 0,
+            "cleanFirst": false,
+            "hidden": true
         }
     ]
 }

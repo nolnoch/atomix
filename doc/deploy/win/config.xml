@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>atomix</Name>
+    <Version>1.0.0</Version>
+    <Title>atomix Installer</Title>
+    <Publisher>nolnoch</Publisher>
+    <StartMenuDir>atomix</StartMenuDir>
+    <TargetDir>@HomeDir@/atomix</TargetDir>
+</Installer>

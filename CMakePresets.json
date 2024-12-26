@@ -60,6 +60,14 @@
             "jobs": 16,
             "cleanFirst": true,
             "hidden": true
+        },
+        {
+            "name": "aomtixClean",
+            "displayName": "Preset Clean: Custom",
+            "targets": ["atomix_clean"],
+            "jobs": 0,
+            "cleanFirst": false,
+            "hidden": false
         }
     ]
 }

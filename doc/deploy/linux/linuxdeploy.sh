@@ -20,7 +20,7 @@ mkdir -p install/appdir/usr/share/icons/hicolor/512x512/apps
 mkdir -p install/appdir/usr/share/icons/hicolor/256x256/apps
 
 cp src/Release/atomix install/appdir/usr/bin/
-cp ../doc/deploy/atomix.desktop install/appdir/usr/share/applications/
+cp ../doc/deploy/linux/atomix.desktop install/appdir/usr/share/applications/
 cp ../res/icons/atomix512.png install/appdir/usr/share/icons/hicolor/512x512/apps/atomix.png
 cp ../res/icons/atomix256.png install/appdir/usr/share/icons/hicolor/256x256/apps/atomix.png
 

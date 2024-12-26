@@ -13,6 +13,8 @@
                 "CMAKE_CXX_COMPILER": "cl.exe",
                 "CMAKE_BUILD_TYPE": "$env{VCPKG_BUILD_TYPE}"
             },
+            "architecture": "x64",
+            "toolset": "host=x64",
             "environment": {
                 "VCPKG_ROOT": "${sourceParentDir}/vcpkg"
             },

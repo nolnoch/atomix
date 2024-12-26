@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>atomix</DisplayName>
+    <Description>Install atomix.</Description>
+    <Version>1.0.0</Version>
+    <ReleaseDate>2024-12-21</ReleaseDate>
+    <Licenses>
+        <License name="GPL-v3" file="GPL-3.0-only.txt" />
+    </Licenses>
+    <Default>script</Default>
+    <Script>installscript.qs</Script>
+    <UserInterfaces>
+        <UserInterface>page.ui</UserInterface>
+    </UserInterfaces>
+</Package>

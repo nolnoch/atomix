@@ -7,6 +7,7 @@
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build",
             "installDir": "${sourceDir}/build/install",
+            "description": "Using default Apple Clang for macOS Intel silicon, Apple silicon, and universal binaries",
             "cacheVariables": {
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
                 "CMAKE_OSX_ARCHITECTURES": "$env{CM_TARGET_ARCH}",

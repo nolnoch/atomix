@@ -9,23 +9,28 @@ INS_MATCH="  export GTK_THEME=Default # This one should be bundled so that it ca
 INS_ENV="  export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/lib/x86_64-linux-gnu"
 PKG="atomix-$VERSION"
 
+LIBDIR="install/appdir/usr/lib"
+BLDDIR="/home/braer/dev/atomix/build"
+VKDIR="/home/braer/VulkanSDK/1.3.296.0/x86_64"
+
 mkdir -p install/appdir/usr/bin
-mkdir -p install/appdir/usr/lib
+mkdir -p $LIBDIR
 mkdir -p install/appdir/usr/share/applications
 mkdir -p install/appdir/usr/share/icons/hicolor/512x512/apps
 mkdir -p install/appdir/usr/share/icons/hicolor/256x256/apps
-# mkdir -p install/appdir/usr/configs
-# mkdir -p install/appdir/usr/shaders
-# mkdir -p install/appdir/usr/res
 
 cp src/Release/atomix install/appdir/usr/bin/
 cp ../doc/deploy/atomix.desktop install/appdir/usr/share/applications/
 cp ../res/icons/atomix512.png install/appdir/usr/share/icons/hicolor/512x512/apps/atomix.png
 cp ../res/icons/atomix256.png install/appdir/usr/share/icons/hicolor/256x256/apps/atomix.png
 
-# cp ../configs/* install/appdir/usr/configs/
-# cp ../shaders/* install/appdir/usr/shaders/
-cp -r ../res/* install/appdir/usr/res/
+cd $LIBDIR
+
+cp $VKDIR/lib/libvulkan.so.1.3.296 .
+ln -s libvulkan.so.1.3.296 libvulkan.so.1
+ln -s libvulkan.so.1 libvulkan.so
+
+cd $BLDDIR
 
 $TOOL -s deploy install/appdir/usr/share/applications/atomix.desktop
 

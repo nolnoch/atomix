@@ -24,8 +24,6 @@ cp $SRCDIR/res/icons/atomix.icns $RESDIR/
 cp $VKDIR/lib/libvulkan.1.3.296.dylib $LIBDIR/
 cp $VKDIR/lib/libMoltenVK.dylib $LIBDIR/
 cp -r $VKDIR/share/vulkan/icd.d $RESDIR/vulkan/
-# Consider removing this and moving above libs to lib/ instead of Frameworks
-# sed -i "" 's|lib/lib|Frameworks/lib|g' $RESDIR/vulkan/icd.d/MoltenVK_icd.json
 
 cd $LIBDIR
 

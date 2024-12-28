@@ -43,47 +43,6 @@ int main(int argc, char* argv[]) {
     app.setOrganizationName("nolnoch");
     app.setApplicationVersion(QT_VERSION_STR);
 
-    // Force Fusion-Dark Palette iff AppRun needs to set default GTK_THEME (not currently)
-    /* QPalette atomixPalette;
-    atomixPalette.setColor(QPalette::WindowText, QColor("#ffffffff"));
-    atomixPalette.setColor(QPalette::Button, QColor("#ff2a2a2a"));
-    atomixPalette.setColor(QPalette::Light, QColor("#ff343434"));
-    atomixPalette.setColor(QPalette::Midlight, QColor("#ff2f2f2f"));
-    atomixPalette.setColor(QPalette::Dark, QColor("#ff252525"));
-    atomixPalette.setColor(QPalette::Mid, QColor("#ff2f2f2f"));
-    atomixPalette.setColor(QPalette::Text, QColor("#ffffffff"));
-    atomixPalette.setColor(QPalette::BrightText, QColor("#ffffffff"));
-    atomixPalette.setColor(QPalette::ButtonText, QColor("#ffffffff"));
-    atomixPalette.setColor(QPalette::Base, QColor("#ff2a2a2a"));
-    atomixPalette.setColor(QPalette::Window, QColor("#ff2a2a2a"));
-    atomixPalette.setColor(QPalette::Shadow, QColor("#ff020202"));
-    // atomixPalette.setColor(QPalette::Highlight, QColor("#ff7764d8"));
-    // atomixPalette.setColor(QPalette::HighlightedText, QColor("#ffffffff"));
-    atomixPalette.setColor(QPalette::AlternateBase, QColor("#ff272727"));
-    atomixPalette.setColor(QPalette::ToolTipBase, QColor("#ffffffdc"));
-    atomixPalette.setColor(QPalette::ToolTipText, QColor("#ff000000"));
-    atomixPalette.setColor(QPalette::PlaceholderText, QColor("#ff9b9b9b"));
-
-    atomixPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#ff949494"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Button, QColor("#ff2a2a2a"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Light, QColor("#ff343434"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Midlight, QColor("#ff2f2f2f"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Dark, QColor("#ff252525"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Mid, QColor("#ff2f2f2f"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Text, QColor("#ff949494"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::BrightText, QColor("#ffffffff"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#ff949494"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Base, QColor("#ff2a2a2a"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Window, QColor("#ff2a2a2a"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::Shadow, QColor("#ff020202"));
-    // atomixPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor("#ff7764d8"));
-    // atomixPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor("#ffffffff"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::AlternateBase, QColor("#ff272727"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::ToolTipBase, QColor("#ffffffdc"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::ToolTipText, QColor("#ff000000"));
-    atomixPalette.setColor(QPalette::Disabled, QPalette::PlaceholderText, QColor("#ff9b9b9b"));
-
-    app.setPalette(atomixPalette); */
     app.setStyle("fusion");
     MainWindow mainWindow;
     QSettings settings;

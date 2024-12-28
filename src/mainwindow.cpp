@@ -820,7 +820,7 @@ void MainWindow::loadWaveConfig() {
     }
 
     notDefaultConfig = (comboWaveConfigFile->currentText() != DEFAULT);
-    buttDeleteWaveConfig->setEnabled((notDefaultConfig && comboWaveConfigFile->currentText() != CUSTOM));
+    buttDeleteWaveConfig->setEnabled(notDefaultConfig && (comboWaveConfigFile->currentText() != CUSTOM));
     buttSaveWaveConfig->setEnabled(false);
     refreshWaveConfigGUI(cfg);
 }

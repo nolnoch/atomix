@@ -31,26 +31,9 @@
 #include <oneapi/dpl/execution>
 
 
-/**
- * @brief Construct a new CloudManager object.
- *
- * @details
- * This constructor will determine the number of hardware threads available on the system
- * and set the thread pool size for the cloud rendering process to that number.
- *
- * @todo
- * Adjust the thread pool size based on the complexity of the cloud data.
- */
 CloudManager::CloudManager() {
 }
 
-/**
- * @brief Destruct a CloudManager object.
- *
- * @details
- * This destructor will purge any active tasks in the cloud thread pool and wait for
- * all tasks to finish before clearing the cloud rendering data.
- */
 CloudManager::~CloudManager() {
     resetManager();
 }

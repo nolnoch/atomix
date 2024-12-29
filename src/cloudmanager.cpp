@@ -2,8 +2,8 @@
  * cloudmanager.cpp
  *
  *    Created on: Sep 4, 2024
- *   Last Update: Sep 9, 2024
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Dec 29, 2024
+ *  Orig. Author: Wade Burch (dev@nolnoch.com)
  *
  *  Copyright 2024 Wade Burch (GPLv3)
  *

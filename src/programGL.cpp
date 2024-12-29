@@ -2,8 +2,8 @@
  * programGL.cpp
  *
  *    Created on: Apr 8, 2013
- *   Last Update: Sep 23, 2024
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Dec 29, 2024
+ *  Orig. Author: Wade Burch (dev@nolnoch.com)
  * 
  *  Copyright 2013,2023,2024 Wade Burch (GPLv3)
  * 

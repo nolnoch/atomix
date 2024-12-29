@@ -2,8 +2,8 @@
  * programVK.cpp
  *
  *    Created on: Oct 21, 2013
- *   Last Update: Oct 21, 2024
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Dec 29, 2024
+ *  Orig. Author: Wade Burch (dev@nolnoch.com)
  * 
  *  Copyright 2013,2023,2024 Wade Burch (GPLv3)
  * 
@@ -40,6 +40,16 @@ ProgramVK::~ProgramVK() {
     cleanup();
 }
 
+/**
+ * Cleanup method to be called when the program is no longer needed.
+ * 
+ * This is a rather large method, as it is responsible for cleaning up all
+ * allocated resources.  It is called by the destructor, but if the object
+ * is not being destroyed, it should be called manually to prevent memory
+ * leaks.
+ * 
+ * This method will deallocate all shaders, buffers, and pipeline objects.
+ */
 void ProgramVK::cleanup() {
     // destruct models
     for (auto &model : p_models) {
@@ -101,16 +111,16 @@ void ProgramVK::cleanup() {
     }
 }
 
+/**
+ * Associate the ProgramVK with an AtomixDevice object.
+ * 
+ * This function sets the Vulkan Window and Instance Objects, Logical Device
+ * and Function Objects, Physical Device and Function Objects, and Command Pool,
+ * Queue, and Render Pass on the ProgramVK object.
+ * 
+ * @param atomixDevice - The AtomixDevice object to associate with the ProgramVK
+ */
 void ProgramVK::setInstance(AtomixDevice *atomixDevice) {
-    /* if (this->p_stage >= 2) {
-        this->p_dev = atomixDevice->device;
-        this->p_vdf = this->p_vi->deviceFunctions(this->p_dev);
-        this->p_cmdpool = this->p_vkw->graphicsCommandPool();
-        this->p_queue = this->p_vkw->graphicsQueue();
-        this->p_renderPass = this->p_vkw->defaultRenderPass();
-        return;
-    } */
-    
     // Link Vulkan Window and Instance Objects
     this->p_vkw = atomixDevice->window;
     this->p_vi = this->p_vkw->vulkanInstance();
@@ -201,6 +211,19 @@ int ProgramVK::addAllShaders(std::vector<std::string> *fList, VKuint type) {
     return errors;
 }
 
+/**
+ * @brief Compile and reflect a shader.
+ *
+ * This function will compile the shader with the `compile` method and, if
+ * successful, reflect the shader with the `reflect` method.  If the shader
+ * fails to compile or reflect, the shader object will be deleted and the
+ * function will return false.  If compilation and reflection are successful,
+ * the shader object will be added to the `p_compiledShaders` vector and the
+ * function will return true.
+ *
+ * @param shader - pointer to Shader object to compile and reflect
+ * @return true if shader compiles and reflects successfully, false otherwise
+ */
 bool ProgramVK::compileShader(Shader *shader) {
     bool compiled = shader->compile(VK_SPIRV_VERSION);
     bool reflected = false;
@@ -247,6 +270,12 @@ int ProgramVK::compileAllShaders() {
     return errors;
 }
 
+/**
+ * @brief Create a Vulkan shader module from a Shader object.
+ *
+ * @param shader - pointer to Shader object to create module from
+ * @return VkShaderModule& - reference to the created shader module
+ */
 VkShaderModule& ProgramVK::createShaderModule(Shader *shader) {
     if (!shader->isValidReflect()) {
         throw std::runtime_error("Shader not reflected: " + shader->getName());
@@ -267,6 +296,17 @@ VkShaderModule& ProgramVK::createShaderModule(Shader *shader) {
     return shaderModule;
 }
 
+/**
+ * @brief Create a Vulkan shader stage from a Shader object.
+ *
+ * @param s - pointer to Shader object to create shader stage from
+ * @return VKuint - index of created shader stage in p_shaderStages vector
+ *
+ * This function will create a shader stage information structure and store it
+ * in the p_shaderStages vector. The shader stage will be for either the vertex
+ * or fragment stage depending on the type of the Shader object. The entry point
+ * name will be "main".
+ */
 VKuint ProgramVK::createShaderStage(Shader *s) {
     VkShaderStageFlagBits stage = (s->getType() == GL_VERTEX_SHADER) ? VK_SHADER_STAGE_VERTEX_BIT : VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -281,6 +321,29 @@ VKuint ProgramVK::createShaderStage(Shader *s) {
     return stageIdx;
 }
 
+/**
+ * @brief Add all uniforms and push constants from shaders to the program's descriptor sets, uniform buffers, and push constant ranges.
+ *
+ * This function will iterate over all of the shaders in the program and add all of
+ * the uniforms and push constants to the descriptor sets, uniform buffers, and push
+ * constant ranges. It will also create a mapping from the uniform or push constant
+ * name to the index in the p_setLayouts and p_pushConstRanges vectors, respectively.
+ *
+ * The function will also create a descriptor pool with the required number of
+ * sets, and create a descriptor set for each set in the pool. The descriptor sets
+ * will be stored in the p_descSets vector.
+ *
+ * The function will also create a uniform buffer for each uniform, and map it so
+ * that the host can access it. The uniform buffers will be stored in the
+ * p_uniformBuffers and p_uniformBuffersMemory vectors.
+ *
+ * The function will also create a push constant range for each push constant, and
+ * store it in the p_pushConstRanges vector.
+ *
+ * Finally, the function will create a mapping from the uniform or push constant
+ * name to the index in the p_uniformBufferMappings and p_pushConstMappings vectors,
+ * respectively.
+ */
 void ProgramVK::addUniformsAndPushConstants() {
     std::vector<VKuint> sets;
     std::vector<VKuint> bindings;
@@ -375,6 +438,19 @@ void ProgramVK::addUniformsAndPushConstants() {
     definePipeLayouts();
 }
 
+/**
+ * @brief Add a model to the program.
+ *
+ * @param[in] info The creation information for the model.
+ * @return The index of the added model.
+ *
+ * This function adds a model to the program, creating all necessary
+ * resources including buffers, shaders, and pipelines. It also sets
+ * up the pipeline libraries if enabled.
+ *
+ * If the model already exists, it will be updated with the new
+ * information.
+ */
 VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     assert(this->p_mapDescriptors.size());
     ModelInfo *model;
@@ -546,6 +622,14 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     return model->id;
 }
 
+/**
+ * Activate a model for rendering.  The model must first be validated
+ * with addModel().  Once activated, the model's active programs will
+ * be rendered when drawFrame() is called.
+ *
+ * @param name - the name of the model to activate
+ * @return true if the model was activated, false otherwise
+ */
 bool ProgramVK::activateModel(const std::string &name) {
     VKuint id = getModelIdFromName(name);
     bool success = false;
@@ -563,6 +647,15 @@ bool ProgramVK::activateModel(const std::string &name) {
     return success;
 }
 
+/**
+ * Associate a program with a model for rendering.  The model must first be
+ * added to the active models list with activateModel() and the program must
+ * exist in the model's list of programs.
+ *
+ * @param name - the name of the model to associate the program with
+ * @param program - the name of the program to associate with the model
+ * @return true if the association was successful, false otherwise
+ */
 bool ProgramVK::addModelProgram(const std::string &name, const std::string &program) {
     VKuint id = getModelIdFromName(name);
     ModelInfo *model = p_models[id];
@@ -588,6 +681,15 @@ bool ProgramVK::addModelProgram(const std::string &name, const std::string &prog
     return (model->activePrograms.insert(programId).second);
 }
 
+/**
+ * Disassociate a program from a model.  The model must first be
+ * added to the active models list with activateModel() and the program must
+ * exist in the model's list of programs.
+ *
+ * @param name - the name of the model to disassociate the program from
+ * @param program - the name of the program to disassociate from the model
+ * @return true if the disassociation was successful, false otherwise
+ */
 bool ProgramVK::removeModelProgram(const std::string &name, const std::string &program) {
     VKuint id = getModelIdFromName(name);
     ModelInfo *model = p_models[id];
@@ -613,6 +715,13 @@ bool ProgramVK::removeModelProgram(const std::string &name, const std::string &p
     return (model->activePrograms.erase(programId));
 }
 
+/**
+ * Clear all active programs from a model.  The model must first be
+ * added to the active models list with activateModel().
+ *
+ * @param name - the name of the model to clear programs from
+ * @return true if the model was found and cleared, false otherwise
+ */
 bool ProgramVK::clearModelPrograms(const std::string &name) {
     VKuint id = getModelIdFromName(name);
     bool success = false;
@@ -625,6 +734,14 @@ bool ProgramVK::clearModelPrograms(const std::string &name) {
     return success;
 }
 
+/**
+ * Deactivate a model and remove it from the active models list.
+ * This will prevent the model from being rendered and will also
+ * clear any active programs from the model.
+ *
+ * @param name - the name of the model to deactivate
+ * @return true if the model was found and deactivated, false otherwise
+ */
 bool ProgramVK::deactivateModel(const std::string &name) {
     VKuint id = getModelIdFromName(name);
     bool success = false;
@@ -637,6 +754,13 @@ bool ProgramVK::deactivateModel(const std::string &name) {
     return success;
 }
 
+/**
+ * Suspend a model from rendering.  The model must first be
+ * added to the active models list with activateModel().
+ *
+ * @param name - the name of the model to suspend
+ * @return true if the model was found and suspended, false otherwise
+ */
 bool ProgramVK::suspendModel(const std::string &name) {
     VKuint id = getModelIdFromName(name);
     bool success = false;
@@ -649,6 +773,14 @@ bool ProgramVK::suspendModel(const std::string &name) {
     return success;
 }
 
+/**
+ * Resume a suspended model.  The model must first be
+ * added to the active models list with activateModel(),
+ * and then suspended with suspendModel().
+ *
+ * @param name - the name of the model to resume
+ * @return true if the model was found and resumed, false otherwise
+ */
 bool ProgramVK::resumeModel(const std::string &name) {
     VKuint id = getModelIdFromName(name);
     bool success = false;
@@ -661,15 +793,33 @@ bool ProgramVK::resumeModel(const std::string &name) {
     return success;
 }
 
+/**
+ * Check if a model is currently suspended.
+ *
+ * @param name - the name of the model to query
+ * @return true if the model is suspended, false otherwise
+ */
 bool ProgramVK::isSuspended(const std::string &name) {
     VKuint id = getModelIdFromName(name);
     return p_activeModels.contains(id) && p_models[id]->valid.suspended;
 }
 
+/**
+ * Clear the active models list.  This should be called
+ * when exiting the current rendering context, or when
+ * all models should be removed from the current rendering
+ * context.
+ */
 void ProgramVK::clearActiveModels() {
     p_activeModels.clear();
 }
 
+/**
+ * Create a pipeline cache for the currently associated device.
+ * This is a Vulkan requirement for pipeline creation.
+ *
+ * @throws std::runtime_error if the pipeline cache could not be created
+ */
 void ProgramVK::createPipelineCache() {
     VkPipelineCacheCreateInfo pipelineCacheCreateInfo{};
     pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -684,6 +834,12 @@ void ProgramVK::createPipelineCache() {
     }
 }
 
+/**
+ * Saves the current pipeline to the associated pipeline cache.
+ * This is a Vulkan requirement for pipeline creation.
+ *
+ * @throws std::runtime_error if the pipeline cache data could not be retrieved
+ */
 void ProgramVK::savePipelineToCache() {
     std::cout << "Saving pipeline to cache..." << std::endl;
 
@@ -693,14 +849,29 @@ void ProgramVK::savePipelineToCache() {
     }
 }
 
+/**
+ * Loads the pipeline from the associated pipeline cache.
+ * This is a Vulkan requirement for pipeline creation.
+ *
+ * @throws std::runtime_error if the pipeline cache data could not be retrieved
+ */
 void ProgramVK::loadPipelineFromCache() {
     std::cout << "Loading pipeline from cache..." << std::endl;
 
 }
 
+
 /**
- * Initializes the program. Then initializes, loads, and compiles all shaders
- * associated with the ProgramVK object.
+ * Initializes the ProgramVK object.
+ *
+ * Checks if there are any shaders registered and if the program is not already
+ * initialized. If either condition is not met, the function will print a
+ * message and return false.
+ *
+ * Otherwise, it will compile all registered shaders, set up the global pipeline
+ * by calling pipelineGlobalSetup, and set the program stage to 2.
+ *
+ * @return true if the program was successfully initialized, false otherwise
  */
 bool ProgramVK::init() {
     int numShaders = this->p_registeredShaders.size();
@@ -723,6 +894,12 @@ bool ProgramVK::init() {
     return true;
 }
 
+/**
+ * Finds the indices of the graphics and present queue families for a physical device.
+ *
+ * @param device - the physical device to query
+ * @return a QueueFamilyIndices object containing the indices of the graphics and present queue families
+ */
 QueueFamilyIndices ProgramVK::findQueueFamilies(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
 
@@ -743,6 +920,20 @@ QueueFamilyIndices ProgramVK::findQueueFamilies(VkPhysicalDevice device) {
     return indices;
 }
 
+/**
+ * Creates the render pass for this program.
+ *
+ * The render pass is created using one attachment with the format returned by
+ * QVulkanWindow::colorFormat(). The attachment is cleared before use and
+ * stored after use. The stencil load and store operations are set to
+ * VK_ATTACHMENT_LOAD_OP_DONT_CARE and VK_ATTACHMENT_STORE_OP_DONT_CARE,
+ * respectively. The initial and final layouts of the attachment are set to
+ * VK_IMAGE_LAYOUT_UNDEFINED and VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, respectively.
+ *
+ * One subpass is created that references the attachment and has a pipeline bind
+ * point of VK_PIPELINE_BIND_POINT_GRAPHICS. The render pass is created using
+ * the render pass create info and the result is stored in p_renderPass.
+ */
 void ProgramVK::createRenderPass() {
     VkAttachmentDescription2 colorAttachment{};
     colorAttachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
@@ -778,6 +969,14 @@ void ProgramVK::createRenderPass() {
     }
 }
 
+/**
+ * @brief Defines pipeline layouts with no push constants and one layout per push constant.
+ *
+ * Two types of pipeline layouts are created: one with no push constants and one with
+ * one push constant range per layout. The layouts are stored in p_pipeLayouts.
+ *
+ * If the creation of any pipeline layout fails, an exception is thrown.
+ */
 void ProgramVK::definePipeLayouts() {
     
     // Define pipeline layout with no push constants
@@ -810,6 +1009,16 @@ void ProgramVK::definePipeLayouts() {
     
 }
 
+/**
+ * @brief Initializes the pipeline info of a model.
+ *
+ * This function takes a ModelCreateInfo and a ModelInfo object and initializes the
+ * pipeline info of the model. It creates the necessary Vulkan pipeline input assembly
+ * and vertex input state create infos.
+ *
+ * @param info The ModelCreateInfo object to initialize the pipeline info from.
+ * @param m The ModelInfo object to initialize the pipeline info for.
+ */
 void ProgramVK::pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m) {
     m->pipeInfo = new ModelPipelineInfo{};
 
@@ -839,6 +1048,15 @@ void ProgramVK::pipelineModelSetup(ModelCreateInfo &info, ModelInfo *m) {
     }
 }
 
+/**
+ * @brief Initializes the global pipeline info.
+ *
+ * This function initializes the global pipeline info which is used by all models.
+ * It sets up the viewport, scissor, tessellation, dynamic state, rasterization,
+ * multisampling, depth stencil, and color blending pipeline state create infos.
+ *
+ * The pipeline state infos are stored in the p_pipeInfo object.
+ */
 void ProgramVK::pipelineGlobalSetup() {
     // Viewport and Scissor
     memset(&this->p_pipeInfo.vp, 0, sizeof(this->p_pipeInfo.vp));
@@ -922,6 +1140,19 @@ void ProgramVK::pipelineGlobalSetup() {
     this->p_pipeInfo.init = true;
 }
 
+/**
+ * @brief Creates a graphics pipeline.
+ *
+ * Creates a graphics pipeline using the specified vertex and fragment shaders,
+ * and the specified vertex buffer and index buffer.
+ *
+ * @param[in] render Render information to store the created pipeline in.
+ * @param[in] m Model information to create the pipeline for.
+ * @param[in] vs Index of the vertex shader to use.
+ * @param[in] fs Index of the fragment shader to use.
+ * @param[in] vbo Index of the vertex buffer to use.
+ * @param[in] ia Index of the index buffer to use.
+ */
 void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs, int vbo, int ia) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderModules = { this->p_shaderStages[vs], this->p_shaderStages[fs] };
 
@@ -953,6 +1184,19 @@ void ProgramVK::createPipeline(RenderInfo *render, ModelInfo *m, int vs, int fs,
     m->valid.pipelines = true;
 }
 
+/**
+ * @brief Generates a vertex input pipeline library part.
+ *
+ * Generates a model-specific pipeline library part for the vertex input state.
+ * This pipeline library part is used to optimize the linking of the pipeline.
+ * When a pipeline is created, it is linked against all the pipeline library
+ * parts that are relevant to the pipeline. This allows the Vulkan driver to
+ * optimize the pipeline by only compiling the shaders that are needed.
+ *
+ * @param[in] m Model information to generate the pipeline library part for.
+ * @param[in] vbo Index of the vertex buffer to use.
+ * @param[in] ia Index of the index buffer to use.
+ */
 void ProgramVK::genVertexInputPipeLib(ModelInfo *m, int vbo, int ia) {
     // Declare model-specific pipeline library part: Vertex Input State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibVBOInfo{};
@@ -976,6 +1220,19 @@ void ProgramVK::genVertexInputPipeLib(ModelInfo *m, int vbo, int ia) {
     }
 }
 
+/**
+ * @brief Generates a pre-rasterization pipeline library part.
+ *
+ * Generates a model-specific pipeline library part for the pre-rasterization state.
+ * This pipeline library part is used to optimize the linking of the pipeline.
+ * When a pipeline is created, it is linked against all the pipeline library
+ * parts that are relevant to the pipeline. This allows the Vulkan driver to
+ * optimize the pipeline by only compiling the shaders that are needed.
+ *
+ * @param[in] m Model information to generate the pipeline library part for.
+ * @param[in] vs Index of the vertex shader to use.
+ * @param[in] lay Index of the pipeline layout to use.
+ */
 void ProgramVK::genPreRasterizationPipeLib(ModelInfo *m, int vs, int lay) {
     // Declare model-specific pipeline library part: Pre-Rasterization State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibPRSInfo{};
@@ -1004,6 +1261,19 @@ void ProgramVK::genPreRasterizationPipeLib(ModelInfo *m, int vs, int lay) {
     }
 }
 
+/**
+ * @brief Generates a fragment shader pipeline library part.
+ *
+ * Generates a model-specific pipeline library part for the fragment shader
+ * state. This pipeline library part is used to optimize the linking of the
+ * pipeline. When a pipeline is created, it is linked against all the pipeline
+ * library parts that are relevant to the pipeline. This allows the Vulkan
+ * driver to optimize the pipeline by only compiling the shaders that are
+ * needed.
+ *
+ * @param[in] m Model information to generate the pipeline library part for.
+ * @param[in] fs Index of the fragment shader to use.
+ */
 void ProgramVK::genFragmentShaderPipeLib(ModelInfo *m, int fs) {
     // Create global pipeline library part: Fragment Shader State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibFSInfo{};
@@ -1030,6 +1300,15 @@ void ProgramVK::genFragmentShaderPipeLib(ModelInfo *m, int fs) {
     }
 }
 
+/**
+ * @brief Generates a fragment output pipeline library part.
+ *
+ * Generates a global pipeline library part for the fragment output state.
+ * This pipeline library part is used to optimize the linking of the pipeline.
+ * When a pipeline is created, it is linked against all the pipeline library
+ * parts that are relevant to the pipeline. This allows the Vulkan driver to
+ * optimize the pipeline by only compiling the shaders that are needed.
+ */
 void ProgramVK::genFragmentOutputPipeLib() {
     // Create global pipeline library part: Fragment Output State
     VkGraphicsPipelineLibraryCreateInfoEXT pipeLibFOInfo{};
@@ -1053,6 +1332,19 @@ void ProgramVK::genFragmentOutputPipeLib() {
     }
 }
 
+/**
+ * @brief Creates a graphics pipeline from the given pipeline libraries.
+ *
+ * Creates a graphics pipeline using the given pipeline libraries.
+ * The pipeline is created from the given vertex input, pre-rasterization,
+ * fragment shader, and fragment output pipeline libraries.
+ *
+ * @param[in] render The render information to create the pipeline for.
+ * @param[in] m The model information to create the pipeline for.
+ * @param[in] vis The index of the vertex input pipeline library to use.
+ * @param[in] pre The index of the pre-rasterization pipeline library to use.
+ * @param[in] frag The index of the fragment shader pipeline library to use.
+ */
 void ProgramVK::createPipeFromLibraries(RenderInfo *render, ModelInfo *m, int vis, int pre, int frag) {
     std::vector<VkPipeline> libs = { m->pipeInfo->library->vertexInput[vis], m->pipeInfo->library->preRasterization[pre], m->pipeInfo->library->fragmentShader[frag], this->p_fragmentOutput };
 
@@ -1077,6 +1369,14 @@ void ProgramVK::updatePipeFromLibraries() {
     // Update pipe with new pipeLibs
 }
 
+/**
+ * @brief Creates a command pool for the given physical device.
+ *
+ * Creates a command pool for the given physical device using the graphics
+ * family index from the given QueueFamilyIndices.
+ *
+ * @throws std::runtime_error if the command pool could not be created
+ */
 void ProgramVK::createCommandPool() {
     QueueFamilyIndices indices = findQueueFamilies(this->p_phydev);
 
@@ -1090,6 +1390,14 @@ void ProgramVK::createCommandPool() {
     }
 }
 
+/**
+ * @brief Allocate a single command buffer from the command pool.
+ *
+ * Allocates a single command buffer from the command pool created by
+ * createCommandPool(). The command buffer is allocated as a primary command buffer.
+ *
+ * @throws std::runtime_error if the command buffer could not be allocated
+ */
 void ProgramVK::createCommandBuffers() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1102,6 +1410,14 @@ void ProgramVK::createCommandBuffers() {
     }
 }
 
+/**
+ * Finds a memory type that matches the given type filter and property flags.
+ *
+ * @param[in] typeFilter a bit field of memory types to filter against
+ * @param[in] flagProperties the memory property flags to filter against
+ * @return the index of the memory type that matches the given criteria
+ * @throws std::runtime_error if no matching memory type is found
+ */
 uint32_t ProgramVK::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags flagProperties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     this->p_vf->vkGetPhysicalDeviceMemoryProperties(this->p_phydev, &memProperties);
@@ -1115,6 +1431,20 @@ uint32_t ProgramVK::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags fl
     throw std::runtime_error("Failed to find suitable memory type.");
 }
 
+/**
+ * @brief Create a Vulkan buffer with the given properties, and allocate memory for it.
+ *
+ * Creates a Vulkan buffer with the given size, usage, and properties. It then
+ * allocates memory for the buffer with the given properties and binds the buffer
+ * to the allocated memory.
+ *
+ * @param[in] size the size of the buffer to create
+ * @param[in] usage the usage of the buffer to create
+ * @param[in] properties the properties of the buffer memory to allocate
+ * @param[out] buffer the created buffer handle
+ * @param[out] bufferMemory the allocated memory handle
+ * @throws std::runtime_error if the buffer or memory could not be created
+ */
 void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1142,6 +1472,16 @@ void ProgramVK::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     this->p_vdf->vkBindBufferMemory(this->p_dev, buffer, bufferMemory, 0);
 }
 
+/**
+ * @brief Copies the contents of one buffer to another.
+ *
+ * Copies the contents of one buffer to another. This function is meant to be used
+ * for copying data from a staging buffer to a device local buffer.
+ *
+ * @param[in] dst the destination buffer to copy to
+ * @param[in] src the source buffer to copy from
+ * @param[in] size the size of the region to copy
+ */
 void ProgramVK::copyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1176,6 +1516,17 @@ void ProgramVK::copyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size) {
     this->p_vdf->vkFreeCommandBuffers(this->p_dev, this->p_cmdpool, 1, &this->p_cmdbuff);
 }
 
+/**
+ * @brief Defines the buffer attributes of a model.
+ *
+ * This function defines the buffer attributes of a model. It creates an AttribInfo
+ * object for each buffer combination of the model and defines the vertex input
+ * bindings and attributes.
+ *
+ * @param[in] info The ModelCreateInfo object containing the information
+ *                 about the model.
+ * @param[in] m The ModelInfo object to define the buffer attributes for.
+ */
 void ProgramVK::defineBufferAttributes(ModelCreateInfo &info, ModelInfo *m) {
     for (auto &combo : info.bufferCombos) {
         m->attributes.push_back(new AttribInfo{});
@@ -1218,6 +1569,20 @@ void ProgramVK::defineBufferAttributes(ModelCreateInfo &info, ModelInfo *m) {
     }
 }
 
+/**
+ * @brief Stages and copies a buffer.
+ *
+ * Stages and copies a buffer from a host-visible staging buffer to a device-local
+ * buffer. The buffer is created with the appropriate usage flags for the given
+ * BufferType.
+ *
+ * @param[in] buffer The device-local buffer to copy to
+ * @param[in] bufferMemory The device memory for the buffer
+ * @param[in] type The type of buffer to create
+ * @param[in] bufSize The size of the buffer in bytes
+ * @param[in] bufData The data to copy into the buffer
+ * @param[in] create If true, creates the buffer and allocates memory for it
+ */
 void ProgramVK::stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory, BufferType type, VKuint64 bufSize, const void *bufData, bool create) {
     VkBufferUsageFlags usage = ((type == BufferType::VERTEX || type == BufferType::DATA) ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : VK_BUFFER_USAGE_INDEX_BUFFER_BIT) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
@@ -1238,6 +1603,32 @@ void ProgramVK::stageAndCopyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemor
     this->p_vdf->vkFreeMemory(this->p_dev, p_stagingMemory, nullptr);
 }
 
+/**
+ * @brief Creates persistent uniform buffers for all uniforms in the program.
+ *
+ * Creates persistent uniform buffers for all uniforms in the program. This
+ * function is called once when the program is first initialized.
+ *
+ * The function iterates over all of the shaders in the program and adds all of
+ * the uniforms to the descriptor sets, uniform buffers, and push constant ranges.
+ * It will also create a mapping from the uniform or push constant name to the
+ * index in the p_setLayouts and p_pushConstRanges vectors, respectively.
+ *
+ * The function will also create a descriptor pool with the required number of
+ * sets, and create a descriptor set for each set in the pool. The descriptor
+ * sets will be stored in the p_descSets vector.
+ *
+ * The function will also create a uniform buffer for each uniform, and map it so
+ * that the host can access it. The uniform buffers will be stored in the
+ * p_uniformBuffers and p_uniformBuffersMemory vectors.
+ *
+ * The function will also create a push constant range for each push constant, and
+ * store it in the p_pushConstRanges vector.
+ *
+ * Finally, the function will create a mapping from the uniform or push constant
+ * name to the index in the p_uniformBufferMappings and p_pushConstMappings
+ * vectors, respectively.
+ */
 void ProgramVK::createPersistentUniformBuffers() {
     std::vector<VKuint> sets;
     std::vector<VKuint> bindings;
@@ -1287,6 +1678,16 @@ void ProgramVK::createPersistentUniformBuffers() {
     }
 }
 
+/**
+ * @brief Create a descriptor set for a given set and binding.
+ *
+ * This function will allocate a descriptor set from the descriptor pool, and
+ * update the descriptor set with the uniform buffer at the given binding.
+ *
+ * @param set - the set to use for the descriptor set
+ * @param binding - the binding to use for the descriptor set
+ * @param size - the size of the uniform buffer
+ */
 void ProgramVK::createDescriptorSets(VKuint set, VKuint binding, VKuint size) {
     for (size_t j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
 
@@ -1318,6 +1719,19 @@ void ProgramVK::createDescriptorSets(VKuint set, VKuint binding, VKuint size) {
     }
 }
 
+/**
+ * @brief Create a descriptor pool for a given number of bindings.
+ *
+ * This function will create a descriptor pool for the given number of bindings.
+ * The descriptor pool will be created with the type of descriptor
+ * VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, and the descriptor count set to
+ * MAX_FRAMES_IN_FLIGHT. The pool size count is set to 1, and the pool size is
+ * set to the given number of bindings. The flags are set to 0.
+ *
+ * @param bindings - the number of bindings for the descriptor pool
+ *
+ * @throws std::runtime_error if the descriptor pool could not be created
+ */
 void ProgramVK::createDescriptorPool(VKuint bindings) {
     VkDescriptorPoolSize poolSize{};
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1335,6 +1749,20 @@ void ProgramVK::createDescriptorPool(VKuint bindings) {
     }
 }
 
+/**
+ * @brief Creates a descriptor set layout for a single uniform buffer.
+ *
+ * This function creates a descriptor set layout with a single binding for a
+ * uniform buffer. The binding is set to the given value, and the descriptor
+ * type is set to VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER. The descriptor count is
+ * set to 1, and the stage flags are set to VK_SHADER_STAGE_VERTEX_BIT.
+ *
+ * The created descriptor set layout is stored in the p_setLayouts vector.
+ *
+ * @param binding - the binding of the uniform buffer
+ *
+ * @throws std::runtime_error if the descriptor set layout could not be created
+ */
 void ProgramVK::createDescriptorSetLayout(VKuint binding) {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = binding;
@@ -1354,6 +1782,21 @@ void ProgramVK::createDescriptorSetLayout(VKuint binding) {
     }
 }
 
+/**
+ * @brief Updates a buffer with the given data.
+ *
+ * This function updates a buffer with the given name by calling
+ * _updateBuffer with the given parameters. The buffer's index is found
+ * using the p_mapBuffers map, and the buffer info and model are found
+ * using the p_mapBufferToModel map. The buffer's type is found in the
+ * buffer info.
+ *
+ * @param bufferName - the name of the buffer to update
+ * @param bufferOffset - the offset of the data in the buffer
+ * @param bufferCount - the number of elements in the data
+ * @param bufferSize - the size of the data in bytes
+ * @param bufferData - a pointer to the data to update the buffer with
+ */
 void ProgramVK::updateBuffer(std::string bufferName, VKuint64 bufferOffset, VKuint64 bufferCount, VKuint64 bufferSize, const void *bufferData) {
     VKuint idx = this->p_mapBuffers[bufferName];
     BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
@@ -1363,6 +1806,18 @@ void ProgramVK::updateBuffer(std::string bufferName, VKuint64 bufferOffset, VKui
     this->_updateBuffer(idx, bufferInfo, model, type, bufferOffset, bufferCount, bufferSize, bufferData);
 }
 
+/**
+ * @brief Updates a buffer with the given data.
+ *
+ * This function updates a buffer with the given buffer name by calling
+ * _updateBuffer with the given parameters. The buffer's index is found
+ * using the p_mapBuffers map, and the buffer info and model are found
+ * using the p_mapBufferToModel map. The buffer's type is found in the
+ * buffer info.
+ *
+ * @param info - the info for the buffer to update, containing the buffer name,
+ * buffer offset, buffer count, buffer size, and buffer data.
+ */
 void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
     VKuint idx = this->p_mapBuffers[info.bufferName];
     BufferCreateInfo *bufferInfo = this->p_buffersInfo[idx];
@@ -1376,6 +1831,31 @@ void ProgramVK::updateBuffer(BufferUpdateInfo &info) {
     this->_updateBuffer(idx, bufferInfo, model, type, offset, count, size, data);
 }
 
+/**
+ * @brief Updates a buffer with the given data.
+ *
+ * This function updates a buffer with the given index by calling
+ * stageAndCopyBuffer with the given parameters. The buffer's info and model
+ * are found using the p_mapBuffers map and the buffer type is found in the
+ * buffer info.
+ *
+ * If the buffer has not been created yet (i.e. bufferInfo->data == 0), then
+ * the buffer is created and the model's valid flags are set. If the buffer
+ * has already been created, but the new size is larger than the old size,
+ * then the buffer is recreated and the model's valid flags are set. If the
+ * buffer has already been created and the new size is smaller than the old
+ * size, then the buffer is updated in place.
+ *
+ * @param idx - the index of the buffer to update
+ * @param bufferInfo - the info for the buffer to update, containing the buffer name,
+ * buffer offset, buffer count, buffer size, and buffer data
+ * @param model - the model that the buffer belongs to
+ * @param type - the type of the buffer (VERTEX, INDEX, or DATA)
+ * @param offset - the offset of the data in the buffer
+ * @param count - the number of elements in the data
+ * @param size - the size of the data in bytes
+ * @param data - a pointer to the data to update the buffer with
+ */
 void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, ModelInfo *model, const BufferType type, const VKuint64 offset, const VKuint64 count, const VKuint64 size, const void *data) {
     bool isVBO = (type == BufferType::VERTEX || type == BufferType::DATA);
     bool isIBO = (type == BufferType::INDEX);
@@ -1468,6 +1948,18 @@ void ProgramVK::_updateBuffer(const VKuint idx, BufferCreateInfo *bufferInfo, Mo
     }
 }
 
+/**
+ * @brief Update the contents of a uniform buffer object (UBO) on the GPU.
+ *
+ * @param currentImage The index of the current swap chain image.
+ * @param uboName The name of the UBO to update.
+ * @param uboSize The size of the UBO in bytes.
+ * @param uboData A pointer to the data to copy into the UBO.
+ *
+ * The function looks up the index of the UBO in the descriptor set and then
+ * copies the data from the host to the UBO on the GPU using the mapping stored
+ * in p_uniformBufferMappings.
+ */
 void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string uboName, uint32_t uboSize, const void *uboData) {
     VKuint uboIdx = this->p_mapDescriptors[uboName];
 
@@ -1475,6 +1967,16 @@ void ProgramVK::updateUniformBuffer(uint32_t currentImage, std::string uboName, 
     memcpy(dest, uboData, uboSize);
 }
 
+/**
+ * @brief Update the contents of a push constant.
+ *
+ * @param name The name of the push constant to update.
+ * @param data A pointer to the data to copy into the push constant.
+ * @param size The size of the push constant in bytes.
+ *
+ * The function looks up the index of the push constant in the descriptor set and
+ * then sets the data and range for that push constant.
+ */
 void ProgramVK::updatePushConstant(std::string name, const void *data, uint32_t size) {
     VKuint pid = this->p_mapPushConsts[name];
     this->p_pushConsts[pid].second = data;
@@ -1491,6 +1993,19 @@ void ProgramVK::updatePushConstant(std::string name, const void *data, uint32_t 
     }
 }
 
+/**
+ * @brief Update the clear color of the program.
+ *
+ * The clear color is used to fill the color attachment of the framebuffer
+ * before drawing. The clear color is specified in 4-component floating point
+ * format, with the first component being red, the second component being green,
+ * the third component being blue, and the fourth component being alpha.
+ *
+ * @param r The red component of the clear color.
+ * @param g The green component of the clear color.
+ * @param b The blue component of the clear color.
+ * @param a The alpha component of the clear color.
+ */
 void ProgramVK::updateClearColor(float r, float g, float b, float a) {
     p_clearColor[0] = r;
     p_clearColor[1] = g;
@@ -1498,11 +2013,36 @@ void ProgramVK::updateClearColor(float r, float g, float b, float a) {
     p_clearColor[3] = a;
 }
 
+/**
+ * @brief Update the swap chain extent.
+ *
+ * The swap chain extent is used to determine the size of the swap chain images
+ * when the swap chain is recreated. The extent is specified in pixels, with the
+ * first component being the width and the second component being the height.
+ *
+ * @param x The width of the swap chain extent.
+ * @param y The height of the swap chain extent.
+ */
 void ProgramVK::updateSwapExtent(int x, int y) {
     this->p_swapExtent.width = x;
     this->p_swapExtent.height = y;
 }
 
+/**
+ * @brief Renders the scene to the swap chain image.
+ *
+ * This function renders the scene to the swap chain image specified by the
+ * current swap chain image index. It uses the render pass and frame buffer
+ * specified by the current swap chain image, and the command buffer specified
+ * by the current command buffer index. It also clears the color and depth
+ * buffers to the specified values.
+ * 
+ * Rendering is done by iterating over the models in the active models list,
+ * then iterating over the active programs for each model, and finally iterating
+ * over the described renders ("offsets") for each program.
+ *
+ * @param renderExtent The extent of the swap chain image.
+ */
 void ProgramVK::render(VkExtent2D &renderExtent) {
     VKuint image = this->p_vkw->currentSwapChainImageIndex();
     VkCommandBuffer cmdBuff = this->p_vkw->currentCommandBuffer();
@@ -1571,6 +2111,13 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     this->p_vdf->vkCmdEndRenderPass(cmdBuff);
 }
 
+/**
+ * ReapZombies is a function that is called once per frame to clean up any
+ * buffers that are no longer in use. It checks the current swap chain image
+ * index against the map of zombie indices, and if the indices no longer match,
+ * it deletes the buffer and memory associated with the index, and adds the
+ * index to the list of free indices.
+ */
 void ProgramVK::reapZombies() {
     VKuint frame = this->p_vkw->currentSwapChainImageIndex();
     if (!this->p_mapZombieIndices.size()) {
@@ -1594,6 +2141,13 @@ void ProgramVK::reapZombies() {
     }
 }
 
+/**
+ * @brief Retrieves a pointer to a Shader object associated with a filename.
+ *
+ * @param fileName - std::string representation of the shader filename
+ * @return Shader* - pointer to the Shader object associated with the filename
+ * @throws std::runtime_error if shader is not found
+ */
 Shader* ProgramVK::getShaderFromName(const std::string& fileName) {
     assert(p_stage >= 2);
     Shader *s = nullptr;
@@ -1611,6 +2165,13 @@ Shader* ProgramVK::getShaderFromName(const std::string& fileName) {
     return s;
 }
 
+/**
+ * @brief Retrieves a pointer to a Shader object associated with a shader id.
+ *
+ * @param id - uint32_t representation of the shader id
+ * @return Shader* - pointer to the Shader object associated with the shader id
+ * @throws std::runtime_error if shader is not found
+ */
 Shader* ProgramVK::getShaderFromId(VKuint id) {
     if (id >= p_compiledShaders.size()) {
         throw std::runtime_error("Shader with id " + std::to_string(id) + " not found.");
@@ -1619,6 +2180,12 @@ Shader* ProgramVK::getShaderFromId(VKuint id) {
     return p_compiledShaders[id];
 }
 
+/**
+ * Retrieves a shader id associated with a filename.
+ * @param fileName - std::string representation of the shader filename
+ * @return uint32_t - shader id associated with the filename
+ * @throws std::runtime_error if shader is not found
+ */
 VKuint ProgramVK::getShaderIdFromName(const std::string& fileName) {
     VKuint id = uint(-1);
     
@@ -1634,6 +2201,13 @@ VKuint ProgramVK::getShaderIdFromName(const std::string& fileName) {
     return id;
 }
 
+/**
+ * Retrieves a pointer to a ModelInfo object associated with a model name.
+ *
+ * @param name - std::string representation of the model name
+ * @return ModelInfo* - pointer to the ModelInfo object associated with the model name
+ * @throws std::runtime_error if model is not found
+ */
 ModelInfo* ProgramVK::getModelFromName(const std::string& name) {
     VKint id = getModelIdFromName(name);
 
@@ -1644,6 +2218,12 @@ ModelInfo* ProgramVK::getModelFromName(const std::string& name) {
     return p_models[id];
 }
 
+/**
+ * Retrieves the model id associated with a model name.
+ *
+ * @param name - std::string representation of the model name
+ * @return VKint - model id associated with the model name, -1 if model is not found
+ */
 VKint ProgramVK::getModelIdFromName(const std::string& name) {
     VKint id = -1;
     
@@ -1659,10 +2239,20 @@ VKint ProgramVK::getModelIdFromName(const std::string& name) {
     return id;
 }
 
+/**
+ * Retrieves a set of the ids of all active models.
+ *
+ * @return std::set<VKuint> - set of active model ids
+ */
 std::set<VKuint> ProgramVK::getActiveModelsById() {
     return p_activeModels;
 }
 
+/**
+ * Retrieves a vector of the names of all active models.
+ *
+ * @return std::vector<std::string> - vector of active model names
+ */
 std::vector<std::string> ProgramVK::getActiveModelsByName() {
     std::vector<std::string> names;
 
@@ -1673,11 +2263,24 @@ std::vector<std::string> ProgramVK::getActiveModelsByName() {
     return names;
 }
 
+/**
+ * Retrieves a set of the ids of all active programs for a model.
+ *
+ * @param modelName - the name of the model to retrieve programs for
+ * @return std::set<VKuint> - set of active program ids
+ */
 std::set<VKuint> ProgramVK::getModelActivePrograms(std::string modelName) {
     VKuint id = getModelIdFromName(modelName);
     return p_models[id]->activePrograms;
 }
 
+/**
+ * Checks if a model and program are active.
+ *
+ * @param modelName - the name of the model
+ * @param program - the id of the program
+ * @return true if the model and program are active, false otherwise
+ */
 bool ProgramVK::isActive(const std::string &modelName, VKuint program) {
     bool active = false;
     VKint id = getModelIdFromName(modelName);
@@ -1692,6 +2295,11 @@ bool ProgramVK::isActive(const std::string &modelName, VKuint program) {
     return active;
 }
 
+/**
+ * Prints information about a model.
+ *
+ * @param model - the model to print information for
+ */
 void ProgramVK::printModel(ModelInfo *model) {
     std::cout << "Model: " << model->id << "\n";
     
@@ -1713,6 +2321,14 @@ void ProgramVK::printModel(ModelInfo *model) {
     std::cout << std::endl;
 }
 
+/**
+ * Prints information about a model creation information object.
+ *
+ * This function prints information about a ModelCreateInfo object, including
+ * its name, vertex buffer objects, index buffer object, shaders, and offsets.
+ *
+ * @param info - the ModelCreateInfo object to print information for
+ */
 void ProgramVK::printInfo(ModelCreateInfo *info) {
     std::cout << "\nInfo: " << info->name << "\n";
     

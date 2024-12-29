@@ -2,8 +2,8 @@
  * vkwindow.cpp
  *
  *    Created on: Oct 22, 2024
- *   Last Update: Oct 22, 2024
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Dec 29, 2024
+ *  Orig. Author: Wade Burch (dev@nolnoch.com)
  *
  *  Copyright 2024 Wade Burch (GPLv3)
  *

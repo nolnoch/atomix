@@ -2,8 +2,8 @@
  * programVK.hpp
  *
  *    Created on: Oct 21, 2013
- *   Last Update: Oct 21, 2024
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Dec 29, 2024
+ *  Orig. Author: Wade Burch (dev@nolnoch.com)
  *
  *  This class was created to automate (and generally make easier) the use
  *  of GLSL programs through the GLEW extension libraries.

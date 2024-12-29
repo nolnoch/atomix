@@ -4,8 +4,8 @@
  *  atomix
  * 
  *    Created on: Mar 8, 2013
- *   Last Update: Sep 9, 2024
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Dec 29, 2024
+ *  Orig. Author: Wade Burch (dev@nolnoch.com)
  * 
  *  This Quaternion class was designed for use in CS354 Computer Graphics.
  *  This may not be the most efficient way to reinvent the wheel, but I

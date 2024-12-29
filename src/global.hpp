@@ -2,8 +2,8 @@
  * global.hpp
  *
  *    Created on: Oct 19, 2023
- *   Last Update: Sep 9, 2024
- *  Orig. Author: Wade Burch (braernoch.dev@gmail.com)
+ *   Last Update: Dec 29, 2024
+ *  Orig. Author: Wade Burch (dev@nolnoch.com)
  * 
  *  Copyright 2023, 2024 Wade Burch (GPLv3)
  * 
@@ -85,7 +85,14 @@ struct AtomixCloudConfig {
 };
 Q_DECLARE_METATYPE(AtomixCloudConfig);
 
-/* Custom BitFlag struct */
+/** 
+ * BitFlag
+ * 
+ *  @brief A simple bitflag class.
+ * 
+ *  @details Simplifies the management of bitflags and their oft-forgotten usages.
+ * 
+*/
 struct BitFlag {
     BitFlag() : bf(0) {};
     BitFlag(uint flag) : bf(flag) {};
@@ -145,6 +152,14 @@ struct BitFlag {
 };
 
 namespace atomix {
+    /**
+     * @brief Pretty print a harmap for debugging purposes.
+     *
+     * @param[in] map The harmap to print.
+     *
+     * Prints each key-value pair in the harmap, with the key followed by the
+     * values of that key, separated by commas.
+     */
     inline void printHarmap(harmap &map) {
         for (auto k : map) {
             std::cout << k.first << ": ";
@@ -156,6 +171,14 @@ namespace atomix {
         std::cout << std::endl;
     }
 
+    /**
+     * @brief Convert a QStringList to a std::vector<std::string>.
+     *
+     * @param[in] list The QStringList to convert.
+     *
+     * @return A std::vector<std::string> containing the same elements as the
+     * QStringList.
+     */
     inline std::vector<std::string> stringlistToVector(QStringList list) {
         std::vector<std::string> vec;
         vec.reserve(list.size());

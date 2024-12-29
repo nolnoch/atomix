@@ -31,9 +31,23 @@
 #include <oneapi/dpl/execution>
 
 
+/**
+ * @brief Constructor for CloudManager class.
+ *
+ * @details
+ * This constructor initializes an instance of the CloudManager class.
+ */
 CloudManager::CloudManager() {
 }
 
+/**
+ * @brief Destructor for CloudManager class.
+ *
+ * @details
+ * This destructor resets the cloud rendering process to its initial state, clearing
+ * all data buffers, resetting the orbital index, and resetting the atom's atomic
+ * number.
+ */
 CloudManager::~CloudManager() {
     resetManager();
 }
@@ -668,6 +682,20 @@ void CloudManager::cloudTestCSV() {
 
 }
 
+/**
+ * @brief radialMaxCSV
+ *
+ * This function takes a vector of probability density values and emits a CSV
+ * file with the maximum probability density for each radial point. The CSV
+ * contains the radial point, followed by the maximum probability density for
+ * that point. The output is a single, long row with no delimiters between the
+ * points and the probability densities. The output is not formatted for human
+ * readability.
+ *
+ * @param vecPDV The vector of probability density values to be processed.
+ * @param n_max The maximum principal quantum number to generate indices for.
+ * This parameter is currently unused.
+ */
 void CloudManager::radialMaxCSV(fvec &vecPDV, [[maybe_unused]] int n_max) {
     const size_t chunkSize = this->cloudResolution * this->cloudResolution >> 1;
     auto it = vecPDV.cbegin();
@@ -829,12 +857,24 @@ std::complex<double> CloudManager::wavefuncPsi(double radial, std::complex<doubl
     return radial * angular;
 }
 
+/**
+ * @brief Compute the radial probability density value of the orbital wavefunction.
+ *
+ * This function takes the radial wavefunction term `R` and the radial distance `r`
+ * and returns the radial probability density value of the orbital wavefunction
+ * evaluated at the given radial distance.
+ *
+ * @param[in] R The radial wavefunction term.
+ * @param[in] r The radial distance at which to evaluate the wavefunction.
+ * @param[in] l The orbital angular momentum.
+ * @returns The radial probability density value of the orbital wavefunction evaluated at `(R, r, l)`.
+ */
 double CloudManager::wavefuncRDP(double R, double r, [[maybe_unused]] int l) {
     double factor = r * r;
 
-    /* if (!l) {
+    if (!l) {
         factor *= 4.0 * M_PI;
-    } */
+    }
 
     return R * R * factor;
 }
@@ -854,17 +894,28 @@ double CloudManager::wavefuncRDP(double R, double r, [[maybe_unused]] int l) {
 double CloudManager::wavefuncPDV(std::complex<double> Psi, double r, [[maybe_unused]] int l) {
     double factor = r * r;
 
-    /* if (!l) {
-        factor *= 0.4 * M_PI;
-    } */
-
-    /* std::complex<double> term1 = std::conj(Psi);
-    std::complex<double> term2 = term1 * Psi;
-    double term3 = term2.real(); */
+    if (!l) {
+        factor *= 4.0 * M_PI;
+    }
 
     return (std::conj(Psi) * Psi).real() * factor;
 }
 
+/**
+ * @brief Compute the probability density value of the orbital wavefunction evaluated at the given point.
+ *
+ * This function takes the principal quantum number `n`, the orbital angular momentum `l`, the z-component
+ * of the orbital angular momentum `m_l`, the radial distance `r`, the polar angle `theta`, and the azimuthal
+ * angle `phi` and returns the probability density value of the orbital wavefunction evaluated at the given point.
+ *
+ * @param[in] n The principal quantum number.
+ * @param[in] l The orbital angular momentum.
+ * @param[in] m_l The z-component of the orbital angular momentum.
+ * @param[in] r The radial distance at which to evaluate the wavefunction.
+ * @param[in] theta The polar angle at which to evaluate the wavefunction.
+ * @param[in] phi The azimuthal angle at which to evaluate the wavefunction.
+ * @returns The probability density value of the orbital wavefunction evaluated at `(n, l, m_l, r, theta, phi)`.
+ */
 double CloudManager::wavefuncPsi2(int n, int l, int m_l, double r, double theta, double phi) {
     double factor = r * r;
 

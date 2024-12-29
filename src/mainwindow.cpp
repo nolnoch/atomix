@@ -35,10 +35,24 @@ int VK_MINOR_VERSION;
 int VK_SPIRV_VERSION;
 
 
+/**
+ * Default constructor for MainWindow.
+ *
+ * Initializes a new instance of the MainWindow class and sets an instance of
+ * FileHandler.
+ */
 MainWindow::MainWindow() {
     fileHandler = new FileHandler;
 }
 
+/**
+ * Initializes the window with a given screen size.
+ *
+ * Finds all files in the resources directory, sets the window title, and
+ * initializes the style, graphics, and widgets.
+ *
+ * @param screenSize The size of the screen.
+ */
 void MainWindow::init(QRect &screenSize) {
     aStyle.qtStyle = this->style()->name();
     setWindowTitle(tr("atomix"));
@@ -57,6 +71,13 @@ void MainWindow::init(QRect &screenSize) {
     _connectSignals();
 }
 
+/**
+ * Called after the window is visible and fully initialized.
+ *
+ * @details
+ * Used to set some variables and load saved settings (if applicable).
+ * Also sets an event filter on the tab widget.
+ */
 void MainWindow::postInit() {
     mw_graphHeight = vkGraph->height();
     mw_graphWidth = vkGraph->width();
@@ -68,6 +89,17 @@ void MainWindow::postInit() {
     showReady();
 }
 
+/**
+ * @brief Updates the details widget with the given AtomixInfo struct.
+ *
+ * @param info The AtomixInfo struct to use.
+ *
+ * @details
+ * This function takes the given AtomixInfo struct and populates the details
+ * widget with it. It calculates the total size of the vertex, data, and index
+ * buffers in bytes, and then converts each of those values to human-readable
+ * units. The resulting string is then set as the text of the details widget.
+ */
 void MainWindow::updateDetails(AtomixInfo *info) {
     this->dInfo.pos = info->pos;
     this->dInfo.near = info->near;
@@ -100,6 +132,13 @@ void MainWindow::updateDetails(AtomixInfo *info) {
     labelDetails->adjustSize();
 }
 
+/**
+ * @brief Setups the status bar.
+ *
+ * This function sets up the status bar. It changes the font of the status bar
+ * to aStyle.fontMonoStatus, and sets the minimum height of the status bar to
+ * aStyle.loadingHeight.
+ */
 void MainWindow::setupStatusBar() {
     statBar = this->statusBar();
     statBar->setObjectName("statusBar");
@@ -107,6 +146,13 @@ void MainWindow::setupStatusBar() {
     statBar->setMinimumHeight(aStyle.loadingHeight);
 }
 
+/**
+ * @brief Setup the details widget.
+ *
+ * This function creates a new QLabel widget as the details widget. It sets the
+ * object name to "labelDetails", sets the alignment to be left and top aligned,
+ * and hides the widget.
+ */
 void MainWindow::setupDetails() {
     labelDetails = new QLabel(this);
     labelDetails->setObjectName("labelDetails");
@@ -114,6 +160,13 @@ void MainWindow::setupDetails() {
     labelDetails->hide();
 }
 
+/**
+ * @brief Setup the loading widget.
+ *
+ * This function creates a new QProgressBar widget as the loading widget. It sets
+ * the object name to "pbLoading", sets the minimum and maximum values to 0, sets
+ * the text visible to false, and hides the widget.
+ */
 void MainWindow::setupLoading() {
     pbLoading = new QProgressBar(this);
     pbLoading->setMinimum(0);
@@ -123,6 +176,16 @@ void MainWindow::setupLoading() {
     aStyle.loadingHeight = pbLoading->sizeHint().height();
 }
 
+/**
+ * @brief Show or hide the loading widget.
+ *
+ * @param loading True to show the loading widget, false to hide it.
+ *
+ * @details
+ * If the loading widget is already in the desired state, this function does nothing.
+ * Otherwise, it adds or removes the loading widget from the status bar, and shows
+ * or hides the widget accordingly.
+ */
 void MainWindow::showLoading(bool loading) {
     if (this->isLoading == loading) return;
     this->isLoading = loading;
@@ -135,6 +198,15 @@ void MainWindow::showLoading(bool loading) {
     }
 }
 
+/**
+ * @brief Toggles the visibility of the details widget.
+ *
+ * @details
+ * This function toggles the visibility of the details widget. If the details widget
+ * is already visible, it is hidden. If the details widget is hidden, it is shown.
+ * Additionally, the minimum height of the status bar is adjusted to accommodate the
+ * visible or hidden state of the details widget.
+ */
 void MainWindow::showDetails() {
     showDebug = !showDebug;
     if (showDebug) {
@@ -147,10 +219,27 @@ void MainWindow::showDetails() {
     }
 }
 
+/**
+ * @brief Show the "Ready" message in the status bar.
+ *
+ * @details
+ * This function shows the "Ready" message in the status bar. This is useful for
+ * indicating that some operation has completed and the application is ready for
+ * user interaction.
+ */
 void MainWindow::showReady() {
     statBar->showMessage(tr("Ready"));
 }
 
+/**
+ * @brief Handle key press events.
+ *
+ * This function handles key press events. The escape key causes the application
+ * to close. The 'D' key toggles the visibility of the details widget. The 'P' key
+ * takes a screenshot of the current window and prompts the user to save it. The
+ * 'Home' key resets the camera and the 'Space' key pauses or unpauses the
+ * application.
+ */
 void MainWindow::keyPressEvent(QKeyEvent *e) {
     switch (e->key()) {
         case Qt::Key_Escape:
@@ -186,6 +275,15 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
     }
 }
 
+/**
+ * @brief Called when the window is resized.
+ *
+ * @param e The resize event.
+ *
+ * @details
+ * This function is called when the window is resized. It updates the window
+ * geometry variables with the new size and position of the window.
+ */
 void MainWindow::resizeEvent(QResizeEvent *e) {
     QWidget::resizeEvent(e);
     
@@ -197,6 +295,19 @@ void MainWindow::resizeEvent(QResizeEvent *e) {
     mw_y = mwLoc.y();
 }
 
+/**
+ * @brief Handles events for objects.
+ *
+ * @param obj The object that received the event.
+ * @param event The event that was received.
+ *
+ * @details
+ * This function handles events for objects. If the object is the tab widget and
+ * the event is a resize event, it resizes the dock widgets. Otherwise, it simply
+ * passes the event on to the parent class.
+ *
+ * @return true if the event was handled, false otherwise.
+ */
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     if ((obj == wTabs) && (event->type() == QEvent::Resize)) {
         _dockResize();
@@ -206,6 +317,17 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     return false;
 }
 
+/**
+ * @brief Saves the window geometry and state when the window is closed.
+ *
+ * @param e The event that triggered this function.
+ *
+ * @details
+ * This function is called when the window is closed. It saves the window
+ * geometry and state to the application settings, so that the window can be
+ * restored to its previous position and state the next time the application is
+ * started.
+ */
 void MainWindow::closeEvent(QCloseEvent *e) {
     QSettings settings("nolnoch", "atomix");
     settings.beginGroup("window");
@@ -215,6 +337,18 @@ void MainWindow::closeEvent(QCloseEvent *e) {
     QWidget::closeEvent(e);
 }
 
+/**
+ * @brief Set up the tabs in the main window.
+ *
+ * @details
+ * This function sets up the tabs in the main window. The tabs are stored in a
+ * QDockWidget, which is added to the main window with the Qt::RightDockWidgetArea
+ * area. The tabs are then populated with the setupDockWaves and setupDockHarmonics
+ * functions. The number of tabs is stored in the mw_tabCount variable.
+ *
+ * Additionally, this function creates a QButtonGroup to manage the save and delete
+ * buttons for the wave and cloud configurations.
+ */
 void MainWindow::setupTabs() {
     dockTabs = new QDockWidget(this);
     dockTabs->setObjectName("dockTabs");
@@ -240,6 +374,15 @@ void MainWindow::setupTabs() {
     buttGroupConfig->addButton(buttSaveWaveConfig, 3);
 }
 
+/**
+ * @brief Set up the Waves dock.
+ *
+ * @details
+ * This function sets up the Waves dock. The dock is stored in a QDockWidget, which
+ * is added to the main window with the Qt::RightDockWidgetArea area. The dock
+ * contains a tab widget with two tabs: "Waves" and "Harmonics". The Waves tab is
+ * populated with the setupDockWaves function.
+ */
 void MainWindow::setupDockWaves() {
     QSizePolicy qPolicyExpandV = QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     wTabWaves = new QWidget(this);
@@ -456,6 +599,11 @@ void MainWindow::setupDockWaves() {
     wTabWaves->setLayout(layDockWaves);
 }
 
+/**
+ * @brief Set up the harmonics dock widget.
+ *
+ * This function initializes all widgets and layouts for the harmonics dock widget.
+ */
 void MainWindow::setupDockHarmonics() {
     QSizePolicy qPolicyExpandA = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     wTabHarmonics = new QWidget(this);
@@ -723,6 +871,13 @@ void MainWindow::setupDockHarmonics() {
     wTabHarmonics->setLayout(layDockHarmonics);
 }
 
+/**
+ * @brief Refreshes the file lists for vertex and fragment shaders.
+ *
+ * This function is called whenever the user's shader files have changed. It
+ * updates the file lists for vertex and fragment shaders, and then refreshes
+ * the configuration GUI elements for the shaders.
+ */
 void MainWindow::refreshShaders() {
     fileHandler->findFiles();
 
@@ -749,6 +904,19 @@ void MainWindow::refreshShaders() {
     }
 }
 
+/**
+ * @brief Refreshes the file lists for wave and cloud configurations.
+ *
+ * This function is called whenever the user's configuration files have changed. It
+ * updates the file lists for wave and cloud configurations, and then refreshes
+ * the configuration GUI elements for the selected configuration(s).
+ *
+ * @param target A BitFlag indicating which configurations to refresh. Options are:
+ *               - mw::WAVE (wave configurations)
+ *               - mw::CLOUD (cloud configurations)
+ * @param selection The name of the configuration to select in the refreshed GUI
+ *                  elements.
+ */
 void MainWindow::refreshConfigs(BitFlag target, QString selection) {
     fileHandler->findFiles();
     int waveFiles = fileHandler->getWaveFilesCount();
@@ -799,6 +967,13 @@ void MainWindow::refreshConfigs(BitFlag target, QString selection) {
     }
 }
 
+/**
+ * @brief Loads the currently selected wave config from a file.
+ *
+ * Handles combo box index changes and loads the selected wave config from a file.
+ * Updates the UI and enables/disables buttons based on whether the config is
+ * default or custom.
+ */
 void MainWindow::loadWaveConfig() {
     int files = fileHandler->getWaveFilesCount();
     int comboID = comboWaveConfigFile->currentIndex();
@@ -825,6 +1000,18 @@ void MainWindow::loadWaveConfig() {
     refreshWaveConfigGUI(cfg);
 }
 
+/**
+ * @brief Updates the UI fields with the given AtomixWaveConfig.
+ *
+ * @details
+ * Updates the UI fields with the values from the given AtomixWaveConfig object.
+ * Fields updated include the number of waves, amplitude, period, wavelength,
+ * resolution, parallel rendering, superposition, CPU rendering, and spherical
+ * rendering.
+ *
+ * @param cfg The AtomixWaveConfig object containing the values to update the
+ *            UI fields with.
+ */
 void MainWindow::refreshWaveConfigGUI(AtomixWaveConfig &cfg) {
     entryOrbit->setText(QString::number(cfg.waves));
     entryAmp->setText(QString::number(cfg.amplitude));
@@ -838,6 +1025,13 @@ void MainWindow::refreshWaveConfigGUI(AtomixWaveConfig &cfg) {
     slswSphere->setValue(cfg.sphere);
 }
 
+/**
+ * @brief Loads the currently selected cloud config from a file.
+ *
+ * Handles combo box index changes and loads the selected cloud config from a file.
+ * Updates the UI and enables/disables buttons based on whether the config is
+ * default or custom.
+ */
 void MainWindow::loadCloudConfig() {
     int files = fileHandler->getCloudFilesCount();
     int comboID = comboCloudConfigFile->currentIndex();
@@ -871,6 +1065,14 @@ void MainWindow::loadCloudConfig() {
     comboCloudConfigFile->setCurrentIndex(++comboID);
 }
 
+/**
+ * @brief Updates the cloud config UI with the values from a given AtomixCloudConfig.
+ *
+ * Populates the cloud config text fields with the values from the given AtomixCloudConfig,
+ * and checks the corresponding orbital checkboxes in the orbital tree.
+ *
+ * @param cfg The AtomixCloudConfig to populate the UI with.
+ */
 void MainWindow::refreshCloudConfigGUI(AtomixCloudConfig &cfg) {
     entryCloudLayers->setText(QString::number(cfg.cloudLayDivisor));
     entryCloudRes->setText(QString::number(cfg.cloudResolution));
@@ -884,6 +1086,19 @@ void MainWindow::refreshCloudConfigGUI(AtomixCloudConfig &cfg) {
     }
 }
 
+/**
+ * @brief Updates the orbital checkboxes in the orbital tree based on a given wave change.
+ *
+ * @details
+ * Updates the orbital checkboxes in the orbital tree based on a given wave change.
+ * Wave change is given as a pair of integers, where the first value is the starting wave number
+ * and the second value is the number of waves to increment/decrement.
+ *
+ * @param waveChange A pair of integers, where the first value is the starting wave number
+ *                   and the second value is the number of waves to increment/decrement.
+ *
+ * @return The new state of the rendered orbits as a bit mask.
+ */
 uint MainWindow::refreshOrbits(std::pair<int, int> waveChange) {
     const QSignalBlocker blocker(buttGroupOrbits);
     ushort renderedOrbits = 0;
@@ -928,6 +1143,14 @@ uint MainWindow::refreshOrbits(std::pair<int, int> waveChange) {
     return renderedOrbits;
 }
 
+/**
+ * @brief Loads the window geometry and state from the application settings.
+ *
+ * @details
+ * This function is called when the application is started. It loads the window
+ * geometry and state from the application settings, so that the window can be
+ * restored to its previous position and state.
+ */
 void MainWindow::loadSavedSettings() {
     QSettings settings("nolnoch", "atomix");
     settings.beginGroup("window");
@@ -936,11 +1159,27 @@ void MainWindow::loadSavedSettings() {
     settings.endGroup();
 }
 
+/**
+ * @brief Changes the selected wave configuration to "Custom" when the user
+ *        changes a wave configuration value.
+ *
+ * @details
+ * This function is a slot for the editingFinished signal of the wave
+ * configuration value line edits. When the user changes a wave configuration
+ * value, this function sets the selected wave configuration to "Custom".
+ */
 void MainWindow::handleWaveConfigChanged() {
     comboWaveConfigFile->setCurrentIndex(comboWaveConfigFile->count() - 1);
     notDefaultConfig = true;
 }
 
+/**
+ * @brief Called when the cloud configuration changes.
+ *
+ * Enables the "Render Cloud" button if there are any selected recipes, and
+ * sets the selected cloud configuration file to "Select a configuration file".
+ * Disables the "Delete" button.
+ */
 void MainWindow::handleCloudConfigChanged() {
     if (numRecipes) {
         buttMorbHarmonics->setEnabled(true);
@@ -949,6 +1188,16 @@ void MainWindow::handleCloudConfigChanged() {
     buttDeleteCloudConfig->setEnabled(false);
 }
 
+/**
+ * @brief Toggles the check state of a leaf node in the orbital select tree when double clicked.
+ *
+ * @details
+ * When a leaf node in the orbital select tree is double clicked, this function toggles the check state of the item.
+ * If the item is checked, it is unchecked, and vice versa.
+ *
+ * @param item The item that was double clicked.
+ * @param col The column of the item that was double clicked.
+ */
 void MainWindow::handleTreeDoubleClick(QTreeWidgetItem *item, int col) {
     Qt::CheckState checked = item->checkState(col);
     int itemChildren = item->childCount();
@@ -959,6 +1208,16 @@ void MainWindow::handleTreeDoubleClick(QTreeWidgetItem *item, int col) {
     }
 }
 
+/**
+ * @brief Toggles the check state of a recipe in the orbital select tree when double clicked in the recipe report table.
+ *
+ * @details
+ * When a recipe in the recipe report table is double clicked, this function toggles the check state of the item.
+ * If the item is checked, it is unchecked, and vice versa.
+ *
+ * @param row The row of the item that was double clicked.
+ * @param col The column of the item that was double clicked.
+ */
 void MainWindow::handleTableDoubleClick(int row, int col) {
     if (col != 1) {
         return;
@@ -968,6 +1227,19 @@ void MainWindow::handleTableDoubleClick(int row, int col) {
     treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Unchecked);
 }
 
+/**
+ * @brief Handles the check state of a recipe in the orbital select tree.
+ *
+ * @details
+ * When a recipe in the orbital select tree is checked or unchecked, this function is called.
+ * It handles the check state of the item and its children, and also handles the addition or removal of the orbital
+ * from the recipe report table and the internal map of cloud recipes.
+ * 
+ * This function is also upwardly-aware and sets the check state of the parent node to reflect the state of its children.
+ *
+ * @param item The item that was checked or unchecked.
+ * @param col The column of the item that was checked or unchecked.
+ */
 void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     tableOrbitalReport->setSortingEnabled(false);
     const QSignalBlocker blocker(tableOrbitalReport);
@@ -1088,6 +1360,16 @@ void MainWindow::handleRecipeCheck(QTreeWidgetItem *item, int col) {
     tableOrbitalReport->setSortingEnabled(true);
 }
 
+/**
+ * @brief Locks recipes for current configuration.
+ *
+ * This is a toggle-able function that will lock all the recipes currently
+ * selected in the Harmonics tab. This function is called when the Lock
+ * button in the tab is clicked.
+ *
+ * @note This function will enable the Generate Harmonics button if there
+ * are any recipes selected.
+ */
 void MainWindow::handleButtLockRecipes() {
     const QSignalBlocker blocker(tableOrbitalReport);
 
@@ -1128,6 +1410,13 @@ void MainWindow::handleButtLockRecipes() {
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #77FF77; }");
 }
 
+/**
+ * @brief Clears all orbital selections from the orbital selection tree and orbital report table.
+ *
+ * This function is called when the user clicks the "Clear" button in the "Harmonics" dock widget.
+ * It iterates over all of the top-level items in the orbital selection tree, and if the item is checked or partially checked,
+ * it sets the check state to unchecked. It then clears the map of cloud recipes, which is a map of orbital numbers to vectors of orbital recipes.
+ */
 void MainWindow::handleButtClearRecipes() {
     int topLevelItems = treeOrbitalSelect->topLevelItemCount();
 
@@ -1143,6 +1432,13 @@ void MainWindow::handleButtClearRecipes() {
     this->mapCloudRecipes.clear();
 }
 
+/**
+ * @brief Resets the orbital selection tree and orbital report table to their initial states.
+ *
+ * Called when the user clicks the "Reset" button in the "Harmonics" dock widget.
+ * Resets the map of cloud recipes to empty and sets the number of recipes to 0.
+ * Disables the "Morph Harmonics" button to reflect the lack of a selection.
+ */
 void MainWindow::handleButtResetRecipes() {
     mapCloudRecipes.clear();
     this->numRecipes = 0;
@@ -1151,6 +1447,16 @@ void MainWindow::handleButtResetRecipes() {
     buttMorbHarmonics->setEnabled(false);
 }
 
+/**
+ * @brief Handles the saving or deletion of a wave or cloud config file when the user interacts with the respective combo box buttons.
+ *
+ * @details
+ * This function is a slot for the button group buttGroupConfig. Its id parameter is used to determine whether to save (id % 2) or delete (id / 2) a config file.
+ * If saving, a file dialog is opened for the user to select a file. The file is then saved with the appropriate config and recipes.
+ * If deleting, a confirmation dialog is opened to ensure the user wants to delete the selected config file. If so, the file is deleted and the config lists are refreshed.
+ *
+ * @param id An integer used to determine whether to save or delete a config file, and whether to save a wave or cloud config file.
+ */
 void MainWindow::handleButtConfigIO(int id) {
     bool wave = (id % 2);
     bool save = (id / 2);
@@ -1199,6 +1505,14 @@ void MainWindow::handleButtConfigIO(int id) {
     }
 }
 
+/**
+ * @brief Handles the Morph Waves button click.
+ *
+ * This function is called when the user clicks the "Morph Waves" button in the "Waves" dock widget.
+ * It clamps the input values to valid ranges, sets the properties of the wave config, and refreshes the orbits and colours.
+ * If the user has selected a valid wave config, it enables the "Morph Harmonics" button and sets the active model to true.
+ * If the user has changed the wave config from the default, it enables the "Save Wave Config" button.
+ */
 void MainWindow::handleButtMorbWaves() {
     std::pair<bool, double> resultP, resultW;
     int oldWaves = mw_waveConfig.waves;
@@ -1237,6 +1551,14 @@ void MainWindow::handleButtMorbWaves() {
     }
 }
 
+/**
+ * @brief Handles the Harmonics button click.
+ *
+ * This function is called when the user clicks the "Render Cloud" button in the "Harmonics" dock widget.
+ * It reads the input values from the dock widget and sets the properties of the cloud config.
+ * It also estimates the buffer sizes required for the new cloud config, and shows a confirmation dialog if the total size exceeds 1 GiB.
+ * If the user confirms, it generates the new cloud and updates the state of the GUI elements.
+ */
 void MainWindow::handleButtMorbHarmonics() {
     mw_cloudConfig.cloudLayDivisor = entryCloudLayers->text().toInt();
     mw_cloudConfig.cloudResolution = entryCloudRes->text().toInt();
@@ -1301,6 +1623,17 @@ void MainWindow::handleButtMorbHarmonics() {
     }
 }
 
+/**
+ * @brief Handles the change in weight of an orbital in the table report.
+ *
+ * @details
+ * When the weight of an orbital in the table report is changed, this function is called.
+ * It updates the weight of the corresponding orbital in mapCloudRecipes and enables the
+ * morbid harmonics button and changes the color of the recipe reporter group box.
+ *
+ * @param row The row of the changed weight.
+ * @param col The column of the changed weight (not used).
+ */
 void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
     // Haha weight change *cries in 38*
     QTableWidgetItem *thisOrbital = tableOrbitalReport->item(row, 1);
@@ -1340,6 +1673,18 @@ void MainWindow::handleWeightChange(int row, [[maybe_unused]] int col) {
     groupRecipeReporter->setStyleSheet("QGroupBox { color: #FFFF77; }");
 }
 
+/**
+ * @brief Handles the toggle switch buttons in the Wave Config dock widget.
+ *
+ * This function is called when one of the toggle switch buttons in the Wave Config dock widget is changed.
+ * It sets or unsets the corresponding properties of the WaveConfig object and calls handleWaveConfigChanged() to
+ * update the state of the GUI elements.
+ * 
+ * This is necessary because it is some of the options available are mutually-exclusive.
+ *
+ * @param id The ID of the toggle switch button that was changed.
+ * @param checked The new state of the toggle switch button.
+ */
 void MainWindow::handleSwitchToggle(int id, bool checked) {
     enum CfgButt { PARA = 0, SUPER  = 1, CPU = 2, SPHERE = 3 };
 
@@ -1388,6 +1733,15 @@ void MainWindow::handleSwitchToggle(int id, bool checked) {
     handleWaveConfigChanged();
 }
 
+/**
+ * @brief Handles the color picker buttons in the Wave Config dock widget.
+ *
+ * When one of the color picker buttons is clicked, this function is called. It opens a color dialog with the
+ * option to choose a color with alpha channel. The chosen color is then converted to a uint and sent to
+ * VKGraph::setColorsWaves() to update the color of the wave.
+ *
+ * @param id The ID of the color picker button that was clicked.
+ */
 void MainWindow::handleButtColors(int id) {
     QColorDialog::ColorDialogOptions colOpts = QFlag(QColorDialog::ShowAlphaChannel);
     QColor colorChoice = QColorDialog::getColor(Qt::white, this, tr("Choose a Color"), colOpts);
@@ -1413,16 +1767,49 @@ void MainWindow::handleButtColors(int id) {
     vkGraph->setColorsWaves(id, colour);
 }
 
+/**
+ * @brief Handles the X culling slider.
+ *
+ * @param val The position of the X culling slider.
+ *
+ * This function is called when the user moves the X culling slider in the Cloud Config dock widget.
+ * It sets the cloudCull_x property of the cloud config to the fractional position of the slider
+ * by dividing the slider position by the number of ticks on the slider.
+ */
 void MainWindow::handleSlideCullingX(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
     this->mw_cloudConfig.cloudCull_x = pct;
 }
 
+/**
+ * @brief Handles the Y culling slider.
+ *
+ * @param val The position of the Y culling slider.
+ *
+ * This function is called when the user moves the Y culling slider in the Cloud Config dock widget.
+ * It sets the cloudCull_y property of the cloud config to the fractional position of the slider
+ * by dividing the slider position by the number of ticks on the slider.
+ */
 void MainWindow::handleSlideCullingY(int val) {
     float pct = (static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks));
     this->mw_cloudConfig.cloudCull_y = pct;
 }
 
+/**
+ * @brief Handles the radial culling slider.
+ *
+ * @param val The position of the radial culling slider.
+ *
+ * This function is called when the user moves the radial culling slider in the Cloud Config dock widget.
+ * It sets the cloudCull_rIn and cloudCull_rOut properties of the cloud config to the fractional position of the slider
+ * by dividing the slider position by the number of ticks on the slider.
+ *
+ * The behaviour of this function is as follows:
+ *  - If the slider is moved to the left (negative values), cloudCull_rIn is set to the fractional position
+ *    and cloudCull_rOut is set to 0.0f.
+ *  - If the slider is moved to the right (positive values), cloudCull_rIn is set to 0.0f and cloudCull_rOut is set to the
+ *    fractional position.
+ */
 void MainWindow::handleSlideCullingR(int val) {
     int range = aStyle.sliderTicks;
     float pct = static_cast<float>(val) / static_cast<float>(range);
@@ -1437,6 +1824,12 @@ void MainWindow::handleSlideCullingR(int val) {
     }
 }
 
+/**
+ * @brief Called when a slider is released.
+ *
+ * This function is called when the user releases any of the culling sliders in the Cloud Config dock widget.
+ * It checks if the value of the slider has changed, and if so, sends the new cloud config to the VKGraph.
+ */
 void MainWindow::handleSlideReleased() {
     if (!activeModel) { return; }
 
@@ -1450,10 +1843,31 @@ void MainWindow::handleSlideReleased() {
     }
 }
 
+/**
+ * @brief Handles the background colour slider.
+ *
+ * @param val The position of the background slider.
+ *
+ * This function is called when the user moves the background slider in the Cloud Config dock widget.
+ * It sets the background colour to the fractional position of the slider by dividing the slider position by the number of ticks on the slider.
+ */
 void MainWindow::handleSlideBackground(int val) {
     vkGraph->setBGColour((static_cast<float>(val) / static_cast<float>(aStyle.sliderTicks)));
 }
 
+/**
+ * @brief Find the index of a specific orbital in the harmap.
+ *
+ * @details
+ * This function iterates through the harmap for the given n and returns the index of the first orbital that matches the given l and m.
+ * If no match is found, -1 is returned.
+ *
+ * @param n The principal quantum number.
+ * @param l The azimuthal quantum number.
+ * @param m The magnetic quantum number.
+ *
+ * @return The index of the orbital in the harmap, or -1 if not found.
+ */
 int MainWindow::findHarmapItem(int n, int l, int m) {
     for (int i = 0; i < (int)this->mapCloudRecipes[n].size(); i++) {
         ivec3 vecElem = mapCloudRecipes[n][i];
@@ -1464,6 +1878,11 @@ int MainWindow::findHarmapItem(int n, int l, int m) {
     return -1;
 }
 
+/**
+ * @brief Returns the total size of all orbitals in the harmap.
+ *
+ * @return The total number of orbitals in the harmap.
+ */
 int MainWindow::getHarmapSize() {
     size_t totalSize = 0;
     for (auto k : mapCloudRecipes) {
@@ -1472,17 +1891,12 @@ int MainWindow::getHarmapSize() {
     return static_cast<int>(totalSize);
 }
 
-/* void MainWindow::printHarmap() {
-    for (auto k : mapCloudRecipes) {
-        std::cout << k.first << ": ";
-        for (auto v : k.second) {
-            std::cout << glm::to_string(v) << ", ";
-        }
-        std::cout << "\n";
-    }
-    std::cout << std::endl;
-} */
-
+/**
+ * @brief Prints the contents of the orbital report table to the console.
+ *
+ * @details
+ * This function is used for debugging purposes. It iterates through the orbital report table and prints the text of each item in the second column to the console.
+ */
 void MainWindow::printList() {
     int listSize = tableOrbitalReport->rowCount();
     for (int i = 0; i < listSize; i++) {
@@ -1492,6 +1906,13 @@ void MainWindow::printList() {
     std::cout << std::endl;
 }
 
+/**
+ * @brief Prints the layout of the main window and its child widgets.
+ *
+ * @details
+ * This function is used for debugging purposes. It prints the size of the main window, the size of the graph, and the size of each tab.
+ * It also recursively prints the layout of each tab.
+ */
 void MainWindow::printLayout() {
     std::cout << "<=====[ Print Layout ]=====>\n" << "\n";
     std::cout << "MainWindow: " << std::setw(4) << mw_width << "x" << std::setw(4) << mw_height << "\n";
@@ -1506,6 +1927,13 @@ void MainWindow::printLayout() {
     std::cout << std::endl;
 }
 
+/**
+ * @brief Prints the layout of the given widget and its children.
+ *
+ * @details
+ * This function is used for debugging purposes. It prints the size hint and minimum size of the given layout, as well as the number of children.
+ * For each child, it recursively calls itself to print the layout of the child.
+ */
 void MainWindow::_printLayout(QLayout *lay, int lvl, int idx) {
     if (!lay) { return; }
 
@@ -1535,6 +1963,18 @@ void MainWindow::_printLayout(QLayout *lay, int lvl, int idx) {
     }
 }
 
+/**
+ * @brief Recursively prints the size hint and minimum size of a layout item and its children.
+ * 
+ * @details
+ * This function is used for debugging purposes. It prints the size hint and minimum size of the given layout item, as well as the number of children.
+ * For each child, it recursively calls itself to print the layout of the child.
+ *
+ * @param child The layout item to print.
+ * @param lvl The level of indentation.
+ * @param idx The index of the child in the parent layout.
+ * @param nameLen The length of the longest object name of a widget in the layout.
+ */
 void MainWindow::_printChild(QLayoutItem *child, int lvl, int idx, int nameLen) {
     if (!child) { return; }
 
@@ -1563,6 +2003,14 @@ void MainWindow::_printChild(QLayoutItem *child, int lvl, int idx, int nameLen) 
     }
 }
 
+/**
+ * @brief Initializes the style of the application.
+ *
+ * @details
+ * This function is responsible for loading the custom font (Inconsolata) and setting the default values for the dock window's size and tab count.
+ * The font is loaded from the file specified in atomixFiles.fonts(). If the custom font is not available, the function falls back to Monaco on macOS and Monospace on other platforms.
+ * The function also sets the default values for the dock window's size and tab count because the window has not been shown and no tabs have been added yet.
+ */
 void MainWindow::_initStyle() {
     // Add custom font(s)
     QString strFontMono = "Inconsolata";
@@ -1587,6 +2035,13 @@ void MainWindow::_initStyle() {
     _setStyle();
 }
 
+/**
+ * @brief Initializes the graphics of the application.
+ *
+ * @details
+ * This function creates a Vulkan instance with the highest supported API version and the required extensions.
+ * It also creates a VKWindow instance and sets it as the central widget of the main window.
+ */
 void MainWindow::_initGraphics() {
     // Vulkan
     QByteArrayList layers = {};
@@ -1734,6 +2189,20 @@ void MainWindow::_connectSignals() {
     connect(slideBackground, &QSlider::sliderMoved, this, &MainWindow::handleSlideBackground);
 }
 
+/**
+ * @brief Sets the style of the application.
+ *
+ * This function is responsible for generating the Qt style sheet for the application.
+ * It takes the dock window size and the number of tabs as input and generates a style sheet
+ * that is then set on all widgets in the application.
+ *
+ * If the isDebug flag is set, the generated style sheet is printed to the console.
+ *
+ * @details
+ * This function is called whenever the window size or dock window size changes.
+ * It is also called when the style of the application needs to be updated due to a change
+ * in the theme or font size.
+ */
 void MainWindow::_setStyle() {
     aStyle.setWindowSize(mw_width, mw_height);
     aStyle.setDockSize(mw_tabWidth, mw_tabHeight, mw_tabCount);
@@ -1746,6 +2215,20 @@ void MainWindow::_setStyle() {
     }
 }
 
+/**
+ * @brief Handles a resize event for the dock widget.
+ *
+ * This function is connected to the resized() signal of the dock widget.
+ * It is responsible for updating the size of the dock widget and its children
+ * whenever the dock widget is resized.
+ *
+ * It also updates the style of the application by calling _setStyle().
+ *
+ * @details
+ * This function is called whenever the dock widget is resized, either by the user
+ * or by the application. It is also called when the style of the application
+ * needs to be updated due to a change in the theme or font size.
+ */
 void MainWindow::_dockResize() {
     QRect tabLoc = wTabs->geometry();
     mw_tabWidth = tabLoc.width();
@@ -1789,6 +2272,13 @@ void MainWindow::_dockResize() {
     statBar->setStyleSheet(QString("font-family: %1; font-size: %2px;").arg(aStyle.strFontMono).arg(aStyle.statusFontSize));
 }
 
+/**
+ * @brief Resize all widgets in the main window.
+ *
+ * This function iterates through each tab in the main window and resizes all
+ * widgets according to their layout policies. This is done so that the window
+ * can correctly resize itself when the user resizes the window.
+ */
 void MainWindow::_resize() {
     int currentTabIdx = wTabs->currentIndex();
 
@@ -1809,6 +2299,21 @@ void MainWindow::_resize() {
     }
 }
 
+/**
+ * @brief Validate a QLineEdit with a mathematical expression.
+ *
+ * This function validates the expression in a QLineEdit to ensure that it can
+ * be evaluated as a mathematical expression. The expression can contain
+ * numbers, parentheses, the four basic arithmetic operators, and the mathematical
+ * constants pi and e. If the expression is valid, the QLineEdit is
+ * highlighted green and the function returns true. Otherwise, the QLineEdit is
+ * highlighted red and the function returns false.
+ *
+ * @param entry The QLineEdit to validate.
+ *
+ * @return A pair containing a boolean indicating whether the expression is
+ * valid and the value of the expression if it is valid.
+ */
 std::pair<bool, double> MainWindow::_validateExprInput(QLineEdit *entry) {
     QString eval = entry->text();
     bool valid = false;

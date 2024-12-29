@@ -26,9 +26,30 @@
 #include "filehandler.hpp"
 
 
+/**
+ * @brief Default constructor for FileHandler
+ *
+ * FileHandler is a class designed to find and manage files used by the
+ * application. It is used to find config files, shaders, and other resources
+ * used by the application.
+ *
+ * @details
+ * The FileHandler class is used to manage files used by the application. It
+ * is used to find config files, shaders, and other resources used by the
+ * application. The class is designed to be used as a singleton, as it is
+ * not intended to be used by multiple threads.
+ */
 FileHandler::FileHandler() {
 }
 
+/**
+ * @brief Destructor for FileHandler
+ *
+ * @details
+ * The destructor for FileHandler clears any loaded files from memory. This
+ * is done to prevent memory leaks from occurring. The files are cleared by
+ * calling clear() on each of the vectors containing the file paths.
+ */
 FileHandler::~FileHandler() {
     wavFiles.clear();
     cldFiles.clear();
@@ -36,6 +57,15 @@ FileHandler::~FileHandler() {
     fshFiles.clear();
 }
 
+/**
+ * @brief Find all files in the config and shader directories
+ *
+ * @details
+ * This function finds all files in the config and shader directories and
+ * stores the file paths in the appropriate vectors. The files are found by
+ * calling the findFiles() function on each of the vectors containing the
+ * file paths.
+ */
 void FileHandler::findFiles() {
     wavFiles.clear();
     cldFiles.clear();
@@ -62,6 +92,19 @@ void FileHandler::findFiles() {
     }
 }
 
+/**
+ * @brief Loads a config file and returns a SuperConfig object
+ *
+ * @details
+ * This function loads a config file and returns a SuperConfig object.
+ * The config file is loaded from the given filepath and the recipes
+ * are loaded from the given harmap object if it is not null.
+ *
+ * @param[in] filepath The filepath of the config file to load
+ * @param[in] recipes The harmap object containing the recipes to load
+ *
+ * @returns A SuperConfig object containing the loaded config
+ */
 SuperConfig FileHandler::loadConfigFile(QString filepath, harmap *recipes) {
     QFile f(filepath);
     f.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -73,6 +116,18 @@ SuperConfig FileHandler::loadConfigFile(QString filepath, harmap *recipes) {
     return configFromJson(jo, recipes);
 }
 
+/**
+ * @brief Saves a config file
+ *
+ * @details
+ * This function saves a config file from a SuperConfig object. The config
+ * file is saved to the given filepath and the recipes are saved from the
+ * given harmap object if it is not null.
+ *
+ * @param[in] filepath The filepath of the config file to save
+ * @param[in] cfg The SuperConfig object containing the config to save
+ * @param[in] recipes The harmap object containing the recipes to save
+ */
 void FileHandler::saveConfigFile(QString filepath, SuperConfig &cfg, harmap *recipes) {
     QFile f(filepath);
     f.open(QIODevice::WriteOnly | QIODevice::Text);
@@ -81,6 +136,19 @@ void FileHandler::saveConfigFile(QString filepath, SuperConfig &cfg, harmap *rec
     f.close();
 }
 
+/**
+ * @brief Converts a QJsonObject to a SuperConfig object
+ *
+ * @details
+ * This function is used to convert a QJsonObject to a SuperConfig object.
+ * The QJsonObject is expected to contain the config data in JSON format.
+ * The recipes are loaded from the given harmap object if it is not null.
+ *
+ * @param[in] json The QJsonObject to convert
+ * @param[in] recipes The harmap object containing the recipes to load
+ *
+ * @returns A SuperConfig object containing the loaded config
+ */
 SuperConfig FileHandler::configFromJson(QJsonObject &json, harmap *recipes) {
     SuperConfig config;
 
@@ -157,6 +225,40 @@ SuperConfig FileHandler::configFromJson(QJsonObject &json, harmap *recipes) {
     return config;
 }
 
+/**
+ * @brief Convert a SuperConfig object into a QJsonObject
+ *
+ * If the SuperConfig object is an AtomixWaveConfig, the following keys are
+ * set in the returned QJsonObject:
+ * - type: "wave"
+ * - waves: the number of waves
+ * - amplitude: the wave amplitude
+ * - period: the wave period
+ * - wavelength: the wave wavelength
+ * - resolution: the wave resolution
+ * - parallel: whether the wave is rendered in parallel
+ * - superposition: whether the wave is rendered with superposition
+ * - cpu: whether the wave is rendered on the CPU
+ * - sphere: whether the wave is rendered as a sphere
+ * - visibleOrbits: the number of visible orbits
+ *
+ * If the SuperConfig object is an AtomixCloudConfig, the following keys are
+ * set in the returned QJsonObject:
+ * - type: "cloud"
+ * - cloudLayDivisor: the number of layers per radius
+ * - cloudResolution: the number of points per circle
+ * - cloudTolerance: the minimum probability for rendering
+ * - cloudCull_x: the culling slider -- theta
+ * - cloudCull_y: the culling slider -- phi
+ * - cloudCull_rIn: the culling slider -- radius-inward
+ * - cloudCull_rOut: the culling slider -- radius-outward
+ * - cpu: whether the cloud is rendered on the CPU
+ * - recipes: a QJsonArray containing the recipes as a list of QJsonObjects
+ *
+ * @param cfg the SuperConfig object to convert
+ * @param recipes the recipes to include in the QJsonObject
+ * @return a QJsonObject containing the converted SuperConfig object
+ */
 QJsonObject FileHandler::configToJson(SuperConfig &cfg, harmap *recipes) {
     QJsonObject jo;
 
@@ -188,6 +290,20 @@ QJsonObject FileHandler::configToJson(SuperConfig &cfg, harmap *recipes) {
     return jo;
 }
 
+/**
+ * @brief Convert a harmap into a QJsonArray
+ *
+ * Each entry in the QJsonArray is a QJsonObject with the following keys:
+ * - Principal: the principal quantum number
+ * - Azimuthal: the azimuthal quantum number
+ * - Magnetic: the magnetic quantum number
+ * - Weight: the weight of the recipe
+ *
+ * The QJsonArray is sorted by Principal quantum number.
+ *
+ * @param har the harmap to convert
+ * @return a QJsonArray containing the converted harmap
+ */
 QJsonArray FileHandler::collapseHarmap(harmap *har) {
     QJsonArray ja;
 
@@ -206,6 +322,20 @@ QJsonArray FileHandler::collapseHarmap(harmap *har) {
     return ja;
 }
 
+/**
+ * @brief Inflate a harmap from a QJsonArray
+ *
+ * Each entry in the QJsonArray should be a QJsonObject with the following keys:
+ * - Principal: the principal quantum number
+ * - Azimuthal: the azimuthal quantum number
+ * - Magnetic: the magnetic quantum number
+ * - Weight: the weight of the recipe
+ *
+ * The QJsonArray may be empty, and the returned harmap will be empty in this case.
+ *
+ * @param ja the QJsonArray to inflate
+ * @return a harmap containing the inflated data
+ */
 harmap FileHandler::inflateHarmap(const QJsonArray &ja) {
     harmap har;
 
@@ -218,10 +348,29 @@ harmap FileHandler::inflateHarmap(const QJsonArray &ja) {
     return har;
 }
 
+/**
+ * @brief Deletes a file
+ *
+ * @details
+ * This function deletes a file located at the given filepath.
+ *
+ * @param filepath the filepath of the file to delete
+ *
+ * @returns true if the file was successfully deleted, false otherwise
+ */
 bool FileHandler::deleteFile(QString filepath) {
     return QFile::remove(filepath);
 }
 
+/**
+ * @brief Prints a SuperConfig object to the console
+ *
+ * @details
+ * This function prints a SuperConfig object to the console.
+ * The config is printed in a human-readable format.
+ *
+ * @param config the SuperConfig object to print
+ */
 void FileHandler::printConfig(SuperConfig &config) {
     if (std::holds_alternative<AtomixWaveConfig>(config)) {
         std::cout << "Type: " << std::get<AtomixWaveConfig>(config).type << "\n";

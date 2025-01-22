@@ -51,6 +51,9 @@ ProgramVK::~ProgramVK() {
  * This method will deallocate all shaders, buffers, and pipeline objects.
  */
 void ProgramVK::cleanup() {
+    // clear active models
+    this->clearActiveModels();
+
     // destruct models
     for (auto &model : p_models) {
         // renders
@@ -58,57 +61,80 @@ void ProgramVK::cleanup() {
             this->p_vdf->vkDestroyPipeline(this->p_dev, render->pipeline, nullptr);
             delete render;
         }
+        model->renders.clear();
         
         // pipeline layouts
         delete model->pipeInfo;
         
         delete model;
     }
+    this->p_models.clear();
 
     // shaders
     for (auto &shader : this->p_shaderModules) {
         this->p_vdf->vkDestroyShaderModule(this->p_dev, shader, nullptr);
     }
+    this->p_shaderModules.clear();
     for (auto &shader : this->p_registeredShaders) {
         delete shader;
     }
+    this->p_registeredShaders.clear();
 
     // desc sets
     for (auto &descLayout : this->p_setLayouts) {
         this->p_vdf->vkDestroyDescriptorSetLayout(this->p_dev, descLayout, nullptr);
     }
+    this->p_setLayouts.clear();
     for (uint i = 0; i < this->p_descSets.size(); i++) {
         for (auto &buf : this->p_uniformBuffers[i]) {
             this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
         }
+        this->p_uniformBuffers[i].clear();
         for (auto &mem : this->p_uniformBuffersMemory[i]) {
             this->p_vdf->vkFreeMemory(this->p_dev, mem, nullptr);
         }
+        this->p_uniformBuffersMemory[i].clear();
     }
+    this->p_uniformBuffers.clear();
+    this->p_uniformBuffersMemory.clear();
     this->p_uniformBufferMappings.clear();
+    this->p_mapDescriptors.clear();
 
     // buffers
     for (auto &buf : this->p_buffers) {
         this->p_vdf->vkDestroyBuffer(this->p_dev, buf, nullptr);
     }
+    this->p_buffers.clear();
     for (auto &mem : this->p_buffersMemory) {
         this->p_vdf->vkFreeMemory(this->p_dev, mem, nullptr);
     }
+    this->p_buffersMemory.clear();
     for (auto &info : this->p_buffersInfo) {
         delete info;
     }
+    this->p_buffersInfo.clear();
 
     // descriptor pool
-    this->p_vdf->vkDestroyDescriptorPool(this->p_dev, this->p_descPool, nullptr);
+    if (this->p_descPool != VK_NULL_HANDLE) {
+        this->p_vdf->vkDestroyDescriptorPool(this->p_dev, this->p_descPool, nullptr);
+        this->p_descPool = VK_NULL_HANDLE;
+    }
 
     // global pipeline objects
-    this->p_vdf->vkDestroyPipeline(this->p_dev, this->p_fragmentOutput, nullptr);
-    this->p_vdf->vkDestroyPipelineCache(this->p_dev, this->p_pipeCache, nullptr);
+    if (this->p_fragmentOutput != VK_NULL_HANDLE) {
+        this->p_vdf->vkDestroyPipeline(this->p_dev, this->p_fragmentOutput, nullptr);
+        this->p_fragmentOutput = VK_NULL_HANDLE;
+    }
+    if (this->p_pipeCache != VK_NULL_HANDLE) {
+        this->p_vdf->vkDestroyPipelineCache(this->p_dev, this->p_pipeCache, nullptr);
+        this->p_pipeCache = VK_NULL_HANDLE;
+    }
 
     // pipeline layouts
     for (auto &pipeLayout : p_pipeLayouts) {
         this->p_vdf->vkDestroyPipelineLayout(this->p_dev, pipeLayout, nullptr);
     }
+    this->p_pipeLayouts.clear();
 }
 
 /**
@@ -563,7 +589,7 @@ VKuint ProgramVK::addModel(ModelCreateInfo &info) {
     std::vector<VKuint> indexCount;
     for (uint i = 0; i < info.offsets.size(); i++) {
         VKuint end = 0;
-        if (i < info.offsets.size() - 1) {
+        if ((i < info.offsets.size() - 1) && (info.offsets[i].offset != info.offsets[i+1].offset)) {
             end = info.offsets[i+1].offset;
         } else {
             end = info.ibo->count;
@@ -774,6 +800,23 @@ bool ProgramVK::suspendModel(const std::string &name) {
 }
 
 /**
+ * Suspend all active models from rendering.  Models must first be
+ * added to the active models list with activateModel().
+ *
+ * @return true if any models were suspended, false otherwise
+ */
+bool ProgramVK::suspendActiveModels() {
+    bool success = false;
+
+    for (VKuint id : p_activeModels) {
+        p_models[id]->valid.suspended = true;
+        success = true;
+    }
+
+    return success;
+}
+
+/**
  * Resume a suspended model.  The model must first be
  * added to the active models list with activateModel(),
  * and then suspended with suspendModel().
@@ -786,6 +829,24 @@ bool ProgramVK::resumeModel(const std::string &name) {
     bool success = false;
 
     if (p_activeModels.contains(id)) {
+        p_models[id]->valid.suspended = false;
+        success = true;
+    }
+
+    return success;
+}
+
+/**
+ * Resume all active models from suspension.  Models must first be
+ * added to the active models list with activateModel(),
+ * and then suspended with suspendModel() or suspendActiveModels().
+ *
+ * @return true if any models were resumed, false otherwise
+ */
+bool ProgramVK::resumeActiveModels() {
+    bool success = false;
+
+    for (VKuint id : p_activeModels) {
         p_models[id]->valid.suspended = false;
         success = true;
     }
@@ -2077,7 +2138,7 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
     
     this->p_vdf->vkCmdBeginRenderPass(cmdBuff, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    // For each active model, bind and draw for all render targets
+    // For each active program for each active model, bind and draw for all render targets
     for (auto &modelIdx : this->p_activeModels) {
         ModelInfo *model = this->p_models[modelIdx];
         if (model->valid.suspended) {
@@ -2104,7 +2165,6 @@ void ProgramVK::render(VkExtent2D &renderExtent) {
                 this->p_vdf->vkCmdDrawIndexed(cmdBuff, render->indexCount, 1, render->indexOffset, 0, 0);
             }
         }
-        
     }
     
     // Cleanup

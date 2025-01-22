@@ -672,21 +672,21 @@ void MainWindow::setupDockHarmonics() {
     SortableOrbitalTr *lastL = nullptr;
     SortableOrbitalTr *thisItem = nullptr;
     for (int n = 1; n <= MAX_ORBITS; n++) {
-        QString strParentN = QString("%1 _ _").arg(n);
+        QString strParentN = QString("%1 _ _").arg(QString::number(n));
         thisItem = new SortableOrbitalTr(treeOrbitalSelect);
         thisItem->setText(0, strParentN);
         thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
         thisItem->setCheckState(0, Qt::Unchecked);
         lastN = thisItem;
         for (int l = 0; l < n; l++) {
-            QString strParentL = QString("%1 %2 _").arg(n).arg(l);
+            QString strParentL = QString("%1 %2 _").arg(QString::number(n)).arg(QString::number(l));
             thisItem = new SortableOrbitalTr(lastN);
             thisItem->setText(0, strParentL);
             thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
             thisItem->setCheckState(0, Qt::Unchecked);
             lastL = thisItem;
             for (int m_l = l; m_l >= -l; m_l--) {
-                QString strFinal = QString("%1 %2 %3").arg(n).arg(l).arg(((m_l > 0) ? QString("+") : QString("")) + QString::number(m_l));
+                QString strFinal = QString("%1 %2 %3").arg(QString::number(n)).arg(QString::number(l)).arg(((m_l > 0) ? QString("+") : QString("")) + QString::number(m_l));
                 thisItem = new SortableOrbitalTr(lastL);
                 thisItem->setText(0, strFinal);
                 thisItem->setTextAlignment(0, Qt::AlignLeft | Qt::AlignVCenter);
@@ -1080,7 +1080,7 @@ void MainWindow::refreshCloudConfigGUI(AtomixCloudConfig &cfg) {
 
     for (auto [key, vec] : mapCloudRecipes) {
         for (auto v : vec) {
-            QString strOrbital = QString("%1 %2 %3%4").arg(key).arg(v.x).arg((v.y > 0) ? "+" : "").arg(v.y);
+            QString strOrbital = QString("%1 %2 %3%4").arg(QString::number(key)).arg(QString::number(v.x)).arg((v.y > 0) ? "+" : "").arg(QString::number(v.y));
             treeOrbitalSelect->findItems(strOrbital, Qt::MatchFixedString | Qt::MatchRecursive, 0).at(0)->setCheckState(0, Qt::Checked);
         }
     }
@@ -2044,6 +2044,7 @@ void MainWindow::_initStyle() {
  */
 void MainWindow::_initGraphics() {
     // Vulkan
+    // QByteArrayList layers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_api_dump" };
     QByteArrayList layers = {};
     QByteArrayList extensions = {};
     if (isMacOS) {
@@ -2269,7 +2270,7 @@ void MainWindow::_dockResize() {
     // Status Bar
     labelDetails->setFont(aStyle.fontMonoStatus);
     labelDetails->adjustSize();
-    statBar->setStyleSheet(QString("font-family: %1; font-size: %2px;").arg(aStyle.strFontMono).arg(aStyle.statusFontSize));
+    statBar->setStyleSheet(QString("font-family: %1; font-size: %2px;").arg(aStyle.strFontMono).arg(QString::number(aStyle.statusFontSize)));
 }
 
 /**

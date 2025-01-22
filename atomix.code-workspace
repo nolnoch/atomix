@@ -117,7 +117,13 @@
 			"qfiledialog": "cpp",
 			"qpixmapcache": "cpp",
 			"qpixmap": "cpp",
-			"qicon": "cpp"
+			"qicon": "cpp",
+			"__hash_table": "cpp",
+			"__node_handle": "cpp",
+			"__tree": "cpp",
+			"forward_list": "cpp",
+			"queue": "cpp",
+			"stack": "cpp"
 		},
 		"cmake.options.statusBarVisibility": "visible"
 	}

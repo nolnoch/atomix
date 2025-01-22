@@ -71,6 +71,8 @@ class Manager {
         const float* getColourData();
         const uint* getIndexData();
 
+        bool isCPU() { return this->mStatus.hasAny(em::CPU_RENDER); };
+
         void printIndices();
         void printVertices();
 

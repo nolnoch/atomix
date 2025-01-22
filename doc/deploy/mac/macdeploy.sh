@@ -5,7 +5,7 @@ BLDDIR="/Users/braer/dev/atomix/build"
 INSTDIR="/Users/braer/dev/atomix/build/install"
 VKDIR="/Users/braer/VulkanSDK/1.3.296.0/macOS"
 QTDIR="/usr/local/Qt-6.8.0"
-LIBDIR="atomix.app/Contents/lib"
+LIBDIR="atomix.app/Contents/Frameworks"
 RESDIR="atomix.app/Contents/Resources"
 
 mkdir -p $INSTDIR 
@@ -24,6 +24,8 @@ cp $SRCDIR/res/icons/atomix.icns $RESDIR/
 cp $VKDIR/lib/libvulkan.1.3.296.dylib $LIBDIR/
 cp $VKDIR/lib/libMoltenVK.dylib $LIBDIR/
 cp -r $VKDIR/share/vulkan/icd.d $RESDIR/vulkan/
+cp -r $VKDIR/share/vulkan/explicit_layer.d $RESDIR/vulkan/
+sed -i '' 's|lib/libMolten|../Frameworks/libMolten|g' $RESDIR/vulkan/icd.d/MoltenVK_icd.json
 
 cd $LIBDIR
 

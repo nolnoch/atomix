@@ -4,3 +4,5 @@ build/
 .qt/
 xbuild/
 CMakeUserPresets.json
+libvulkan.1.3.296.dylib
+libMoltenVK.dylib

@@ -5,7 +5,7 @@ if(APPLE)
     set(SCRIPT_PREFIX "mac")
     set(SCRIPT_CMD "source")
     set(SCRIPT_EXT "sh")
-    set(Qt6_DIR "/usr/local/Qt-6.8.0")
+    set(Qt6_DIR "/usr/local/Qt-6.9.0")
 elseif(UNIX)
     set(SCRIPT_PREFIX "linux")
     set(SCRIPT_CMD "source")
@@ -54,8 +54,8 @@ if(APPLE)
     message(STATUS "Build/Install for Apple")
     set_target_properties(atomix PROPERTIES
         MACOSX_BUNDLE true
-        BUILD_RPATH "@loader_path/../lib"
-        INSTALL_RPATH "@loader_path/../lib"
+        BUILD_RPATH "@loader_path/../Frameworks"
+        INSTALL_RPATH "@loader_path/../Frameworks"
     )
 elseif(UNIX)
     message(STATUS "Build/Install for Linux")

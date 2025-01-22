@@ -266,8 +266,10 @@ public:
     bool clearModelPrograms(const std::string &name);
     bool deactivateModel(const std::string &name);
     bool suspendModel(const std::string &name);
-    bool resumeModel(const std::string &name);
+    bool suspendActiveModels();
     bool isSuspended(const std::string &name);
+    bool resumeModel(const std::string &name);
+    bool resumeActiveModels();
     void clearActiveModels();
 
     void createPipelineCache();

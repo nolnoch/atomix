@@ -67,7 +67,7 @@ void Shader::setId(unsigned int idAssigned) {
  */
 bool Shader::compile(uint32_t version) {
     const char *shaderSource = this->getSourceRaw();
-    int shaderLength = this->getLengthRaw();
+    int shaderLength = static_cast<int>(this->getLengthRaw());
     EShLanguage stage = (this->shaderType == GL_VERTEX_SHADER) ? EShLangVertex : EShLangFragment;
     EShMessages messages = EShMsgDefault;
 
@@ -144,7 +144,7 @@ bool Shader::reflect() {
         uni.name = set.name;
         uni.set = comp.get_decoration(set.id, spv::DecorationDescriptorSet);
         uni.binding = comp.get_decoration(set.id, spv::DecorationBinding);
-        uni.size = comp.get_declared_struct_size(comp.get_type(set.type_id));
+        uni.size = static_cast<uint32_t>(comp.get_declared_struct_size(comp.get_type(set.type_id)));
         // std::cout << "Uniform Buffer " << uni.name << " -- set: " << uni.set << ", binding: " << uni.binding << ", size: " << uni.size << std::endl;
     }
 
@@ -153,7 +153,7 @@ bool Shader::reflect() {
         this->pushConstants.push_back({});
         PushConstant &pConst = this->pushConstants.back();
         pConst.name = push.name;
-        pConst.size = comp.get_declared_struct_size(comp.get_type(push.type_id));
+        pConst.size = static_cast<uint32_t>(comp.get_declared_struct_size(comp.get_type(push.type_id)));
         // std::cout << "Push Constant Buffer " << pConst.name << " -- size: " << pConst.size << std::endl;
     }
 

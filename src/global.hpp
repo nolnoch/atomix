@@ -97,53 +97,144 @@ struct BitFlag {
     BitFlag() : bf(0) {};
     BitFlag(uint flag) : bf(flag) {};
 
+    /**
+     * @brief Set the specified flag.
+     *
+     * @param[in] flag The flag to set.
+     */
     void set(uint flag) {
         bf |= flag;
     }
+    /**
+     * @brief Clear the specified flag.
+     *
+     * @param[in] flag The flag to clear.
+     */
     void clear(uint flag) {
         bf &= ~flag;
     }
+    /**
+     * @brief Toggle the specified flag.
+     *
+     * @param[in] flag The flag to toggle.
+     */
     void toggle(uint flag) {
         bf ^= flag;
     }
+    /**
+     * @brief Set the specified flag if the condition is met.
+     *
+     * @param[in] flag The flag to set.
+     * @param[in] condition The condition to check.
+     */
     void condSet(uint flag, bool condition) {
         if (condition) {
             set(flag);
         }
     }
+    /**
+     * @brief Toggle the specified flag if the condition is met.
+     *
+     * @param[in] flag The flag to toggle.
+     * @param[in] condition The condition to check.
+     */
     void condToggle(uint flag, bool condition) {
         if (condition) {
             toggle(flag);
         }
     }
+    /**
+     * @brief Advance the bitflag state.
+     *
+     * @param[in] flagA The flags that must be set before the advance.
+     * @param[in] flagB The flags that must be clear before the advance.
+     *
+     * @details If all flags in flagA are set and all flags in flagB are clear,
+     *          the function will toggle the flags in flagA and flagB.
+     *          Otherwise, it will do nothing.
+     */
     void advance(uint flagA, uint flagB) {
         assert(hasAll(flagA) && hasNone(flagB));
         toggle(flagA | flagB);
     }
+    /**
+     * @brief Check if all flags in the given flag are set.
+     *
+     * @param[in] flag The flag to check.
+     * @return true if all flags in the given flag are set, false otherwise.
+     */
     bool hasAll(uint flag) {
         return (bf & flag) == flag;
     }
+    /**
+     * @brief Check if any flag in the given flag is set.
+     *
+     * @param[in] flag The flag to check.
+     * @return true if any flag in the given flag is set, false otherwise.
+     */
     bool hasAny(uint flag) {
         return (bf & flag) > 0;
     }
+    /**
+     * @brief Check if some (but not none and not all) flags in the given flag are set.
+     *
+     * @param[in] flag The flag to check.
+     * @return true if some (but not none and not all) flags in the given flag are set, false otherwise.
+     */
     bool hasSomeNotAll(uint flag) {
         return (hasAny(flag)) && (!hasAll(flag));
     }
+    /**
+     * @brief Check if some or none (but not all) flags in the given flag are set.
+     *
+     * @param[in] flagA The flag to check.
+     * @return true if some or none (but not all) flags in the given flag are set, false otherwise.
+     */
     bool hasSomeOrNone(uint flag) {
         return (hasSomeNotAll(flag) || hasNone(flag));
     }
+    /**
+     * @brief Check if all flags in flagA are set and all flags in flagB are not set.
+     *
+     * @param[in] flagA The first flag to check.
+     * @param[in] flagB The second flag to check.
+     * @return true if all flags in `flagA` are set and all flags in `flagB` are not set, false otherwise.
+     */
     bool hasFirstNotLast(uint flagA, uint flagB) {
         return (hasAll(flagA)) && (hasNone(flagB));
     }
+    /**
+     * @brief Check if all flags in the given flag are not set.
+     *
+     * @param[in] flag The flag to check.
+     * @return true if all flags in `flag` are not set, false otherwise.
+     */
     bool hasNone(uint flag) {
         return (bf & flag) == 0;
     }
+    /**
+     * @brief Set the current BitFlag to the given flag, clearing all other flags.
+     *
+     * @param[in] flag The flag to set.
+     */
     void setTo(uint flag) {
         bf = flag;
     }
+    /**
+     * @brief Return the intersection of the current BitFlag with the given flag.
+     *
+     * @param[in] flag The flag to intersect with.
+     *
+     * @return The bitwise AND of the current BitFlag with the given flag.
+     */
     uint intersection(uint flag) {
         return bf & flag;
     }
+    /**
+     * @brief Reset the BitFlag to 0.
+     *
+     * @details This sets all flags to 0, effectively clearing the BitFlag.
+     */
     void reset() {
         bf = 0;
     }

@@ -121,19 +121,16 @@ public:
     VKRenderer(QVulkanWindow *vkWin);
     ~VKRenderer();
 
-    // SwapChainSupportInfo querySwapChainSupport(VkPhysicalDevice device);
     void setProgram(ProgramVK *prog) { atomixProg = prog; }
     void setWindow(VKWindow *win) { vr_vkw = win; }
-    // QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
     void preInitResources() override;
     void initResources() override;
     void initSwapChainResources() override;
-    // void logicalDeviceLost() override;
-    // void physicalDeviceLost() override;
+    void logicalDeviceLost() override;
+    void physicalDeviceLost() override;
     void releaseSwapChainResources() override;
     void releaseResources() override;
-
     void startNextFrame() override;
 
 private:
@@ -164,6 +161,7 @@ public:
     QVulkanWindowRenderer* createRenderer() override;
     bool initProgram(AtomixDevice *dev);
     void initWindow();
+    void releaseWindow();
 
     void handleHome();
     void handlePause();
@@ -172,6 +170,8 @@ public:
     void updateBuffersAndShaders();
     void setBGColour(float colour);
     void estimateSize(AtomixCloudConfig *cfg, harmap *cloudMap, uint *vertex, uint *data, uint *index);
+
+    void resetHang();
 
     VkSurfaceKHR vw_surface = VK_NULL_HANDLE;
     BitFlag flGraphState;
@@ -264,6 +264,8 @@ private:
     WaveState vw_wave;
     PushConstantsWave pConstWave = {0.0f, 0};
     PushConstantsCloud pConstCloud = {0.0f};
+
+    uint savedState = 0;
 };
 
 #endif

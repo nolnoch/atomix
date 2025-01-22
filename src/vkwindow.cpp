@@ -35,12 +35,21 @@
 
 VKWindow::VKWindow(QWidget *parent, FileHandler *fileHandler)
     : fileHandler(fileHandler), vw_parent(parent) {
-    setSurfaceType(QVulkanWindow::VulkanSurface);
+    this->setSurfaceType(QVulkanWindow::VulkanSurface);
     this->setDeviceExtensions({ "VK_KHR_portability_subset" });
+    this->setFlags(QVulkanWindow::PersistentResources);
 }
 
 VKWindow::~VKWindow() {
     cleanup();
+}
+
+void VKWindow::releaseWindow() {
+    delete atomixProg;
+    this->atomixProg = nullptr;
+
+    this->savedState = flGraphState.intersection(eModeFlags);
+    flGraphState.reset();
 }
 
 void VKWindow::cleanup() {
@@ -48,6 +57,7 @@ void VKWindow::cleanup() {
         fwModel->waitForFinished();
     }
     changeModes(true);
+    delete atomixProg;
     delete vw_timer;
 }
 
@@ -95,11 +105,11 @@ void VKWindow::initWindow() {
     // Init -- Matrices
     initVecsAndMatrices();
 
-    // Init -- ProgramVK and Shaders
+    // Init -- Models
     initModels();
-
     this->atomixProg->activateModel("crystal");
     this->atomixProg->addModelProgram("crystal");
+    this->flGraphState.set(this->savedState);
 
     // Init -- Time
     vw_timeStart = QDateTime::currentMSecsSinceEpoch();
@@ -297,6 +307,22 @@ void VKWindow::initWaveModel() {
     waveInd.type = BufferType::INDEX;
     waveInd.dataTypes = { DataType::UINT };
 
+    // Iff we are here from a mid-run resource reset, we can use the existing data
+    if (waveManager) {
+        if (waveManager->isCPU()) {
+            waveVertCPU.count = waveManager->getVertexCount();
+            waveVertCPU.size = waveManager->getVertexSize();
+            waveVertCPU.data = waveManager->getVertexData();
+        } else {
+            waveVert.count = waveManager->getVertexCount();
+            waveVert.size = waveManager->getVertexSize();
+            waveVert.data = waveManager->getVertexData();
+        }
+        waveInd.count = waveManager->getIndexCount();
+        waveInd.size = waveManager->getIndexSize();
+        waveInd.data = waveManager->getIndexData();
+    }
+
     // Define Atomix Wave Model with above buffers
     ModelCreateInfo waveModel{};
     waveModel.name = "wave";
@@ -384,6 +410,28 @@ void VKWindow::initCloudModel() {
     cloudInd.type = BufferType::INDEX;
     cloudInd.name = "cloudIndices";
     cloudInd.dataTypes = { DataType::UINT };
+
+    // Iff we are here from a mid-run resource reset, we can use the existing data
+    if (cloudManager) {
+        if (cloudManager->isCPU()) {
+            cloudVertCPU.count = cloudManager->getVertexCount();
+            cloudVertCPU.size = cloudManager->getVertexSize();
+            cloudVertCPU.data = cloudManager->getVertexData();
+            cloudDataCPU.count = cloudManager->getDataCount();
+            cloudDataCPU.size = cloudManager->getDataSize();
+            cloudDataCPU.data = cloudManager->getDataData();
+        } else {
+            cloudVert.count = cloudManager->getVertexCount();
+            cloudVert.size = cloudManager->getVertexSize();
+            cloudVert.data = cloudManager->getVertexData();
+            cloudData.count = cloudManager->getDataCount();
+            cloudData.size = cloudManager->getDataSize();
+            cloudData.data = cloudManager->getDataData();
+        }
+        cloudInd.count = cloudManager->getIndexCount();
+        cloudInd.size = cloudManager->getIndexSize();
+        cloudInd.data = cloudManager->getIndexData();
+    }
 
     // Define Atomix Cloud Model with above buffers
     ModelCreateInfo cloudModel{};
@@ -906,7 +954,7 @@ void VKRenderer::preInitResources() {
 
 void VKRenderer::initResources() {
     // Set Window pointer
-    // vr_qvw->setRenderer(this);
+    std::cout << "initResources" << std::endl;
 
     // Define instance, device, and function pointers
     vr_dev = vr_qvw->device();
@@ -915,21 +963,12 @@ void VKRenderer::initResources() {
     vr_vdf = vr_vi->deviceFunctions(vr_dev);
     vr_vf = vr_vi->functions();
 
-    // Create Program
-    AtomixDevice progDev;
-    progDev.window = vr_qvw;
-    progDev.physicalDevice = vr_phydev;
-    progDev.device = vr_dev;
-    if (this->vr_vkw->initProgram(&progDev)) {
-        this->vr_vkw->initWindow();
-    }
-
     // Retrieve physical device constraints
     if (!vr_isInit) {
         VkPhysicalDeviceProperties vr_props;
         vr_vf->vkGetPhysicalDeviceProperties(vr_phydev, &vr_props);
 
-        QVersionNumber version = QVersionNumber(VK_VERSION_MAJOR(vr_props.apiVersion), VK_VERSION_MINOR(vr_props.apiVersion), VK_VERSION_PATCH(vr_props.apiVersion));
+        QVersionNumber version = QVersionNumber(VK_API_VERSION_MAJOR(vr_props.apiVersion), VK_API_VERSION_MINOR(vr_props.apiVersion), VK_API_VERSION_PATCH(vr_props.apiVersion));
         if (version.minorVersion() != VK_MINOR_VERSION) {
             VK_MINOR_VERSION = version.minorVersion();
             if (VK_MINOR_VERSION >= 3) {
@@ -1001,84 +1040,51 @@ void VKRenderer::initResources() {
 
             std::cout << dev_info.toStdString() << std::endl;
         }
+        vr_isInit = true;
     }
-    vr_isInit = true;
+
+    // Create Program
+    AtomixDevice progDev;
+    progDev.window = vr_qvw;
+    progDev.physicalDevice = vr_phydev;
+    progDev.device = vr_dev;
+    if (this->vr_vkw->initProgram(&progDev)) {
+        this->vr_vkw->initWindow();
+    }
 }
 
-/* SwapChainSupportInfo VKRenderer::querySwapChainSupport(VkPhysicalDevice device) {
-    SwapChainSupportInfo info;
-    
-    this->vr_vf->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, this->vr_qvw->vw_surface, &info.capabilities);
-    
-    VKuint formatCount = 0;
-    this->vr_qvw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_qvw->vw_surface, &formatCount, nullptr);
-    if (formatCount) {
-        info.formats.resize(formatCount);
-        this->vr_qvw->vkGetPhysicalDeviceSurfaceFormatsKHR(device, this->vr_qvw->vw_surface, &formatCount, info.formats.data());
-    }
-
-    VKuint presentModeCount = 0;
-    this->vr_qvw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_qvw->vw_surface, &presentModeCount, nullptr);
-    if (presentModeCount) {
-        info.presentModes.resize(presentModeCount);
-        this->vr_qvw->vkGetPhysicalDeviceSurfacePresentModesKHR(device, this->vr_qvw->vw_surface, &presentModeCount, info.presentModes.data());
-    }
-    
-    return info;
-} */
-
 void VKRenderer::initSwapChainResources() {
-    /* QSize swapChainImageSize = this->vr_qvw->swapChainImageSize();
-    VkExtent2D extent = {swapChainImageSize.width(), swapChainImageSize.height()};
-    this->vr_qvw->vw_surface = QVulkanInstance::surfaceForWindow(this->vr_qvw);
-    SwapChainSupportInfo swapChainSupport = querySwapChainSupport(this->vr_phydev);
+    std::cout << "initSwapChainResources" << std::endl;
 
-    VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = this->vr_qvw->vw_surface;
-    createInfo.minImageCount = 2;
-    createInfo.imageFormat = swapChainSupport.formats[0].format;
-    createInfo.imageColorSpace = swapChainSupport.formats[0].colorSpace;
-    createInfo.imageExtent = extent;
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    QueueFamilyIndices indices = findQueueFamilies(this->vr_phydev);
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
-    if (indices.graphicsFamily != indices.presentFamily) {
-        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
-    } else {
-        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        createInfo.queueFamilyIndexCount = 0; // Optional
-        createInfo.pQueueFamilyIndices = nullptr; // Optional
-    }
-
-    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = swapChainSupport.presentModes[0];
-    createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-    VkSwapchainKHR swapchain;
-    if ((this->vr_vf->vkCreateSwapchainKHR(this->vr_dev, &createInfo, nullptr, &swapchain)) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create swap chain!");
-    }
-
-    this->vr_qvw->setSwapChain(swapchain); */
-    // QVulkanWindowRenderer::initSwapChainResources();
+    this->atomixProg->resumeActiveModels();
 
     // Update render extent
     const QSize vkwSize = vr_qvw->swapChainImageSize();
     VkExtent2D renderExtent = {static_cast<uint32_t>(vkwSize.width()), static_cast<uint32_t>(vkwSize.height())};
     this->vr_vkw->updateExtent(renderExtent);
     this->vr_extent = renderExtent;
+
+    /* this->d_framebuffer = this->vr_vkw->currentFramebuffer();
+    this->d_swapCount = this->vr_vkw->swapChainImageCount();
+    this->d_swapIndex = this->vr_vkw->currentSwapChainImageIndex();
+    this->d_renderPass = this->vr_vkw->defaultRenderPass(); */
+}
+
+void VKRenderer::logicalDeviceLost() {
+    // TODO logicalDeviceLost
+    std::cout << "logicalDeviceLost" << std::endl;
+}
+
+void VKRenderer::physicalDeviceLost() {
+    // TODO physicalDeviceLost
+    std::cout << "physicalDeviceLost" << std::endl;
 }
 
 void VKRenderer::releaseSwapChainResources() {
     // TODO releaseSwapChainResources
+    std::cout << "releaseSwapChainResources" << std::endl;
+
+    this->atomixProg->suspendActiveModels();
 }
 
 /**
@@ -1093,10 +1099,41 @@ void VKRenderer::releaseSwapChainResources() {
  * physical device, as these are owned by the QVulkanWindow.
  */
 void VKRenderer::releaseResources() {
-    // TODO releaseResources
+    std::cout << "releaseResources" << std::endl;
+    
+    this->vr_vkw->releaseWindow();
 }
 
 void VKRenderer::startNextFrame() {
+    /*
+    VkFramebuffer t_framebuffer = this->vr_vkw->currentFramebuffer();
+    VkRenderPass t_renderPass = this->vr_vkw->defaultRenderPass();
+    int t_swapCount = this->vr_vkw->swapChainImageCount();
+    int t_swapIndex = this->vr_vkw->currentSwapChainImageIndex();
+
+    if (t_framebuffer == this->d_framebuffer) {
+        std::cout << "framebuffer NOT changed" << std::endl;
+    } else {
+        this->d_framebuffer = t_framebuffer;
+    }
+
+    if (t_renderPass != this->d_renderPass) {
+        std::cout << "renderPass changed" << std::endl;
+    }
+
+    if (t_swapCount != this->d_swapCount) {
+        std::cout << "swapCount changed" << std::endl;
+    }
+
+    if (t_swapIndex == this->d_swapIndex) {
+        std::cout << "swapIndex NOT changed" << std::endl;
+    } else {
+        this->d_swapIndex = t_swapIndex;
+    }
+
+    std::cout << d_idx++ << std::endl;
+    */
+
     // Reap zombie buffers
     this->atomixProg->reapZombies();
 

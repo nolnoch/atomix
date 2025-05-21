@@ -5,10 +5,6 @@ _I am under no illusions and make no claims that this represents completely accu
 
 My goal with this project is to tactically/viscerally understand de Broglie wavelength stuff, inspired by this wonderful youtube video: [https://youtu.be/k581_XpaTnU](https://youtu.be/k581_XpaTnU).
 
-Originally intended functionality is that the user will be able to increase input energy and see the electron orbits appear, evolve, and stabilize from the first orbit outwards.
-
-Warning: I may end up taking this in many different directions since the magical world of graphics code is my imagination's playground for testing, failing, and learning.
-
 I sincerely doubt anyone will ever see this but me, but it's always good to communicate and CYA, innit?
 
 ## Current State
@@ -81,5 +77,5 @@ I lost a month to learning and re-making my rendering library in Vulkan.
 MacOS also doesn't respect Qt's styling defaults, so that UI is still currently buggy.
 
 #### TODO and Future Goals:
-* Need to go back and add imaginary influence to spherical harmonics for accurate lobes
+* Solve Vulkan freezing issue on MacOS (appears to be an issue with Qt)
 * May use this platform to explore gravity, the implications of the Planck length, and multidimensional rotations

@@ -54,6 +54,13 @@ if(APPLE)
     message(STATUS "Build/Install for Apple")
     set_target_properties(atomix PROPERTIES
         MACOSX_BUNDLE true
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.nolnoch.atomix"
+        MACOSX_BUNDLE_BUNDLE_NAME "atomix"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_ICON_FILE "atomix.icns"
+        MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2023-2025 Wade Burch. GPLv3."
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/doc/deploy/mac/Info.plist.in"
         BUILD_RPATH "@loader_path/../Frameworks"
         INSTALL_RPATH "@loader_path/../Frameworks"
     )

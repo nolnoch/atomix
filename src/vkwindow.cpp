@@ -44,6 +44,23 @@ VKWindow::~VKWindow() {
     cleanup();
 }
 
+bool VKWindow::event(QEvent *e) {
+#ifdef Q_OS_MACOS
+    // Qt's cocoa plugin answers -[CALayer display] with a synchronous expose, from which
+    // QGuiApplication synthesizes a QPaintEvent, and QVulkanWindow renders a frame on Paint.
+    // That frame then runs inside the Core Animation transaction commit, where MoltenVK's
+    // lazy -[CAMetalLayer nextDrawable] blocks: no drawable is free until earlier presents
+    // complete and composite, and neither can happen until the commit returns. The main
+    // thread hangs and the window never appears. Defer to an UpdateRequest instead, which
+    // the display link delivers on the main queue outside the display cycle.
+    if (e->type() == QEvent::Paint) {
+        requestUpdate();
+        return true;
+    }
+#endif
+    return QVulkanWindow::event(e);
+}
+
 void VKWindow::releaseWindow() {
     delete atomixProg;
     this->atomixProg = nullptr;

@@ -26,6 +26,8 @@ QT_VERSION=6.12.0
 QTBASE_SHA256=a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307
 QTDECLARATIVE_SHA256=311f3a2603e1973bb59baef9dfa740a376de713157d4782ee043681e889c9260
 VULKAN_HEADERS_TAG=vulkan-sdk-1.3.296.0   # same version vcpkg provides to atomix
+MOLTENVK_TAG=v1.4.2                       # same version bundled in the app
+MVK_VULKAN_H_SHA256=4559af38c2f9a02c68bf3acbabfc8002e745a6a6f77c5b88ee399de3dd3e4dd2
 DEPLOYMENT_TARGET=14.4                    # keep in sync with CMAKE_OSX_DEPLOYMENT_TARGET
 
 WORK=$(cd "$(mktemp -d)" && pwd -P)
@@ -41,6 +43,12 @@ fetch_qt() {  # fetch_qt <module> <sha256>
 fetch_qt qtbase "$QTBASE_SHA256"
 fetch_qt qtdeclarative "$QTDECLARATIVE_SHA256"
 git clone --quiet --depth 1 --branch "$VULKAN_HEADERS_TAG" https://github.com/KhronosGroup/Vulkan-Headers.git
+# Qt's cocoa plugin also includes <MoltenVK/mvk_vulkan.h> (a few platform #defines around
+# <vulkan/vulkan.h>); put it beside the Vulkan headers so one include dir covers both.
+mkdir -p Vulkan-Headers/include/MoltenVK
+curl -fsSL -o Vulkan-Headers/include/MoltenVK/mvk_vulkan.h \
+    "https://raw.githubusercontent.com/KhronosGroup/MoltenVK/$MOLTENVK_TAG/MoltenVK/MoltenVK/API/mvk_vulkan.h"
+echo "$MVK_VULKAN_H_SHA256  Vulkan-Headers/include/MoltenVK/mvk_vulkan.h" | shasum -a 256 -c -
 
 COMMON_CMAKE_ARGS=(
     -DCMAKE_OSX_ARCHITECTURES="$ARCH"

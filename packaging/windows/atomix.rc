@@ -1,0 +1,2 @@
+// Embeds the application icon in atomix.exe (Explorer, taskbar).
+IDI_ICON1 ICON "../../res/icons/favicon.ico"

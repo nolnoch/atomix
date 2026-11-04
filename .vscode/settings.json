@@ -1,10 +1,5 @@
 {
-    "cmake.sourceDirectory": "/Users/braer/dev/atomix",
-    "cmake.buildDirectory": "/Users/braer/dev/atomix/build",
-    "cmake.installPrefix": "${workspaceRoot}/build/install",
-    "cmake.configureSettings": {
-        "CMAKE_BUILD_TYPE": "${buildType}",
-    },
+    "cmake.useCMakePresets": "always",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "C_Cpp.errorSquiggles": "enabled",
     "files.associations": {

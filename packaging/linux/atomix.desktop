@@ -1,7 +1,8 @@
 [Desktop Entry]
+Type=Application
 Name=atomix
 Comment=Amateur theoretical physics emporium
 Exec=atomix
 Icon=atomix
-Type=Application
-Categories=Education;
+Categories=Education;Science;Physics;
+Terminal=false

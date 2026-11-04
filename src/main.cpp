@@ -25,6 +25,9 @@
 #include <QSysInfo>
 #include <QtWidgets/QApplication>
 #include <QCommandLineParser>
+#include <QDir>
+#include <QFileInfo>
+#include <QSettings>
 #include <QLoggingCategory>
 #include <QSurfaceFormat>
 #include "mainwindow.hpp"
@@ -41,7 +44,18 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("atomix");
     app.setOrganizationName("nolnoch");
-    app.setApplicationVersion(QT_VERSION_STR);
+    app.setApplicationVersion(ATOMIX_VERSION);
+
+#if defined(Q_OS_MACOS)
+    // Qt looks for the Vulkan loader with a bare dlopen("libvulkan.dylib"), which doesn't search the
+    // app bundle. Point it at the loader we ship in Contents/Frameworks (unless the user overrides it).
+    if (!qEnvironmentVariableIsSet("QT_VULKAN_LIB")) {
+        const QString bundledLoader = QCoreApplication::applicationDirPath() + "/../Frameworks/libvulkan.1.dylib";
+        if (QFileInfo::exists(bundledLoader)) {
+            qputenv("QT_VULKAN_LIB", QFileInfo(bundledLoader).canonicalFilePath().toUtf8());
+        }
+    }
+#endif
 
     app.setStyle("fusion");
     MainWindow mainWindow;
@@ -51,7 +65,7 @@ int main(int argc, char* argv[]) {
     QCommandLineParser qParser;
     qParser.setApplicationDescription(QApplication::applicationName());
     QCommandLineOption cliVerbose("verbose", QApplication::translate("main", "ALL debug and information messages"));
-    QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: application directory)"), "directory", QApplication::applicationDirPath());
+    QCommandLineOption cliAtomixDir({ "d", "atomix-dir" }, QApplication::translate("main", "parent directory of atomix shaders, configs, etc. (default: the copy shipped with the application)"), "directory");
     QCommandLineOption cliProfiling({ "p", "profiling" }, QApplication::translate("main", "enable profiling"));
     QCommandLineOption cliTesting({ "t", "testing" }, QApplication::translate("main", "enable testing"));
     QCommandLineOption cliResetGeometry({ "r", "reset-geometry" }, QApplication::translate("main", "reset window geometry (instead of loading saved geometry)"));
@@ -87,33 +101,48 @@ int main(int argc, char* argv[]) {
     QString os = QSysInfo::prettyProductName();
     isMacOS = os.contains("macOS");
 
-    QString strAtomixDir = "";
+    // Locate the atomix files directory (the one holding configs/ and shaders/). Candidates in order:
+    //   1. --atomix-dir on the command line
+    //   2. the packaged location, relative to the executable (never the working directory, which is
+    //      arbitrary when launched from Finder, a file manager, or a Start-menu shortcut)
+    //   3. a directory the user previously picked in the dialog below
+    //   4. the source tree this binary was built from (developer builds)
+    // If none of them has configs/ and shaders/, the user is asked to pick a folder.
+    const QString exeDir = QCoreApplication::applicationDirPath();
+#if defined(Q_OS_MACOS)
+    const QString bundledDir = exeDir + "/../Resources";             // atomix.app/Contents/Resources
+#elif defined(Q_OS_WIN)
+    const QString bundledDir = exeDir;                               // flat folder next to atomix.exe
+#else
+    const QString bundledDir = exeDir + "/../share/atomix";          // <prefix>/share/atomix (AppImage: usr/share/atomix)
+#endif
+    settings.beginGroup("atomixFiles");
+    const QString savedDir = settings.value("root").toString();
+    settings.endGroup();
+
+    QStringList candidates;
     if (qParser.isSet(cliAtomixDir)) {
-        // Use CLI argument first, as if it is provided, the user probably knows what they are doing (hah)
-        strAtomixDir = qParser.value(cliAtomixDir);
-    } else {
-        // If not provided, start with default (current) directory
-        strAtomixDir = QDir::currentPath();
+        candidates << qParser.value(cliAtomixDir);
+    }
+    candidates << bundledDir;
+    if (!savedDir.isEmpty()) {
+        candidates << savedDir;
+    }
+    candidates << QStringLiteral(ATOMIX_DEV_DIR);
 
-        // Adjust for platform filesystems
-        if (isMacOS) {
-            strAtomixDir = strAtomixDir + "/../Resources";
-        } else {
-            strAtomixDir = strAtomixDir + "/../usr";
-        }
-
-        // Check for previous directory
-        settings.beginGroup("atomixFiles");
-        QString savedDir = settings.value("root").toString();
-        settings.endGroup();
-        if (!savedDir.isEmpty()) {
-            strAtomixDir = savedDir;
+    QString strAtomixDir;
+    for (const QString &candidate : candidates) {
+        if (mainWindow.getAtomixFiles().setRoot(QDir(candidate).absolutePath().toStdString())) {
+            strAtomixDir = QDir(candidate).absolutePath();
+            break;
         }
     }
 
-    // Attempt to set atomix directory and show dialog if necessary
-    QDir atomixDir(strAtomixDir);
-    while (!mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {
+    // Nothing found: show dialog until the user picks a valid folder or cancels. Remember the choice.
+    QDir atomixDir(strAtomixDir.isEmpty() ? QDir::homePath() : strAtomixDir);
+    bool pickedByUser = false;
+    while (strAtomixDir.isEmpty() && !mainWindow.getAtomixFiles().setRoot(atomixDir.absolutePath().toStdString())) {
+        pickedByUser = true;
         QMessageBox dialogConfim;
         dialogConfim.setText("Please choose the folder (\"atomix Files Directory\") containing the \"configs\" and \"shaders\" folders shipped with the program or provided by you.");
         dialogConfim.setStandardButtons(QMessageBox::Ok);
@@ -132,13 +161,19 @@ int main(int argc, char* argv[]) {
         }
         atomixDir = QDir(dir);
     }
+    if (strAtomixDir.isEmpty()) {
+        strAtomixDir = atomixDir.absolutePath();
+    }
     QIcon icoAtomix(QString::fromStdString(mainWindow.getAtomixFiles().resources()) + QString::fromStdString("icons/favicon.ico"));
     app.setWindowIcon(icoAtomix);
 
-    // Since by this point the atomix directory is set, let's save it.
-    settings.beginGroup("atomixFiles");
-    settings.setValue("root", atomixDir.absolutePath());
-    settings.endGroup();
+    // Remember a folder the user had to pick by hand. (Packaged locations are found again automatically,
+    // and saving them would pin an old install's files after the app is moved or upgraded.)
+    if (pickedByUser) {
+        settings.beginGroup("atomixFiles");
+        settings.setValue("root", strAtomixDir);
+        settings.endGroup();
+    }
 
     // Debug Info
     if (isDebug) {

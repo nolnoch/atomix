@@ -1,0 +1,256 @@
+# Builds atomix for Linux (AppImage), macOS arm64 + Intel (DMG) and Windows x64 (zip).
+# Every push/PR uploads the packages as workflow artifacts; pushing a tag v* also creates a draft
+# GitHub release with them attached.
+#
+# Optional secrets (macOS signing + notarization; without them the DMGs are ad-hoc signed):
+#   MACOS_CERT_P12_BASE64, MACOS_CERT_PASSWORD   Developer ID Application certificate (.p12, base64)
+#   MACOS_SIGN_IDENTITY                          "Developer ID Application: Name (TEAMID)"
+#   APPLE_API_KEY_ID, APPLE_API_ISSUER_ID,       App Store Connect API key for notarytool
+#   APPLE_API_KEY_P8                             (contents of AuthKey_<id>.p8)
+name: build
+
+on:
+  push:
+    branches: [master, build-system]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  QT_VERSION: 6.12.0
+  VCPKG_TAG: 2026.10.16
+  # aqtinstall 3.3.0 (latest release) can't fetch Windows Qt >= 6.11 (aqtinstall#1007, fixed by #1000
+  # on master, unreleased). Use that master commit on Windows until a release includes it.
+  AQT_WINDOWS_SOURCE: git+https://github.com/miurahr/aqtinstall.git@5a49f2b391ae8ee1d3c0dd87f8b33c1d49a4deb7
+  MOLTENVK_VERSION: v1.4.2
+  MOLTENVK_SHA256: f95765a6229cb7b915990a2890ce12ebe36a730b021545d3d52ae69ce4c4024e
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-24.04
+            preset: linux-release
+            triplet: x64-linux-atomix
+            qt_arch: ''
+          - name: macos-arm64
+            os: macos-15
+            preset: macos-arm64-release
+            triplet: arm64-osx-atomix
+            qt_arch: ''
+          - name: macos-x64
+            os: macos-15-intel
+            preset: macos-x64-release
+            triplet: x64-osx-atomix
+            qt_arch: ''
+          - name: windows-x64
+            os: windows-2025
+            preset: windows-release
+            triplet: x64-windows-atomix
+            qt_arch: win64_msvc2022_64
+    env:
+      HAS_MACOS_CERT: ${{ secrets.MACOS_CERT_P12_BASE64 != '' }}
+      HAS_NOTARY_KEY: ${{ secrets.APPLE_API_KEY_P8 != '' }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set paths
+        run: |
+          # Forward slashes on Windows too: these end up inside CMake code.
+          tmp=$(cygpath -m "$RUNNER_TEMP" 2>/dev/null || echo "$RUNNER_TEMP")
+          echo "VCPKG_ROOT=$tmp/vcpkg" >> "$GITHUB_ENV"
+          echo "VCPKG_CACHE_DIR=$tmp/vcpkg-cache" >> "$GITHUB_ENV"
+          echo "VCPKG_BINARY_SOURCES=clear;files,$tmp/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+
+      - uses: lukka/get-cmake@v4.4.5
+        with:
+          cmakeVersion: '~4.4.0'
+          ninjaVersion: '~1.13.0'
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        # Headers vcpkg's vulkan-loader port compiles its X11/Wayland WSI support against.
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            libx11-dev libx11-xcb-dev libxcb1-dev libxrandr-dev libwayland-dev pkg-config
+
+      - name: Set up vcpkg
+        run: |
+          # Full clone: the manifest's builtin-baseline is an older commit.
+          git clone --quiet https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" checkout --quiet "$VCPKG_TAG"
+          if [ "$RUNNER_OS" = Windows ]; then
+            cmd //c "$(cygpath -w "$VCPKG_ROOT")\\bootstrap-vcpkg.bat" -disableMetrics
+          else
+            "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+          fi
+          mkdir -p "$VCPKG_CACHE_DIR"
+
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: ${{ env.VCPKG_CACHE_DIR }}
+          key: vcpkg-${{ matrix.triplet }}-${{ env.VCPKG_TAG }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/**') }}
+          restore-keys: vcpkg-${{ matrix.triplet }}-${{ env.VCPKG_TAG }}-
+
+      - name: Install Qt
+        if: runner.os != 'macOS'
+        uses: jurplel/install-qt-action@v4.5.0
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ matrix.qt_arch }}
+          aqtsource: ${{ runner.os == 'Windows' && env.AQT_WINDOWS_SOURCE || '' }}
+          cache: true
+
+      # ---- macOS: Qt built from source (prebuilt macOS Qt has no Vulkan), MoltenVK, signing ----
+      # Restore and save are separate steps so a fresh Qt build is cached even if a later step fails.
+      - name: Restore Qt build
+        if: runner.os == 'macOS'
+        id: qt-cache
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: ${{ runner.temp }}/qt
+          key: qt-${{ env.QT_VERSION }}-${{ matrix.name }}-${{ hashFiles('packaging/macos/build-qt.sh') }}
+
+      - name: Build Qt with Vulkan
+        if: runner.os == 'macOS' && steps.qt-cache.outputs.cache-hit != 'true'
+        run: packaging/macos/build-qt.sh "$RUNNER_TEMP/qt"
+
+      - name: Save Qt build
+        if: runner.os == 'macOS' && steps.qt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: ${{ runner.temp }}/qt
+          key: ${{ steps.qt-cache.outputs.cache-primary-key }}
+
+      - name: Use built Qt
+        if: runner.os == 'macOS'
+        run: echo "QT_ROOT_DIR=$RUNNER_TEMP/qt" >> "$GITHUB_ENV"
+
+      - name: Download MoltenVK
+        if: runner.os == 'macOS'
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/MoltenVK-macos.tar" \
+            "https://github.com/KhronosGroup/MoltenVK/releases/download/$MOLTENVK_VERSION/MoltenVK-macos.tar"
+          echo "$MOLTENVK_SHA256  $RUNNER_TEMP/MoltenVK-macos.tar" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/moltenvk"
+          tar -xf "$RUNNER_TEMP/MoltenVK-macos.tar" -C "$RUNNER_TEMP/moltenvk"
+          echo "MOLTENVK_DIR=$RUNNER_TEMP/moltenvk/MoltenVK/MoltenVK/dynamic/dylib/macOS" >> "$GITHUB_ENV"
+
+      - name: Import signing certificate
+        if: runner.os == 'macOS' && env.HAS_MACOS_CERT == 'true'
+        uses: apple-actions/import-codesign-certs@v7.2.0
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          p12-password: ${{ secrets.MACOS_CERT_PASSWORD }}
+
+      - name: Write notarization key
+        if: runner.os == 'macOS' && env.HAS_NOTARY_KEY == 'true'
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          printf '%s\n' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+          echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+
+      # ---- Configure + build ----
+      - name: Set up MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1.13.0
+        with:
+          arch: x64
+
+      - name: Configure and build (Linux, macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cmake --preset ${{ matrix.preset }}
+          cmake --build --preset ${{ matrix.preset }}
+
+      - name: Configure and build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh   # Git Bash's /usr/bin/link would shadow MSVC's link.exe
+        run: |
+          cmake --preset ${{ matrix.preset }}
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --build --preset ${{ matrix.preset }}
+
+      - name: Read version
+        run: |
+          version=$(sed -n 's/^CMAKE_PROJECT_VERSION:STATIC=//p' "build/${{ matrix.preset }}/CMakeCache.txt")
+          echo "ATOMIX_VERSION=$version" >> "$GITHUB_ENV"
+          echo "atomix $version"
+
+      # ---- Package ----
+      - name: Package AppImage
+        if: runner.os == 'Linux'
+        run: |
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
+          packaging/linux/build-appimage.sh "build/${{ matrix.preset }}" dist
+
+      - name: Package DMG
+        if: runner.os == 'macOS'
+        env:
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          cmake --install "build/${{ matrix.preset }}"
+          packaging/macos/package-dmg.sh "build/${{ matrix.preset }}/install" \
+            "dist/atomix-$ATOMIX_VERSION-${{ matrix.name }}.dmg"
+
+      - name: Package zip
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake --install "build/${{ matrix.preset }}"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $name = "atomix-$env:ATOMIX_VERSION-${{ matrix.name }}"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Move-Item "build/${{ matrix.preset }}/install" "dist/$name"
+          Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip"
+          Remove-Item -Recurse "dist/$name"
+
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: atomix-${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Remove notarization key
+        if: always() && runner.os == 'macOS'
+        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v3.0.3
+        with:
+          files: dist/*
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -1785,9 +1785,9 @@ void ProgramVK::createDescriptorSets(VKuint set, VKuint binding, VKuint size) {
  *
  * This function will create a descriptor pool for the given number of bindings.
  * The descriptor pool will be created with the type of descriptor
- * VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, and the descriptor count set to
- * MAX_FRAMES_IN_FLIGHT. The pool size count is set to 1, and the pool size is
- * set to the given number of bindings. The flags are set to 0.
+ * VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, with room for MAX_FRAMES_IN_FLIGHT sets
+ * of each of the given number of bindings (one uniform buffer descriptor per
+ * set). The flags are set to 0.
  *
  * @param bindings - the number of bindings for the descriptor pool
  *
@@ -1796,7 +1796,9 @@ void ProgramVK::createDescriptorSets(VKuint set, VKuint binding, VKuint size) {
 void ProgramVK::createDescriptorPool(VKuint bindings) {
     VkDescriptorPoolSize poolSize{};
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = MAX_FRAMES_IN_FLIGHT;
+    // Every set holds one uniform buffer, and each of the `bindings` sets is allocated once per frame.
+    // Some drivers let allocations exceed descriptorCount; MoltenVK does not (VK_ERROR_OUT_OF_POOL_MEMORY).
+    poolSize.descriptorCount = MAX_FRAMES_IN_FLIGHT * bindings;
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

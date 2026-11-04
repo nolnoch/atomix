@@ -1,83 +1,84 @@
 {
     "version": 9,
-    "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
-    "include": [
-        "CMake${hostSystemName}Presets.json"
-    ],
+    "cmakeMinimumRequired": { "major": 3, "minor": 30, "patch": 0 },
     "configurePresets": [
         {
-            "name": "defaultConfigDebug",
-            "displayName": "Preset Configuration: Debug",
-            "inherits": "vcpkg",
-            "environment": {
-                "VCPKG_BUILD_TYPE": "Debug"
-            },
-            "hidden": true
+            "name": "base",
+            "hidden": true,
+            "description": "Common settings. Needs VCPKG_ROOT (vcpkg checkout) and QT_ROOT_DIR (Qt kit, e.g. ~/Qt/6.12.0/gcc_64) in the environment.",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/build/${presetName}/install",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}",
+                "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/triplets"
+            }
         },
         {
-            "name": "defaultConfigRelease",
-            "displayName": "Preset Configuration: Release",
-            "inherits": "vcpkg",
-            "environment": {
-                "VCPKG_BUILD_TYPE": "Release"
-            },
-            "hidden": true
+            "name": "dev",
+            "inherits": "base",
+            "displayName": "Development (Debug + Release)",
+            "description": "Local development build with vcpkg's default triplet. Build with the dev-debug / dev-release build presets.",
+            "generator": "Ninja Multi-Config"
+        },
+        {
+            "name": "release-base",
+            "hidden": true,
+            "inherits": "base",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "linux-release",
+            "inherits": "release-base",
+            "displayName": "Linux release (AppImage)",
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-linux-atomix"
+            }
+        },
+        {
+            "name": "macos-arm64-release",
+            "inherits": "release-base",
+            "displayName": "macOS Apple silicon release (DMG)",
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+            "cacheVariables": {
+                "CMAKE_OSX_ARCHITECTURES": "arm64",
+                "VCPKG_TARGET_TRIPLET": "arm64-osx-atomix",
+                "ATOMIX_MOLTENVK_DIR": "$env{MOLTENVK_DIR}"
+            }
+        },
+        {
+            "name": "macos-x64-release",
+            "inherits": "release-base",
+            "displayName": "macOS Intel release (DMG)",
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+            "cacheVariables": {
+                "CMAKE_OSX_ARCHITECTURES": "x86_64",
+                "VCPKG_TARGET_TRIPLET": "x64-osx-atomix",
+                "ATOMIX_MOLTENVK_DIR": "$env{MOLTENVK_DIR}"
+            }
+        },
+        {
+            "name": "windows-release",
+            "inherits": "release-base",
+            "displayName": "Windows release (zip)",
+            "description": "Run from a Visual Studio x64 developer prompt (CI uses ilammy/msvc-dev-cmd).",
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "VCPKG_TARGET_TRIPLET": "x64-windows-atomix"
+            }
         }
     ],
     "buildPresets": [
-        {
-            "name": "defaultBuildDebug",
-            "displayName": "Preset Build: Debug",
-            "configuration": "Debug",
-            "targets": ["atomix"],
-            "jobs": 16,
-            "cleanFirst": true,
-            "hidden": true
-        },
-        {
-            "name": "defaultBuildRelease",
-            "displayName": "Preset Build: Release (default)",
-            "configuration": "Release",
-            "targets": ["atomix"],
-            "jobs": 16,
-            "cleanFirst": true,
-            "hidden": true
-        },
-        {
-            "name": "defaultInstall",
-            "displayName": "Preset Install (default)",
-            "configuration": "Release",
-            "targets": ["atomix", "install"],
-            "jobs": 16,
-            "cleanFirst": true,
-            "hidden": true
-        },
-        {
-            "name": "debugInstall",
-            "displayName": "Preset Install: Debug",
-            "configuration": "Debug",
-            "targets": ["atomix", "install"],
-            "jobs": 16,
-            "cleanFirst": true,
-            "hidden": true
-        },
-        {
-            "name": "atomixCleanDebug",
-            "displayName": "Preset Clean: Custom",
-            "configuration": "Debug",
-            "targets": ["atomix_clean"],
-            "jobs": 0,
-            "cleanFirst": false,
-            "hidden": true
-        },
-        {
-            "name": "atomixCleanRelease",
-            "displayName": "Preset Clean: Custom",
-            "configuration": "Release",
-            "targets": ["atomix_clean"],
-            "jobs": 0,
-            "cleanFirst": false,
-            "hidden": true
-        }
+        { "name": "dev-debug",   "configurePreset": "dev", "configuration": "Debug" },
+        { "name": "dev-release", "configurePreset": "dev", "configuration": "Release" },
+        { "name": "linux-release",       "configurePreset": "linux-release" },
+        { "name": "macos-arm64-release", "configurePreset": "macos-arm64-release" },
+        { "name": "macos-x64-release",   "configurePreset": "macos-x64-release" },
+        { "name": "windows-release",     "configurePreset": "windows-release" }
     ]
 }

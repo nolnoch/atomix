@@ -187,6 +187,7 @@ public slots:
     void selectRenderedWaves(int id, bool checked);
 
 protected:
+    bool event(QEvent *e) override;
     void wheelEvent(QWheelEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;

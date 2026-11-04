@@ -1,0 +1,58 @@
+● Done. Summary of changes:        
+                                                                                          
+  ┌────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────┐
+  │                File                │                                         Change                                          │  
+  ├────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤
+  │ doc/deploy/mac/atomix.entitlements │ new — disable-library-validation (for bundled MoltenVK/libvulkan/Qt), allow-jit (for    │  
+  │                                    │ QtQml)                                                                                  │
+  ├────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤  
+  │ doc/deploy/mac/Info.plist.in       │ new — proper bundle metadata template; CMake fills the ${MACOSX_BUNDLE_*} vars          │
+  ├────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤  
+  │ src/CMakeLists.txt                 │ added the MACOSX_BUNDLE_* properties to the if(APPLE) block, including bundle ID        │
+  │                                    │ com.nolnoch.atomix and a pointer to the plist template                                  │  
+  ├────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤
+  │                                    │ rewrote signing to use your Developer ID cert with hardened runtime + entitlements,     │  
+  │ doc/deploy/mac/macdeploy.sh        │ signed bottom-up (dylibs → plugins → frameworks → executable → bundle), and added       │  
+  │                                    │ notarize + staple                                                                       │
+  └────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────┘  
+                                                            
+  The script also bumped QTDIR to match the 6.9.0 path now in your CMakeLists. Set SKIP_NOTARIZE=1 for fast iteration locally       
+  without going through Apple.
+                                                                                                                                    
+  One-time setup before you run it                                                                                                  
+  
+  You need to give notarytool a stored credential so the script can submit unattended. From your Mac:                               
+                                                            
+  xcrun notarytool store-credentials AC_PASSWORD \                                                                                  
+      --apple-id "braernoch@gmail.com" \                                                                                            
+      --team-id "39683CAT84" \                                                                                                      
+      --password "<APP-SPECIFIC PASSWORD>"                                                                                          
+                                                                                                                                    
+  The app-specific password is not your Apple ID password — generate one at https://appleid.apple.com → Sign-In and Security →      
+  App-Specific Passwords. Once stored, the keychain holds it under the name AC_PASSWORD, and the script reuses it on every run.
+                                                                                                                                    
+  Verify it actually worked                                                                                                         
+  
+  After running the install, on a different Mac (or simulating one):                                                                
+                                                            
+  # Simulate "downloaded from internet" quarantine (Gatekeeper's gate)                                                              
+  xattr -w com.apple.quarantine "0083;00000000;Safari;" atomix.app                                                                  
+  # Should print: atomix.app: accepted    source=Notarized Developer ID                                                             
+  spctl -a -vvv -t exec atomix.app                                                                                                  
+                                                                                                                                    
+  If spctl says "accepted, source=Notarized Developer ID," it'll launch on any Mac without xattr workarounds. If it says            
+  "source=Developer ID" only (no "Notarized"), stapling didn't happen.
+                                                                                                                                    
+  Likely first-run hiccups                                  
+
+  - No "Developer ID Application" cert in keychain. Check with security find-identity -v -p codesigning. If it's missing, you need  
+  to create one in your dev account → Certificates, ID & Profiles → "+" → "Developer ID Application," download, and double-click the
+   .cer. (Apple Development ≠ Developer ID Application — they're separate cert types.)                                              
+  - Notarization rejection because --timestamp couldn't reach Apple's TSA, or because some dylib was skipped. The submission ID
+  prints to stdout; fetch the log with xcrun notarytool log <id> --keychain-profile AC_PASSWORD. The log will name the offending    
+  file.
+  - App still won't open after notarization. Almost always means the hardened runtime is killing it because something needs an      
+  entitlement we didn't grant. Run the app from Console.app or Console and look for "EXC_BAD_ACCESS / KERN_PROTECTION_FAILURE" or   
+  "Library Validation failed" — if it's the latter, library-validation is already disabled, so it's something else. Send me the
+  crash log and I'll narrow it down.
+  

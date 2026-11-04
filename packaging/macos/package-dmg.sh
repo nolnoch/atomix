@@ -142,7 +142,20 @@ if [ "$submit_rc" -ne 0 ] || [ "$STATUS" != "Accepted" ]; then
     exit 1
 fi
 
-xcrun stapler staple "$OUT_DMG"
-xcrun stapler validate "$OUT_DMG"
-spctl --assess --type open --context context:primary-signature --verbose=2 "$OUT_DMG"
+# stapler and spctl both talk to Apple's ticket service (api.apple-cloudkit.com), and CI runners
+# occasionally lose that connection ("NSURLErrorDomain -1005", stapler exit 68). Retry them.
+retry() {
+    local attempt
+    for attempt in 1 2 3 4 5; do
+        "$@" && return 0
+        [ "$attempt" -lt 5 ] || break
+        echo "'$1 ${2:-}' failed (attempt $attempt), retrying in $((attempt * 10))s"
+        sleep $((attempt * 10))
+    done
+    echo "error: '$*' failed after 5 attempts" >&2
+    return 1
+}
+retry xcrun stapler staple "$OUT_DMG"
+retry xcrun stapler validate "$OUT_DMG"
+retry spctl --assess --type open --context context:primary-signature --verbose=2 "$OUT_DMG"
 echo "== Done (signed + notarized): $OUT_DMG"

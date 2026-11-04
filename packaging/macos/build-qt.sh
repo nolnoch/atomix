@@ -17,7 +17,9 @@ if [ $# -lt 1 ] || [ $# -gt 2 ]; then
     exit 2
 fi
 mkdir -p "$1"
-PREFIX=$(cd "$1" && pwd)
+# Physical paths (pwd -P): Qt refuses build paths containing symlinks, and macOS temp dirs live
+# under /var, which is a symlink to /private/var.
+PREFIX=$(cd "$1" && pwd -P)
 ARCH="${2:-$(uname -m)}"
 
 QT_VERSION=6.12.0
@@ -26,7 +28,7 @@ QTDECLARATIVE_SHA256=311f3a2603e1973bb59baef9dfa740a376de713157d4782ee043681e889
 VULKAN_HEADERS_TAG=vulkan-sdk-1.3.296.0   # same version vcpkg provides to atomix
 DEPLOYMENT_TARGET=14.4                    # keep in sync with CMAKE_OSX_DEPLOYMENT_TARGET
 
-WORK=$(mktemp -d)
+WORK=$(cd "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 

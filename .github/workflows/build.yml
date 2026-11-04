@@ -83,6 +83,14 @@ jobs:
           cmakeVersion: '~4.4.0'
           ninjaVersion: '~1.13.0'
 
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        # Headers vcpkg's vulkan-loader port compiles its X11/Wayland WSI support against.
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            libx11-dev libx11-xcb-dev libxcb1-dev libxrandr-dev libwayland-dev pkg-config
+
       - name: Set up vcpkg
         run: |
           # Full clone: the manifest's builtin-baseline is an older commit.
@@ -103,6 +111,7 @@ jobs:
           restore-keys: vcpkg-${{ matrix.triplet }}-${{ env.VCPKG_TAG }}-
 
       - name: Install Qt
+        if: runner.os != 'macOS'
         uses: jurplel/install-qt-action@v4.5.0
         with:
           version: ${{ env.QT_VERSION }}
@@ -110,7 +119,31 @@ jobs:
           aqtsource: ${{ runner.os == 'Windows' && env.AQT_WINDOWS_SOURCE || '' }}
           cache: true
 
-      # ---- macOS: MoltenVK + signing credentials ----
+      # ---- macOS: Qt built from source (prebuilt macOS Qt has no Vulkan), MoltenVK, signing ----
+      # Restore and save are separate steps so a fresh Qt build is cached even if a later step fails.
+      - name: Restore Qt build
+        if: runner.os == 'macOS'
+        id: qt-cache
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: ${{ runner.temp }}/qt
+          key: qt-${{ env.QT_VERSION }}-${{ matrix.name }}-${{ hashFiles('packaging/macos/build-qt.sh') }}
+
+      - name: Build Qt with Vulkan
+        if: runner.os == 'macOS' && steps.qt-cache.outputs.cache-hit != 'true'
+        run: packaging/macos/build-qt.sh "$RUNNER_TEMP/qt"
+
+      - name: Save Qt build
+        if: runner.os == 'macOS' && steps.qt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: ${{ runner.temp }}/qt
+          key: ${{ steps.qt-cache.outputs.cache-primary-key }}
+
+      - name: Use built Qt
+        if: runner.os == 'macOS'
+        run: echo "QT_ROOT_DIR=$RUNNER_TEMP/qt" >> "$GITHUB_ENV"
+
       - name: Download MoltenVK
         if: runner.os == 'macOS'
         run: |

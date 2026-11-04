@@ -23,9 +23,7 @@ if [ $# -ne 2 ]; then
 fi
 INSTALL_DIR=$(cd "$1" && pwd)
 OUT_DMG="$2"
-SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 APP="$INSTALL_DIR/atomix.app"
-ENTITLEMENTS="$SCRIPT_DIR/atomix.entitlements"
 
 [ -d "$APP" ] || { echo "error: $APP not found (run cmake --install first)" >&2; exit 1; }
 mkdir -p "$(dirname "$OUT_DMG")"
@@ -91,11 +89,9 @@ done < <(macho_files)
 find "$APP/Contents" -type d -name '*.framework' -prune -print | while IFS= read -r fw; do
     "${SIGN[@]}" "$fw"
 done
-if [ -n "$IDENTITY" ]; then
-    "${SIGN[@]}" --entitlements "$ENTITLEMENTS" "$APP"
-else
-    "${SIGN[@]}" "$APP"
-fi
+# No entitlements: the Qt we build has the QML JIT disabled (build-qt.sh), so the hardened runtime
+# needs no exceptions.
+"${SIGN[@]}" "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
 # --- 3. DMG ------------------------------------------------------------------------------------

@@ -75,15 +75,16 @@ The center (i.e. nucleus) model is a central hexahedral crystal with polar colou
 Requirements:
 * CMake 3.30+ and Ninja
 * A C++23 compiler: GCC 13+, Apple Clang 16+ (Xcode 16), or Visual Studio 2022 17.10+
-* Qt 6.12 ([online installer](https://www.qt.io/download-open-source), or [aqtinstall](https://github.com/miurahr/aqtinstall))
+* Qt 6.12 with Vulkan support. On Linux and Windows the [online installer](https://www.qt.io/download-open-source) or [aqtinstall](https://github.com/miurahr/aqtinstall) builds work. Qt's prebuilt macOS binaries are built without Vulkan, so on macOS build Qt with `packaging/macos/build-qt.sh <install-dir>` (30-60 minutes; builds only qtbase and qtdeclarative).
 * [vcpkg](https://github.com/microsoft/vcpkg) (supplies glm, glslang, SPIRV-Tools, SPIRV-Cross, oneTBB and the Vulkan loader; see `vcpkg.json`)
+* Linux only: X11/Wayland headers for vcpkg's Vulkan loader (Ubuntu: `sudo apt install libx11-dev libx11-xcb-dev libxcb1-dev libxrandr-dev libwayland-dev pkg-config`)
 * macOS only: MoltenVK (from a [MoltenVK release](https://github.com/KhronosGroup/MoltenVK/releases), the Vulkan SDK, or Homebrew)
 
 Point two environment variables at your installs, then use a CMake preset:
 
 ```sh
 export VCPKG_ROOT=~/vcpkg               # vcpkg checkout (bootstrapped)
-export QT_ROOT_DIR=~/Qt/6.12.0/gcc_64   # or .../macos, or C:/Qt/6.12.0/msvc2022_64
+export QT_ROOT_DIR=~/Qt/6.12.0/gcc_64   # or C:/Qt/6.12.0/msvc2022_64, or your build-qt.sh prefix on macOS
 
 # Development build (Debug + Release in one tree)
 cmake --preset dev

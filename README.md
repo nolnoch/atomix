@@ -106,5 +106,5 @@ I lost a month to learning and re-making my rendering library in Vulkan.
 MacOS also doesn't respect Qt's styling defaults, so that UI is still currently buggy.
 
 #### TODO and Future Goals:
-* Solve Vulkan freezing issue on MacOS (appears to be an issue with Qt)
+* ~~Solve Vulkan freezing issue on MacOS~~ (fixed in 0.2.0: rendering inside Core Animation's display cycle deadlocked MoltenVK)
 * May use this platform to explore gravity, the implications of the Planck length, and multidimensional rotations

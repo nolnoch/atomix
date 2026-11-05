@@ -8,32 +8,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build System
 
-CMake (≥ 3.30) + vcpkg + Qt 6.8+ (Linux/Windows) or 6.9+ (macOS). C++23, requires Vulkan 1.3.
+CMake (≥ 3.30) + Ninja + vcpkg + Qt 6.12. C++23. Vulkan instance version is whatever the loader reports (`mainwindow.cpp`, SPIR-V target picked to match).
 
-`VCPKG_ROOT` must point at a vcpkg checkout (the Linux preset defaults it to `${sourceParentDir}/vcpkg`). `vcpkg.json` pins dependencies (glm, glslang, spirv-tools/cross/reflect, tbb, vulkan).
+Two environment variables drive everything; nothing per-machine is hardcoded:
+- `VCPKG_ROOT`: a bootstrapped vcpkg checkout. `vcpkg.json` supplies glm, glslang, SPIRV-Tools, SPIRV-Cross, oneTBB and the Vulkan loader; overlay triplets (static, release-only) live in `cmake/triplets/`.
+- `QT_ROOT_DIR`: the Qt kit (e.g. `~/Qt/6.12.0/gcc_64`). Prebuilt macOS Qt has no Vulkan, so on macOS build it with `packaging/macos/build-qt.sh <prefix>`.
 
-`src/CMakeLists.txt` hardcodes per-platform locations that you may need to retarget:
-- `Qt6_DIR` (Linux: `/home/braer/Qt/6.8.0/gcc_64`, macOS: `/usr/local/Qt-6.9.0`, Windows: `C:/Qt/6.8.1/msvc2022_64`)
-- `oneDPL_DIR` on Linux (`/opt/intel/oneapi/2025.1/lib/cmake/oneDPL`)
+oneDPL (header-only) is used from an installed package if `find_package` finds one, otherwise `src/CMakeLists.txt` downloads the release headers. On macOS, `ATOMIX_MOLTENVK_DIR` (presets read `$MOLTENVK_DIR`) points at `libMoltenVK.dylib`; the Vulkan loader and MoltenVK are bundled into the .app.
 
-`CMakePresets.json` includes a per-host file (`CMake${hostSystemName}Presets.json`) and exposes hidden presets that `CMakeUserPresets.json` extends with the `*A` suffix (which is what you actually invoke):
+Presets (`CMakePresets.json`; `CMakeUserPresets.json` is no longer used):
 
 ```bash
-# Configure + build (Release is the intended default)
-cmake --preset defaultConfigReleaseA
-cmake --build --preset defaultBuildReleaseA
+# Development: Debug + Release in one tree (Ninja Multi-Config)
+cmake --preset dev
+cmake --build --preset dev-release        # or dev-debug
+./build/dev/src/Release/atomix
 
-# Debug
-cmake --preset defaultConfigDebugA
-cmake --build --preset defaultBuildDebugA
-
-# Build + install + run platform deploy script
-cmake --build --preset defaultInstallA
+# Release + package, as CI does it
+cmake --preset linux-release && cmake --build --preset linux-release
+packaging/linux/build-appimage.sh build/linux-release dist
 ```
 
-`install` triggers `doc/deploy/{linux,mac,win}/<plat>deploy.{sh,bat}`, which assembles an AppImage / .app / Windows installer. The Linux deploy script references `~/bin/appimagetool` and a hardcoded VulkanSDK path — expect to edit it before running on a new machine.
+Other release presets: `macos-arm64-release`, `macos-x64-release` (then `cmake --install build/<preset>` and `packaging/macos/package-dmg.sh build/<preset>/install dist/atomix.dmg`), and `windows-release` (from an x64 VS developer prompt; `cmake --install build/windows-release` gives a self-contained folder). Install layouts: macOS `atomix.app` (data in `Contents/Resources`), Windows flat folder, Linux FHS tree (`bin/`, `share/atomix/`) that linuxdeploy turns into an AppImage.
 
-`atomix_clean` is a custom target that runs the platform `*clean` script.
+CI (`.github/workflows/build.yml`) builds all four packages on every push and PR and uploads them as artifacts. macOS DMGs are Developer ID signed and notarized when the signing secrets are present (listed at the top of the workflow). Pushing a `v*` tag also runs the `release` job, which attaches the four packages to a draft GitHub release. Release version comes from `project(VERSION)` in the top-level `CMakeLists.txt`. Actions caches are per-branch, so the first run on a new branch rebuilds Qt from source on both macOS runners (~30-60 min).
 
 ## Running
 
@@ -43,10 +41,11 @@ cmake --build --preset defaultInstallA
 
 The binary needs an "atomix files directory" containing both `configs/` and `shaders/`. Resolution order (`src/main.cpp`):
 1. `-d/--atomix-dir` CLI flag,
-2. `QSettings` group `atomixFiles/root` from a previous run,
-3. `<cwd>/../Resources` (macOS) or `<cwd>/../usr` (other) — matches the deploy layout, not the build tree.
+2. the packaged location relative to the executable: `../Resources` (macOS bundle), the exe's own folder (Windows), `../share/atomix` (Linux/AppImage),
+3. `QSettings` group `atomixFiles/root` from a previous run,
+4. `ATOMIX_DEV_DIR`, the source tree the binary was built from (so dev builds run from `build/` without `-d`).
 
-If none resolve, the app pops a folder picker. When developing from `build/`, pass `-d <repo-root>`.
+If none resolve, the app pops a folder picker.
 
 There is no test suite; `--testing`/`--profiling` set globals (`isTesting`, `isProfiling` in `global.hpp`) consumed ad hoc.
 
@@ -80,4 +79,5 @@ Key cross-cutting types live in `global.hpp`: `AtomixWaveConfig`, `AtomixCloudCo
 
 - All headers use a uniform GPLv3 banner with author/date — preserve it on new files.
 - Doxygen-style comments on `BitFlag` / `Manager` are the documented public API contract; keep them in sync with behaviour changes (recent commits are tagged `[Doc]`).
-- Per `README.md` and `src/TODOList.txt`, the macOS Qt+Vulkan freeze on focus change is a known unresolved issue; commit `e6613e6` partially handles it.
+- macOS: `VKWindow` swallows `QEvent::Paint` and calls `requestUpdate()` instead, because rendering inside the CALayer display cycle deadlocks MoltenVK's `nextDrawable` (6d3893d, issue #9). Don't remove it.
+- Known renderer and physics issues are tracked as GitHub issues #1-#8 and #10-#16.
